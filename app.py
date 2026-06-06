@@ -1436,7 +1436,7 @@ with tab3:
                     df_uploaded.head(20),
                     use_container_width=True
                 )
-                                st.divider()
+                st.divider()
 
                 st.subheader(
                     "FFT Analysis"
