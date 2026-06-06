@@ -334,29 +334,109 @@ with tab2:
                             f"{sample_rate_est} Hz"
                         )
 
-                        if dominant_freq < 40:
+                       # ==================================================
+# FAULT CONFIDENCE ENGINE V2
+# ==================================================
 
-                            interpretatie = (
-                                "⚠️ Mogelijke Onbalans"
-                            )
+amp_1x = 0
+amp_2x = 0
+amp_3x = 0
+bpfo_energy = 0
 
-                        elif dominant_freq < 120:
+rpm_est = dominant_freq * 60
 
-                            interpretatie = (
-                                "⚠️ Mogelijk Lagerdefect"
-                            )
+for idx, f in enumerate(fft_freqs_real):
 
-                        elif dominant_freq > 500:
+    amp = fft_waarden_real[idx]
 
-                            interpretatie = (
-                                "⚠️ Mogelijke Resonantie"
-                            )
+    if abs(f - dominant_freq) < 2:
+        amp_1x += amp
 
-                        else:
+    if abs(f - (dominant_freq * 2)) < 2:
+        amp_2x += amp
 
-                            interpretatie = (
-                                "❓ Onbekend patroon"
-                            )
+    if abs(f - (dominant_freq * 3)) < 2:
+        amp_3x += amp
+
+    if 1000 <= f <= 1300:
+        bpfo_energy += amp
+
+totale_energie = np.sum(fft_waarden_real) + 1e-9
+
+unbalance_score = (
+    amp_1x /
+    totale_energie
+) * 100 * 10
+
+looseness_score = (
+    (amp_1x + amp_2x + amp_3x)
+    / totale_energie
+) * 100 * 10
+
+bpfo_score = (
+    bpfo_energy /
+    totale_energie
+) * 100 * 4
+
+unbalance_score = min(
+    100,
+    round(unbalance_score, 1)
+)
+
+looseness_score = min(
+    100,
+    round(looseness_score, 1)
+)
+
+bpfo_score = min(
+    100,
+    round(bpfo_score, 1)
+)
+
+scores = {
+    "Unbalance": unbalance_score,
+    "Mechanical Looseness": looseness_score,
+    "BPFO Outer Race": bpfo_score
+}
+
+fault_type = max(
+    scores,
+    key=scores.get
+)
+
+confidence = scores[fault_type]
+
+st.markdown("### Fault Confidence")
+
+st.progress(
+    int(confidence)
+)
+
+st.write(
+    f"**Likely Fault:** {fault_type}"
+)
+
+st.write(
+    f"**Confidence:** {confidence:.1f}%"
+)
+
+score_df = pd.DataFrame({
+    "Fault": [
+        "Unbalance",
+        "Mechanical Looseness",
+        "BPFO Outer Race"
+    ],
+    "Score": [
+        unbalance_score,
+        looseness_score,
+        bpfo_score
+    ]
+})
+
+st.dataframe(
+    score_df,
+    use_container_width=True
+)
 
                         st.success(
                             f"AI Interpretatie:\n\n{interpretatie}"
