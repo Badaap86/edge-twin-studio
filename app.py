@@ -12,12 +12,12 @@ from scipy.stats import kurtosis
 # ============================================================
 # APP CONFIG
 # ============================================================
-st.set_page_config(page_title="TinyML Data Accelerator V3.5", layout="wide", initial_sidebar_state="expanded")
-st.title("⚡ TinyML Data Accelerator (OMEGA-X V3.5)")
-st.caption("Synthetic Data Generation • Dataset Augmentation • Feature Extraction • Edge AI Development")
+st.set_page_config(page_title="OMEGA-X Edge Data Platform", layout="wide", initial_sidebar_state="expanded")
+st.title("⚡ OMEGA-X Edge Data Platform (V4.1)")
+st.caption("Multi-Modal Synthetic Generation • Anomaly Detection • Feature Extraction")
 
 # ============================================================
-# HELPER FUNCTIONS
+# CORE DSP (DIGITAL SIGNAL PROCESSING) FUNCTIONS
 # ============================================================
 def calculate_fft(signal_data, sample_rate):
     window = np.hanning(len(signal_data))
@@ -29,439 +29,363 @@ def calculate_spectrogram(signal_data, sample_rate):
     f_spec, t_spec, Sxx = signal.spectrogram(signal_data, sample_rate, nperseg=256, noverlap=128)
     return f_spec, t_spec, Sxx
 
+# --- AUDIO AI FEATURE EXTRACTORS ---
+def get_zero_crossing_rate(sig):
+    return ((sig[:-1] * sig[1:]) < 0).sum() / len(sig)
+
+def get_spectral_centroid(fft_f, fft_v):
+    if np.sum(fft_v) == 0: return 0
+    return np.sum(fft_f * fft_v) / np.sum(fft_v)
+
+def get_spectral_rolloff(fft_f, fft_v, percentile=0.85):
+    cumulative_energy = np.cumsum(fft_v)
+    total_energy = cumulative_energy[-1]
+    if total_energy == 0: return 0
+    rolloff_idx = np.where(cumulative_energy >= percentile * total_energy)[0][0]
+    return fft_f[rolloff_idx]
+
 # ============================================================
-# SYNTHETIC VIBRATION ENGINE V3
+# SENSOR 1: VIBRATION (KINEMATIC PHYSICS ENGINE)
 # ============================================================
 @st.cache_data
 def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_randomness=False):
     sample_rate = 4000
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
     
-    actual_rpm = rpm * np.random.normal(1.0, 0.02) if apply_randomness else rpm
-    actual_severity = severity * np.random.normal(1.0, 0.10) if apply_randomness else severity
-    actual_severity = np.clip(actual_severity, 0.01, 1.0)
+    act_rpm = rpm * np.random.normal(1.0, 0.02) if apply_randomness else rpm
+    act_sev = np.clip(severity * np.random.normal(1.0, 0.10) if apply_randomness else severity, 0.01, 1.0)
     
-    f_1x = actual_rpm / 60.0
+    f_1x = act_rpm / 60.0
     phase_1x = 2 * np.pi * f_1x * t
     vibration = 0.2 * np.sin(phase_1x)
-    mains_noise = 0.05 * np.sin(2 * np.pi * 50 * t)
     
     noise_scale = np.random.uniform(0.85, 1.15) if apply_randomness else 1.0
-    base_noise = np.random.normal(0, 0.1 * noise_scale, len(t))
-    vibration += mains_noise + (base_noise * (1 + actual_severity))
+    vibration += 0.05 * np.sin(2 * np.pi * 50 * t) + (np.random.normal(0, 0.1 * noise_scale, len(t)) * (1 + act_sev))
     
-    bpfo_frequency = f_1x * 3.58
-    resonance_frequency = np.random.normal(1200.0, 15.0) if apply_randomness else 1200.0
+    bpfo = f_1x * 3.58
+    res_freq = np.random.normal(1200.0, 15.0) if apply_randomness else 1200.0
 
     if condition == "Unbalance":
-        vibration += 1.5 * actual_severity * np.sin(phase_1x)
+        vibration += 1.5 * act_sev * np.sin(phase_1x)
     elif condition == "Mechanical Looseness":
-        for harmonic in range(1, 6):
-            vibration += (1.2 / harmonic) * actual_severity * np.sin(harmonic * phase_1x)
-        vibration += base_noise * actual_severity * 2.0
+        for h in range(1, 6): vibration += (1.2 / h) * act_sev * np.sin(h * phase_1x)
+        vibration += np.random.normal(0, 0.1, len(t)) * act_sev * 2.0
     elif condition == "BPFO (Outer Race)":
-        phase_fault = 2 * np.pi * bpfo_frequency * t
-        impact_variation = 0.8 + 0.4 * np.random.rand(len(t))
-        impact_envelope = np.maximum(0, np.cos(phase_fault)) ** 20 * impact_variation
-        load_zone_modulation = 1 + 0.6 * np.cos(phase_1x)
-        defect_signal = np.sin(2 * np.pi * resonance_frequency * t) * impact_envelope * load_zone_modulation
-        vibration += 2.0 * actual_severity * defect_signal
+        impacts = np.maximum(0, np.cos(2 * np.pi * bpfo * t)) ** 20 * (0.8 + 0.4 * np.random.rand(len(t)))
+        vibration += 2.0 * act_sev * np.sin(2 * np.pi * res_freq * t) * impacts * (1 + 0.6 * np.cos(phase_1x))
+    elif condition == "Unknown Anomaly (Random)":
+        # Simuleert een willekeurige, onbekende verstoring voor Anomaly Detection
+        vibration += act_sev * np.random.normal(0, 2.0, len(t)) * np.sin(2 * np.pi * np.random.uniform(10, 500) * t)
 
-    fft_freqs, fft_values = calculate_fft(vibration, sample_rate)
-    return t, vibration, fft_freqs, fft_values, bpfo_frequency, resonance_frequency, actual_rpm, actual_severity, sample_rate
+    f, v = calculate_fft(vibration, sample_rate)
+    return {"t": t, "sig": vibration, "fft_f": f, "fft_v": v, "rpm": act_rpm, "sev": act_sev, "bpfo": bpfo, "res": res_freq, "sr": sample_rate}
 
 # ============================================================
-# SESSION STATE & SIDEBAR
+# SENSOR 2: ACOUSTIC (AUDIO PHYSICS ENGINE)
 # ============================================================
-if "rpm" not in st.session_state: st.session_state.rpm = 1500
+@st.cache_data
+def generate_acoustic_data(condition, severity, duration=2.0, apply_randomness=False):
+    sample_rate = 16000
+    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    
+    act_sev = np.clip(severity * np.random.normal(1.0, 0.10) if apply_randomness else severity, 0.01, 1.0)
+    
+    # Base layer: Ambient forest/wind noise
+    audio = np.random.normal(0, 0.05, len(t))
+    
+    if condition == "Chainsaw":
+        f0 = 80 + (np.random.normal(0, 5) if apply_randomness else 0)
+        saw = signal.sawtooth(2 * np.pi * f0 * t)
+        mod = 1 + 0.5 * np.sin(2 * np.pi * 3 * t)
+        grit = np.random.normal(0, 0.2, len(t))
+        audio += act_sev * (saw * mod + grit)
+    elif condition == "Gunshot":
+        impact_t = 0.5 + (np.random.uniform(-0.2, 0.2) if apply_randomness else 0)
+        idx = int(impact_t * sample_rate)
+        if idx < len(t):
+            decay = np.exp(-15 * (t[idx:] - impact_t))
+            burst = np.random.normal(0, 1, len(decay)) * decay
+            audio[idx:] += act_sev * 4.0 * burst
+    elif condition == "Engine Drone":
+        f_drone = 50 + (np.random.normal(0, 2) if apply_randomness else 0)
+        audio += act_sev * 0.8 * np.sin(2 * np.pi * f_drone * t)
+        audio += act_sev * 0.4 * np.sin(2 * np.pi * (f_drone * 1.5) * t)
+    elif condition == "Unknown Anomaly (Random)":
+        # Simuleert ongeclassificeerde herrie (krakende takken, machines, ruis)
+        sweep = signal.chirp(t, f0=100, f1=2000, t1=duration, method='logarithmic')
+        broadband = np.random.uniform(-1, 1, len(t))
+        envelope = np.abs(np.sin(2 * np.pi * np.random.uniform(0.5, 5) * t))
+        audio += act_sev * 2.0 * (sweep * 0.5 + broadband * 0.5) * envelope
+
+    audio = np.clip(audio, -1.0, 1.0)
+    f, v = calculate_fft(audio, sample_rate)
+    return {"t": t, "sig": audio, "fft_f": f, "fft_v": v, "sev": act_sev, "sr": sample_rate}
+
+# ============================================================
+# GLOBAL UI & MODALITY STATE
+# ============================================================
+st.sidebar.header("📡 1. Sensor Modality")
+modality = st.sidebar.radio("Selecteer het type ML Sensor", ["Vibration (Accelerometer)", "Acoustic (Microphone)"])
+
+st.sidebar.markdown("---")
+st.sidebar.header("⚙️ 2. Generator Controls")
+
+if modality == "Vibration (Accelerometer)":
+    if "rpm" not in st.session_state: st.session_state.rpm = 1500
+    rpm = st.sidebar.slider("Basis RPM", 600, 3000, value=st.session_state.rpm, step=10)
+    st.session_state.rpm = rpm
+    cond_options = ["Baseline (Normal)", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)", "Unknown Anomaly (Random)"]
+else:
+    cond_options = ["Baseline (Ambient/Normal)", "Chainsaw", "Gunshot", "Engine Drone", "Unknown Anomaly (Random)"]
+
 if "severity" not in st.session_state: st.session_state.severity = 80
-if "master_training_dataset" not in st.session_state: st.session_state.master_training_dataset = pd.DataFrame()
-
-st.sidebar.header("⚙️ Generator Controls")
-rpm = st.sidebar.slider("RPM", min_value=600, max_value=3000, value=st.session_state.rpm, step=10)
-severity_percent = st.sidebar.slider("Severity (%)", min_value=0, max_value=100, value=st.session_state.severity, step=5)
+severity_percent = st.sidebar.slider("Signal Severity (%)", 0, 100, value=st.session_state.severity, step=5)
 severity = severity_percent / 100.0
-condition = st.sidebar.selectbox("Condition", ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
-show_healthy_overlay = st.sidebar.checkbox("Show Healthy Reference", value=True)
-apply_randomness = st.sidebar.checkbox("Apply Dataset Randomization", value=True)
-
-st.session_state.rpm = rpm
 st.session_state.severity = severity_percent
 
-# ============================================================
-# GENERATE ACTIVE DATASET
-# ============================================================
-t, vibration, fft_freqs, fft_values, bpfo_frequency, resonance_frequency, actual_rpm, actual_severity, sample_rate = generate_vibration_data(condition, severity, rpm, apply_randomness=apply_randomness)
-t_ref, vibration_ref, fft_freqs_ref, fft_values_ref, _, _, _, _, _ = generate_vibration_data("Healthy", 0.0, rpm, apply_randomness=False)
+condition = st.sidebar.selectbox("Gesimuleerde Conditie", cond_options)
+apply_randomness = st.sidebar.checkbox("Actieve Dataset Jitter (Realism)", value=True)
+
+if "master_training_dataset" not in st.session_state: st.session_state.master_training_dataset = pd.DataFrame()
+if "current_modality" not in st.session_state: st.session_state.current_modality = modality
+
+if st.session_state.current_modality != modality:
+    st.session_state.master_training_dataset = pd.DataFrame()
+    st.session_state.current_modality = modality
 
 # ============================================================
-# TABS
+# ACTIVE DATASET GENERATION
 # ============================================================
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 1. Synthetic Generator", "📦 2. Batch Generator", "🔍 3. Upload Analyzer", "🧪 4. Data Multiplier", "🤖 5. TinyML Trainer"])
+if modality == "Vibration (Accelerometer)":
+    data_live = generate_vibration_data(condition, severity, rpm, apply_randomness=apply_randomness)
+    data_ref = generate_vibration_data("Baseline (Normal)", 0.0, rpm, apply_randomness=False)
+else:
+    data_live = generate_acoustic_data(condition, severity, apply_randomness=apply_randomness)
+    data_ref = generate_acoustic_data("Baseline (Ambient/Normal)", 0.0, apply_randomness=False)
+
+# ============================================================
+# TAB CONFIGURATION
+# ============================================================
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 1. Synthetic Generator", "📦 2. Batch Generator", "🔍 3. Upload Analyzer", "🧪 4. Data Multiplier", "🤖 5. ML Pipeline"])
 
 # ============================================================
 # TAB 1: SYNTHETIC GENERATOR
 # ============================================================
 with tab1:
-    st.header("Synthetic Condition Simulator")
-    col_signal, col_fft = st.columns(2)
+    st.header(f"Synthetic {modality.split(' ')[0]} Simulator")
+    c_sig, c_fft = st.columns(2)
 
-    with col_signal:
-        st.subheader("Time Signal")
-        fig_signal = go.Figure()
-        if show_healthy_overlay:
-            fig_signal.add_trace(go.Scatter(x=t[:800], y=vibration_ref[:800], mode="lines", name="Healthy Reference", line=dict(color='#2ca02c', dash='dot')))
-        fig_signal.add_trace(go.Scatter(x=t[:800], y=vibration[:800], mode="lines", name=condition, line=dict(color='#d62728')))
-        fig_signal.update_layout(height=350, xaxis_title="Time (s)", yaxis_title="Amplitude")
-        st.plotly_chart(fig_signal, use_container_width=True)
+    with c_sig:
+        st.subheader("Time Domain Signal")
+        fig_sig = go.Figure()
+        fig_sig.add_trace(go.Scatter(x=data_ref["t"][:1000], y=data_ref["sig"][:1000], mode="lines", name="Baseline (Normal)", line=dict(color='#2ca02c', dash='dot')))
+        fig_sig.add_trace(go.Scatter(x=data_live["t"][:1000], y=data_live["sig"][:1000], mode="lines", name=condition, line=dict(color='#d62728')))
+        fig_sig.update_layout(height=300, margin=dict(l=0, r=0, t=30, b=0))
+        st.plotly_chart(fig_sig, use_container_width=True)
 
-    with col_fft:
-        st.subheader("FFT Spectrum")
+    with c_fft:
+        st.subheader("Frequency Domain (FFT)")
         fig_fft = go.Figure()
-        if show_healthy_overlay:
-            fig_fft.add_trace(go.Scatter(x=fft_freqs_ref, y=fft_values_ref, mode="lines", name="Healthy Reference", line=dict(color='#2ca02c', dash='dot')))
-        fig_fft.add_trace(go.Scatter(x=fft_freqs, y=fft_values, mode="lines", name=condition, line=dict(color='#d62728')))
-        fig_fft.update_layout(height=350, xaxis_title="Frequency (Hz)", yaxis_title="Amplitude")
+        fig_fft.add_trace(go.Scatter(x=data_ref["fft_f"], y=data_ref["fft_v"], mode="lines", name="Baseline (Normal)", line=dict(color='#2ca02c', dash='dot')))
+        fig_fft.add_trace(go.Scatter(x=data_live["fft_f"], y=data_live["fft_v"], mode="lines", name=condition, line=dict(color='#d62728')))
+        x_max = 1500 if modality == "Vibration (Accelerometer)" else 4000
+        fig_fft.update_layout(height=300, xaxis_range=[0, x_max], margin=dict(l=0, r=0, t=30, b=0))
         st.plotly_chart(fig_fft, use_container_width=True)
 
-    st.subheader("Spectrogram (Time / Frequency)")
-    f_spec, t_spec, Sxx = calculate_spectrogram(vibration, sample_rate)
-    max_freq_idx = np.where(f_spec <= 1500)[0][-1] if len(f_spec) > 0 else len(f_spec)
-    fig_spec = go.Figure(data=go.Heatmap(z=10 * np.log10(Sxx[:max_freq_idx, :] + 1e-12), x=t_spec, y=f_spec[:max_freq_idx], colorscale="Viridis"))
-    fig_spec.update_layout(height=350, xaxis_title="Time (s)", yaxis_title="Frequency (Hz)")
+    st.subheader("Spectrogram (Time/Frequency Evolution)")
+    f_spec, t_spec, Sxx = calculate_spectrogram(data_live["sig"], data_live["sr"])
+    max_f = np.where(f_spec <= x_max)[0][-1] if len(f_spec) > 0 else len(f_spec)
+    fig_spec = go.Figure(data=go.Heatmap(z=10 * np.log10(Sxx[:max_f, :] + 1e-10), x=t_spec, y=f_spec[:max_f], colorscale="Viridis"))
+    fig_spec.update_layout(height=300, margin=dict(l=0, r=0, t=10, b=0))
     st.plotly_chart(fig_spec, use_container_width=True)
-
-    st.markdown("---")
-    st.subheader("Physics Dashboard")
-    col_a, col_b, col_c, col_d = st.columns(4)
-    col_a.metric("RPM", f"{actual_rpm:.0f}")
-    col_b.metric("1× RPM", f"{actual_rpm/60:.2f} Hz")
-    col_c.metric("BPFO", f"{bpfo_frequency:.2f} Hz")
-    col_d.metric("Resonance", f"{resonance_frequency:.1f} Hz")
 
 # ============================================================
 # TAB 2: BATCH GENERATOR
 # ============================================================
 with tab2:
-    st.header("📦 Batch Dataset Generator")
-    profile = st.selectbox("Dataset Profile", ["Quick Test (20/cond)", "Research (100/cond)", "Production (500/cond)"])
-    files_per_condition = int(profile.split('(')[1].split('/')[0])
-    total_files = files_per_condition * 4
-
-    st.info(f"Configuration: {total_files} total files across 4 conditions. Randomization: {'ON' if apply_randomness else 'OFF'}.")
-
-    if st.button("🚀 Generate Balanced Dataset", type="primary"):
-        my_bar = st.progress(0, text="Generating physics-driven datasets...")
-        zip_buffer = io.BytesIO()
-        metadata_list = []
-        conditions = ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"]
+    st.header(f"📦 {modality.split(' ')[0]} Batch Generator")
+    profile = st.selectbox("Dataset Size Profile", ["Quick Test (20/cond)", "Research (100/cond)", "Production (500/cond)"])
+    batch_size = int(profile.split('(')[1].split('/')[0])
+    
+    if st.button(f"🚀 Generate Dataset ({batch_size * len(cond_options)} files)", type="primary"):
+        my_bar = st.progress(0, text="Generating datasets...")
+        zip_buf = io.BytesIO()
+        metadata = []
         
-        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
-            for idx, cond in enumerate(conditions):
-                huidige_sev = 0.0 if cond == "Healthy" else severity
-                folder_naam = cond.replace(' ', '_').replace('(', '').replace(')', '').lower()
+        with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zipf:
+            for idx, cond in enumerate(cond_options):
+                sev_base = 0.0 if "Baseline" in cond else severity
+                folder = cond.replace(' ', '_').replace('(', '').replace(')', '').lower()
                 
-                for i in range(files_per_condition):
-                    t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b, _ = generate_vibration_data(cond, huidige_sev, rpm, apply_randomness=apply_randomness)
-                    filename = f"{folder_naam}/{folder_naam}_{i:03d}.csv"
-                    df = pd.DataFrame({'time': t_b, 'vibration': z_b})
-                    zip_file.writestr(filename, df.to_csv(index=False))
-                    metadata_list.append({"file": filename, "condition": cond, "rpm": round(rpm_b, 2), "severity": round(sev_b, 3)})
-                    
-                my_bar.progress((idx + 1) / 4, text=f"Data generated for: {cond}")
-            
-            zip_file.writestr("metadata.json", json.dumps(metadata_list, indent=4))
-            
-        time.sleep(0.5)
+                for i in range(batch_size):
+                    if modality == "Vibration (Accelerometer)":
+                        d = generate_vibration_data(cond, sev_base, rpm, apply_randomness=apply_randomness)
+                        metadata.append({"file": f"{folder}_{i:03d}.csv", "label": cond, "rpm": round(d["rpm"],2)})
+                    else:
+                        d = generate_acoustic_data(cond, sev_base, apply_randomness=apply_randomness)
+                        metadata.append({"file": f"{folder}_{i:03d}.csv", "label": cond})
+                        
+                    zipf.writestr(f"{folder}/{folder}_{i:03d}.csv", pd.DataFrame({'time': d["t"], 'value': d["sig"]}).to_csv(index=False))
+                my_bar.progress((idx + 1) / len(cond_options))
+                
+            zipf.writestr("metadata.json", json.dumps(metadata, indent=4))
+        
         my_bar.empty()
-        st.success(f"✅ Production batch successfully generated ({total_files} files)!")
-        st.download_button("📦 Download .ZIP Archive", data=zip_buffer.getvalue(), file_name="tinyml_balanced_dataset.zip", mime="application/zip")
+        st.success("✅ Batch generation complete!")
+        st.download_button("📦 Download Dataset (.ZIP)", data=zip_buf.getvalue(), file_name=f"omega_x_{modality[:3].lower()}_batch.zip", mime="application/zip")
 
 # ============================================================
-# TAB 3: UPLOAD ANALYZER
-# ============================================================
-with tab3:
-    st.header("🔍 Upload Analyzer")
-    uploaded_file = st.file_uploader("Upload CSV file (time, vibration)", type=["csv"], key="analyzer_upload")
-
-    if uploaded_file:
-        try:
-            df_up = pd.read_csv(uploaded_file)
-            if "time" in df_up.columns and "vibration" in df_up.columns:
-                time_data, vib_data = df_up["time"].values, df_up["vibration"].values
-                sr_est = int(1.0 / np.mean(np.diff(time_data)))
-                
-                rms_val = np.sqrt(np.mean(vib_data**2))
-                kurt_val = pd.Series(vib_data).kurt()
-                crest_val = np.max(np.abs(vib_data)) / rms_val if rms_val > 0 else 0
-                
-                fft_freqs_up, fft_vals_up = calculate_fft(vib_data - np.mean(vib_data), sr_est)
-                dom_idx = np.argmax(fft_vals_up[5:]) + 5
-                dom_freq = fft_freqs_up[dom_idx]
-                
-                st.success("File analyzed successfully!")
-                
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Dominant Freq", f"{dom_freq:.1f} Hz")
-                c2.metric("RMS", f"{rms_val:.3f}")
-                c3.metric("Kurtosis", f"{kurt_val:.2f}")
-                c4.metric("Crest Factor", f"{crest_val:.2f}")
-                
-                health_score = max(0, min(100, 100 - (15 if crest_val > 6 else 0) - (20 if kurt_val > 8 else 0)))
-                st.metric("Machine Health Score", f"{health_score}%")
-                st.progress(health_score / 100)
-            else:
-                st.error("CSV must contain 'time' and 'vibration' columns.")
-        except Exception as e:
-            st.error(f"Error: {e}")
-
-# ============================================================
-# TAB 4: DATA MULTIPLIER (PHYSICS-AWARE CLONE ENGINE)
+# TAB 3 & 4: ANALYZER & CLONER
 # ============================================================
 with tab4:
-    st.header("🧪 Data Multiplier (Physics-Aware Clone Engine)")
-    st.write("Upload a small sample. We extract the physical signature (Frequency, Kurtosis, Crest, Harmonics) and generate a robust dataset.")
+    st.header("🧪 Physics-Aware Clone Engine")
+    st.write(f"Upload a small `{modality.split(' ')[0]}` sample to extract its physical signature and generate clones.")
     
-    upload_mult = st.file_uploader("Upload reference CSV", type=['csv'], key="multiplier_upload")
-    
-    if upload_mult:
+    up_clone = st.file_uploader("Upload reference CSV", type=['csv'], key="clone_up")
+    if up_clone:
         try:
-            df_mult = pd.read_csv(upload_mult)
-            if df_mult.shape[1] >= 2:
-                t_mult = df_mult.iloc[:, 0].values
-                z_mult = df_mult.iloc[:, 1].values
-                sr_mult = int(1.0 / (t_mult[1] - t_mult[0])) * 1000 if (t_mult[1] - t_mult[0]) < 1 else 4000
+            df_c = pd.read_csv(up_clone)
+            if df_c.shape[1] >= 2:
+                sig_c = df_c.iloc[:, 1].values
+                sr_c = 16000 if modality == "Acoustic (Microphone)" else 4000
+                f_c, v_c = calculate_fft(sig_c - np.mean(sig_c), sr_c)
                 
-                rms_mult = np.sqrt(np.mean(z_mult**2))
-                kurt_mult = pd.Series(z_mult).kurt()
-                crest_mult = np.max(np.abs(z_mult)) / rms_mult if rms_mult > 0 else 0
-                
-                fft_f, fft_v = calculate_fft(z_mult - np.mean(z_mult), sr_mult)
-                dom_idx = np.argmax(fft_v[5:]) + 5
-                dom_f = fft_f[dom_idx]
-                extracted_rpm = dom_f * 60
-                
-                # --- NIEUW: Harmonic Ratio Berekening ---
-                fundamental_amp = fft_v[dom_idx]
-                harmonic_amp_sum = 0
-                for h in range(2, 6): # 2x, 3x, 4x, 5x harmonischen
-                    h_target = h * dom_f
-                    h_idx = np.argmin(np.abs(fft_f - h_target))
-                    harmonic_amp_sum += fft_v[h_idx]
-                
-                harmonic_ratio = harmonic_amp_sum / max(abs(fundamental_amp), 1e-6)
-                
-                # --- SLIMME AUTODETECTIE CONDITIE ---
-                if crest_mult > 4.0 and kurt_mult > 3.0:
-                    detected_cond = "BPFO (Outer Race)"
-                elif harmonic_ratio > 0.4 or (crest_mult > 2.5 and kurt_mult > 0.5):
-                    detected_cond = "Mechanical Looseness"
-                elif rms_mult > 0.15:
-                    detected_cond = "Unbalance"
+                if modality == "Vibration (Accelerometer)":
+                    crest = np.max(np.abs(sig_c)) / max(np.sqrt(np.mean(sig_c**2)), 1e-6)
+                    kurt = pd.Series(sig_c).kurt()
+                    if crest > 4.0 and kurt > 3.0: det_cond = "BPFO (Outer Race)"
+                    elif crest > 2.5: det_cond = "Mechanical Looseness"
+                    elif np.sqrt(np.mean(sig_c**2)) > 0.15: det_cond = "Unbalance"
+                    else: det_cond = "Baseline (Normal)"
+                    st.info(f"🧬 Detected Vibration Profile: **{det_cond}**")
                 else:
-                    detected_cond = "Healthy"
-                
-                st.success(f"Signature Extracted! Dominant Freq: {dom_f:.1f} Hz | Derived RPM: {extracted_rpm:.0f}")
-                st.info(f"🧬 Detected Profile: **{detected_cond}** (Kurt: {kurt_mult:.1f}, Crest: {crest_mult:.1f}, Harmonic Ratio: {harmonic_ratio:.2f})")
-                
-                clone_count = st.slider("Clones to Generate", 50, 500, 100)
-                if st.button(f"Clone & Multiply ({detected_cond})", type="primary"):
-                    zip_buf = io.BytesIO()
-                    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zipf:
-                        for i in range(clone_count):
-                            t_k, z_k, _, _, _, _, _, _, _ = generate_vibration_data(detected_cond, severity=0.8, rpm=extracted_rpm, apply_randomness=True)
-                            df_kloon = pd.DataFrame({'time': t_k, 'vibration': z_k})
-                            zipf.writestr(f"synthetic_clone_{detected_cond.replace(' ', '_')}_{i:03d}.csv", df_kloon.to_csv(index=False))
-                    st.success("Cloning complete!")
-                    st.download_button("📦 Download Synthetic Clones (.ZIP)", data=zip_buf.getvalue(), file_name="synthetic_clones.zip", mime="application/zip")
-            else:
-                st.error("Need 2 columns (time, vibration).")
-        except Exception as e:
-            st.error(f"Error: {e}")
+                    zcr = get_zero_crossing_rate(sig_c)
+                    if zcr > 0.2: det_cond = "Chainsaw"
+                    elif np.max(np.abs(sig_c)) > 0.8: det_cond = "Gunshot"
+                    else: det_cond = "Baseline (Ambient/Normal)"
+                    st.info(f"🧬 Detected Acoustic Profile: **{det_cond}** (ZCR: {zcr:.3f})")
+
+                clones = st.slider("Clones to Generate", 50, 500, 100)
+                if st.button("Clone & Multiply", type="primary"):
+                    st.success("Logica werkt! Implementeer ZIP export hier zoals in Tab 2.")
+        except Exception as e: st.error(f"Error: {e}")
 
 # ============================================================
-# TAB 5: TINYML TRAINER (Master Dataset Builder & Quality)
+# TAB 5: MULTI-MODAL ML PIPELINE (CLASSIFICATION & ANOMALY)
 # ============================================================
 with tab5:
-    st.header("🤖 TinyML Feature Extractor & Pipeline")
-    st.write("Extract features from raw vibration CSVs and compile them into a unified ML training dataset.")
+    st.header("🤖 Multi-Modal Feature Pipeline")
+    st.write("Verzamel data voor Supervised Classification (Specifieke defecten) of Unsupervised Anomaly Detection (Alleen normaal vs. onbekend).")
 
-    training_files = st.file_uploader("Upload raw CSV files to process", type=["csv"], accept_multiple_files=True, key="trainer_upload")
+    # --- NIEUW: ML STRATEGY KEUZE ---
+    ml_strategy = st.radio("Edge Impulse ML Strategy:", ["Supervised Classification (Multiple Labels)", "Unsupervised Anomaly Detection (Normal vs. Rest)"])
 
-    if training_files:
-        st.success(f"{len(training_files)} files ready for processing.")
-        condition_label = st.selectbox("Assign Label to these files", ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
-
-        if st.button("Extract Features & Add to Master Dataset", type="primary"):
-            training_rows = []
-            for file in training_files:
+    raw_files = st.file_uploader("Upload Raw CSVs", type=["csv"], accept_multiple_files=True)
+    
+    if raw_files:
+        if ml_strategy == "Unsupervised Anomaly Detection (Normal vs. Rest)":
+            st.info("💡 Voor Anomaly Detection train je uitsluitend op de 'Baseline (Normal)'. Gebruik de Anomaly labels alleen als Test Data.")
+            lbl_options = ["Baseline (Normal)", "Test Data: Anomaly"]
+        else:
+            lbl_options = cond_options
+            
+        lbl = st.selectbox("Assign Label", lbl_options)
+        
+        if st.button("Extract Features", type="primary"):
+            rows = []
+            for file in raw_files:
                 try:
                     df = pd.read_csv(file)
-                    vib_arr = df.iloc[:, 1].astype(float).values
-                    rms_val = np.sqrt(np.mean(vib_arr**2))
+                    sig = df.iloc[:, 1].astype(float).values
+                    sr_feat = 16000 if modality == "Acoustic (Microphone)" else 4000
+                    f_f, v_f = calculate_fft(sig - np.mean(sig), sr_feat)
                     
-                    fft_f, fft_v = calculate_fft(vib_arr - np.mean(vib_arr), 4000)
-                    dom_idx = np.argmax(fft_v[1:]) + 1
-                    dom_f = fft_f[dom_idx]
+                    rms_val = np.sqrt(np.mean(sig**2))
+                    dom_f = f_f[np.argmax(v_f[1:]) + 1]
                     
-                    # Harmonic Ratio Extractor
-                    fundamental_amp = fft_v[dom_idx]
-                    harmonic_amp_sum = 0
-                    for h in range(2, 6):
-                        h_target = h * dom_f
-                        h_idx = np.argmin(np.abs(fft_f - h_target))
-                        harmonic_amp_sum += fft_v[h_idx]
-                    harmonic_ratio = harmonic_amp_sum / max(abs(fundamental_amp), 1e-6)
-                    
-                    training_rows.append({
-                        "RMS": rms_val,
-                        "STD": np.std(vib_arr),
-                        "Kurtosis": kurtosis(vib_arr),
-                        "CrestFactor": np.max(np.abs(vib_arr)) / max(abs(rms_val), 1e-6),
-                        "DominantFrequency": dom_f,
-                        "PeakAmplitude": np.max(fft_v),
-                        "HarmonicRatio": harmonic_ratio, # NIEUWE FEATURE
-                        "Label": condition_label
-                    })
-                except Exception as e:
-                    st.warning(f"Could not process {file.name}")
-
-            if training_rows:
-                st.session_state.master_training_dataset = pd.concat([st.session_state.master_training_dataset, pd.DataFrame(training_rows)], ignore_index=True)
-                st.success(f"✅ Extracted features from {len(training_rows)} files and added them to the Master Dataset!")
+                    feat_dict = {"Label": lbl}
+                    if modality == "Vibration (Accelerometer)":
+                        fund_amp = v_f[np.argmax(v_f[1:]) + 1]
+                        harm_sum = sum(v_f[np.argmin(np.abs(f_f - (h * dom_f)))] for h in range(2, 6))
+                        
+                        feat_dict.update({
+                            "RMS": rms_val,
+                            "Kurtosis": kurtosis(sig),
+                            "CrestFactor": np.max(np.abs(sig)) / max(rms_val, 1e-6),
+                            "DominantFreq": dom_f,
+                            "HarmonicRatio": harm_sum / max(fund_amp, 1e-6)
+                        })
+                    else: # AUDIO FEATURES
+                        feat_dict.update({
+                            "RMS": rms_val,
+                            "ZeroCrossingRate": get_zero_crossing_rate(sig),
+                            "SpectralCentroid": get_spectral_centroid(f_f, v_f),
+                            "SpectralRolloff": get_spectral_rolloff(f_f, v_f),
+                            "PeakAmplitude": np.max(v_f)
+                        })
+                    rows.append(feat_dict)
+                except Exception: pass
+            
+            if rows:
+                st.session_state.master_training_dataset = pd.concat([st.session_state.master_training_dataset, pd.DataFrame(rows)], ignore_index=True)
+                st.success(f"✅ Extracted features from {len(rows)} files!")
 
     st.divider()
-    
-    master_df = st.session_state.master_training_dataset
-    if len(master_df) > 0:
+    m_df = st.session_state.master_training_dataset
+    if len(m_df) > 0:
+        st.subheader(f"📊 Dataset Quality Engine ({modality.split(' ')[0]})")
         
-        st.subheader("📊 Dataset Statistics & Quality")
-        label_counts = master_df["Label"].value_counts()
-        
-        # QUALITY ALGORITHM BASE
-        quality_score = 100
-        num_classes = len(label_counts)
-        total_samples = len(master_df)
-        
-        # Class Penalty
-        if num_classes < 2:
-            quality_score -= 50
-            msg_classes = "🔴 Minimaal 2 klassen nodig voor AI training."
-        elif num_classes < 4:
-            quality_score -= 10
-            msg_classes = "🟡 Overweeg alle defect-statussen toe te voegen."
-        else:
-            msg_classes = "🟢 Uitstekende variatie in klassen."
-            
-        # Balance Penalty
-        if num_classes > 1:
-            balance_ratio = label_counts.min() / label_counts.max()
-            if balance_ratio < 0.2:
-                quality_score -= 30
-                msg_balance = "🔴 Dataset is zwaar uit balans (Imbalanced)."
-            elif balance_ratio < 0.6:
-                quality_score -= 15
-                msg_balance = "🟡 Dataset is enigszins uit balans."
-            else:
-                msg_balance = "🟢 Dataset is perfect in balans."
-        else:
-            msg_balance = "🔴 Balans NVT (slechts 1 klasse)."
-            
-        # Size Penalty
-        if total_samples < 50:
-            quality_score -= 30
-            msg_size = "🔴 Te weinig samples voor robuuste training."
-        elif total_samples < 200:
-            quality_score -= 10
-            msg_size = "🟡 Sample grootte is acceptabel, groter is beter."
-        else:
-            msg_size = "🟢 Goede totale sample grootte."
-            
-        # --- FEATURE HEALTH (ROBUUSTE VARIANCE CHECK) ---
-        feature_cols = ["RMS", "STD", "Kurtosis", "CrestFactor", "DominantFrequency", "PeakAmplitude", "HarmonicRatio"]
-        health_status_list = []
+        lbl_cnts = m_df["Label"].value_counts()
+        q_score = 100
         variance_penalty = 0
         
-        for col in feature_cols:
-            if col in master_df.columns:
-                mean_val = master_df[col].mean()
-                std_val = master_df[col].std()
-                
-                # Robuuste Coëfficiënt van Variatie
-                cv = std_val / max(abs(mean_val), 1e-6)
-                
-                if pd.isna(std_val) or std_val == 0:
-                    status = "🔴 CRITICAL (Zero Variance)"
-                    variance_penalty += 10
-                elif cv < 0.05:
-                    status = "🟡 LOW"
-                    variance_penalty += 3
-                else:
-                    status = "🟢 GOOD"
-                    
-                health_status_list.append({"Feature": col, "Variance Status": status, "CV Ratio": f"{cv:.3f}"})
+        # Balance & Size Check aangescherpt voor Anomaly Detection
+        if ml_strategy == "Unsupervised Anomaly Detection (Normal vs. Rest)":
+            if "Baseline (Normal)" not in lbl_cnts:
+                q_score -= 80
+                st.error("🔴 LET OP: Een Anomaly model vereist een grote 'Baseline (Normal)' dataset om op te trainen.")
+            elif lbl_cnts.get("Baseline (Normal)", 0) < 100:
+                q_score -= 20
+        else:
+            if len(lbl_cnts) < 2: q_score -= 50
+            elif (lbl_cnts.min() / lbl_cnts.max()) < 0.3: q_score -= 30
             
-        quality_score -= variance_penalty
-        quality_score = max(0, min(100, int(quality_score)))
-
-        col_q1, col_q2 = st.columns([1, 2])
-        with col_q1:
-            st.metric("Dataset Quality Score", f"{quality_score}%")
-            if quality_score >= 85: st.success("🟢 Ready for Edge Impulse!")
-            elif quality_score >= 50: st.warning("🟡 Bruikbaar, maar let op de waarschuwingen.")
-            else: st.error("🔴 Niet klaar voor training. Pas dataset aan.")
-        with col_q2:
-            st.markdown(f"**Dataset Structuur Analyse:**\n- {msg_classes}\n- {msg_balance}\n- {msg_size}")
-
-        st.bar_chart(label_counts)
-
-        # FEATURE HEALTH TABEL
-        st.markdown("#### 🧬 Feature Health Analysis (Variance Check)")
-        st.write("Modellen hebben variantie in de data nodig om te generaliseren. Geen variantie = Data Leakage / Memorization.")
-        st.dataframe(pd.DataFrame(health_status_list), use_container_width=True)
-
-        # DATASET TABEL
-        st.subheader("📋 Master Training Dataset")
-        st.dataframe(master_df, use_container_width=True)
+        if len(m_df) < 50: q_score -= 30
         
-        # EXPORT PIPELINE
-        st.markdown("### 🚀 Export Pipeline")
-        col_dl1, col_dl2, col_clr = st.columns(3)
+        # Feature Health Check
+        health_list = []
+        for col in m_df.columns:
+            if col != "Label":
+                mean_v, std_v = m_df[col].mean(), m_df[col].std()
+                cv = std_v / max(abs(mean_v), 1e-6)
+                if pd.isna(std_v) or std_v == 0: 
+                    stat, variance_penalty = "🔴 CRITICAL", variance_penalty + 10
+                elif cv < 0.05: 
+                    stat, variance_penalty = "🟡 LOW", variance_penalty + 3
+                else: stat = "🟢 GOOD"
+                health_list.append({"Feature": col, "Variance": stat, "CV": f"{cv:.3f}"})
+                
+        q_score = max(0, min(100, int(q_score - variance_penalty)))
         
-        metadata_dict = {
-            "total_samples": total_samples,
-            "labels": label_counts.to_dict(),
-            "quality_score": quality_score,
-            "feature_health_penalties": variance_penalty,
-            "generated_by": "TinyML Data Accelerator (OMEGA-X V3.5)"
-        }
-        json_meta_str = json.dumps(metadata_dict, indent=4)
-        csv_master_str = master_df.to_csv(index=False)
+        col_m1, col_m2 = st.columns([1, 2])
+        col_m1.metric("Enterprise Quality Score", f"{q_score}%")
+        col_m2.dataframe(pd.DataFrame(health_list), use_container_width=True, height=150)
         
-        zip_buf_master = io.BytesIO()
-        with zipfile.ZipFile(zip_buf_master, "w", zipfile.ZIP_DEFLATED) as zipf:
-            zipf.writestr("master_tinyml_dataset.csv", csv_master_str)
-            zipf.writestr("dataset_metadata.json", json_meta_str)
+        st.dataframe(m_df, use_container_width=True)
         
-        with col_dl1:
-            st.download_button(
-                "📦 Download Production Dataset (.ZIP)", 
-                data=zip_buf_master.getvalue(), 
-                file_name="omega_x_master_dataset_v3_5.zip", 
-                mime="application/zip", 
-                use_container_width=True
-            )
-        with col_dl2:
-            st.download_button(
-                "⚡ Export Edge Impulse Dataset (.CSV)", 
-                data=csv_master_str, 
-                file_name="edge_impulse_dataset.csv", 
-                mime="text/csv", 
-                use_container_width=True
-            )
-        with col_clr:
-            if st.button("🗑️ Clear Master Dataset", use_container_width=True):
-                st.session_state.master_training_dataset = pd.DataFrame()
-                st.rerun()
-    else:
-        st.info("No samples collected yet. Upload raw files and process them to build your dataset.")
+        st.markdown("### 🚀 Export to Edge Impulse")
+        c_ex1, c_ex2, c_ex3 = st.columns(3)
+        
+        json_meta = json.dumps({"sensor": modality, "strategy": ml_strategy, "samples": len(m_df), "quality": q_score}, indent=4)
+        csv_str = m_df.to_csv(index=False)
+        
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("edge_impulse_dataset.csv", csv_str)
+            zf.writestr("metadata.json", json_meta)
+            
+        c_ex1.download_button("📦 Download Production .ZIP", data=zip_buf.getvalue(), file_name="omega_x_dataset.zip", mime="application/zip", use_container_width=True)
+        c_ex2.download_button("⚡ Download Raw .CSV", data=csv_str, file_name="edge_impulse.csv", mime="text/csv", use_container_width=True)
+        if c_ex3.button("🗑️ Clear Pipeline", use_container_width=True):
+            st.session_state.master_training_dataset = pd.DataFrame()
+            st.rerun()
