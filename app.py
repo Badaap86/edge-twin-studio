@@ -555,5 +555,232 @@ with tab1:
     )
 
     st.markdown("---")
-    
+        # ========================================================
+    # SPECTROGRAM
+    # ========================================================
+
+    st.subheader("Spectrogram (Time / Frequency)")
+
+    f_spec, t_spec, Sxx = calculate_spectrogram(
+        vibration,
+        sample_rate
+    )
+
+    fig_spec = go.Figure(
+        data=go.Heatmap(
+            z=10 * np.log10(
+                Sxx + 1e-12
+            ),
+            x=t_spec,
+            y=f_spec,
+            colorscale="Viridis"
+        )
+    )
+
+    fig_spec.update_layout(
+        height=450,
+        xaxis_title="Time (s)",
+        yaxis_title="Frequency (Hz)"
+    )
+
+    st.plotly_chart(
+        fig_spec,
+        use_container_width=True
+    )
+
+    st.markdown("---")
+
+    # ========================================================
+    # PHYSICS DASHBOARD
+    # ========================================================
+
+    st.subheader("Physics Dashboard")
+
+    col_a, col_b, col_c, col_d = st.columns(4)
+
+    col_a.metric(
+        "RPM",
+        f"{actual_rpm:.0f}"
+    )
+
+    col_b.metric(
+        "1× RPM",
+        f"{actual_rpm/60:.2f} Hz"
+    )
+
+    col_c.metric(
+        "BPFO",
+        f"{bpfo_frequency:.2f} Hz"
+    )
+
+    col_d.metric(
+        "Resonance",
+        f"{resonance_frequency:.1f} Hz"
+    )
+
+    st.markdown("---")
+
+    # ========================================================
+    # MODEL READINESS SCORE
+    # ========================================================
+
+    st.subheader("Model Readiness")
+
+    readiness_score = 50
+
+    if apply_randomness:
+        readiness_score += 20
+
+    if show_healthy_overlay:
+        readiness_score += 10
+
+    if severity_percent > 0:
+        readiness_score += 10
+
+    if condition != "Healthy":
+        readiness_score += 10
+
+    readiness_score = min(
+        readiness_score,
+        100
+    )
+
+    st.progress(
+        readiness_score
+    )
+
+    readiness_col1, readiness_col2, readiness_col3 = st.columns(3)
+
+    readiness_col1.metric(
+        "Readiness Score",
+        f"{readiness_score}%"
+    )
+
+    readiness_col2.metric(
+        "Randomization",
+        "Enabled" if apply_randomness else "Disabled"
+    )
+
+    readiness_col3.metric(
+        "Condition",
+        condition
+    )
+
+    if readiness_score >= 90:
+
+        st.success(
+            "Dataset appears suitable for TinyML training."
+        )
+
+    elif readiness_score >= 70:
+
+        st.warning(
+            "Dataset is usable but could benefit from more variation."
+        )
+
+    else:
+
+        st.error(
+            "Dataset variation may be insufficient."
+        )
+
+    st.markdown("---")
+
+    # ========================================================
+    # FAULT FINGERPRINT
+    # ========================================================
+
+    st.subheader("Expected Fault Fingerprint")
+
+    if condition == "Healthy":
+
+        fingerprint = pd.DataFrame(
+            {
+                "Feature": [
+                    "1× RPM",
+                    "Harmonics",
+                    "Impacts",
+                    "Resonance"
+                ],
+                "Expected":
+                [
+                    "Low",
+                    "Low",
+                    "None",
+                    "Low"
+                ]
+            }
+        )
+
+    elif condition == "Unbalance":
+
+        fingerprint = pd.DataFrame(
+            {
+                "Feature": [
+                    "1× RPM",
+                    "Harmonics",
+                    "Impacts",
+                    "Resonance"
+                ],
+                "Expected":
+                [
+                    "Very High",
+                    "Low",
+                    "None",
+                    "Low"
+                ]
+            }
+        )
+
+    elif condition == "Mechanical Looseness":
+
+        fingerprint = pd.DataFrame(
+            {
+                "Feature": [
+                    "1× RPM",
+                    "2× RPM",
+                    "3× RPM",
+                    "4× RPM"
+                ],
+                "Expected":
+                [
+                    "High",
+                    "High",
+                    "Medium",
+                    "Medium"
+                ]
+            }
+        )
+
+    else:
+
+        fingerprint = pd.DataFrame(
+            {
+                "Feature": [
+                    "BPFO",
+                    "Impacts",
+                    "Sidebands",
+                    "Resonance"
+                ],
+                "Expected":
+                [
+                    "High",
+                    "High",
+                    "Present",
+                    "Strong"
+                ]
+            }
+        )
+
+    st.dataframe(
+        fingerprint,
+        use_container_width=True
+    )
+
+    st.markdown("---")
+
+    st.info(
+        "Synthetic signal generated using DSP-based "
+        "kinematic fault modelling."
+    )
     
