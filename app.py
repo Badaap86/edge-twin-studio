@@ -157,7 +157,7 @@ with tab1:
         batch_size = int(batch_profile.split('(')[1].split('/')[0])
         totaal_bestanden = batch_size * 4
 
-    if st.button(f"Genereer Gebalanceerde Dataset ({totaal_bestanden} files)", use_container_width=True):
+    if st.button(f"Genereer Gebalanceerde Dataset (4 condities × {batch_size} = {totaal_bestanden} files)", use_container_width=True):
         with st.spinner(f"Genereren van {totaal_bestanden} fysica-gedreven bestanden..."):
             zip_buffer = io.BytesIO()
             metadata_list = []
