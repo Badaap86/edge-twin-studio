@@ -1662,7 +1662,52 @@ with tab3:
                     feature_df,
                     use_container_width=True
                 )
-             
+
+                st.divider()
+                
+                st.subheader("Machine Health Score")
+                
+                health_score = 100
+                
+                if crest_factor > 6:
+                    health_score -= 15
+                
+                if kurtosis_value > 8:
+                    health_score -= 20
+                
+                if peak_amplitude > 700:
+                    health_score -= 10
+                
+                health_score = max(
+                    0,
+                    min(100, health_score)
+                )
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric(
+                        "Health Score",
+                        f"{health_score}%"
+                    )
+                
+                with col2:
+                    st.progress(
+                        health_score / 100
+                    )
+                
+                if health_score >= 85:
+                    st.success(
+                        "Machine condition is excellent."
+                    )
+                elif health_score >= 70:
+                    st.warning(
+                        "Machine condition should be monitored."
+                    )
+                else:
+                    st.error(
+                        "Machine condition requires attention."
+                    )
         except Exception as e:
 
             st.error(
