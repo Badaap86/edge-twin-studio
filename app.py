@@ -1329,7 +1329,7 @@ Noise Variation:
         st.warning(
             "Generate dataset first."
         )
-        # ============================================================
+    # ============================================================
 # TAB 3 - UPLOAD ANALYZER
 # DEEL 5.1A
 # ============================================================
@@ -1349,7 +1349,14 @@ with tab3:
         key="upload_analyzer_csv"
     )
 
-    if uploaded_file is not None:
+    if uploaded_file is None:
+
+        st.info(
+            "Upload a CSV dataset "
+            "to begin analysis."
+        )
+
+    else:
 
         try:
 
@@ -1411,18 +1418,21 @@ with tab3:
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
+
                     st.metric(
                         "Samples",
                         f"{sample_count:,}"
                     )
 
                 with col2:
+
                     st.metric(
                         "Duration",
                         f"{duration:.2f} s"
                     )
 
                 with col3:
+
                     st.metric(
                         "Sample Rate",
                         f"{sample_rate:.0f} Hz"
@@ -1436,6 +1446,7 @@ with tab3:
                     df_uploaded.head(20),
                     use_container_width=True
                 )
+
                 st.divider()
 
                 st.subheader(
@@ -1455,12 +1466,14 @@ with tab3:
 
                 fft_freqs = np.fft.rfftfreq(
                     len(vibration_centered),
-                    d=1/sample_rate
+                    d=1 / sample_rate
                 )
 
-                dominant_idx = np.argmax(
-                    fft_values[1:]
-                ) + 1
+                dominant_idx = (
+                    np.argmax(
+                        fft_values[1:]
+                    ) + 1
+                )
 
                 dominant_frequency = (
                     fft_freqs[
@@ -1489,21 +1502,13 @@ with tab3:
                         "Peak Amplitude",
                         f"{peak_amplitude:.1f}"
                     )
-                st.divider()
-                                
-                except Exception as e:
 
-                st.error(
+                st.divider()
+
+        except Exception as e:
+
+            st.error(
                 f"Error loading file: {e}"
             )
-
-                else:
-
-               st.info(
-               "Upload a CSV dataset "
-               "to begin analysis."
-            )
-        )
- 
         
     
