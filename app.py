@@ -1528,7 +1528,83 @@ with tab3:
                     fft_fig,
                     use_container_width=True
                 )
-                
+                                st.divider()
+
+                st.subheader(
+                    "Predicted Condition"
+                )
+
+                if dominant_frequency < 40:
+
+                    predicted_condition = (
+                        "Unbalance"
+                    )
+
+                    confidence = 85
+
+                elif dominant_frequency < 80:
+
+                    predicted_condition = (
+                        "Mechanical Looseness"
+                    )
+
+                    confidence = 88
+
+                elif dominant_frequency < 120:
+
+                    predicted_condition = (
+                        "BPFO (Outer Race)"
+                    )
+
+                    confidence = 90
+
+                else:
+
+                    predicted_condition = (
+                        "Healthy"
+                    )
+
+                    confidence = 80
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.metric(
+                        "Condition",
+                        predicted_condition
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "Confidence",
+                        f"{confidence}%"
+                    )
+
+                if predicted_condition == "Healthy":
+
+                    st.success(
+                        "Machine appears healthy."
+                    )
+
+                elif predicted_condition == "Unbalance":
+
+                    st.warning(
+                        "Possible rotor imbalance detected."
+                    )
+
+                elif predicted_condition == "Mechanical Looseness":
+
+                    st.warning(
+                        "Possible mechanical looseness detected."
+                    )
+
+                else:
+
+                    st.error(
+                        "Possible bearing fault detected."
+                    )
         except Exception as e:
 
             st.error(
