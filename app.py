@@ -783,4 +783,184 @@ with tab1:
         "Synthetic signal generated using DSP-based "
         "kinematic fault modelling."
     )
+    # ============================================================
+# TAB 2 - BATCH GENERATOR
+# ============================================================
+
+with tab2:
+
+    st.header("📦 Batch Dataset Generator")
+
+    st.write(
+        "Generate complete TinyML-ready training datasets "
+        "with automatic parameter variation."
+    )
+
+    st.markdown("---")
+
+    # ========================================================
+    # DATASET PROFILE
+    # ========================================================
+
+    profile = st.selectbox(
+        "Dataset Profile",
+        [
+            "Quick Test",
+            "Research",
+            "Production"
+        ]
+    )
+
+    if profile == "Quick Test":
+
+        files_per_condition = 20
+
+    elif profile == "Research":
+
+        files_per_condition = 100
+
+    else:
+
+        files_per_condition = 500
+
+    total_files = files_per_condition * 4
+
+    # ========================================================
+    # DATASET STATISTICS
+    # ========================================================
+
+    st.subheader("Dataset Statistics")
+
+    stat1, stat2, stat3, stat4 = st.columns(4)
+
+    stat1.metric(
+        "Conditions",
+        "4"
+    )
+
+    stat2.metric(
+        "Files / Condition",
+        files_per_condition
+    )
+
+    stat3.metric(
+        "Total Files",
+        total_files
+    )
+
+    estimated_size_mb = round(
+        total_files * 0.08,
+        1
+    )
+
+    stat4.metric(
+        "Estimated Size",
+        f"{estimated_size_mb} MB"
+    )
+
+    st.markdown("---")
+
+    # ========================================================
+    # RANDOMIZATION SETTINGS
+    # ========================================================
+
+    st.subheader("Randomization Settings")
+
+    rpm_randomization = st.checkbox(
+        "RPM Randomization",
+        value=True
+    )
+
+    severity_randomization = st.checkbox(
+        "Severity Randomization",
+        value=True
+    )
+
+    noise_randomization = st.checkbox(
+        "Noise Randomization",
+        value=True
+    )
+
+    st.markdown("---")
+
+    # ========================================================
+    # CONDITION OVERVIEW
+    # ========================================================
+
+    st.subheader("Conditions Included")
+
+    overview_df = pd.DataFrame(
+        {
+            "Condition": [
+                "Healthy",
+                "Unbalance",
+                "Mechanical Looseness",
+                "BPFO (Outer Race)"
+            ],
+            "Files": [
+                files_per_condition,
+                files_per_condition,
+                files_per_condition,
+                files_per_condition
+            ]
+        }
+    )
+
+    st.dataframe(
+        overview_df,
+        use_container_width=True
+    )
+
+    st.markdown("---")
+
+    # ========================================================
+    # GENERATION PREVIEW
+    # ========================================================
+
+    st.subheader("Generation Preview")
+
+    st.info(
+        f"""
+Profile: {profile}
+
+Total Files: {total_files}
+
+RPM Variation:
+{"Enabled" if rpm_randomization else "Disabled"}
+
+Severity Variation:
+{"Enabled" if severity_randomization else "Disabled"}
+
+Noise Variation:
+{"Enabled" if noise_randomization else "Disabled"}
+"""
+    )
+
+    st.markdown("---")
+
+    # ========================================================
+    # GENERATE BUTTON
+    # ========================================================
+
+    generate_batch = st.button(
+        "🚀 Prepare Dataset Generation",
+        use_container_width=True
+    )
+
+    if generate_batch:
+
+        st.success(
+            f"Dataset profile '{profile}' ready."
+        )
+
+        progress = st.progress(0)
+
+        for i in range(100):
+
+            progress.progress(i + 1)
+
+        st.success(
+            f"Configuration complete: {total_files} files."
+        )
+        
     
