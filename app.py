@@ -9,8 +9,8 @@ import zipfile
 # --- CONFIGURATIE & COMMERCIËLE POSITIONERING ---
 st.set_page_config(page_title="TinyML Data Accelerator", layout="wide")
 st.title("⚡ Edge AI Acceleration Tool: Kinematic Vibration Simulator")
-st.subheader("Verkort je Edge AI proof-of-concept van weken naar minuten.")
-st.markdown("Genereer fysisch verklaarbare trainingsdata en omzeil het *Cold Start*-probleem voordat je echte hardware-defecten hebt gemeten.")
+st.subheader("Train Edge AI models before real-world failure data exists.")
+st.markdown("Genereer fysisch verklaarbare trainingsdata en omzeil het *Cold Start*-probleem in voorspellend onderhoud.")
 
 @st.cache_data
 def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_randomness=False):
@@ -57,7 +57,7 @@ def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_random
 # --- INTERFACE INDELING ---
 st.sidebar.header("1. Visualiseer & Valideer")
 
-# Twee-weg koppeling (Two-way bind) voor RPM en Severity
+# Twee-weg koppeling
 if "rpm" not in st.session_state: st.session_state["rpm"] = 1500
 if "sev" not in st.session_state: st.session_state["sev"] = 80
 
@@ -83,54 +83,98 @@ severity_pct = st.session_state["sev"]
 severity = severity_pct / 100.0
 
 st.sidebar.markdown("---")
-condition = st.sidebar.selectbox("Defect Type", ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
+condition = st.sidebar.selectbox("Defect Type", ["Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
 
-t, z_data, freqs, fft_z, bpfo_hz, res_hz, _, _ = generate_vibration_data(condition, severity, rpm)
+# Nieuw: Toon Healthy Referentie
+toon_healthy = st.sidebar.checkbox("✅ Toon Healthy Referentie", value=True)
+
+t, z_data_def, freqs, fft_z_def, bpfo_hz, res_hz, _, _ = generate_vibration_data(condition, severity, rpm)
 
 col1, col2 = st.columns(2)
 with col1:
     st.subheader("Live Tijdsignaal")
-    fig_time = go.Figure(go.Scatter(x=t[:800], y=z_data[:800], mode='lines', line=dict(color='#1f77b4')))
-    fig_time.update_layout(xaxis_title="Tijd (s)", yaxis_title="g", height=300, margin=dict(l=0, r=0, t=30, b=0))
+    fig_time = go.Figure()
+    
+    if toon_healthy:
+        _, z_data_ref, _, _, _, _, _, _ = generate_vibration_data("Healthy", 0, rpm)
+        fig_time.add_trace(go.Scatter(x=t[:800], y=z_data_ref[:800], mode='lines', name='Healthy (Ref)', line=dict(color='#2ca02c', width=1, dash='dot')))
+        
+    fig_time.add_trace(go.Scatter(x=t[:800], y=z_data_def[:800], mode='lines', name=condition, line=dict(color='#d62728')))
+    fig_time.update_layout(xaxis_title="Tijd (s)", yaxis_title="g", height=350, margin=dict(l=0, r=0, t=30, b=0), legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
     st.plotly_chart(fig_time, use_container_width=True)
 
 with col2:
     st.subheader("Live FFT Spectrum")
-    fig_fft = go.Figure(go.Scatter(x=freqs, y=fft_z, mode='lines', line=dict(color='#d62728')))
-    if condition == 'BPFO (Outer Race)': fig_fft.update_layout(xaxis_range=[1000, 1400])
+    fig_fft = go.Figure()
+    
+    if toon_healthy:
+        _, _, _, fft_z_ref, _, _, _, _ = generate_vibration_data("Healthy", 0, rpm)
+        fig_fft.add_trace(go.Scatter(x=freqs, y=fft_z_ref, mode='lines', name='Healthy (Ref)', line=dict(color='#2ca02c', width=1, dash='dot')))
+        
+    fig_fft.add_trace(go.Scatter(x=freqs, y=fft_z_def, mode='lines', name=condition, line=dict(color='#d62728')))
+    if condition == 'BPFO (Outer Race)': fig_fft.update_layout(xaxis_range=[0, 1400])
     else: fig_fft.update_layout(xaxis_range=[0, min(rpm/60 * 10, 500)])
-    fig_fft.update_layout(xaxis_title="Hz", yaxis_title="Amplitude", height=300, margin=dict(l=0, r=0, t=30, b=0))
+    fig_fft.update_layout(xaxis_title="Hz", yaxis_title="Amplitude", height=350, margin=dict(l=0, r=0, t=30, b=0), legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99))
     st.plotly_chart(fig_fft, use_container_width=True)
 
-# --- METRICS & BATCH BILDER ---
+# --- UITLEG & METRICS ---
 st.markdown("---")
-st.header("2. Genereer Trainingsdata (Batch Export)")
+st.header("2. Fysische Analyse (Edge Labeling)")
+col_a, col_b, col_c = st.columns(3)
+
+with col_a:
+    st.markdown("### Spectrale Signatuur")
+    st.write(f"- **RPM:** {rpm}")
+    st.write(f"- **1x RPM Draaggolf:** {rpm/60:.2f} Hz")
+    if condition == 'BPFO (Outer Race)':
+        st.write(f"- **Berekende BPFO:** {bpfo_hz:.2f} Hz")
+        st.write(f"- **Resonantie Piek:** {res_hz:.1f} Hz")
+        st.write(f"- **Sidebands:** ~{res_hz - (rpm/60):.1f} Hz en ~{res_hz + (rpm/60):.1f} Hz")
+
+with col_b:
+    st.markdown("### Edge Impulse Metadata")
+    label_name = condition.replace(" ", "_").lower()
+    st.code(f"Label: {label_name}\nSeverity: {severity}\nRPM: {rpm}", language="text")
+
+with col_c:
+     st.markdown("### Waarom zie je dit?")
+     if condition == 'Unbalance':
+         st.info("Onbalans veroorzaakt een zware, sinusvormige trilling die exact meeloopt met het toerental (1x RPM).")
+     elif condition == 'Mechanical Looseness':
+         st.info("Mechanische speling genereert 'harmonics'. Je ziet niet alleen de 1x RPM piek, maar ook pieken op 2x, 3x, 4x RPM door het 'klapperen' van de as.")
+     elif condition == 'BPFO (Outer Race)':
+         st.info("Een putje in de buitenring veroorzaakt hoogfrequente 'ping' geluiden (impacts) op de eigenfrequentie van het materiaal (resonantie), gemoduleerd door het rotatietempo.")
+
+# --- BATCH BILDER ---
+st.markdown("---")
+st.header("3. Genereer Trainingsdata (Batch Export)")
 st.write("Genereer een gebalanceerde dataset met realistische variaties (±2% RPM jitter, variabele ruisvloer) om overfitting in je Edge AI model te voorkomen.")
 
-met_col1, met_col2, met_col3, met_col4 = st.columns(4)
-met_col1.metric("1× RPM (Draaggolf)", f"{rpm/60:.2f} Hz")
-met_col2.metric("Berekende BPFO", f"{bpfo_hz:.2f} Hz")
-met_col3.metric("Structurele Resonantie", f"{res_hz:.1f} Hz")
-met_col4.metric("Workflow Status", "Edge Impulse Ready")
+batch_size = st.slider("Aantal CSV bestanden PER CONDITIE", min_value=10, max_value=250, value=50, step=10)
+totaal_bestanden = batch_size * 4 # Healthy + 3 defects
 
-batch_size = st.slider("Aantal CSV bestanden per conditie", min_value=10, max_value=250, value=50, step=10)
-
-if st.button(f"Genereer {batch_size} datasets voor '{condition}'"):
+if st.button(f"Genereer Gebalanceerde Dataset ({totaal_bestanden} files)"):
     with st.spinner("Genereren van fysica-gedreven datasets..."):
         zip_buffer = io.BytesIO()
         metadata_list = []
+        condities_om_te_genereren = ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"]
+        
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for i in range(batch_size):
-                t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b = generate_vibration_data(condition, severity, rpm, apply_randomness=True)
-                filename = f"{condition.replace(' ', '_').lower()}_{i:03d}.csv"
-                df = pd.DataFrame({'timestamp_ms': t_b * 1000, 'accZ': z_b})
-                zip_file.writestr(filename, df.to_csv(index=False))
+            for cond in condities_om_te_genereren:
+                # Bepaal severity (Healthy is altijd 0)
+                huidige_sev = 0.0 if cond == "Healthy" else severity
                 
-                metadata_list.append({
-                    "file": filename, "condition": condition, "base_rpm": rpm, "actual_rpm": round(rpm_b, 2),
-                    "target_severity": severity, "actual_severity": round(sev_b, 3), "calculated_bpfo_hz": round(bpfo_b, 2), "resonance_hz": round(res_b, 2)
-                })
+                for i in range(batch_size):
+                    t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b = generate_vibration_data(cond, huidige_sev, rpm, apply_randomness=True)
+                    filename = f"{cond.replace(' ', '_').lower()}_{i:03d}.csv"
+                    df = pd.DataFrame({'timestamp_ms': t_b * 1000, 'accZ': z_b})
+                    zip_file.writestr(filename, df.to_csv(index=False))
+                    
+                    metadata_list.append({
+                        "file": filename, "condition": cond, "base_rpm": rpm, "actual_rpm": round(rpm_b, 2),
+                        "target_severity": huidige_sev, "actual_severity": round(sev_b, 3), "calculated_bpfo_hz": round(bpfo_b, 2), "resonance_hz": round(res_b, 2)
+                    })
             zip_file.writestr("metadata.json", json.dumps(metadata_list, indent=4))
         
-        st.success("Batch succesvol gegenereerd!")
-        st.download_button(label="📦 Download .ZIP Archief (CSV + JSON)", data=zip_buffer.getvalue(), file_name=f"dataset_{condition.replace(' ', '_').lower()}_batch.zip", mime="application/zip")
+        st.success(f"Batch succesvol gegenereerd! ({totaal_bestanden} bestanden klaargezet)")
+        st.download_button(label="📦 Download Gebalanceerd .ZIP Archief (CSV + JSON)", data=zip_buffer.getvalue(), file_name="gebalanceerde_edge_dataset.zip", mime="application/zip")
