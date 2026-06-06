@@ -1528,7 +1528,7 @@ with tab3:
                     fft_fig,
                     use_container_width=True
                 )
-                                st.divider()
+                st.divider()
 
                 st.subheader(
                     "Predicted Condition"
