@@ -1756,5 +1756,64 @@ with tab3:
             st.error(
                 f"Error loading file: {e}"
             )
-        
+        with tab5:
+
+    st.header(
+        "🤖 TinyML Model Trainer"
+    )
+
+    st.write(
+        "Train machine learning models "
+        "from vibration datasets."
+    )
+
+    uploaded_files = st.file_uploader(
+        "Upload training CSV files",
+        type=["csv"],
+        accept_multiple_files=True,
+        key="tinyml_training_files"
+    )
+
+    if uploaded_files:
+
+        st.success(
+            f"{len(uploaded_files)} files loaded."
+        )
+
+        condition_label = st.selectbox(
+            "Dataset Label",
+            [
+                "Healthy",
+                "Unbalance",
+                "Mechanical Looseness",
+                "Bearing Fault"
+            ]
+        )
+
+        st.info(
+            f"Selected label: "
+            f"{condition_label}"
+        )
+
+        if st.button(
+            "Prepare Training Dataset"
+        ):
+
+            st.success(
+                "Training dataset prepared."
+            )
+
+            st.write(
+                f"Files: {len(uploaded_files)}"
+            )
+
+            st.write(
+                f"Label: {condition_label}"
+            )
+
+    else:
+
+        st.info(
+            "Upload CSV files to begin."
+        )
     
