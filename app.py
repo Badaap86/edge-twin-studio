@@ -1436,7 +1436,83 @@ with tab3:
                     df_uploaded.head(20),
                     use_container_width=True
                 )
+                                st.divider()
 
+                st.subheader(
+                    "FFT Analysis"
+                )
+
+                vibration_centered = (
+                    vibration_data
+                    - np.mean(vibration_data)
+                )
+
+                fft_values = np.abs(
+                    np.fft.rfft(
+                        vibration_centered
+                    )
+                )
+
+                fft_freqs = np.fft.rfftfreq(
+                    len(vibration_centered),
+                    d=1/sample_rate
+                )
+
+                dominant_idx = np.argmax(
+                    fft_values[1:]
+                ) + 1
+
+                dominant_frequency = (
+                    fft_freqs[
+                        dominant_idx
+                    ]
+                )
+
+                peak_amplitude = (
+                    fft_values[
+                        dominant_idx
+                    ]
+                )
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.metric(
+                        "Dominant Frequency",
+                        f"{dominant_frequency:.2f} Hz"
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "Peak Amplitude",
+                        f"{peak_amplitude:.1f}"
+                    )
+
+                fft_fig = go.Figure()
+
+                fft_fig.add_trace(
+                    go.Scatter(
+                        x=fft_freqs,
+                        y=fft_values,
+                        mode="lines",
+                        name="FFT"
+                    )
+                )
+
+                fft_fig.update_layout(
+                    template="plotly_dark",
+                    height=450,
+                    xaxis_title="Frequency (Hz)",
+                    yaxis_title="Amplitude",
+                    title="FFT Spectrum"
+                )
+
+                st.plotly_chart(
+                    fft_fig,
+                    use_container_width=True
+                )
         except Exception as e:
 
             st.error(
