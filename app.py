@@ -1239,5 +1239,95 @@ Noise Variation:
         st.warning(
             "Generate a dataset first."
         )
+        # ========================================================
+# ZIP EXPORT + DOWNLOAD
+# DEEL 4.3
+# ========================================================
+
+    st.markdown("---")
+
+    st.subheader("ZIP Export")
+
+    if "csv_export_dict" in st.session_state:
+
+        export_dict = st.session_state[
+            "csv_export_dict"
+        ]
+
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(
+            zip_buffer,
+            "w",
+            zipfile.ZIP_DEFLATED
+        ) as zip_file:
+
+            total_files_zip = 0
+
+            for condition_name in export_dict:
+
+                for sample in export_dict[
+                    condition_name
+                ]:
+
+                    zip_file.writestr(
+                        sample["filename"],
+                        sample["csv"]
+                    )
+
+                    total_files_zip += 1
+
+            metadata = {
+                "generator": "TinyML Data Accelerator V3",
+                "profile": profile,
+                "conditions": list(
+                    export_dict.keys()
+                ),
+                "total_files": total_files_zip,
+                "rpm_randomization":
+                    rpm_randomization,
+                "severity_randomization":
+                    severity_randomization,
+                "noise_randomization":
+                    noise_randomization
+            }
+
+            zip_file.writestr(
+                "metadata.json",
+                json.dumps(
+                    metadata,
+                    indent=4
+                )
+            )
+
+        zip_buffer.seek(0)
+
+        st.success(
+            f"ZIP package ready "
+            f"({total_files_zip} CSV files)"
+        )
+
+        st.download_button(
+            label="⬇ Download Dataset ZIP",
+            data=zip_buffer,
+            file_name=(
+                f"tinyml_dataset_"
+                f"{profile.lower().replace(' ','_')}"
+                f".zip"
+            ),
+            mime="application/zip",
+            use_container_width=True
+        )
+
+        st.info(
+            "ZIP contains CSV files "
+            "and metadata.json"
+        )
+
+    else:
+
+        st.warning(
+            "Generate dataset first."
+        )
         
     
