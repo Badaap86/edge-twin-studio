@@ -962,5 +962,166 @@ Noise Variation:
         st.success(
             f"Configuration complete: {total_files} files."
         )
+        # ========================================================
+# DATASET GENERATION ENGINE
+# DEEL 4.2A
+# ========================================================
+
+    st.markdown("---")
+
+    st.subheader("Dataset Generation Engine")
+
+    condition_map = [
+        "Healthy",
+        "Unbalance",
+        "Mechanical Looseness",
+        "BPFO (Outer Race)"
+    ]
+
+    if generate_batch:
+
+        generated_dataset = {}
+
+        generation_progress = st.progress(0)
+
+        status_text = st.empty()
+
+        total_jobs = (
+            len(condition_map)
+            * files_per_condition
+        )
+
+        current_job = 0
+
+        for fault_condition in condition_map:
+
+            generated_dataset[fault_condition] = []
+
+            for sample_idx in range(
+                files_per_condition
+            ):
+
+                rpm_value = rpm
+
+                severity_value = severity
+
+                if rpm_randomization:
+
+                    rpm_value = int(
+                        rpm
+                        * np.random.uniform(
+                            0.95,
+                            1.05
+                        )
+                    )
+
+                if severity_randomization:
+
+                    severity_value = np.clip(
+                        severity
+                        * np.random.uniform(
+                            0.85,
+                            1.15
+                        ),
+                        0.01,
+                        1.0
+                    )
+
+                (
+                    t_gen,
+                    vibration_gen,
+                    _,
+                    _,
+                    bpfo_gen,
+                    resonance_gen,
+                    rpm_gen,
+                    severity_gen,
+                    sample_rate_gen
+                ) = generate_vibration_data(
+                    condition=fault_condition,
+                    severity=severity_value,
+                    rpm=rpm_value,
+                    apply_randomness=noise_randomization
+                )
+
+                sample_df = pd.DataFrame(
+                    {
+                        "time": t_gen,
+                        "vibration": vibration_gen
+                    }
+                )
+
+                generated_dataset[
+                    fault_condition
+                ].append(
+                    {
+                        "data": sample_df,
+                        "rpm": rpm_gen,
+                        "severity": severity_gen,
+                        "bpfo": bpfo_gen,
+                        "resonance": resonance_gen,
+                        "sample_rate": sample_rate_gen
+                    }
+                )
+
+                current_job += 1
+
+                generation_progress.progress(
+                    current_job
+                    / total_jobs
+                )
+
+                status_text.text(
+                    f"Generating {fault_condition} "
+                    f"{sample_idx + 1}/"
+                    f"{files_per_condition}"
+                )
+
+        st.session_state[
+            "generated_dataset"
+        ] = generated_dataset
+
+        st.success(
+            f"Generated "
+            f"{total_files} synthetic files."
+        )
+
+        st.info(
+            "Dataset stored in memory and ready "
+            "for CSV export."
+        )
+
+        preview_col1, preview_col2 = st.columns(2)
+
+        preview_col1.metric(
+            "Conditions",
+            len(condition_map)
+        )
+
+        preview_col2.metric(
+            "Generated Files",
+            total_files
+        )
+
+        preview_condition = st.selectbox(
+            "Preview Condition",
+            condition_map,
+            key="preview_condition"
+        )
+
+        preview_df = (
+            st.session_state[
+                "generated_dataset"
+            ][preview_condition][0]["data"]
+        )
+
+        st.subheader(
+            "Generated Sample Preview"
+        )
+
+        st.dataframe(
+            preview_df.head(20),
+            use_container_width=True
+        )
         
     
