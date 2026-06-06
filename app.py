@@ -1329,5 +1329,125 @@ Noise Variation:
         st.warning(
             "Generate dataset first."
         )
+        # ============================================================
+# TAB 3 - UPLOAD ANALYZER
+# DEEL 5.1A
+# ============================================================
+
+with tab3:
+
+    st.header("🔍 Upload Analyzer")
+
+    st.write(
+        "Upload vibration datasets and perform "
+        "automatic analysis."
+    )
+
+    uploaded_file = st.file_uploader(
+        "Upload CSV file",
+        type=["csv"],
+        key="upload_analyzer_csv"
+    )
+
+    if uploaded_file is not None:
+
+        try:
+
+            df_uploaded = pd.read_csv(
+                uploaded_file
+            )
+
+            st.success(
+                f"Loaded: {uploaded_file.name}"
+            )
+
+            required_columns = [
+                "time",
+                "vibration"
+            ]
+
+            if not all(
+                col in df_uploaded.columns
+                for col in required_columns
+            ):
+
+                st.error(
+                    "CSV must contain "
+                    "'time' and 'vibration' columns."
+                )
+
+            else:
+
+                time_data = (
+                    df_uploaded["time"]
+                    .values
+                )
+
+                vibration_data = (
+                    df_uploaded["vibration"]
+                    .values
+                )
+
+                sample_count = len(
+                    vibration_data
+                )
+
+                duration = (
+                    time_data[-1]
+                    - time_data[0]
+                )
+
+                sample_rate = (
+                    1.0 /
+                    np.mean(
+                        np.diff(time_data)
+                    )
+                )
+
+                st.subheader(
+                    "Dataset Information"
+                )
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.metric(
+                        "Samples",
+                        f"{sample_count:,}"
+                    )
+
+                with col2:
+                    st.metric(
+                        "Duration",
+                        f"{duration:.2f} s"
+                    )
+
+                with col3:
+                    st.metric(
+                        "Sample Rate",
+                        f"{sample_rate:.0f} Hz"
+                    )
+
+                st.subheader(
+                    "Dataset Preview"
+                )
+
+                st.dataframe(
+                    df_uploaded.head(20),
+                    use_container_width=True
+                )
+
+        except Exception as e:
+
+            st.error(
+                f"Error loading file: {e}"
+            )
+
+    else:
+
+        st.info(
+            "Upload a CSV dataset "
+            "to begin analysis."
+        )
         
     
