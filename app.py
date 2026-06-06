@@ -1662,7 +1662,10 @@ with tab3:
                     feature_df,
                     use_container_width=True
                 )
-                
+
+               st.divider()
+
+ 
         except Exception as e:
 
             st.error(
