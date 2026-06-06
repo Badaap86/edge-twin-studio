@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import scipy.signal as signal
 import io
 import json
 import zipfile
@@ -52,12 +53,11 @@ def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_random
     fft_waarden = np.abs(np.fft.rfft(z_totaal * window))
     fft_frequenties = np.fft.rfftfreq(len(t), 1/sample_rate)
     
-    return t, z_totaal, fft_frequenties, fft_waarden, calc_bpfo, calc_res, actueel_rpm, actuele_severity
+    return t, z_totaal, fft_frequenties, fft_waarden, calc_bpfo, calc_res, actueel_rpm, actuele_severity, sample_rate
 
 # --- INTERFACE INDELING ---
 st.sidebar.header("1. Visualiseer & Valideer")
 
-# Twee-weg koppeling
 if "rpm" not in st.session_state: st.session_state["rpm"] = 1500
 if "sev" not in st.session_state: st.session_state["sev"] = 80
 
@@ -86,30 +86,50 @@ st.sidebar.markdown("---")
 condition = st.sidebar.selectbox("Defect Type", ["Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
 toon_healthy = st.sidebar.checkbox("✅ Toon Healthy Referentie", value=True)
 
-t, z_data_def, freqs, fft_z_def, bpfo_hz, res_hz, _, _ = generate_vibration_data(condition, severity, rpm)
+t, z_data_def, freqs, fft_z_def, bpfo_hz, res_hz, _, _, fs = generate_vibration_data(condition, severity, rpm)
 
-col1, col2 = st.columns(2)
+# Drie kolommen voor de grafieken (Tijd, FFT, Spectrogram)
+col1, col2, col3 = st.columns(3)
+
 with col1:
     st.subheader("Live Tijdsignaal")
     fig_time = go.Figure()
     if toon_healthy:
-        _, z_data_ref, _, _, _, _, _, _ = generate_vibration_data("Healthy", 0, rpm)
+        _, z_data_ref, _, _, _, _, _, _, _ = generate_vibration_data("Healthy", 0, rpm)
         fig_time.add_trace(go.Scatter(x=t[:800], y=z_data_ref[:800], mode='lines', name='Healthy (Ref)', line=dict(color='#2ca02c', width=1, dash='dot')))
     fig_time.add_trace(go.Scatter(x=t[:800], y=z_data_def[:800], mode='lines', name=condition, line=dict(color='#d62728')))
-    fig_time.update_layout(xaxis_title="Tijd (s)", yaxis_title="g", height=350, margin=dict(l=0, r=0, t=30, b=0), legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
+    fig_time.update_layout(xaxis_title="Tijd (s)", yaxis_title="g", height=300, margin=dict(l=0, r=0, t=30, b=0), legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
     st.plotly_chart(fig_time, use_container_width=True)
 
 with col2:
     st.subheader("Live FFT Spectrum")
     fig_fft = go.Figure()
     if toon_healthy:
-        _, _, _, fft_z_ref, _, _, _, _ = generate_vibration_data("Healthy", 0, rpm)
+        _, _, _, fft_z_ref, _, _, _, _, _ = generate_vibration_data("Healthy", 0, rpm)
         fig_fft.add_trace(go.Scatter(x=freqs, y=fft_z_ref, mode='lines', name='Healthy (Ref)', line=dict(color='#2ca02c', width=1, dash='dot')))
     fig_fft.add_trace(go.Scatter(x=freqs, y=fft_z_def, mode='lines', name=condition, line=dict(color='#d62728')))
     if condition == 'BPFO (Outer Race)': fig_fft.update_layout(xaxis_range=[0, 1400])
     else: fig_fft.update_layout(xaxis_range=[0, min(rpm/60 * 10, 500)])
-    fig_fft.update_layout(xaxis_title="Hz", yaxis_title="Amplitude", height=350, margin=dict(l=0, r=0, t=30, b=0), legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99))
+    fig_fft.update_layout(xaxis_title="Hz", yaxis_title="Amplitude", height=300, margin=dict(l=0, r=0, t=30, b=0), legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99))
     st.plotly_chart(fig_fft, use_container_width=True)
+
+with col3:
+    st.subheader("Spectrogram (Tijd/Frequentie)")
+    # Bereken Spectrogram met SciPy
+    f_spec, t_spec, Sxx = signal.spectrogram(z_data_def, fs, nperseg=256, noverlap=128)
+    
+    # Beperk de weergavefrequentie voor overzichtelijkheid
+    max_freq_idx = np.where(f_spec <= 1500)[0][-1] 
+    
+    fig_spec = go.Figure(data=go.Heatmap(
+        z=10 * np.log10(Sxx[:max_freq_idx, :] + 1e-10), # Log scale voor betere zichtbaarheid
+        x=t_spec,
+        y=f_spec[:max_freq_idx],
+        colorscale='Viridis'
+    ))
+    fig_spec.update_layout(xaxis_title="Tijd (s)", yaxis_title="Hz", height=300, margin=dict(l=0, r=0, t=30, b=0))
+    st.plotly_chart(fig_spec, use_container_width=True)
+
 
 # --- UITLEG & METRICS ---
 st.markdown("---")
@@ -132,7 +152,7 @@ with col_b:
 
 with col_c:
      st.markdown("### Model Readiness Score")
-     st.write("✅ Dataset Balance: Gebalanceerd (via Batch Export)")
+     st.write("✅ Dataset Balance: Gebalanceerd")
      st.write("✅ RPM Variability: Toegepast (Jitter)")
      st.write("✅ Noise Variation: Toegepast (Dynamisch)")
      st.write("🟢 **Overfitting Risk:** Low")
@@ -140,7 +160,7 @@ with col_c:
 # --- BATCH BILDER ---
 st.markdown("---")
 st.header("3. Genereer Trainingsdata (Batch Export)")
-st.write("Genereer een robuuste dataset met ingebouwde variatie om ML-overfitting te voorkomen. De export bevat een gebalanceerde verdeling over alle vier de condities (Healthy, Unbalance, Looseness, BPFO).")
+st.write("Genereer een robuuste dataset met ingebouwde variatie om ML-overfitting te voorkomen. De export bevat een gebalanceerde verdeling over alle vier de condities.")
 
 col_export1, col_export2, col_export3 = st.columns(3)
 
@@ -174,7 +194,7 @@ if st.button(f"Genereer Gebalanceerde Dataset ({totaal_bestanden} files)", use_c
                 folder_naam = cond.replace(' ', '_').lower()
                 
                 for i in range(batch_size):
-                    t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b = generate_vibration_data(cond, huidige_sev, rpm, apply_randomness=True)
+                    t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b, _ = generate_vibration_data(cond, huidige_sev, rpm, apply_randomness=True)
                     filename = f"{folder_naam}/{folder_naam}_{i:03d}.csv"
                     df = pd.DataFrame({'timestamp_ms': t_b * 1000, 'accZ': z_b})
                     zip_file.writestr(filename, df.to_csv(index=False))
