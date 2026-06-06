@@ -1663,47 +1663,47 @@ with tab3:
                     use_container_width=True
                 )
              
-            st.divider()
+           st.divider()
+        
+st.subheader(
+    "Machine Health Score"
+)
 
-            st.subheader(
-            "Machine Health Score"
-         )
+health_score = 100
 
-            health_score = 100
+if crest_factor > 6:
+    health_score -= 15
 
-           if crest_factor > 6:
-           health_score -= 15
+if kurtosis_value > 8:
+    health_score -= 20
 
-           if kurtosis_value > 8:
-           health_score -= 20
+if peak_amplitude > 700:
+    health_score -= 10
 
-           if peak_amplitude > 700:
-           health_score -= 10
+health_score = max(
+    0,
+    min(
+        100,
+        health_score
+    )
+)
 
-           health_score = max(
-            0,
-          min(
-           100,
-          health_score
-      )
-  )
+col1, col2 = st.columns(2)
 
-         col1, col2 = st.columns(2)
+with col1:
 
-        with col1:
+    st.metric(
+        "Health Score",
+        f"{health_score}/100"
+    )
 
-        st.metric(
-           "Health Score",
-           f"{health_score}/100"
-       )
+with col2:
 
-       with col2:
-
-       if health_score >= 80:
+    if health_score >= 80:
 
         status = "GOOD"
 
-      elif health_score >= 60:
+    elif health_score >= 60:
 
         status = "WARNING"
 
@@ -1733,7 +1733,7 @@ else:
     st.error(
         "Critical vibration condition detected."
     )
-               
+ 
  
         except Exception as e:
 
