@@ -1123,5 +1123,121 @@ Noise Variation:
             preview_df.head(20),
             use_container_width=True
         )
+        # ========================================================
+# CSV EXPORT ENGINE
+# DEEL 4.2B
+# ========================================================
+
+    st.markdown("---")
+
+    st.subheader("CSV Export Engine")
+
+    if "generated_dataset" in st.session_state:
+
+        export_dataset = st.session_state[
+            "generated_dataset"
+        ]
+
+        total_csv_files = sum(
+            len(export_dataset[c])
+            for c in export_dataset
+        )
+
+        st.metric(
+            "CSV Files Ready",
+            total_csv_files
+        )
+
+        csv_preview_condition = st.selectbox(
+            "CSV Preview Condition",
+            list(export_dataset.keys()),
+            key="csv_preview_condition"
+        )
+
+        csv_preview_sample = export_dataset[
+            csv_preview_condition
+        ][0]["data"]
+
+        st.dataframe(
+            csv_preview_sample.head(10),
+            use_container_width=True
+        )
+
+        st.success(
+            f"{total_csv_files} CSV datasets ready for export."
+        )
+
+        csv_export_dict = {}
+
+        for fault_condition in export_dataset:
+
+            csv_export_dict[
+                fault_condition
+            ] = []
+
+            for idx, sample in enumerate(
+                export_dataset[fault_condition]
+            ):
+
+                filename = (
+                    fault_condition
+                    .lower()
+                    .replace(" ", "_")
+                    .replace("(", "")
+                    .replace(")", "")
+                    + "_"
+                    + str(idx + 1).zfill(3)
+                    + ".csv"
+                )
+
+                csv_string = sample[
+                    "data"
+                ].to_csv(
+                    index=False
+                )
+
+                csv_export_dict[
+                    fault_condition
+                ].append(
+                    {
+                        "filename": filename,
+                        "csv": csv_string
+                    }
+                )
+
+        st.session_state[
+            "csv_export_dict"
+        ] = csv_export_dict
+
+        total_csv_created = sum(
+            len(csv_export_dict[c])
+            for c in csv_export_dict
+        )
+
+        st.info(
+            f"{total_csv_created} CSV files prepared in memory."
+        )
+
+        sample_condition = list(
+            csv_export_dict.keys()
+        )[0]
+
+        sample_file = csv_export_dict[
+            sample_condition
+        ][0]
+
+        st.subheader(
+            "Generated Filename Example"
+        )
+
+        st.code(
+            sample_file["filename"]
+        )
+
+    else:
+
+        st.warning(
+            "Generate a dataset first."
+        )
         
     
