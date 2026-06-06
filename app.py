@@ -1796,119 +1796,119 @@ with tab3:
                                 f"{condition_label}"
                             )
                     
-            if st.button(
-            "Prepare Training Dataset"
-        ):
-        
-            training_rows = []
-        
-            for uploaded_file in uploaded_files:
-        
-                try:
-        
-                    df = pd.read_csv(uploaded_file)
-        
-                    vibration_data = (
-                        df.iloc[:, 1]
-                        .astype(float)
-                        .values
-                    )
-        
-                    sample_rate = 4000
-        
-                    rms_value = np.sqrt(
-                        np.mean(vibration_data ** 2)
-                    )
-        
-                    std_value = np.std(
-                        vibration_data
-                    )
-        
-                    kurtosis_value = kurtosis(
-                        vibration_data
-                    )
-        
-                    crest_factor = (
-                        np.max(
-                            np.abs(vibration_data)
+                    if st.button(
+                    "Prepare Training Dataset"
+                ):
+                
+                    training_rows = []
+                
+                    for uploaded_file in uploaded_files:
+                
+                        try:
+                
+                            df = pd.read_csv(uploaded_file)
+                
+                            vibration_data = (
+                                df.iloc[:, 1]
+                                .astype(float)
+                                .values
+                            )
+                
+                            sample_rate = 4000
+                
+                            rms_value = np.sqrt(
+                                np.mean(vibration_data ** 2)
+                            )
+                
+                            std_value = np.std(
+                                vibration_data
+                            )
+                
+                            kurtosis_value = kurtosis(
+                                vibration_data
+                            )
+                
+                            crest_factor = (
+                                np.max(
+                                    np.abs(vibration_data)
+                                )
+                                / rms_value
+                            )
+                
+                            fft_values = np.abs(
+                                np.fft.rfft(vibration_data)
+                            )
+                
+                            fft_freqs = np.fft.rfftfreq(
+                                len(vibration_data),
+                                d=1/sample_rate
+                            )
+                
+                            dominant_idx = np.argmax(
+                                fft_values[1:]
+                            ) + 1
+                
+                            dominant_frequency = (
+                                fft_freqs[
+                                    dominant_idx
+                                ]
+                            )
+                
+                            peak_amplitude = (
+                                fft_values[
+                                    dominant_idx
+                                ]
+                            )
+                
+                            training_rows.append(
+                                {
+                                    "RMS": rms_value,
+                                    "STD": std_value,
+                                    "Kurtosis": kurtosis_value,
+                                    "CrestFactor": crest_factor,
+                                    "DominantFrequency": dominant_frequency,
+                                    "PeakAmplitude": peak_amplitude,
+                                    "Label": condition_label
+                                }
+                            )
+                
+                        except Exception as e:
+                
+                            st.warning(
+                                f"Skipped file: "
+                                f"{uploaded_file.name}"
+                            )
+                
+                    if len(training_rows) > 0:
+                
+                        training_df = pd.DataFrame(
+                            training_rows
                         )
-                        / rms_value
-                    )
-        
-                    fft_values = np.abs(
-                        np.fft.rfft(vibration_data)
-                    )
-        
-                    fft_freqs = np.fft.rfftfreq(
-                        len(vibration_data),
-                        d=1/sample_rate
-                    )
-        
-                    dominant_idx = np.argmax(
-                        fft_values[1:]
-                    ) + 1
-        
-                    dominant_frequency = (
-                        fft_freqs[
-                            dominant_idx
-                        ]
-                    )
-        
-                    peak_amplitude = (
-                        fft_values[
-                            dominant_idx
-                        ]
-                    )
-        
-                    training_rows.append(
-                        {
-                            "RMS": rms_value,
-                            "STD": std_value,
-                            "Kurtosis": kurtosis_value,
-                            "CrestFactor": crest_factor,
-                            "DominantFrequency": dominant_frequency,
-                            "PeakAmplitude": peak_amplitude,
-                            "Label": condition_label
-                        }
-                    )
-        
-                except Exception as e:
-        
-                    st.warning(
-                        f"Skipped file: "
-                        f"{uploaded_file.name}"
-                    )
-        
-            if len(training_rows) > 0:
-        
-                training_df = pd.DataFrame(
-                    training_rows
-                )
-        
-                st.success(
-                    f"{len(training_rows)} samples prepared."
-                )
-        
-                st.dataframe(
-                    training_df,
-                    use_container_width=True
-                )
-        
-                csv_data = (
-                    training_df.to_csv(
-                        index=False
-                    )
-                )
-        
-                st.download_button(
-                    label="📥 Download Training Dataset",
-                    data=csv_data,
-                    file_name="training_dataset.csv",
-                    mime="text/csv"
-                )
-        
-            else:
-        
-                st.error(
-                    "No valid training files found."
-                )
+                
+                        st.success(
+                            f"{len(training_rows)} samples prepared."
+                        )
+                
+                        st.dataframe(
+                            training_df,
+                            use_container_width=True
+                        )
+                
+                        csv_data = (
+                            training_df.to_csv(
+                                index=False
+                            )
+                        )
+                
+                        st.download_button(
+                            label="📥 Download Training Dataset",
+                            data=csv_data,
+                            file_name="training_dataset.csv",
+                            mime="text/csv"
+                        )
+                
+                    else:
+                
+                        st.error(
+                            "No valid training files found."
+                        )
