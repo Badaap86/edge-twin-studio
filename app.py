@@ -1489,41 +1489,8 @@ with tab3:
                         "Peak Amplitude",
                         f"{peak_amplitude:.1f}"
                     )
+                st.divider()
 
-                fft_fig = go.Figure()
-
-                fft_fig.add_trace(
-                    go.Scatter(
-                        x=fft_freqs,
-                        y=fft_values,
-                        mode="lines",
-                        name="FFT"
-                    )
-                )
-
-                fft_fig.update_layout(
-                    template="plotly_dark",
-                    height=450,
-                    xaxis_title="Frequency (Hz)",
-                    yaxis_title="Amplitude",
-                    title="FFT Spectrum"
-                )
-
-                st.plotly_chart(
-                    fft_fig,
-                    use_container_width=True
-                )
-        except Exception as e:
-
-            st.error(
-                f"Error loading file: {e}"
-            )
-
-    else:
-
-        st.info(
-            "Upload a CSV dataset "
-            "to begin analysis."
-        )
+ 
         
     
