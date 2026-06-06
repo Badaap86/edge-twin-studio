@@ -384,14 +384,13 @@ st.sidebar.info(
 # TABS
 # ============================================================
 
-tab1, tab2, tab3, tab4 = st.tabs(
-    [
-        "📈 Synthetic Generator",
-        "📦 Batch Generator",
-        "🔍 Upload Analyzer",
-        "🧪 Data Multiplier"
-    ]
-)
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📈 Synthetic Generator",
+    "📦 Batch Generator",
+    "🔍 Upload Analyzer",
+    "🧪 Data Multiplier",
+    "🤖 TinyML Trainer"
+])
 
 # ============================================================
 # GENERATE ACTIVE DATASET
