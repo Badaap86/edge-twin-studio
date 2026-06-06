@@ -192,43 +192,111 @@ with tab1:
 # =========================================================================
 # TAB 2: DATA MULTIPLIER (CSV)
 # =========================================================================
+# =========================================================================
+# TAB 2: DATA MULTIPLIER (CSV)
+# =========================================================================
+
 with tab2:
+
     st.header("Referentie Signaal Uploaden & Klonen")
-    st.write("Upload een échte, te kleine dataset. Ons algoritme extraheert de fysieke kenmerken en genereert een robuuste, gevarieerde Edge AI dataset met exact diezelfde signatuur.")
-    
-    uploaded_file = st.file_uploader("Upload je ruwe meting (.csv met Tijd en Acceleratie)", type=['csv'])
-    
+
+    st.write(
+        "Upload een échte dataset. De AI analyseert de signatuur, "
+        "extraheert kenmerken en genereert een uitgebreide trainingsdataset."
+    )
+
+    uploaded_file = st.file_uploader(
+        "Upload CSV (tijd + acceleratie)",
+        type=["csv"]
+    )
+
     if uploaded_file is not None:
+
         try:
+
             df_real = pd.read_csv(uploaded_file)
-            
+
             if df_real.shape[1] < 2:
-                st.error("❌ Oeps! Het lijkt erop dat deze CSV niet de juiste structuur heeft. Zorg dat je een bestand uploadt met minimaal 2 kolommen (Tijd en Acceleratie).")
+
+                st.error(
+                    "❌ CSV moet minimaal 2 kolommen bevatten "
+                    "(tijd en acceleratie)."
+                )
+
             else:
+
                 t_real = df_real.iloc[:, 0].values
                 z_real = df_real.iloc[:, 1].values
-                
-                # Check of de data numeriek is
-                if not (np.issubdtype(t_real.dtype, np.number) and np.issubdtype(z_real.dtype, np.number)):
-                    st.error("❌ Fout bij inlezen: De kolommen bevatten tekst in plaats van getallen. Zorg dat de CSV puur numerieke data bevat.")
-                else:
-                    st.success(f"✅ Bestand '{uploaded_file.name}' succesvol ingelezen! AI Analyse is voltooid.")
-                    
-                    # --- AI ANALYSE ---
-                    sample_rate_est = int(1.0 / (t_real[1] - t_real[0])) * 1000 
-                    if sample_rate_est < 10: sample_rate_est = 4000 
-                    window_real = np.hanning(len(t_real))
-                    fft_waarden_real = np.abs(np.fft.rfft(z_real * window_real))
-                    fft_freqs_real = np.fft.rfftfreq(len(t_real), 1/sample_rate_est)
-                    dominant_idx = np.argmax(fft_waarden_real[1:]) + 1
-                    dominant_freq = fft_freqs_real[dominant_idx]
 
-                    st.subheader("FFT Analyse")
+                if not (
+                    np.issubdtype(t_real.dtype, np.number)
+                    and np.issubdtype(z_real.dtype, np.number)
+                ):
+
+                    st.error(
+                        "❌ CSV bevat niet-numerieke waarden."
+                    )
+
+                else:
+
+                    st.success(
+                        f"✅ Bestand '{uploaded_file.name}' succesvol ingelezen."
+                    )
+
+                    # ==================================================
+                    # SAMPLE RATE SCHATTING
+                    # ==================================================
+
+                    dt = np.mean(np.diff(t_real))
+
+                    if dt <= 0:
+                        sample_rate_est = 4000
+                    else:
+                        sample_rate_est = int(1.0 / dt)
+
+                    if sample_rate_est < 10:
+                        sample_rate_est = 4000
+
+                    # ==================================================
+                    # FFT
+                    # ==================================================
+
+                    window_real = np.hanning(len(z_real))
+
+                    fft_waarden_real = np.abs(
+                        np.fft.rfft(
+                            z_real * window_real
+                        )
+                    )
+
+                    fft_freqs_real = np.fft.rfftfreq(
+                        len(z_real),
+                        1 / sample_rate_est
+                    )
+
+                    dominant_idx = (
+                        np.argmax(
+                            fft_waarden_real[1:]
+                        ) + 1
+                    )
+
+                    dominant_freq = (
+                        fft_freqs_real[dominant_idx]
+                    )
+
+                    st.markdown("---")
+                    st.subheader("AI Analyse")
 
                     col1, col2 = st.columns(2)
 
+                    # ==========================================
+                    # FFT GRAFIEK
+                    # ==========================================
+
                     with col1:
+
                         fig_fft_real = go.Figure()
+
                         fig_fft_real.add_trace(
                             go.Scatter(
                                 x=fft_freqs_real,
@@ -237,24 +305,255 @@ with tab2:
                                 name="FFT"
                             )
                         )
+
                         fig_fft_real.update_layout(
+                            title="FFT Spectrum",
                             xaxis_title="Frequentie (Hz)",
                             yaxis_title="Amplitude",
                             height=350
                         )
-                        st.plotly_chart(fig_fft_real, use_container_width=True)
+
+                        st.plotly_chart(
+                            fig_fft_real,
+                            use_container_width=True
+                        )
+
+                    # ==========================================
+                    # METRICS
+                    # ==========================================
 
                     with col2:
+
                         st.metric(
                             "Dominante Frequentie",
                             f"{dominant_freq:.2f} Hz"
                         )
 
-                        st.info(
-                            f"Het systeem detecteert een dominante component rond "
-                            f"{dominant_freq:.2f} Hz."
+                        st.metric(
+                            "Geschatte Sample Rate",
+                            f"{sample_rate_est} Hz"
+                        )
+
+                        if dominant_freq < 40:
+
+                            interpretatie = (
+                                "⚠️ Mogelijke Onbalans"
+                            )
+
+                        elif dominant_freq < 120:
+
+                            interpretatie = (
+                                "⚠️ Mogelijk Lagerdefect"
+                            )
+
+                        elif dominant_freq > 500:
+
+                            interpretatie = (
+                                "⚠️ Mogelijke Resonantie"
+                            )
+
+                        else:
+
+                            interpretatie = (
+                                "❓ Onbekend patroon"
+                            )
+
+                        st.success(
+                            f"AI Interpretatie:\n\n{interpretatie}"
+                        )
+
+                    # ==================================================
+                    # SPECTROGRAM
+                    # ==================================================
+
+                    st.markdown("---")
+                    st.subheader(
+                        "Upload Spectrogram"
+                    )
+
+                    f_spec_real, t_spec_real, Sxx_real = (
+                        signal.spectrogram(
+                            z_real,
+                            sample_rate_est,
+                            nperseg=256,
+                            noverlap=128
+                        )
+                    )
+
+                    fig_spec_real = go.Figure(
+                        data=go.Heatmap(
+                            z=10 * np.log10(
+                                Sxx_real + 1e-10
+                            ),
+                            x=t_spec_real,
+                            y=f_spec_real,
+                            colorscale="Viridis"
+                        )
+                    )
+
+                    fig_spec_real.update_layout(
+                        xaxis_title="Tijd (s)",
+                        yaxis_title="Frequentie (Hz)",
+                        height=400
+                    )
+
+                    st.plotly_chart(
+                        fig_spec_real,
+                        use_container_width=True
+                    )
+
+                    # ==================================================
+                    # DATASET AUGMENTATION
+                    # ==================================================
+
+                    st.markdown("---")
+                    st.subheader(
+                        "Dataset Augmentation"
+                    )
+
+                    aantal_variaties = st.slider(
+                        "Aantal variaties",
+                        10,
+                        500,
+                        100
+                    )
+
+                    noise_factor = st.slider(
+                        "Extra Noise",
+                        0.0,
+                        0.50,
+                        0.10
+                    )
+
+                    amplitude_jitter = st.slider(
+                        "Amplitude Jitter",
+                        0.0,
+                        0.30,
+                        0.05
+                    )
+
+                    if st.button(
+                        "🚀 Genereer Augmented Dataset",
+                        use_container_width=True
+                    ):
+
+                        progress_bar = st.progress(
+                            0,
+                            text="Genereren..."
+                        )
+
+                        zip_buffer = io.BytesIO()
+
+                        metadata = []
+
+                        with zipfile.ZipFile(
+                            zip_buffer,
+                            "a",
+                            zipfile.ZIP_DEFLATED
+                        ) as zip_file:
+
+                            for i in range(
+                                aantal_variaties
+                            ):
+
+                                amp_scale = (
+                                    1
+                                    + np.random.normal(
+                                        0,
+                                        amplitude_jitter
+                                    )
+                                )
+
+                                augmented_signal = (
+                                    z_real * amp_scale
+                                )
+
+                                augmented_signal += (
+                                    np.random.normal(
+                                        0,
+                                        np.std(z_real)
+                                        * noise_factor,
+                                        len(z_real)
+                                    )
+                                )
+
+                                df_aug = pd.DataFrame(
+                                    {
+                                        "timestamp":
+                                            t_real,
+                                        "accZ":
+                                            augmented_signal
+                                    }
+                                )
+
+                                filename = (
+                                    f"augmented/"
+                                    f"aug_{i:04d}.csv"
+                                )
+
+                                zip_file.writestr(
+                                    filename,
+                                    df_aug.to_csv(
+                                        index=False
+                                    )
+                                )
+
+                                metadata.append(
+                                    {
+                                        "file":
+                                            filename,
+                                        "source":
+                                            uploaded_file.name,
+                                        "variation":
+                                            i,
+                                        "dominant_frequency":
+                                            float(
+                                                dominant_freq
+                                            )
+                                    }
+                                )
+
+                                progress_bar.progress(
+                                    int(
+                                        (
+                                            i + 1
+                                        )
+                                        / aantal_variaties
+                                        * 100
+                                    ),
+                                    text=(
+                                        f"Bestand "
+                                        f"{i+1}/"
+                                        f"{aantal_variaties}"
+                                    )
+                                )
+
+                            zip_file.writestr(
+                                "metadata.json",
+                                json.dumps(
+                                    metadata,
+                                    indent=4
+                                )
+                            )
+
+                        progress_bar.empty()
+
+                        st.success(
+                            "✅ Dataset succesvol gegenereerd."
+                        )
+
+                        st.download_button(
+                            "📦 Download Augmented ZIP",
+                            zip_buffer.getvalue(),
+                            file_name=(
+                                "augmented_dataset.zip"
+                            ),
+                            mime="application/zip",
+                            use_container_width=True
                         )
 
         except Exception as e:
-            st.error(f"Analyse mislukt: {e}")
-                   
+
+            st.error(
+                f"Analyse mislukt: {e}"
+            )
