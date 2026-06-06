@@ -56,9 +56,33 @@ def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_random
 
 # --- INTERFACE INDELING ---
 st.sidebar.header("1. Visualiseer & Valideer")
-rpm = st.sidebar.slider("Basis RPM", 600, 3000, 1500, 10)
-severity_pct = st.sidebar.slider("Severity (%)", 0, 100, 80, 5)
+
+# Twee-weg koppeling (Two-way bind) voor RPM en Severity
+if "rpm" not in st.session_state: st.session_state["rpm"] = 1500
+if "sev" not in st.session_state: st.session_state["sev"] = 80
+
+def sync_rpm_slider(): st.session_state["rpm"] = st.session_state["rpm_slider_widget"]
+def sync_rpm_num(): st.session_state["rpm"] = st.session_state["rpm_num_widget"]
+def sync_sev_slider(): st.session_state["sev"] = st.session_state["sev_slider_widget"]
+def sync_sev_num(): st.session_state["sev"] = st.session_state["sev_num_widget"]
+
+st.session_state["rpm_slider_widget"] = st.session_state["rpm"]
+st.session_state["rpm_num_widget"] = st.session_state["rpm"]
+st.session_state["sev_slider_widget"] = st.session_state["sev"]
+st.session_state["sev_num_widget"] = st.session_state["sev"]
+
+st.sidebar.markdown("**Basis RPM**")
+st.sidebar.number_input("Typ RPM", 600, 3000, key="rpm_num_widget", on_change=sync_rpm_num, label_visibility="collapsed")
+st.sidebar.slider("Schuif RPM", 600, 3000, step=10, key="rpm_slider_widget", on_change=sync_rpm_slider, label_visibility="collapsed")
+rpm = st.session_state["rpm"]
+
+st.sidebar.markdown("**Severity (%)**")
+st.sidebar.number_input("Typ Severity", 0, 100, key="sev_num_widget", on_change=sync_sev_num, label_visibility="collapsed")
+st.sidebar.slider("Schuif Severity", 0, 100, step=5, key="sev_slider_widget", on_change=sync_sev_slider, label_visibility="collapsed")
+severity_pct = st.session_state["sev"]
 severity = severity_pct / 100.0
+
+st.sidebar.markdown("---")
 condition = st.sidebar.selectbox("Defect Type", ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
 
 t, z_data, freqs, fft_z, bpfo_hz, res_hz, _, _ = generate_vibration_data(condition, severity, rpm)
