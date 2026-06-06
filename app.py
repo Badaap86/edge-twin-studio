@@ -220,4 +220,41 @@ with tab2:
                     window_real = np.hanning(len(t_real))
                     fft_waarden_real = np.abs(np.fft.rfft(z_real * window_real))
                     fft_freqs_real = np.fft.rfftfreq(len(t_real), 1/sample_rate_est)
+                                        dominant_idx = np.argmax(fft_waarden_real[1:]) + 1
+                    dominant_freq = fft_freqs_real[dominant_idx]
+
+                    st.subheader("FFT Analyse")
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        fig_fft_real = go.Figure()
+                        fig_fft_real.add_trace(
+                            go.Scatter(
+                                x=fft_freqs_real,
+                                y=fft_waarden_real,
+                                mode="lines",
+                                name="FFT"
+                            )
+                        )
+                        fig_fft_real.update_layout(
+                            xaxis_title="Frequentie (Hz)",
+                            yaxis_title="Amplitude",
+                            height=350
+                        )
+                        st.plotly_chart(fig_fft_real, use_container_width=True)
+
+                    with col2:
+                        st.metric(
+                            "Dominante Frequentie",
+                            f"{dominant_freq:.2f} Hz"
+                        )
+
+                        st.info(
+                            f"Het systeem detecteert een dominante component rond "
+                            f"{dominant_freq:.2f} Hz."
+                        )
+
+        except Exception as e:
+            st.error(f"Analyse mislukt: {e}")
                    
