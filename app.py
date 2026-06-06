@@ -1605,6 +1605,64 @@ with tab3:
                     st.error(
                         "Possible bearing fault detected."
                     )
+
+                st.divider()
+
+                st.subheader(
+                    "Extracted Features"
+                )
+
+                rms_value = np.sqrt(
+                    np.mean(
+                        vibration_data ** 2
+                    )
+                )
+
+                std_value = np.std(
+                    vibration_data
+                )
+
+                kurtosis_value = (
+                    pd.Series(
+                        vibration_data
+                    ).kurt()
+                )
+
+                crest_factor = (
+                    np.max(
+                        np.abs(
+                            vibration_data
+                        )
+                    )
+                    / rms_value
+                )
+
+                feature_df = pd.DataFrame(
+                    {
+                        "Feature": [
+                            "RMS",
+                            "STD",
+                            "Kurtosis",
+                            "Crest Factor",
+                            "Dominant Frequency",
+                            "Peak Amplitude"
+                        ],
+                        "Value": [
+                            rms_value,
+                            std_value,
+                            kurtosis_value,
+                            crest_factor,
+                            dominant_frequency,
+                            peak_amplitude
+                        ]
+                    }
+                )
+
+                st.dataframe(
+                    feature_df,
+                    use_container_width=True
+                )
+                
         except Exception as e:
 
             st.error(
