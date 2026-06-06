@@ -6,12 +6,13 @@ import scipy.signal as signal
 import io
 import json
 import zipfile
+import time
 
 # --- CONFIGURATIE & COMMERCIËLE POSITIONERING ---
-st.set_page_config(page_title="TinyML Data Accelerator", layout="wide")
+st.set_page_config(page_title="TinyML Data Accelerator", layout="wide", initial_sidebar_state="expanded")
 st.title("⚡ Edge AI Acceleration Tool: Kinematic Vibration Simulator")
 st.subheader("Train Edge AI models before real-world failure data exists.")
-st.markdown("Genereer of vermenigvuldig fysisch verklaarbare trainingsdata om het *Cold Start*-probleem te verslaan.")
+st.markdown("Genereer of vermenigvuldig fysisch verklaarbare trainingsdata om het *Cold Start*-probleem in voorspellend onderhoud te verslaan.")
 
 @st.cache_data
 def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_randomness=False):
@@ -62,7 +63,7 @@ tab1, tab2 = st.tabs(["🎛️ 1. Synthetische Generator", "📂 2. Data Multipl
 # TAB 1: SYNTHETISCHE GENERATOR
 # =========================================================================
 with tab1:
-    st.sidebar.header("1. Visualiseer & Valideer (Tab 1)")
+    st.sidebar.header("1. Visualiseer & Valideer")
 
     if "rpm" not in st.session_state: st.session_state["rpm"] = 1500
     if "sev" not in st.session_state: st.session_state["sev"] = 80
@@ -157,86 +158,66 @@ with tab1:
         batch_size = int(batch_profile.split('(')[1].split('/')[0])
         totaal_bestanden = batch_size * 4
 
-    if st.button(f"Genereer Gebalanceerde Dataset (4 condities × {batch_size} = {totaal_bestanden} files)", use_container_width=True):
-        with st.spinner(f"Genereren van {totaal_bestanden} fysica-gedreven bestanden..."):
-            zip_buffer = io.BytesIO()
-            metadata_list = []
-            for cond in ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"]:
+    if st.button(f"Genereer Gebalanceerde Dataset (4 condities × {batch_size} = {totaal_bestanden} files)", use_container_width=True, type="primary"):
+        progress_text = "Genereren van fysica-gedreven bestanden..."
+        my_bar = st.progress(0, text=progress_text)
+        
+        zip_buffer = io.BytesIO()
+        metadata_list = []
+        condities = ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"]
+        
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+            for idx, cond in enumerate(condities):
                 huidige_sev = 0.0 if cond == "Healthy" else severity
                 folder_naam = cond.replace(' ', '_').lower()
-                with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
-                    for i in range(batch_size):
-                        t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b, _ = generate_vibration_data(cond, huidige_sev, rpm, apply_randomness=True)
-                        filename = f"{folder_naam}/{folder_naam}_{i:03d}.csv"
-                        df = pd.DataFrame({'timestamp_ms': t_b * 1000, 'accZ': z_b})
-                        zip_file.writestr(filename, df.to_csv(index=False))
-            st.success(f"Batch succesvol gegenereerd!")
-            st.download_button(label="📦 Download .ZIP", data=zip_buffer.getvalue(), file_name="gebalanceerde_edge_dataset.zip", mime="application/zip", use_container_width=True)
+                for i in range(batch_size):
+                    t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b, _ = generate_vibration_data(cond, huidige_sev, rpm, apply_randomness=True)
+                    filename = f"{folder_naam}/{folder_naam}_{i:03d}.csv"
+                    df = pd.DataFrame({'timestamp_ms': t_b * 1000, 'accZ': z_b})
+                    zip_file.writestr(filename, df.to_csv(index=False))
+                    
+                    metadata_list.append({
+                        "file": filename, "condition": cond, "base_rpm": rpm, "actual_rpm": round(rpm_b, 2)
+                    })
+                my_bar.progress((idx + 1) / 4, text=f"Data gegenereerd voor: {cond}")
+            
+            zip_file.writestr("metadata.json", json.dumps(metadata_list, indent=4))
+            
+        time.sleep(0.5)
+        my_bar.empty()
+        st.success(f"✅ Productie-klare batch succesvol gegenereerd ({totaal_bestanden} bestanden)!")
+        st.balloons()
+        st.download_button(label="📦 Download .ZIP Archief (CSV + JSON)", data=zip_buffer.getvalue(), file_name="gebalanceerde_edge_dataset.zip", mime="application/zip", use_container_width=True)
 
 # =========================================================================
 # TAB 2: DATA MULTIPLIER (CSV)
 # =========================================================================
 with tab2:
     st.header("Referentie Signaal Uploaden & Klonen")
-    st.write("Upload een échte, te kleine dataset. Ons algoritme extraheert de fysieke kenmerken (Dominante frequentie, RPM, Ruisvloer) en genereert een grote, gevarieerde Edge AI dataset met exact diezelfde signatuur.")
+    st.write("Upload een échte, te kleine dataset. Ons algoritme extraheert de fysieke kenmerken en genereert een robuuste, gevarieerde Edge AI dataset met exact diezelfde signatuur.")
     
     uploaded_file = st.file_uploader("Upload je ruwe meting (.csv met Tijd en Acceleratie)", type=['csv'])
     
     if uploaded_file is not None:
         try:
             df_real = pd.read_csv(uploaded_file)
-            # Pak simpelweg de eerste twee kolommen om fouten met kolomnamen te voorkomen
-            t_real = df_real.iloc[:, 0].values
-            z_real = df_real.iloc[:, 1].values
             
-            st.success("Bestand succesvol ingelezen! Analyse draait...")
-            
-            # --- AI ANALYSE (SIMPELE FFT EXTRACTIE) ---
-            sample_rate_est = int(1.0 / (t_real[1] - t_real[0])) * 1000 # aanname dat T in ms is
-            if sample_rate_est < 10: sample_rate_est = 4000 # fallback
-            
-            window_real = np.hanning(len(t_real))
-            fft_waarden_real = np.abs(np.fft.rfft(z_real * window_real))
-            fft_freqs_real = np.fft.rfftfreq(len(t_real), 1/sample_rate_est)
-            
-            # Vind piek (negeer DC / 0Hz piek)
-            piek_idx = np.argmax(fft_waarden_real[5:]) + 5
-            dominante_freq = fft_freqs_real[piek_idx]
-            geschat_rpm = dominante_freq * 60
-            
-            # --- DASHBOARD VOOR REAL DATA ---
-            st.markdown("---")
-            c1, c2 = st.columns(2)
-            with c1:
-                st.subheader("Geüpload Signaal")
-                fig_up = go.Figure(go.Scatter(x=t_real[:800], y=z_real[:800], mode='lines', line=dict(color='#8c564b')))
-                fig_up.update_layout(height=250, margin=dict(l=0, r=0, t=0, b=0))
-                st.plotly_chart(fig_up, use_container_width=True)
-            with c2:
-                st.subheader("Geëxtraheerde Eigenschappen")
-                st.metric("Dominante Frequentie", f"{dominante_freq:.1f} Hz")
-                st.metric("Afgeleid Basis RPM", f"{geschat_rpm:.0f} RPM")
-                st.markdown("### Synthetic Fidelity Score: ⭐⭐⭐⭐☆")
-                st.write("- **RPM Match:** 97%\n- **Noise Variance:** Gekalibreerd\n- **Spectral Correlation:** Hoog")
+            if df_real.shape[1] < 2:
+                st.error("❌ Oeps! Het lijkt erop dat deze CSV niet de juiste structuur heeft. Zorg dat je een bestand uploadt met minimaal 2 kolommen (Tijd en Acceleratie).")
+            else:
+                t_real = df_real.iloc[:, 0].values
+                z_real = df_real.iloc[:, 1].values
                 
-            st.markdown("---")
-            st.subheader("Multiplier Activeren")
-            st.write(f"Genereer variaties gebaseerd op de geëxtraheerde **{geschat_rpm:.0f} RPM** signatuur.")
-            
-            aantal_klonen = st.slider("Aantal Variaties Genereren", 50, 1000, 200, 50)
-            
-            if st.button("Kloon & Vermenigvuldig (Batch Export)", type="primary"):
-                with st.spinner("AI Multiplier is bezig..."):
-                    # Maak een ZIP bestand met varianten gebaseerd op het geschatte RPM
-                    zip_buf = io.BytesIO()
-                    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zipf:
-                        for i in range(aantal_klonen):
-                            # Genereer variaties (we doen alsof het 'Unbalance' is op het gemeten RPM als kloon)
-                            t_k, z_k, _, _, _, _, _, _, _ = generate_vibration_data('Unbalance', severity=0.5, rpm=geschat_rpm, apply_randomness=True)
-                            df_kloon = pd.DataFrame({'timestamp_ms': t_k * 1000, 'accZ': z_k})
-                            zipf.writestr(f"synthetic_clone_{i:03d}.csv", df_kloon.to_csv(index=False))
-                    st.success("Klonen voltooid!")
-                    st.download_button("📦 Download Synthetic Clones (.ZIP)", data=zip_buf.getvalue(), file_name="synthetic_clones.zip", mime="application/zip")
+                # Check of de data numeriek is
+                if not (np.issubdtype(t_real.dtype, np.number) and np.issubdtype(z_real.dtype, np.number)):
+                    st.error("❌ Fout bij inlezen: De kolommen bevatten tekst in plaats van getallen. Zorg dat de CSV puur numerieke data bevat.")
+                else:
+                    st.success(f"✅ Bestand '{uploaded_file.name}' succesvol ingelezen! AI Analyse is voltooid.")
                     
-        except Exception as e:
-            st.error("Kon het CSV bestand niet verwerken. Zorg dat kolom 1 Tijd is, en kolom 2 de Trilling (Z-as).")
+                    # --- AI ANALYSE ---
+                    sample_rate_est = int(1.0 / (t_real[1] - t_real[0])) * 1000 
+                    if sample_rate_est < 10: sample_rate_est = 4000 
+                    
+                    window_real = np.hanning(len(t_real))
+                    fft_waarden_real = np.abs(np.fft.rfft(z_real * window_real))
+                    fft_freqs_real = np.fft.rfftfreq(len(t_real), 1/sample_rate_est
