@@ -1708,6 +1708,50 @@ with tab3:
                     st.error(
                         "Machine condition requires attention."
                     )
+
+                    st.divider()
+                    
+                    st.subheader(
+                        "📄 Download Analysis Report"
+                    )
+                    
+                    report_df = pd.DataFrame(
+                        {
+                            "Metric": [
+                                "Predicted Condition",
+                                "Confidence",
+                                "Health Score",
+                                "RMS",
+                                "STD",
+                                "Kurtosis",
+                                "Crest Factor",
+                                "Dominant Frequency",
+                                "Peak Amplitude"
+                            ],
+                            "Value": [
+                                predicted_condition,
+                                f"{confidence}%",
+                                f"{health_score}%",
+                                rms_value,
+                                std_value,
+                                kurtosis_value,
+                                crest_factor,
+                                dominant_frequency,
+                                peak_amplitude
+                            ]
+                        }
+                    )
+                    
+                    csv_report = report_df.to_csv(
+                        index=False
+                    )
+                    
+                    st.download_button(
+                        label="⬇ Download Analysis Report",
+                        data=csv_report,
+                        file_name="analysis_report.csv",
+                        mime="text/csv"
+                    )
         except Exception as e:
 
             st.error(
