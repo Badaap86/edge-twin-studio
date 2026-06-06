@@ -326,4 +326,234 @@ if "rpm" not in st.session_state:
 if "severity" not in st.session_state:
 
     st.session_state.severity = 80
+    # ============================================================
+# SIDEBAR
+# ============================================================
+
+st.sidebar.header("⚙️ Generator Controls")
+
+rpm = st.sidebar.slider(
+    "RPM",
+    min_value=600,
+    max_value=3000,
+    value=st.session_state.rpm,
+    step=10
+)
+
+severity_percent = st.sidebar.slider(
+    "Severity (%)",
+    min_value=0,
+    max_value=100,
+    value=st.session_state.severity,
+    step=5
+)
+
+severity = severity_percent / 100.0
+
+condition = st.sidebar.selectbox(
+    "Condition",
+    [
+        "Healthy",
+        "Unbalance",
+        "Mechanical Looseness",
+        "BPFO (Outer Race)"
+    ]
+)
+
+show_healthy_overlay = st.sidebar.checkbox(
+    "Show Healthy Reference",
+    value=True
+)
+
+apply_randomness = st.sidebar.checkbox(
+    "Apply Dataset Randomization",
+    value=True
+)
+
+st.session_state.rpm = rpm
+st.session_state.severity = severity_percent
+
+st.sidebar.markdown("---")
+
+st.sidebar.info(
+    "TinyML Data Accelerator V3\n\n"
+    "Synthetic Data + Fault Analysis + Dataset Augmentation"
+)
+
+# ============================================================
+# TABS
+# ============================================================
+
+tab1, tab2, tab3, tab4 = st.tabs(
+    [
+        "📈 Synthetic Generator",
+        "📦 Batch Generator",
+        "🔍 Upload Analyzer",
+        "🧪 Data Multiplier"
+    ]
+)
+
+# ============================================================
+# GENERATE ACTIVE DATASET
+# ============================================================
+
+(
+    t,
+    vibration,
+    fft_freqs,
+    fft_values,
+    bpfo_frequency,
+    resonance_frequency,
+    actual_rpm,
+    actual_severity,
+    sample_rate
+) = generate_vibration_data(
+    condition=condition,
+    severity=severity,
+    rpm=rpm,
+    apply_randomness=apply_randomness
+)
+
+# Healthy reference
+
+(
+    t_ref,
+    vibration_ref,
+    fft_freqs_ref,
+    fft_values_ref,
+    _,
+    _,
+    _,
+    _,
+    _
+) = generate_vibration_data(
+    condition="Healthy",
+    severity=0.0,
+    rpm=rpm,
+    apply_randomness=False
+)
+
+# ============================================================
+# TAB 1
+# ============================================================
+
+with tab1:
+
+    st.header("Synthetic Condition Simulator")
+
+    st.write(
+        "Generate physically explainable vibration datasets "
+        "for TinyML, Edge AI and Predictive Maintenance."
+    )
+
+    col_signal, col_fft = st.columns(2)
+
+    # --------------------------------------------------------
+    # TIME DOMAIN
+    # --------------------------------------------------------
+
+    with col_signal:
+
+        st.subheader("Time Signal")
+
+        fig_signal = go.Figure()
+
+        if show_healthy_overlay:
+
+            fig_signal.add_trace(
+                go.Scatter(
+                    x=t[:800],
+                    y=vibration_ref[:800],
+                    mode="lines",
+                    name="Healthy Reference"
+                )
+            )
+
+        fig_signal.add_trace(
+            go.Scatter(
+                x=t[:800],
+                y=vibration[:800],
+                mode="lines",
+                name=condition
+            )
+        )
+
+        fig_signal.update_layout(
+            height=400,
+            xaxis_title="Time (s)",
+            yaxis_title="Amplitude"
+        )
+
+        st.plotly_chart(
+            fig_signal,
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # FFT
+    # --------------------------------------------------------
+
+    with col_fft:
+
+        st.subheader("FFT Spectrum")
+
+        fig_fft = go.Figure()
+
+        if show_healthy_overlay:
+
+            fig_fft.add_trace(
+                go.Scatter(
+                    x=fft_freqs_ref,
+                    y=fft_values_ref,
+                    mode="lines",
+                    name="Healthy Reference"
+                )
+            )
+
+        fig_fft.add_trace(
+            go.Scatter(
+                x=fft_freqs,
+                y=fft_values,
+                mode="lines",
+                name=condition
+            )
+        )
+
+        fig_fft.update_layout(
+            height=400,
+            xaxis_title="Frequency (Hz)",
+            yaxis_title="Amplitude"
+        )
+
+        st.plotly_chart(
+            fig_fft,
+            use_container_width=True
+        )
+
+    st.markdown("---")
+
+    metric1, metric2, metric3, metric4 = st.columns(4)
+
+    metric1.metric(
+        "RPM",
+        f"{actual_rpm:.0f}"
+    )
+
+    metric2.metric(
+        "1× RPM",
+        f"{actual_rpm/60:.2f} Hz"
+    )
+
+    metric3.metric(
+        "BPFO",
+        f"{bpfo_frequency:.2f} Hz"
+    )
+
+    metric4.metric(
+        "Resonance",
+        f"{resonance_frequency:.1f} Hz"
+    )
+
+    st.markdown("---")
+    
     
