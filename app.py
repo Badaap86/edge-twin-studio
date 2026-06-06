@@ -1505,6 +1505,30 @@ with tab3:
 
                 st.divider()
 
+                fft_fig = go.Figure()
+
+                fft_fig.add_trace(
+                    go.Scatter(
+                        x=fft_freqs,
+                        y=fft_values,
+                        mode="lines",
+                        name="FFT"
+                    )
+                )
+
+                fft_fig.update_layout(
+                    template="plotly_dark",
+                    height=450,
+                    title="FFT Spectrum",
+                    xaxis_title="Frequency (Hz)",
+                    yaxis_title="Amplitude"
+                )
+
+                st.plotly_chart(
+                    fft_fig,
+                    use_container_width=True
+                )
+                
         except Exception as e:
 
             st.error(
