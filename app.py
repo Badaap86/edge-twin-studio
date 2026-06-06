@@ -12,1918 +12,456 @@ from scipy.stats import kurtosis
 # ============================================================
 # APP CONFIG
 # ============================================================
-
-st.set_page_config(
-    page_title="TinyML Data Accelerator V3",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-st.title("⚡ TinyML Data Accelerator V3")
-st.caption(
-    "Synthetic Data Generation • Dataset Augmentation • "
-    "Fault Analysis • Edge AI Development"
-)
+st.set_page_config(page_title="TinyML Data Accelerator V3.5", layout="wide", initial_sidebar_state="expanded")
+st.title("⚡ TinyML Data Accelerator (OMEGA-X V3.5)")
+st.caption("Synthetic Data Generation • Dataset Augmentation • Feature Extraction • Edge AI Development")
 
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
-
 def calculate_fft(signal_data, sample_rate):
-
     window = np.hanning(len(signal_data))
-
-    fft_values = np.abs(
-        np.fft.rfft(
-            signal_data * window
-        )
-    )
-
-    fft_freqs = np.fft.rfftfreq(
-        len(signal_data),
-        1 / sample_rate
-    )
-
+    fft_values = np.abs(np.fft.rfft(signal_data * window))
+    fft_freqs = np.fft.rfftfreq(len(signal_data), 1 / sample_rate)
     return fft_freqs, fft_values
 
-
 def calculate_spectrogram(signal_data, sample_rate):
-
-    f_spec, t_spec, Sxx = signal.spectrogram(
-        signal_data,
-        sample_rate,
-        nperseg=256,
-        noverlap=128
-    )
-
+    f_spec, t_spec, Sxx = signal.spectrogram(signal_data, sample_rate, nperseg=256, noverlap=128)
     return f_spec, t_spec, Sxx
-
-
-def estimate_sample_rate(time_vector):
-
-    try:
-
-        dt = np.mean(
-            np.diff(time_vector)
-        )
-
-        if dt <= 0:
-            return 4000
-
-        fs = int(1.0 / dt)
-
-        if fs < 10:
-            return 4000
-
-        return fs
-
-    except:
-
-        return 4000
-
-
-def rms(signal_data):
-
-    return np.sqrt(
-        np.mean(
-            signal_data ** 2
-        )
-    )
-
 
 # ============================================================
 # SYNTHETIC VIBRATION ENGINE V3
 # ============================================================
-
 @st.cache_data
-def generate_vibration_data(
-    condition,
-    severity,
-    rpm,
-    duration=2.0,
-    apply_randomness=False
-):
-
+def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_randomness=False):
     sample_rate = 4000
-
-    t = np.linspace(
-        0,
-        duration,
-        int(sample_rate * duration),
-        endpoint=False
-    )
-
-    actual_rpm = rpm
-
-    if apply_randomness:
-
-        actual_rpm = rpm * np.random.normal(
-            1.0,
-            0.02
-        )
-
-    actual_severity = severity
-
-    if apply_randomness:
-
-        actual_severity = severity * np.random.normal(
-            1.0,
-            0.10
-        )
-
-    actual_severity = np.clip(
-        actual_severity,
-        0.01,
-        1.0
-    )
-
+    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    
+    actual_rpm = rpm * np.random.normal(1.0, 0.02) if apply_randomness else rpm
+    actual_severity = severity * np.random.normal(1.0, 0.10) if apply_randomness else severity
+    actual_severity = np.clip(actual_severity, 0.01, 1.0)
+    
     f_1x = actual_rpm / 60.0
-
-    phase_1x = (
-        2
-        * np.pi
-        * f_1x
-        * t
-    )
-
-    vibration = (
-        0.2
-        * np.sin(phase_1x)
-    )
-
-    mains_noise = (
-        0.05
-        * np.sin(
-            2
-            * np.pi
-            * 50
-            * t
-        )
-    )
-
-    noise_scale = 1.0
-
-    if apply_randomness:
-
-        noise_scale = np.random.uniform(
-            0.85,
-            1.15
-        )
-
-    base_noise = np.random.normal(
-        0,
-        0.1 * noise_scale,
-        len(t)
-    )
-
-    vibration += mains_noise
-
-    vibration += (
-        base_noise
-        * (1 + actual_severity)
-    )
-
+    phase_1x = 2 * np.pi * f_1x * t
+    vibration = 0.2 * np.sin(phase_1x)
+    mains_noise = 0.05 * np.sin(2 * np.pi * 50 * t)
+    
+    noise_scale = np.random.uniform(0.85, 1.15) if apply_randomness else 1.0
+    base_noise = np.random.normal(0, 0.1 * noise_scale, len(t))
+    vibration += mains_noise + (base_noise * (1 + actual_severity))
+    
     bpfo_frequency = f_1x * 3.58
+    resonance_frequency = np.random.normal(1200.0, 15.0) if apply_randomness else 1200.0
 
-    resonance_frequency = 1200.0
-
-    if apply_randomness:
-
-        resonance_frequency = np.random.normal(
-            1200.0,
-            15.0
-        )
-
-    # ========================================================
-    # HEALTHY
-    # ========================================================
-
-    if condition == "Healthy":
-
-        pass
-
-    # ========================================================
-    # UNBALANCE
-    # ========================================================
-
-    elif condition == "Unbalance":
-
-        vibration += (
-            1.5
-            * actual_severity
-            * np.sin(
-                phase_1x
-            )
-        )
-
-    # ========================================================
-    # MECHANICAL LOOSENESS
-    # ========================================================
-
+    if condition == "Unbalance":
+        vibration += 1.5 * actual_severity * np.sin(phase_1x)
     elif condition == "Mechanical Looseness":
-
         for harmonic in range(1, 6):
-
-            vibration += (
-                (1.2 / harmonic)
-                * actual_severity
-                * np.sin(
-                    harmonic
-                    * phase_1x
-                )
-            )
-
-        vibration += (
-            base_noise
-            * actual_severity
-            * 2.0
-        )
-
-    # ========================================================
-    # BPFO OUTER RACE
-    # ========================================================
-
+            vibration += (1.2 / harmonic) * actual_severity * np.sin(harmonic * phase_1x)
+        vibration += base_noise * actual_severity * 2.0
     elif condition == "BPFO (Outer Race)":
+        phase_fault = 2 * np.pi * bpfo_frequency * t
+        impact_variation = 0.8 + 0.4 * np.random.rand(len(t))
+        impact_envelope = np.maximum(0, np.cos(phase_fault)) ** 20 * impact_variation
+        load_zone_modulation = 1 + 0.6 * np.cos(phase_1x)
+        defect_signal = np.sin(2 * np.pi * resonance_frequency * t) * impact_envelope * load_zone_modulation
+        vibration += 2.0 * actual_severity * defect_signal
 
-        phase_fault = (
-            2
-            * np.pi
-            * bpfo_frequency
-            * t
-        )
-
-        impact_variation = (
-            0.8
-            + 0.4
-            * np.random.rand(
-                len(t)
-            )
-        )
-
-        impact_envelope = (
-            np.maximum(
-                0,
-                np.cos(
-                    phase_fault
-                )
-            ) ** 20
-        )
-
-        impact_envelope *= (
-            impact_variation
-        )
-
-        load_zone_modulation = (
-            1
-            + 0.6
-            * np.cos(
-                phase_1x
-            )
-        )
-
-        defect_signal = (
-            np.sin(
-                2
-                * np.pi
-                * resonance_frequency
-                * t
-            )
-            * impact_envelope
-            * load_zone_modulation
-        )
-
-        vibration += (
-            2.0
-            * actual_severity
-            * defect_signal
-        )
-
-    fft_freqs, fft_values = calculate_fft(
-        vibration,
-        sample_rate
-    )
-
-    return (
-        t,
-        vibration,
-        fft_freqs,
-        fft_values,
-        bpfo_frequency,
-        resonance_frequency,
-        actual_rpm,
-        actual_severity,
-        sample_rate
-    )
-
+    fft_freqs, fft_values = calculate_fft(vibration, sample_rate)
+    return t, vibration, fft_freqs, fft_values, bpfo_frequency, resonance_frequency, actual_rpm, actual_severity, sample_rate
 
 # ============================================================
-# SESSION STATE
+# SESSION STATE & SIDEBAR
 # ============================================================
-
-if "rpm" not in st.session_state:
-
-    st.session_state.rpm = 1500
-
-if "severity" not in st.session_state:
-
-    st.session_state.severity = 80
-    # ============================================================
-# SIDEBAR
-# ============================================================
+if "rpm" not in st.session_state: st.session_state.rpm = 1500
+if "severity" not in st.session_state: st.session_state.severity = 80
+if "master_training_dataset" not in st.session_state: st.session_state.master_training_dataset = pd.DataFrame()
 
 st.sidebar.header("⚙️ Generator Controls")
-
-rpm = st.sidebar.slider(
-    "RPM",
-    min_value=600,
-    max_value=3000,
-    value=st.session_state.rpm,
-    step=10
-)
-
-severity_percent = st.sidebar.slider(
-    "Severity (%)",
-    min_value=0,
-    max_value=100,
-    value=st.session_state.severity,
-    step=5
-)
-
+rpm = st.sidebar.slider("RPM", min_value=600, max_value=3000, value=st.session_state.rpm, step=10)
+severity_percent = st.sidebar.slider("Severity (%)", min_value=0, max_value=100, value=st.session_state.severity, step=5)
 severity = severity_percent / 100.0
-
-condition = st.sidebar.selectbox(
-    "Condition",
-    [
-        "Healthy",
-        "Unbalance",
-        "Mechanical Looseness",
-        "BPFO (Outer Race)"
-    ]
-)
-
-show_healthy_overlay = st.sidebar.checkbox(
-    "Show Healthy Reference",
-    value=True
-)
-
-apply_randomness = st.sidebar.checkbox(
-    "Apply Dataset Randomization",
-    value=True
-)
+condition = st.sidebar.selectbox("Condition", ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
+show_healthy_overlay = st.sidebar.checkbox("Show Healthy Reference", value=True)
+apply_randomness = st.sidebar.checkbox("Apply Dataset Randomization", value=True)
 
 st.session_state.rpm = rpm
 st.session_state.severity = severity_percent
 
-st.sidebar.markdown("---")
-
-st.sidebar.info(
-    "TinyML Data Accelerator V3\n\n"
-    "Synthetic Data + Fault Analysis + Dataset Augmentation"
-)
+# ============================================================
+# GENERATE ACTIVE DATASET
+# ============================================================
+t, vibration, fft_freqs, fft_values, bpfo_frequency, resonance_frequency, actual_rpm, actual_severity, sample_rate = generate_vibration_data(condition, severity, rpm, apply_randomness=apply_randomness)
+t_ref, vibration_ref, fft_freqs_ref, fft_values_ref, _, _, _, _, _ = generate_vibration_data("Healthy", 0.0, rpm, apply_randomness=False)
 
 # ============================================================
 # TABS
 # ============================================================
-
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📈 Synthetic Generator",
-    "📦 Batch Generator",
-    "🔍 Upload Analyzer",
-    "🧪 Data Multiplier",
-    "🤖 TinyML Trainer"
-])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 1. Synthetic Generator", "📦 2. Batch Generator", "🔍 3. Upload Analyzer", "🧪 4. Data Multiplier", "🤖 5. TinyML Trainer"])
 
 # ============================================================
-# GENERATE ACTIVE DATASET
+# TAB 1: SYNTHETIC GENERATOR
 # ============================================================
-
-(
-    t,
-    vibration,
-    fft_freqs,
-    fft_values,
-    bpfo_frequency,
-    resonance_frequency,
-    actual_rpm,
-    actual_severity,
-    sample_rate
-) = generate_vibration_data(
-    condition=condition,
-    severity=severity,
-    rpm=rpm,
-    apply_randomness=apply_randomness
-)
-
-# Healthy reference
-
-(
-    t_ref,
-    vibration_ref,
-    fft_freqs_ref,
-    fft_values_ref,
-    _,
-    _,
-    _,
-    _,
-    _
-) = generate_vibration_data(
-    condition="Healthy",
-    severity=0.0,
-    rpm=rpm,
-    apply_randomness=False
-)
-
-# ============================================================
-# TAB 1
-# ============================================================
-
 with tab1:
-
     st.header("Synthetic Condition Simulator")
-
-    st.write(
-        "Generate physically explainable vibration datasets "
-        "for TinyML, Edge AI and Predictive Maintenance."
-    )
-
     col_signal, col_fft = st.columns(2)
 
-    # --------------------------------------------------------
-    # TIME DOMAIN
-    # --------------------------------------------------------
-
     with col_signal:
-
         st.subheader("Time Signal")
-
         fig_signal = go.Figure()
-
         if show_healthy_overlay:
-
-            fig_signal.add_trace(
-                go.Scatter(
-                    x=t[:800],
-                    y=vibration_ref[:800],
-                    mode="lines",
-                    name="Healthy Reference"
-                )
-            )
-
-        fig_signal.add_trace(
-            go.Scatter(
-                x=t[:800],
-                y=vibration[:800],
-                mode="lines",
-                name=condition
-            )
-        )
-
-        fig_signal.update_layout(
-            height=400,
-            xaxis_title="Time (s)",
-            yaxis_title="Amplitude"
-        )
-
-        st.plotly_chart(
-            fig_signal,
-            use_container_width=True
-        )
-
-    # --------------------------------------------------------
-    # FFT
-    # --------------------------------------------------------
+            fig_signal.add_trace(go.Scatter(x=t[:800], y=vibration_ref[:800], mode="lines", name="Healthy Reference", line=dict(color='#2ca02c', dash='dot')))
+        fig_signal.add_trace(go.Scatter(x=t[:800], y=vibration[:800], mode="lines", name=condition, line=dict(color='#d62728')))
+        fig_signal.update_layout(height=350, xaxis_title="Time (s)", yaxis_title="Amplitude")
+        st.plotly_chart(fig_signal, use_container_width=True)
 
     with col_fft:
-
         st.subheader("FFT Spectrum")
-
         fig_fft = go.Figure()
-
         if show_healthy_overlay:
-
-            fig_fft.add_trace(
-                go.Scatter(
-                    x=fft_freqs_ref,
-                    y=fft_values_ref,
-                    mode="lines",
-                    name="Healthy Reference"
-                )
-            )
-
-        fig_fft.add_trace(
-            go.Scatter(
-                x=fft_freqs,
-                y=fft_values,
-                mode="lines",
-                name=condition
-            )
-        )
-
-        fig_fft.update_layout(
-            height=400,
-            xaxis_title="Frequency (Hz)",
-            yaxis_title="Amplitude"
-        )
-
-        st.plotly_chart(
-            fig_fft,
-            use_container_width=True
-        )
-
-    st.markdown("---")
-
-    metric1, metric2, metric3, metric4 = st.columns(4)
-
-    metric1.metric(
-        "RPM",
-        f"{actual_rpm:.0f}"
-    )
-
-    metric2.metric(
-        "1× RPM",
-        f"{actual_rpm/60:.2f} Hz"
-    )
-
-    metric3.metric(
-        "BPFO",
-        f"{bpfo_frequency:.2f} Hz"
-    )
-
-    metric4.metric(
-        "Resonance",
-        f"{resonance_frequency:.1f} Hz"
-    )
-
-    st.markdown("---")
-        # ========================================================
-    # SPECTROGRAM
-    # ========================================================
+            fig_fft.add_trace(go.Scatter(x=fft_freqs_ref, y=fft_values_ref, mode="lines", name="Healthy Reference", line=dict(color='#2ca02c', dash='dot')))
+        fig_fft.add_trace(go.Scatter(x=fft_freqs, y=fft_values, mode="lines", name=condition, line=dict(color='#d62728')))
+        fig_fft.update_layout(height=350, xaxis_title="Frequency (Hz)", yaxis_title="Amplitude")
+        st.plotly_chart(fig_fft, use_container_width=True)
 
     st.subheader("Spectrogram (Time / Frequency)")
-
-    f_spec, t_spec, Sxx = calculate_spectrogram(
-        vibration,
-        sample_rate
-    )
-
-    fig_spec = go.Figure(
-        data=go.Heatmap(
-            z=10 * np.log10(
-                Sxx + 1e-12
-            ),
-            x=t_spec,
-            y=f_spec,
-            colorscale="Viridis"
-        )
-    )
-
-    fig_spec.update_layout(
-        height=450,
-        xaxis_title="Time (s)",
-        yaxis_title="Frequency (Hz)"
-    )
-
-    st.plotly_chart(
-        fig_spec,
-        use_container_width=True
-    )
+    f_spec, t_spec, Sxx = calculate_spectrogram(vibration, sample_rate)
+    max_freq_idx = np.where(f_spec <= 1500)[0][-1] if len(f_spec) > 0 else len(f_spec)
+    fig_spec = go.Figure(data=go.Heatmap(z=10 * np.log10(Sxx[:max_freq_idx, :] + 1e-12), x=t_spec, y=f_spec[:max_freq_idx], colorscale="Viridis"))
+    fig_spec.update_layout(height=350, xaxis_title="Time (s)", yaxis_title="Frequency (Hz)")
+    st.plotly_chart(fig_spec, use_container_width=True)
 
     st.markdown("---")
-
-    # ========================================================
-    # PHYSICS DASHBOARD
-    # ========================================================
-
     st.subheader("Physics Dashboard")
-
     col_a, col_b, col_c, col_d = st.columns(4)
+    col_a.metric("RPM", f"{actual_rpm:.0f}")
+    col_b.metric("1× RPM", f"{actual_rpm/60:.2f} Hz")
+    col_c.metric("BPFO", f"{bpfo_frequency:.2f} Hz")
+    col_d.metric("Resonance", f"{resonance_frequency:.1f} Hz")
 
-    col_a.metric(
-        "RPM",
-        f"{actual_rpm:.0f}"
-    )
-
-    col_b.metric(
-        "1× RPM",
-        f"{actual_rpm/60:.2f} Hz"
-    )
-
-    col_c.metric(
-        "BPFO",
-        f"{bpfo_frequency:.2f} Hz"
-    )
-
-    col_d.metric(
-        "Resonance",
-        f"{resonance_frequency:.1f} Hz"
-    )
-
-    st.markdown("---")
-
-    # ========================================================
-    # MODEL READINESS SCORE
-    # ========================================================
-
-    st.subheader("Model Readiness")
-
-    readiness_score = 50
-
-    if apply_randomness:
-        readiness_score += 20
-
-    if show_healthy_overlay:
-        readiness_score += 10
-
-    if severity_percent > 0:
-        readiness_score += 10
-
-    if condition != "Healthy":
-        readiness_score += 10
-
-    readiness_score = min(
-        readiness_score,
-        100
-    )
-
-    st.progress(
-        readiness_score
-    )
-
-    readiness_col1, readiness_col2, readiness_col3 = st.columns(3)
-
-    readiness_col1.metric(
-        "Readiness Score",
-        f"{readiness_score}%"
-    )
-
-    readiness_col2.metric(
-        "Randomization",
-        "Enabled" if apply_randomness else "Disabled"
-    )
-
-    readiness_col3.metric(
-        "Condition",
-        condition
-    )
-
-    if readiness_score >= 90:
-
-        st.success(
-            "Dataset appears suitable for TinyML training."
-        )
-
-    elif readiness_score >= 70:
-
-        st.warning(
-            "Dataset is usable but could benefit from more variation."
-        )
-
-    else:
-
-        st.error(
-            "Dataset variation may be insufficient."
-        )
-
-    st.markdown("---")
-
-    # ========================================================
-    # FAULT FINGERPRINT
-    # ========================================================
-
-    st.subheader("Expected Fault Fingerprint")
-
-    if condition == "Healthy":
-
-        fingerprint = pd.DataFrame(
-            {
-                "Feature": [
-                    "1× RPM",
-                    "Harmonics",
-                    "Impacts",
-                    "Resonance"
-                ],
-                "Expected":
-                [
-                    "Low",
-                    "Low",
-                    "None",
-                    "Low"
-                ]
-            }
-        )
-
-    elif condition == "Unbalance":
-
-        fingerprint = pd.DataFrame(
-            {
-                "Feature": [
-                    "1× RPM",
-                    "Harmonics",
-                    "Impacts",
-                    "Resonance"
-                ],
-                "Expected":
-                [
-                    "Very High",
-                    "Low",
-                    "None",
-                    "Low"
-                ]
-            }
-        )
-
-    elif condition == "Mechanical Looseness":
-
-        fingerprint = pd.DataFrame(
-            {
-                "Feature": [
-                    "1× RPM",
-                    "2× RPM",
-                    "3× RPM",
-                    "4× RPM"
-                ],
-                "Expected":
-                [
-                    "High",
-                    "High",
-                    "Medium",
-                    "Medium"
-                ]
-            }
-        )
-
-    else:
-
-        fingerprint = pd.DataFrame(
-            {
-                "Feature": [
-                    "BPFO",
-                    "Impacts",
-                    "Sidebands",
-                    "Resonance"
-                ],
-                "Expected":
-                [
-                    "High",
-                    "High",
-                    "Present",
-                    "Strong"
-                ]
-            }
-        )
-
-    st.dataframe(
-        fingerprint,
-        use_container_width=True
-    )
-
-    st.markdown("---")
-
-    st.info(
-        "Synthetic signal generated using DSP-based "
-        "kinematic fault modelling."
-    )
-    # ============================================================
-# TAB 2 - BATCH GENERATOR
 # ============================================================
-
+# TAB 2: BATCH GENERATOR
+# ============================================================
 with tab2:
-
     st.header("📦 Batch Dataset Generator")
-
-    st.write(
-        "Generate complete TinyML-ready training datasets "
-        "with automatic parameter variation."
-    )
-
-    st.markdown("---")
-
-    # ========================================================
-    # DATASET PROFILE
-    # ========================================================
-
-    profile = st.selectbox(
-        "Dataset Profile",
-        [
-            "Quick Test",
-            "Research",
-            "Production"
-        ]
-    )
-
-    if profile == "Quick Test":
-
-        files_per_condition = 20
-
-    elif profile == "Research":
-
-        files_per_condition = 100
-
-    else:
-
-        files_per_condition = 500
-
+    profile = st.selectbox("Dataset Profile", ["Quick Test (20/cond)", "Research (100/cond)", "Production (500/cond)"])
+    files_per_condition = int(profile.split('(')[1].split('/')[0])
     total_files = files_per_condition * 4
 
-    # ========================================================
-    # DATASET STATISTICS
-    # ========================================================
+    st.info(f"Configuration: {total_files} total files across 4 conditions. Randomization: {'ON' if apply_randomness else 'OFF'}.")
 
-    st.subheader("Dataset Statistics")
-
-    stat1, stat2, stat3, stat4 = st.columns(4)
-
-    stat1.metric(
-        "Conditions",
-        "4"
-    )
-
-    stat2.metric(
-        "Files / Condition",
-        files_per_condition
-    )
-
-    stat3.metric(
-        "Total Files",
-        total_files
-    )
-
-    estimated_size_mb = round(
-        total_files * 0.08,
-        1
-    )
-
-    stat4.metric(
-        "Estimated Size",
-        f"{estimated_size_mb} MB"
-    )
-
-    st.markdown("---")
-
-    # ========================================================
-    # RANDOMIZATION SETTINGS
-    # ========================================================
-
-    st.subheader("Randomization Settings")
-
-    rpm_randomization = st.checkbox(
-        "RPM Randomization",
-        value=True
-    )
-
-    severity_randomization = st.checkbox(
-        "Severity Randomization",
-        value=True
-    )
-
-    noise_randomization = st.checkbox(
-        "Noise Randomization",
-        value=True
-    )
-
-    st.markdown("---")
-
-    # ========================================================
-    # CONDITION OVERVIEW
-    # ========================================================
-
-    st.subheader("Conditions Included")
-
-    overview_df = pd.DataFrame(
-        {
-            "Condition": [
-                "Healthy",
-                "Unbalance",
-                "Mechanical Looseness",
-                "BPFO (Outer Race)"
-            ],
-            "Files": [
-                files_per_condition,
-                files_per_condition,
-                files_per_condition,
-                files_per_condition
-            ]
-        }
-    )
-
-    st.dataframe(
-        overview_df,
-        use_container_width=True
-    )
-
-    st.markdown("---")
-
-    # ========================================================
-    # GENERATION PREVIEW
-    # ========================================================
-
-    st.subheader("Generation Preview")
-
-    st.info(
-        f"""
-Profile: {profile}
-
-Total Files: {total_files}
-
-RPM Variation:
-{"Enabled" if rpm_randomization else "Disabled"}
-
-Severity Variation:
-{"Enabled" if severity_randomization else "Disabled"}
-
-Noise Variation:
-{"Enabled" if noise_randomization else "Disabled"}
-"""
-    )
-
-    st.markdown("---")
-
-    # ========================================================
-    # GENERATE BUTTON
-    # ========================================================
-
-    generate_batch = st.button(
-        "🚀 Prepare Dataset Generation",
-        use_container_width=True
-    )
-
-    if generate_batch:
-
-        st.success(
-            f"Dataset profile '{profile}' ready."
-        )
-
-        progress = st.progress(0)
-
-        for i in range(100):
-
-            progress.progress(i + 1)
-
-        st.success(
-            f"Configuration complete: {total_files} files."
-        )
-        # ========================================================
-# DATASET GENERATION ENGINE
-# DEEL 4.2A
-# ========================================================
-
-    st.markdown("---")
-
-    st.subheader("Dataset Generation Engine")
-
-    condition_map = [
-        "Healthy",
-        "Unbalance",
-        "Mechanical Looseness",
-        "BPFO (Outer Race)"
-    ]
-
-    if generate_batch:
-
-        generated_dataset = {}
-
-        generation_progress = st.progress(0)
-
-        status_text = st.empty()
-
-        total_jobs = (
-            len(condition_map)
-            * files_per_condition
-        )
-
-        current_job = 0
-
-        for fault_condition in condition_map:
-
-            generated_dataset[fault_condition] = []
-
-            for sample_idx in range(
-                files_per_condition
-            ):
-
-                rpm_value = rpm
-
-                severity_value = severity
-
-                if rpm_randomization:
-
-                    rpm_value = int(
-                        rpm
-                        * np.random.uniform(
-                            0.95,
-                            1.05
-                        )
-                    )
-
-                if severity_randomization:
-
-                    severity_value = np.clip(
-                        severity
-                        * np.random.uniform(
-                            0.85,
-                            1.15
-                        ),
-                        0.01,
-                        1.0
-                    )
-
-                (
-                    t_gen,
-                    vibration_gen,
-                    _,
-                    _,
-                    bpfo_gen,
-                    resonance_gen,
-                    rpm_gen,
-                    severity_gen,
-                    sample_rate_gen
-                ) = generate_vibration_data(
-                    condition=fault_condition,
-                    severity=severity_value,
-                    rpm=rpm_value,
-                    apply_randomness=noise_randomization
-                )
-
-                sample_df = pd.DataFrame(
-                    {
-                        "time": t_gen,
-                        "vibration": vibration_gen
-                    }
-                )
-
-                generated_dataset[
-                    fault_condition
-                ].append(
-                    {
-                        "data": sample_df,
-                        "rpm": rpm_gen,
-                        "severity": severity_gen,
-                        "bpfo": bpfo_gen,
-                        "resonance": resonance_gen,
-                        "sample_rate": sample_rate_gen
-                    }
-                )
-
-                current_job += 1
-
-                generation_progress.progress(
-                    current_job
-                    / total_jobs
-                )
-
-                status_text.text(
-                    f"Generating {fault_condition} "
-                    f"{sample_idx + 1}/"
-                    f"{files_per_condition}"
-                )
-
-        st.session_state[
-            "generated_dataset"
-        ] = generated_dataset
-
-        st.success(
-            f"Generated "
-            f"{total_files} synthetic files."
-        )
-
-        st.info(
-            "Dataset stored in memory and ready "
-            "for CSV export."
-        )
-
-        preview_col1, preview_col2 = st.columns(2)
-
-        preview_col1.metric(
-            "Conditions",
-            len(condition_map)
-        )
-
-        preview_col2.metric(
-            "Generated Files",
-            total_files
-        )
-
-        preview_condition = st.selectbox(
-            "Preview Condition",
-            condition_map,
-            key="preview_condition"
-        )
-
-        preview_df = (
-            st.session_state[
-                "generated_dataset"
-            ][preview_condition][0]["data"]
-        )
-
-        st.subheader(
-            "Generated Sample Preview"
-        )
-
-        st.dataframe(
-            preview_df.head(20),
-            use_container_width=True
-        )
-        # ========================================================
-# CSV EXPORT ENGINE
-# DEEL 4.2B
-# ========================================================
-
-    st.markdown("---")
-
-    st.subheader("CSV Export Engine")
-
-    if "generated_dataset" in st.session_state:
-
-        export_dataset = st.session_state[
-            "generated_dataset"
-        ]
-
-        total_csv_files = sum(
-            len(export_dataset[c])
-            for c in export_dataset
-        )
-
-        st.metric(
-            "CSV Files Ready",
-            total_csv_files
-        )
-
-        csv_preview_condition = st.selectbox(
-            "CSV Preview Condition",
-            list(export_dataset.keys()),
-            key="csv_preview_condition"
-        )
-
-        csv_preview_sample = export_dataset[
-            csv_preview_condition
-        ][0]["data"]
-
-        st.dataframe(
-            csv_preview_sample.head(10),
-            use_container_width=True
-        )
-
-        st.success(
-            f"{total_csv_files} CSV datasets ready for export."
-        )
-
-        csv_export_dict = {}
-
-        for fault_condition in export_dataset:
-
-            csv_export_dict[
-                fault_condition
-            ] = []
-
-            for idx, sample in enumerate(
-                export_dataset[fault_condition]
-            ):
-
-                filename = (
-                    fault_condition
-                    .lower()
-                    .replace(" ", "_")
-                    .replace("(", "")
-                    .replace(")", "")
-                    + "_"
-                    + str(idx + 1).zfill(3)
-                    + ".csv"
-                )
-
-                csv_string = sample[
-                    "data"
-                ].to_csv(
-                    index=False
-                )
-
-                csv_export_dict[
-                    fault_condition
-                ].append(
-                    {
-                        "filename": filename,
-                        "csv": csv_string
-                    }
-                )
-
-        st.session_state[
-            "csv_export_dict"
-        ] = csv_export_dict
-
-        total_csv_created = sum(
-            len(csv_export_dict[c])
-            for c in csv_export_dict
-        )
-
-        st.info(
-            f"{total_csv_created} CSV files prepared in memory."
-        )
-
-        sample_condition = list(
-            csv_export_dict.keys()
-        )[0]
-
-        sample_file = csv_export_dict[
-            sample_condition
-        ][0]
-
-        st.subheader(
-            "Generated Filename Example"
-        )
-
-        st.code(
-            sample_file["filename"]
-        )
-
-    else:
-
-        st.warning(
-            "Generate a dataset first."
-        )
-        # ========================================================
-# ZIP EXPORT + DOWNLOAD
-# DEEL 4.3
-# ========================================================
-
-    st.markdown("---")
-
-    st.subheader("ZIP Export")
-
-    if "csv_export_dict" in st.session_state:
-
-        export_dict = st.session_state[
-            "csv_export_dict"
-        ]
-
+    if st.button("🚀 Generate Balanced Dataset", type="primary"):
+        my_bar = st.progress(0, text="Generating physics-driven datasets...")
         zip_buffer = io.BytesIO()
+        metadata_list = []
+        conditions = ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"]
+        
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+            for idx, cond in enumerate(conditions):
+                huidige_sev = 0.0 if cond == "Healthy" else severity
+                folder_naam = cond.replace(' ', '_').replace('(', '').replace(')', '').lower()
+                
+                for i in range(files_per_condition):
+                    t_b, z_b, _, _, bpfo_b, res_b, rpm_b, sev_b, _ = generate_vibration_data(cond, huidige_sev, rpm, apply_randomness=apply_randomness)
+                    filename = f"{folder_naam}/{folder_naam}_{i:03d}.csv"
+                    df = pd.DataFrame({'time': t_b, 'vibration': z_b})
+                    zip_file.writestr(filename, df.to_csv(index=False))
+                    metadata_list.append({"file": filename, "condition": cond, "rpm": round(rpm_b, 2), "severity": round(sev_b, 3)})
+                    
+                my_bar.progress((idx + 1) / 4, text=f"Data generated for: {cond}")
+            
+            zip_file.writestr("metadata.json", json.dumps(metadata_list, indent=4))
+            
+        time.sleep(0.5)
+        my_bar.empty()
+        st.success(f"✅ Production batch successfully generated ({total_files} files)!")
+        st.download_button("📦 Download .ZIP Archive", data=zip_buffer.getvalue(), file_name="tinyml_balanced_dataset.zip", mime="application/zip")
 
-        with zipfile.ZipFile(
-            zip_buffer,
-            "w",
-            zipfile.ZIP_DEFLATED
-        ) as zip_file:
-
-            total_files_zip = 0
-
-            for condition_name in export_dict:
-
-                for sample in export_dict[
-                    condition_name
-                ]:
-
-                    zip_file.writestr(
-                        sample["filename"],
-                        sample["csv"]
-                    )
-
-                    total_files_zip += 1
-
-            metadata = {
-                "generator": "TinyML Data Accelerator V3",
-                "profile": profile,
-                "conditions": list(
-                    export_dict.keys()
-                ),
-                "total_files": total_files_zip,
-                "rpm_randomization":
-                    rpm_randomization,
-                "severity_randomization":
-                    severity_randomization,
-                "noise_randomization":
-                    noise_randomization
-            }
-
-            zip_file.writestr(
-                "metadata.json",
-                json.dumps(
-                    metadata,
-                    indent=4
-                )
-            )
-
-        zip_buffer.seek(0)
-
-        st.success(
-            f"ZIP package ready "
-            f"({total_files_zip} CSV files)"
-        )
-
-        st.download_button(
-            label="⬇ Download Dataset ZIP",
-            data=zip_buffer,
-            file_name=(
-                f"tinyml_dataset_"
-                f"{profile.lower().replace(' ','_')}"
-                f".zip"
-            ),
-            mime="application/zip",
-            use_container_width=True
-        )
-
-        st.info(
-            "ZIP contains CSV files "
-            "and metadata.json"
-        )
-
-    else:
-
-        st.warning(
-            "Generate dataset first."
-        )
-    # ============================================================
-# TAB 3 - UPLOAD ANALYZER
-# DEEL 5.1A
 # ============================================================
-
+# TAB 3: UPLOAD ANALYZER
+# ============================================================
 with tab3:
-
     st.header("🔍 Upload Analyzer")
+    uploaded_file = st.file_uploader("Upload CSV file (time, vibration)", type=["csv"], key="analyzer_upload")
 
-    st.write(
-        "Upload vibration datasets and perform "
-        "automatic analysis."
-    )
-
-    uploaded_file = st.file_uploader(
-        "Upload CSV file",
-        type=["csv"],
-        key="upload_analyzer_csv"
-    )
-
-    if uploaded_file is None:
-
-        st.info(
-            "Upload a CSV dataset "
-            "to begin analysis."
-        )
-
-    else:
-
+    if uploaded_file:
         try:
-
-            df_uploaded = pd.read_csv(
-                uploaded_file
-            )
-
-            st.success(
-                f"Loaded: {uploaded_file.name}"
-            )
-
-            required_columns = [
-                "time",
-                "vibration"
-            ]
-
-            if not all(
-                col in df_uploaded.columns
-                for col in required_columns
-            ):
-
-                st.error(
-                    "CSV must contain "
-                    "'time' and 'vibration' columns."
-                )
-
+            df_up = pd.read_csv(uploaded_file)
+            if "time" in df_up.columns and "vibration" in df_up.columns:
+                time_data, vib_data = df_up["time"].values, df_up["vibration"].values
+                sr_est = int(1.0 / np.mean(np.diff(time_data)))
+                
+                rms_val = np.sqrt(np.mean(vib_data**2))
+                kurt_val = pd.Series(vib_data).kurt()
+                crest_val = np.max(np.abs(vib_data)) / rms_val if rms_val > 0 else 0
+                
+                fft_freqs_up, fft_vals_up = calculate_fft(vib_data - np.mean(vib_data), sr_est)
+                dom_idx = np.argmax(fft_vals_up[5:]) + 5
+                dom_freq = fft_freqs_up[dom_idx]
+                
+                st.success("File analyzed successfully!")
+                
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Dominant Freq", f"{dom_freq:.1f} Hz")
+                c2.metric("RMS", f"{rms_val:.3f}")
+                c3.metric("Kurtosis", f"{kurt_val:.2f}")
+                c4.metric("Crest Factor", f"{crest_val:.2f}")
+                
+                health_score = max(0, min(100, 100 - (15 if crest_val > 6 else 0) - (20 if kurt_val > 8 else 0)))
+                st.metric("Machine Health Score", f"{health_score}%")
+                st.progress(health_score / 100)
             else:
-
-                time_data = (
-                    df_uploaded["time"]
-                    .values
-                )
-
-                vibration_data = (
-                    df_uploaded["vibration"]
-                    .values
-                )
-
-                sample_count = len(
-                    vibration_data
-                )
-
-                duration = (
-                    time_data[-1]
-                    - time_data[0]
-                )
-
-                sample_rate = (
-                    1.0 /
-                    np.mean(
-                        np.diff(time_data)
-                    )
-                )
-
-                st.subheader(
-                    "Dataset Information"
-                )
-
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-
-                    st.metric(
-                        "Samples",
-                        f"{sample_count:,}"
-                    )
-
-                with col2:
-
-                    st.metric(
-                        "Duration",
-                        f"{duration:.2f} s"
-                    )
-
-                with col3:
-
-                    st.metric(
-                        "Sample Rate",
-                        f"{sample_rate:.0f} Hz"
-                    )
-
-                st.subheader(
-                    "Dataset Preview"
-                )
-
-                st.dataframe(
-                    df_uploaded.head(20),
-                    use_container_width=True
-                )
-
-                st.divider()
-
-                st.subheader(
-                    "FFT Analysis"
-                )
-
-                vibration_centered = (
-                    vibration_data
-                    - np.mean(vibration_data)
-                )
-
-                fft_values = np.abs(
-                    np.fft.rfft(
-                        vibration_centered
-                    )
-                )
-
-                fft_freqs = np.fft.rfftfreq(
-                    len(vibration_centered),
-                    d=1 / sample_rate
-                )
-
-                dominant_idx = (
-                    np.argmax(
-                        fft_values[1:]
-                    ) + 1
-                )
-
-                dominant_frequency = (
-                    fft_freqs[
-                        dominant_idx
-                    ]
-                )
-
-                peak_amplitude = (
-                    fft_values[
-                        dominant_idx
-                    ]
-                )
-
-                col1, col2 = st.columns(2)
-
-                with col1:
-
-                    st.metric(
-                        "Dominant Frequency",
-                        f"{dominant_frequency:.2f} Hz"
-                    )
-
-                with col2:
-
-                    st.metric(
-                        "Peak Amplitude",
-                        f"{peak_amplitude:.1f}"
-                    )
-
-                st.divider()
-
-                fft_fig = go.Figure()
-
-                fft_fig.add_trace(
-                    go.Scatter(
-                        x=fft_freqs,
-                        y=fft_values,
-                        mode="lines",
-                        name="FFT"
-                    )
-                )
-
-                fft_fig.update_layout(
-                    template="plotly_dark",
-                    height=450,
-                    title="FFT Spectrum",
-                    xaxis_title="Frequency (Hz)",
-                    yaxis_title="Amplitude"
-                )
-
-                st.plotly_chart(
-                    fft_fig,
-                    use_container_width=True
-                )
-                st.divider()
-
-                st.subheader(
-                    "Predicted Condition"
-                )
-
-                if dominant_frequency < 40:
-
-                    predicted_condition = (
-                        "Unbalance"
-                    )
-
-                    confidence = 85
-
-                elif dominant_frequency < 80:
-
-                    predicted_condition = (
-                        "Mechanical Looseness"
-                    )
-
-                    confidence = 88
-
-                elif dominant_frequency < 120:
-
-                    predicted_condition = (
-                        "BPFO (Outer Race)"
-                    )
-
-                    confidence = 90
-
-                else:
-
-                    predicted_condition = (
-                        "Healthy"
-                    )
-
-                    confidence = 80
-
-                col1, col2 = st.columns(2)
-
-                with col1:
-
-                    st.metric(
-                        "Condition",
-                        predicted_condition
-                    )
-
-                with col2:
-
-                    st.metric(
-                        "Confidence",
-                        f"{confidence}%"
-                    )
-
-                if predicted_condition == "Healthy":
-
-                    st.success(
-                        "Machine appears healthy."
-                    )
-
-                elif predicted_condition == "Unbalance":
-
-                    st.warning(
-                        "Possible rotor imbalance detected."
-                    )
-
-                elif predicted_condition == "Mechanical Looseness":
-
-                    st.warning(
-                        "Possible mechanical looseness detected."
-                    )
-
-                else:
-
-                    st.error(
-                        "Possible bearing fault detected."
-                    )
-
-                st.divider()
-
-                st.subheader(
-                    "Extracted Features"
-                )
-
-                rms_value = np.sqrt(
-                    np.mean(
-                        vibration_data ** 2
-                    )
-                )
-
-                std_value = np.std(
-                    vibration_data
-                )
-
-                kurtosis_value = (
-                    pd.Series(
-                        vibration_data
-                    ).kurt()
-                )
-
-                crest_factor = (
-                    np.max(
-                        np.abs(
-                            vibration_data
-                        )
-                    )
-                    / rms_value
-                )
-
-                feature_df = pd.DataFrame(
-                    {
-                        "Feature": [
-                            "RMS",
-                            "STD",
-                            "Kurtosis",
-                            "Crest Factor",
-                            "Dominant Frequency",
-                            "Peak Amplitude"
-                        ],
-                        "Value": [
-                            rms_value,
-                            std_value,
-                            kurtosis_value,
-                            crest_factor,
-                            dominant_frequency,
-                            peak_amplitude
-                        ]
-                    }
-                )
-
-                st.dataframe(
-                    feature_df,
-                    use_container_width=True
-                )
-
-                st.divider()
-                
-                st.subheader("Machine Health Score")
-                
-                health_score = 100
-                
-                if crest_factor > 6:
-                    health_score -= 15
-                
-                if kurtosis_value > 8:
-                    health_score -= 20
-                
-                if peak_amplitude > 700:
-                    health_score -= 10
-                
-                health_score = max(
-                    0,
-                    min(100, health_score)
-                )
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.metric(
-                        "Health Score",
-                        f"{health_score}%"
-                    )
-                
-                with col2:
-                    st.progress(
-                        health_score / 100
-                    )
-                
-                if health_score >= 85:
-                    st.success(
-                        "Machine condition is excellent."
-                    )
-                elif health_score >= 70:
-                    st.warning(
-                        "Machine condition should be monitored."
-                    )
-                else:
-                    st.error(
-                        "Machine condition requires attention."
-                    )
-
-                    st.divider()
-                    
-                    st.subheader(
-                        "📄 Download Analysis Report"
-                    )
-                    
-                    report_df = pd.DataFrame(
-                        {
-                            "Metric": [
-                                "Predicted Condition",
-                                "Confidence",
-                                "Health Score",
-                                "RMS",
-                                "STD",
-                                "Kurtosis",
-                                "Crest Factor",
-                                "Dominant Frequency",
-                                "Peak Amplitude"
-                            ],
-                            "Value": [
-                                predicted_condition,
-                                f"{confidence}%",
-                                f"{health_score}%",
-                                rms_value,
-                                std_value,
-                                kurtosis_value,
-                                crest_factor,
-                                dominant_frequency,
-                                peak_amplitude
-                            ]
-                        }
-                    )
-                    
-                    csv_report = report_df.to_csv(
-                        index=False
-                    )
-                    
-                    st.download_button(
-                        label="⬇ Download Analysis Report",
-                        data=csv_report,
-                        file_name="analysis_report.csv",
-                        mime="text/csv"
-                    )
+                st.error("CSV must contain 'time' and 'vibration' columns.")
         except Exception as e:
+            st.error(f"Error: {e}")
 
-                    st.error(
-                        f"Error loading file: {e}"
-                    )
-    with tab5:
-
-                st.header(
-                    "🤖 TinyML Model Trainer"
-                )
-            
-                st.write(
-                    "Train machine learning models "
-                    "from vibration datasets."
-                )
-            
-                uploaded_files = st.file_uploader(
-                    "Upload training CSV files",
-                    type=["csv"],
-                    accept_multiple_files=True,
-                    key="tinyml_training_files"
-                )
-            
-                if uploaded_files:
-            
-                    st.success(
-                        f"{len(uploaded_files)} files loaded."
-                    )
-            
-                    condition_label = st.selectbox(
-                        "Dataset Label",
-                        [
-                            "Healthy",
-                            "Unbalance",
-                            "Mechanical Looseness",
-                            "Bearing Fault"
-                        ]
-                    )
-            
-                    st.info(
-                        f"Selected label: {condition_label}"
-                    )
-            
-                    if st.button(
-                        "Prepare Training Dataset"
-                    ):
-            
-                        training_rows = []
-            
-                        for uploaded_file in uploaded_files:
-            
-                            try:
-            
-                                df = pd.read_csv(
-                                    uploaded_file
-                                )
-            
-                                vibration_data = (
-                                    df.iloc[:, 1]
-                                    .astype(float)
-                                    .values
-                                )
-            
-                                sample_rate = 4000
-            
-                                rms_value = np.sqrt(
-                                    np.mean(
-                                        vibration_data ** 2
-                                    )
-                                )
-            
-                                std_value = np.std(
-                                    vibration_data
-                                )
-            
-                                kurtosis_value = kurtosis(
-                                    vibration_data
-                                )
-            
-                                crest_factor = (
-                                    np.max(
-                                        np.abs(
-                                            vibration_data
-                                        )
-                                    )
-                                    / rms_value
-                                )
-            
-                                fft_values = np.abs(
-                                    np.fft.rfft(
-                                        vibration_data
-                                    )
-                                )
-            
-                                fft_freqs = np.fft.rfftfreq(
-                                    len(vibration_data),
-                                    d=1 / sample_rate
-                                )
-            
-                                dominant_idx = (
-                                    np.argmax(
-                                        fft_values[1:]
-                                    ) + 1
-                                )
-            
-                                dominant_frequency = (
-                                    fft_freqs[
-                                        dominant_idx
-                                    ]
-                                )
-            
-                                peak_amplitude = (
-                                    fft_values[
-                                        dominant_idx
-                                    ]
-                                )
-            
-                                training_rows.append(
-                                    {
-                                        "RMS": rms_value,
-                                        "STD": std_value,
-                                        "Kurtosis": kurtosis_value,
-                                        "CrestFactor": crest_factor,
-                                        "DominantFrequency": dominant_frequency,
-                                        "PeakAmplitude": peak_amplitude,
-                                        "Label": condition_label
-                                    }
-                                )
-            
-                            except Exception as e:
-            
-                                st.warning(
-                                    f"Skipped file: "
-                                    f"{uploaded_file.name}"
-                                )
-            
-                        if len(training_rows) > 0:
-            
-                            training_df = pd.DataFrame(
-                                training_rows
-                            )
-            
-                            st.success(
-                                f"{len(training_rows)} samples prepared."
-                            )
-            
-                            st.dataframe(
-                                training_df,
-                                use_container_width=True
-                            )
-            
-                            csv_data = (
-                                training_df.to_csv(
-                                    index=False
-                                )
-                            )
-            
-                            st.download_button(
-                                label="📥 Download Training Dataset",
-                                data=csv_data,
-                                file_name="training_dataset.csv",
-                                mime="text/csv"
-                            )
-            
-                        else:
-            
-                            st.error(
-                                "No valid training files found."
-                            )
-            
+# ============================================================
+# TAB 4: DATA MULTIPLIER (PHYSICS-AWARE CLONE ENGINE)
+# ============================================================
+with tab4:
+    st.header("🧪 Data Multiplier (Physics-Aware Clone Engine)")
+    st.write("Upload a small sample. We extract the physical signature (Frequency, Kurtosis, Crest, Harmonics) and generate a robust dataset.")
+    
+    upload_mult = st.file_uploader("Upload reference CSV", type=['csv'], key="multiplier_upload")
+    
+    if upload_mult:
+        try:
+            df_mult = pd.read_csv(upload_mult)
+            if df_mult.shape[1] >= 2:
+                t_mult = df_mult.iloc[:, 0].values
+                z_mult = df_mult.iloc[:, 1].values
+                sr_mult = int(1.0 / (t_mult[1] - t_mult[0])) * 1000 if (t_mult[1] - t_mult[0]) < 1 else 4000
+                
+                rms_mult = np.sqrt(np.mean(z_mult**2))
+                kurt_mult = pd.Series(z_mult).kurt()
+                crest_mult = np.max(np.abs(z_mult)) / rms_mult if rms_mult > 0 else 0
+                
+                fft_f, fft_v = calculate_fft(z_mult - np.mean(z_mult), sr_mult)
+                dom_idx = np.argmax(fft_v[5:]) + 5
+                dom_f = fft_f[dom_idx]
+                extracted_rpm = dom_f * 60
+                
+                # --- NIEUW: Harmonic Ratio Berekening ---
+                fundamental_amp = fft_v[dom_idx]
+                harmonic_amp_sum = 0
+                for h in range(2, 6): # 2x, 3x, 4x, 5x harmonischen
+                    h_target = h * dom_f
+                    h_idx = np.argmin(np.abs(fft_f - h_target))
+                    harmonic_amp_sum += fft_v[h_idx]
+                
+                harmonic_ratio = harmonic_amp_sum / max(abs(fundamental_amp), 1e-6)
+                
+                # --- SLIMME AUTODETECTIE CONDITIE ---
+                if crest_mult > 4.0 and kurt_mult > 3.0:
+                    detected_cond = "BPFO (Outer Race)"
+                elif harmonic_ratio > 0.4 or (crest_mult > 2.5 and kurt_mult > 0.5):
+                    detected_cond = "Mechanical Looseness"
+                elif rms_mult > 0.15:
+                    detected_cond = "Unbalance"
                 else:
+                    detected_cond = "Healthy"
+                
+                st.success(f"Signature Extracted! Dominant Freq: {dom_f:.1f} Hz | Derived RPM: {extracted_rpm:.0f}")
+                st.info(f"🧬 Detected Profile: **{detected_cond}** (Kurt: {kurt_mult:.1f}, Crest: {crest_mult:.1f}, Harmonic Ratio: {harmonic_ratio:.2f})")
+                
+                clone_count = st.slider("Clones to Generate", 50, 500, 100)
+                if st.button(f"Clone & Multiply ({detected_cond})", type="primary"):
+                    zip_buf = io.BytesIO()
+                    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zipf:
+                        for i in range(clone_count):
+                            t_k, z_k, _, _, _, _, _, _, _ = generate_vibration_data(detected_cond, severity=0.8, rpm=extracted_rpm, apply_randomness=True)
+                            df_kloon = pd.DataFrame({'time': t_k, 'vibration': z_k})
+                            zipf.writestr(f"synthetic_clone_{detected_cond.replace(' ', '_')}_{i:03d}.csv", df_kloon.to_csv(index=False))
+                    st.success("Cloning complete!")
+                    st.download_button("📦 Download Synthetic Clones (.ZIP)", data=zip_buf.getvalue(), file_name="synthetic_clones.zip", mime="application/zip")
+            else:
+                st.error("Need 2 columns (time, vibration).")
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+# ============================================================
+# TAB 5: TINYML TRAINER (Master Dataset Builder & Quality)
+# ============================================================
+with tab5:
+    st.header("🤖 TinyML Feature Extractor & Pipeline")
+    st.write("Extract features from raw vibration CSVs and compile them into a unified ML training dataset.")
+
+    training_files = st.file_uploader("Upload raw CSV files to process", type=["csv"], accept_multiple_files=True, key="trainer_upload")
+
+    if training_files:
+        st.success(f"{len(training_files)} files ready for processing.")
+        condition_label = st.selectbox("Assign Label to these files", ["Healthy", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)"])
+
+        if st.button("Extract Features & Add to Master Dataset", type="primary"):
+            training_rows = []
+            for file in training_files:
+                try:
+                    df = pd.read_csv(file)
+                    vib_arr = df.iloc[:, 1].astype(float).values
+                    rms_val = np.sqrt(np.mean(vib_arr**2))
+                    
+                    fft_f, fft_v = calculate_fft(vib_arr - np.mean(vib_arr), 4000)
+                    dom_idx = np.argmax(fft_v[1:]) + 1
+                    dom_f = fft_f[dom_idx]
+                    
+                    # Harmonic Ratio Extractor
+                    fundamental_amp = fft_v[dom_idx]
+                    harmonic_amp_sum = 0
+                    for h in range(2, 6):
+                        h_target = h * dom_f
+                        h_idx = np.argmin(np.abs(fft_f - h_target))
+                        harmonic_amp_sum += fft_v[h_idx]
+                    harmonic_ratio = harmonic_amp_sum / max(abs(fundamental_amp), 1e-6)
+                    
+                    training_rows.append({
+                        "RMS": rms_val,
+                        "STD": np.std(vib_arr),
+                        "Kurtosis": kurtosis(vib_arr),
+                        "CrestFactor": np.max(np.abs(vib_arr)) / max(abs(rms_val), 1e-6),
+                        "DominantFrequency": dom_f,
+                        "PeakAmplitude": np.max(fft_v),
+                        "HarmonicRatio": harmonic_ratio, # NIEUWE FEATURE
+                        "Label": condition_label
+                    })
+                except Exception as e:
+                    st.warning(f"Could not process {file.name}")
+
+            if training_rows:
+                st.session_state.master_training_dataset = pd.concat([st.session_state.master_training_dataset, pd.DataFrame(training_rows)], ignore_index=True)
+                st.success(f"✅ Extracted features from {len(training_rows)} files and added them to the Master Dataset!")
+
+    st.divider()
+    
+    master_df = st.session_state.master_training_dataset
+    if len(master_df) > 0:
+        
+        st.subheader("📊 Dataset Statistics & Quality")
+        label_counts = master_df["Label"].value_counts()
+        
+        # QUALITY ALGORITHM BASE
+        quality_score = 100
+        num_classes = len(label_counts)
+        total_samples = len(master_df)
+        
+        # Class Penalty
+        if num_classes < 2:
+            quality_score -= 50
+            msg_classes = "🔴 Minimaal 2 klassen nodig voor AI training."
+        elif num_classes < 4:
+            quality_score -= 10
+            msg_classes = "🟡 Overweeg alle defect-statussen toe te voegen."
+        else:
+            msg_classes = "🟢 Uitstekende variatie in klassen."
             
-                    st.info(
-                        "Upload CSV files to begin."
-                    )
+        # Balance Penalty
+        if num_classes > 1:
+            balance_ratio = label_counts.min() / label_counts.max()
+            if balance_ratio < 0.2:
+                quality_score -= 30
+                msg_balance = "🔴 Dataset is zwaar uit balans (Imbalanced)."
+            elif balance_ratio < 0.6:
+                quality_score -= 15
+                msg_balance = "🟡 Dataset is enigszins uit balans."
+            else:
+                msg_balance = "🟢 Dataset is perfect in balans."
+        else:
+            msg_balance = "🔴 Balans NVT (slechts 1 klasse)."
+            
+        # Size Penalty
+        if total_samples < 50:
+            quality_score -= 30
+            msg_size = "🔴 Te weinig samples voor robuuste training."
+        elif total_samples < 200:
+            quality_score -= 10
+            msg_size = "🟡 Sample grootte is acceptabel, groter is beter."
+        else:
+            msg_size = "🟢 Goede totale sample grootte."
+            
+        # --- FEATURE HEALTH (ROBUUSTE VARIANCE CHECK) ---
+        feature_cols = ["RMS", "STD", "Kurtosis", "CrestFactor", "DominantFrequency", "PeakAmplitude", "HarmonicRatio"]
+        health_status_list = []
+        variance_penalty = 0
+        
+        for col in feature_cols:
+            if col in master_df.columns:
+                mean_val = master_df[col].mean()
+                std_val = master_df[col].std()
+                
+                # Robuuste Coëfficiënt van Variatie
+                cv = std_val / max(abs(mean_val), 1e-6)
+                
+                if pd.isna(std_val) or std_val == 0:
+                    status = "🔴 CRITICAL (Zero Variance)"
+                    variance_penalty += 10
+                elif cv < 0.05:
+                    status = "🟡 LOW"
+                    variance_penalty += 3
+                else:
+                    status = "🟢 GOOD"
+                    
+                health_status_list.append({"Feature": col, "Variance Status": status, "CV Ratio": f"{cv:.3f}"})
+            
+        quality_score -= variance_penalty
+        quality_score = max(0, min(100, int(quality_score)))
+
+        col_q1, col_q2 = st.columns([1, 2])
+        with col_q1:
+            st.metric("Dataset Quality Score", f"{quality_score}%")
+            if quality_score >= 85: st.success("🟢 Ready for Edge Impulse!")
+            elif quality_score >= 50: st.warning("🟡 Bruikbaar, maar let op de waarschuwingen.")
+            else: st.error("🔴 Niet klaar voor training. Pas dataset aan.")
+        with col_q2:
+            st.markdown(f"**Dataset Structuur Analyse:**\n- {msg_classes}\n- {msg_balance}\n- {msg_size}")
+
+        st.bar_chart(label_counts)
+
+        # FEATURE HEALTH TABEL
+        st.markdown("#### 🧬 Feature Health Analysis (Variance Check)")
+        st.write("Modellen hebben variantie in de data nodig om te generaliseren. Geen variantie = Data Leakage / Memorization.")
+        st.dataframe(pd.DataFrame(health_status_list), use_container_width=True)
+
+        # DATASET TABEL
+        st.subheader("📋 Master Training Dataset")
+        st.dataframe(master_df, use_container_width=True)
+        
+        # EXPORT PIPELINE
+        st.markdown("### 🚀 Export Pipeline")
+        col_dl1, col_dl2, col_clr = st.columns(3)
+        
+        metadata_dict = {
+            "total_samples": total_samples,
+            "labels": label_counts.to_dict(),
+            "quality_score": quality_score,
+            "feature_health_penalties": variance_penalty,
+            "generated_by": "TinyML Data Accelerator (OMEGA-X V3.5)"
+        }
+        json_meta_str = json.dumps(metadata_dict, indent=4)
+        csv_master_str = master_df.to_csv(index=False)
+        
+        zip_buf_master = io.BytesIO()
+        with zipfile.ZipFile(zip_buf_master, "w", zipfile.ZIP_DEFLATED) as zipf:
+            zipf.writestr("master_tinyml_dataset.csv", csv_master_str)
+            zipf.writestr("dataset_metadata.json", json_meta_str)
+        
+        with col_dl1:
+            st.download_button(
+                "📦 Download Production Dataset (.ZIP)", 
+                data=zip_buf_master.getvalue(), 
+                file_name="omega_x_master_dataset_v3_5.zip", 
+                mime="application/zip", 
+                use_container_width=True
+            )
+        with col_dl2:
+            st.download_button(
+                "⚡ Export Edge Impulse Dataset (.CSV)", 
+                data=csv_master_str, 
+                file_name="edge_impulse_dataset.csv", 
+                mime="text/csv", 
+                use_container_width=True
+            )
+        with col_clr:
+            if st.button("🗑️ Clear Master Dataset", use_container_width=True):
+                st.session_state.master_training_dataset = pd.DataFrame()
+                st.rerun()
+    else:
+        st.info("No samples collected yet. Upload raw files and process them to build your dataset.")
