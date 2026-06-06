@@ -220,4 +220,4 @@ with tab2:
                     
                     window_real = np.hanning(len(t_real))
                     fft_waarden_real = np.abs(np.fft.rfft(z_real * window_real))
-                    fft_freqs_real = np.fft.rfftfreq(len(t_real), 1/sample_rate_est))
+                    fft_freqs_real = np.fft.rfftfreq(len(t_real), 1/sample_rate_est)
