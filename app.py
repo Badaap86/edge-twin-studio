@@ -1491,19 +1491,19 @@ with tab3:
                     )
                 st.divider()
                                 
-        except Exception as e:
+                except Exception as e:
 
-            st.error(
+                st.error(
                 f"Error loading file: {e}"
             )
 
-    else:
+                else:
 
-        st.info(
-            "Upload a CSV dataset "
-            "to begin analysis."
+               st.info(
+               "Upload a CSV dataset "
+               "to begin analysis."
+            )
         )
-    )
  
         
     
