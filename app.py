@@ -1757,173 +1757,173 @@ with tab3:
                     st.error(
                         f"Error loading file: {e}"
                     )
-                with tab5:
+    with tab5:
 
-    st.header(
-        "🤖 TinyML Model Trainer"
-    )
-
-    st.write(
-        "Train machine learning models "
-        "from vibration datasets."
-    )
-
-    uploaded_files = st.file_uploader(
-        "Upload training CSV files",
-        type=["csv"],
-        accept_multiple_files=True,
-        key="tinyml_training_files"
-    )
-
-    if uploaded_files:
-
-        st.success(
-            f"{len(uploaded_files)} files loaded."
-        )
-
-        condition_label = st.selectbox(
-            "Dataset Label",
-            [
-                "Healthy",
-                "Unbalance",
-                "Mechanical Looseness",
-                "Bearing Fault"
-            ]
-        )
-
-        st.info(
-            f"Selected label: {condition_label}"
-        )
-
-        if st.button(
-            "Prepare Training Dataset"
-        ):
-
-            training_rows = []
-
-            for uploaded_file in uploaded_files:
-
-                try:
-
-                    df = pd.read_csv(
-                        uploaded_file
+                st.header(
+                    "🤖 TinyML Model Trainer"
+                )
+            
+                st.write(
+                    "Train machine learning models "
+                    "from vibration datasets."
+                )
+            
+                uploaded_files = st.file_uploader(
+                    "Upload training CSV files",
+                    type=["csv"],
+                    accept_multiple_files=True,
+                    key="tinyml_training_files"
+                )
+            
+                if uploaded_files:
+            
+                    st.success(
+                        f"{len(uploaded_files)} files loaded."
                     )
-
-                    vibration_data = (
-                        df.iloc[:, 1]
-                        .astype(float)
-                        .values
+            
+                    condition_label = st.selectbox(
+                        "Dataset Label",
+                        [
+                            "Healthy",
+                            "Unbalance",
+                            "Mechanical Looseness",
+                            "Bearing Fault"
+                        ]
                     )
-
-                    sample_rate = 4000
-
-                    rms_value = np.sqrt(
-                        np.mean(
-                            vibration_data ** 2
-                        )
+            
+                    st.info(
+                        f"Selected label: {condition_label}"
                     )
-
-                    std_value = np.std(
-                        vibration_data
-                    )
-
-                    kurtosis_value = kurtosis(
-                        vibration_data
-                    )
-
-                    crest_factor = (
-                        np.max(
-                            np.abs(
-                                vibration_data
+            
+                    if st.button(
+                        "Prepare Training Dataset"
+                    ):
+            
+                        training_rows = []
+            
+                        for uploaded_file in uploaded_files:
+            
+                            try:
+            
+                                df = pd.read_csv(
+                                    uploaded_file
+                                )
+            
+                                vibration_data = (
+                                    df.iloc[:, 1]
+                                    .astype(float)
+                                    .values
+                                )
+            
+                                sample_rate = 4000
+            
+                                rms_value = np.sqrt(
+                                    np.mean(
+                                        vibration_data ** 2
+                                    )
+                                )
+            
+                                std_value = np.std(
+                                    vibration_data
+                                )
+            
+                                kurtosis_value = kurtosis(
+                                    vibration_data
+                                )
+            
+                                crest_factor = (
+                                    np.max(
+                                        np.abs(
+                                            vibration_data
+                                        )
+                                    )
+                                    / rms_value
+                                )
+            
+                                fft_values = np.abs(
+                                    np.fft.rfft(
+                                        vibration_data
+                                    )
+                                )
+            
+                                fft_freqs = np.fft.rfftfreq(
+                                    len(vibration_data),
+                                    d=1 / sample_rate
+                                )
+            
+                                dominant_idx = (
+                                    np.argmax(
+                                        fft_values[1:]
+                                    ) + 1
+                                )
+            
+                                dominant_frequency = (
+                                    fft_freqs[
+                                        dominant_idx
+                                    ]
+                                )
+            
+                                peak_amplitude = (
+                                    fft_values[
+                                        dominant_idx
+                                    ]
+                                )
+            
+                                training_rows.append(
+                                    {
+                                        "RMS": rms_value,
+                                        "STD": std_value,
+                                        "Kurtosis": kurtosis_value,
+                                        "CrestFactor": crest_factor,
+                                        "DominantFrequency": dominant_frequency,
+                                        "PeakAmplitude": peak_amplitude,
+                                        "Label": condition_label
+                                    }
+                                )
+            
+                            except Exception as e:
+            
+                                st.warning(
+                                    f"Skipped file: "
+                                    f"{uploaded_file.name}"
+                                )
+            
+                        if len(training_rows) > 0:
+            
+                            training_df = pd.DataFrame(
+                                training_rows
                             )
-                        )
-                        / rms_value
+            
+                            st.success(
+                                f"{len(training_rows)} samples prepared."
+                            )
+            
+                            st.dataframe(
+                                training_df,
+                                use_container_width=True
+                            )
+            
+                            csv_data = (
+                                training_df.to_csv(
+                                    index=False
+                                )
+                            )
+            
+                            st.download_button(
+                                label="📥 Download Training Dataset",
+                                data=csv_data,
+                                file_name="training_dataset.csv",
+                                mime="text/csv"
+                            )
+            
+                        else:
+            
+                            st.error(
+                                "No valid training files found."
+                            )
+            
+                else:
+            
+                    st.info(
+                        "Upload CSV files to begin."
                     )
-
-                    fft_values = np.abs(
-                        np.fft.rfft(
-                            vibration_data
-                        )
-                    )
-
-                    fft_freqs = np.fft.rfftfreq(
-                        len(vibration_data),
-                        d=1 / sample_rate
-                    )
-
-                    dominant_idx = (
-                        np.argmax(
-                            fft_values[1:]
-                        ) + 1
-                    )
-
-                    dominant_frequency = (
-                        fft_freqs[
-                            dominant_idx
-                        ]
-                    )
-
-                    peak_amplitude = (
-                        fft_values[
-                            dominant_idx
-                        ]
-                    )
-
-                    training_rows.append(
-                        {
-                            "RMS": rms_value,
-                            "STD": std_value,
-                            "Kurtosis": kurtosis_value,
-                            "CrestFactor": crest_factor,
-                            "DominantFrequency": dominant_frequency,
-                            "PeakAmplitude": peak_amplitude,
-                            "Label": condition_label
-                        }
-                    )
-
-                except Exception as e:
-
-                    st.warning(
-                        f"Skipped file: "
-                        f"{uploaded_file.name}"
-                    )
-
-            if len(training_rows) > 0:
-
-                training_df = pd.DataFrame(
-                    training_rows
-                )
-
-                st.success(
-                    f"{len(training_rows)} samples prepared."
-                )
-
-                st.dataframe(
-                    training_df,
-                    use_container_width=True
-                )
-
-                csv_data = (
-                    training_df.to_csv(
-                        index=False
-                    )
-                )
-
-                st.download_button(
-                    label="📥 Download Training Dataset",
-                    data=csv_data,
-                    file_name="training_dataset.csv",
-                    mime="text/csv"
-                )
-
-            else:
-
-                st.error(
-                    "No valid training files found."
-                )
-
-    else:
-
-        st.info(
-            "Upload CSV files to begin."
-        )
