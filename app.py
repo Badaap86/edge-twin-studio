@@ -42,7 +42,70 @@ def safe_dataframe_from_dataset():
     return st.session_state.dataset
 
 
-def make_zip_from_signal_files(files, manifest, zip_name="dataset.zip"):
+def set_param_value(key, value):
+    value = float(value)
+    st.session_state[key] = value
+    st.session_state[f"{key}_slider_widget"] = value
+    st.session_state[f"{key}_number_widget"] = value
+
+
+def sync_from_slider(key):
+    value = float(st.session_state[f"{key}_slider_widget"])
+    st.session_state[key] = value
+    st.session_state[f"{key}_number_widget"] = value
+
+
+def sync_from_number(key):
+    value = float(st.session_state[f"{key}_number_widget"])
+    st.session_state[key] = value
+    st.session_state[f"{key}_slider_widget"] = value
+
+
+def sidebar_slider_with_number(label, min_value, max_value, default_value, step, key):
+    if key not in st.session_state:
+        st.session_state[key] = float(default_value)
+
+    current_value = float(st.session_state[key])
+
+    if f"{key}_slider_widget" not in st.session_state:
+        st.session_state[f"{key}_slider_widget"] = current_value
+
+    if f"{key}_number_widget" not in st.session_state:
+        st.session_state[f"{key}_number_widget"] = current_value
+
+    st.sidebar.markdown(f"**{label}**")
+
+    col_slider, col_number = st.sidebar.columns([3, 1])
+
+    with col_slider:
+        st.slider(
+            label=f"{label} slider",
+            min_value=float(min_value),
+            max_value=float(max_value),
+            step=float(step),
+            key=f"{key}_slider_widget",
+            on_change=sync_from_slider,
+            args=(key,),
+            label_visibility="collapsed"
+        )
+
+    with col_number:
+        st.number_input(
+            label=f"{label} value",
+            min_value=float(min_value),
+            max_value=float(max_value),
+            step=float(step),
+            key=f"{key}_number_widget",
+            on_change=sync_from_number,
+            args=(key,),
+            label_visibility="collapsed"
+        )
+
+    st.session_state[key] = float(st.session_state[f"{key}_number_widget"])
+    return float(st.session_state[key])
+
+
+def make_zip_from_signal_files(files, manifest):
     zip_buf = io.BytesIO()
 
     with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
@@ -307,10 +370,10 @@ if not user_projects.empty:
 
             settings = loaded.get("settings", {})
 
-            st.session_state.base_f_slider = float(settings.get("base_f", 50.0))
-            st.session_state.harm_r_slider = float(settings.get("harm_r", 0.0))
-            st.session_state.imp_r_slider = float(settings.get("imp_r", 0.0))
-            st.session_state.noise_l_slider = float(settings.get("noise_l", 0.1))
+            set_param_value("base_f_slider", float(settings.get("base_f", 50.0)))
+            set_param_value("harm_r_slider", float(settings.get("harm_r", 0.0)))
+            set_param_value("imp_r_slider", float(settings.get("imp_r", 0.0)))
+            set_param_value("noise_l_slider", float(settings.get("noise_l", 0.1)))
 
             st.sidebar.success(f"Loaded {loaded['name']}")
             st.rerun()
@@ -330,35 +393,39 @@ current_class = st.sidebar.text_input(
     "Baseline_Normal"
 )
 
-base_f = st.sidebar.slider(
-    "Base Freq (Hz)",
-    0.0,
-    1000.0,
-    st.session_state.get("base_f_slider", 50.0),
+base_f = sidebar_slider_with_number(
+    label="Base Freq (Hz)",
+    min_value=0.0,
+    max_value=1000.0,
+    default_value=50.0,
+    step=1.0,
     key="base_f_slider"
 )
 
-harm_r = st.sidebar.slider(
-    "Harmonics",
-    0.0,
-    2.0,
-    st.session_state.get("harm_r_slider", 0.0),
+harm_r = sidebar_slider_with_number(
+    label="Harmonics",
+    min_value=0.0,
+    max_value=2.0,
+    default_value=0.0,
+    step=0.01,
     key="harm_r_slider"
 )
 
-imp_r = st.sidebar.slider(
-    "Impacts (Hz)",
-    0.0,
-    50.0,
-    st.session_state.get("imp_r_slider", 0.0),
+imp_r = sidebar_slider_with_number(
+    label="Impacts (Hz)",
+    min_value=0.0,
+    max_value=50.0,
+    default_value=0.0,
+    step=0.1,
     key="imp_r_slider"
 )
 
-noise_l = st.sidebar.slider(
-    "Noise",
-    0.0,
-    1.0,
-    st.session_state.get("noise_l_slider", 0.1),
+noise_l = sidebar_slider_with_number(
+    label="Noise",
+    min_value=0.0,
+    max_value=1.0,
+    default_value=0.1,
+    step=0.01,
     key="noise_l_slider"
 )
 
@@ -729,10 +796,10 @@ with tab4:
             c_s4.metric("Noise Estimate", f"{phys['noise']:.3f}")
 
             if st.button("🔄 Sync Sliders", type="primary"):
-                st.session_state.base_f_slider = float(np.clip(phys["base_f"], 0.0, 1000.0))
-                st.session_state.harm_r_slider = float(np.clip(phys["harm_r"], 0.0, 2.0))
-                st.session_state.imp_r_slider = float(np.clip(phys["imp_r"], 0.0, 50.0))
-                st.session_state.noise_l_slider = float(np.clip(phys["noise"], 0.0, 1.0))
+                set_param_value("base_f_slider", float(np.clip(phys["base_f"], 0.0, 1000.0)))
+                set_param_value("harm_r_slider", float(np.clip(phys["harm_r"], 0.0, 2.0)))
+                set_param_value("imp_r_slider", float(np.clip(phys["imp_r"], 0.0, 50.0)))
+                set_param_value("noise_l_slider", float(np.clip(phys["noise"], 0.0, 1.0)))
                 st.rerun()
 
         except Exception as e:
