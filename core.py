@@ -14,10 +14,11 @@ import datetime
 import uuid
 import bcrypt
 import secrets
+import zipfile
 
 
 # ============================================================
-# DATABASE ENGINE - V17 SAAS FOUNDATION
+# DATABASE ENGINE - V17.1 SAAS FOUNDATION
 # ============================================================
 
 DB_NAME = "omega_v16.db"
@@ -423,7 +424,7 @@ def generate_universal_signal(duration, sr, base_f, harm_r, imp_r, noise_l, norm
 
 
 # ============================================================
-# EXPANDED HARDWARE PROFILER - V17
+# EXPANDED HARDWARE PROFILER - V17.1
 # ============================================================
 
 HARDWARE_PROFILES = {
@@ -1088,7 +1089,7 @@ def generate_predictive_maintenance_aging_dataset(base_params, samples_per_stage
 
 
 # ============================================================
-# SENSOR FUSION STUDIO - V17
+# SENSOR FUSION STUDIO - V17.1
 # ============================================================
 
 FUSION_TEMPLATES = {
@@ -1248,19 +1249,8 @@ def calculate_fusion_score(
         else:
             event = "Critical failure risk"
             action = "Immediate maintenance recommended."
-
-        result = {
-            "mode": mode,
-            "fusion_score": raw_score,
-            "health_score": health_score,
-            "confidence": confidence,
-            "level": level,
-            "event": event,
-            "recommended_action": action,
-            "sensor_values": sensor_values,
-            "weights": weights,
-        }
     else:
+        health_score = float(np.clip(100.0 - raw_score, 0, 100))
         if raw_score < 20:
             event = "Normal"
             action = "No action required."
@@ -1274,19 +1264,17 @@ def calculate_fusion_score(
             event = "Critical threat"
             action = "Immediate response recommended."
 
-        result = {
-            "mode": mode,
-            "fusion_score": raw_score,
-            "health_score": float(np.clip(100.0 - raw_score, 0, 100)),
-            "confidence": confidence,
-            "level": level,
-            "event": event,
-            "recommended_action": action,
-            "sensor_values": sensor_values,
-            "weights": weights,
-        }
-
-    return result
+    return {
+        "mode": mode,
+        "fusion_score": raw_score,
+        "health_score": health_score,
+        "confidence": confidence,
+        "level": level,
+        "event": event,
+        "recommended_action": action,
+        "sensor_values": sensor_values,
+        "weights": weights,
+    }
 
 
 def fusion_label_from_score(score, template_name):
@@ -1297,11 +1285,25 @@ def fusion_label_from_score(score, template_name):
         return "Unknown"
 
     score = float(np.clip(score, 0, 100))
-
     idx = int(np.floor((score / 100.0) * len(classes)))
     idx = min(max(idx, 0), len(classes) - 1)
 
     return classes[idx]
+
+
+def fusion_score_target_for_label(label, classes):
+    if label not in classes:
+        return 50.0
+
+    idx = classes.index(label)
+
+    if len(classes) <= 1:
+        return 50.0
+
+    low = (idx / len(classes)) * 100
+    high = ((idx + 1) / len(classes)) * 100
+
+    return float((low + high) / 2.0)
 
 
 def generate_sensor_fusion_sample(
@@ -1350,6 +1352,27 @@ def generate_sensor_fusion_sample(
     return row
 
 
+def generate_balanced_sensor_values_for_target(template_name, target_score):
+    template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
+    weights = template["weights"]
+
+    audio_w = weights.get("audio", 0.2)
+    vibration_w = weights.get("vibration", 0.2)
+    gas_w = weights.get("gas", 0.2)
+    radar_w = weights.get("radar", 0.2)
+    gps_w = weights.get("gps", 0.2)
+
+    base = float(np.clip(target_score, 0, 100))
+
+    audio = np.clip(base + np.random.normal(0, 12) + audio_w * 15, 0, 100)
+    vibration = np.clip(base + np.random.normal(0, 12) + vibration_w * 15, 0, 100)
+    gas = np.clip(base + np.random.normal(0, 10) + gas_w * 10, 0, 100)
+    radar = np.clip(base + np.random.normal(0, 13) + radar_w * 15, 0, 100)
+    gps = np.clip(base + np.random.normal(0, 10) + gps_w * 10, 0, 100)
+
+    return audio, vibration, gas, radar, gps
+
+
 def generate_sensor_fusion_dataset(
     template_name,
     samples=500,
@@ -1358,11 +1381,13 @@ def generate_sensor_fusion_dataset(
     base_gas=20,
     base_radar=50,
     base_gps=50,
-    include_scenario_variants=True
+    include_scenario_variants=True,
+    balanced_classes=True
 ):
     rows = []
 
     template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
+    classes = template.get("classes", ["Normal", "Elevated", "High", "Critical"])
     defaults = template.get("defaults", {})
 
     base_audio = defaults.get("audio", base_audio)
@@ -1371,33 +1396,31 @@ def generate_sensor_fusion_dataset(
     base_radar = defaults.get("radar", base_radar)
     base_gps = defaults.get("gps", base_gps)
 
-    for _ in range(int(samples)):
-        if include_scenario_variants:
-            scenario_shift = np.random.choice(["normal", "medium", "high", "critical"], p=[0.30, 0.30, 0.25, 0.15])
+    samples = int(samples)
 
-            if scenario_shift == "normal":
-                multiplier = np.random.uniform(0.10, 0.35)
-            elif scenario_shift == "medium":
-                multiplier = np.random.uniform(0.35, 0.65)
-            elif scenario_shift == "high":
-                multiplier = np.random.uniform(0.65, 0.90)
-            else:
-                multiplier = np.random.uniform(0.90, 1.15)
+    if balanced_classes and classes:
+        per_class = max(1, samples // len(classes))
+        remainder = samples - (per_class * len(classes))
 
-            audio = np.clip(base_audio * multiplier + np.random.normal(0, 8), 0, 100)
-            vibration = np.clip(base_vibration * multiplier + np.random.normal(0, 8), 0, 100)
-            gas = np.clip(base_gas * multiplier + np.random.normal(0, 6), 0, 100)
-            radar = np.clip(base_radar * multiplier + np.random.normal(0, 10), 0, 100)
-            gps = np.clip(base_gps * multiplier + np.random.normal(0, 6), 0, 100)
-        else:
-            audio = base_audio
-            vibration = base_vibration
-            gas = base_gas
-            radar = base_radar
-            gps = base_gps
+        label_plan = []
 
-        rows.append(
-            generate_sensor_fusion_sample(
+        for label in classes:
+            label_plan.extend([label] * per_class)
+
+        if remainder > 0:
+            label_plan.extend(list(np.random.choice(classes, size=remainder, replace=True)))
+
+        np.random.shuffle(label_plan)
+
+        for label in label_plan:
+            target_score = fusion_score_target_for_label(label, classes)
+
+            audio, vibration, gas, radar, gps = generate_balanced_sensor_values_for_target(
+                template_name,
+                target_score
+            )
+
+            row = generate_sensor_fusion_sample(
                 template_name=template_name,
                 audio_score=audio,
                 vibration_score=vibration,
@@ -1406,20 +1429,307 @@ def generate_sensor_fusion_dataset(
                 gps_score=gps,
                 jitter=True
             )
-        )
+
+            row["Label"] = label
+            rows.append(row)
+
+    else:
+        for _ in range(samples):
+            if include_scenario_variants:
+                scenario_shift = np.random.choice(
+                    ["normal", "medium", "high", "critical"],
+                    p=[0.25, 0.30, 0.25, 0.20]
+                )
+
+                if scenario_shift == "normal":
+                    multiplier = np.random.uniform(0.10, 0.35)
+                elif scenario_shift == "medium":
+                    multiplier = np.random.uniform(0.35, 0.65)
+                elif scenario_shift == "high":
+                    multiplier = np.random.uniform(0.65, 0.90)
+                else:
+                    multiplier = np.random.uniform(0.90, 1.15)
+
+                audio = np.clip(base_audio * multiplier + np.random.normal(0, 8), 0, 100)
+                vibration = np.clip(base_vibration * multiplier + np.random.normal(0, 8), 0, 100)
+                gas = np.clip(base_gas * multiplier + np.random.normal(0, 6), 0, 100)
+                radar = np.clip(base_radar * multiplier + np.random.normal(0, 10), 0, 100)
+                gps = np.clip(base_gps * multiplier + np.random.normal(0, 6), 0, 100)
+            else:
+                audio = base_audio
+                vibration = base_vibration
+                gas = base_gas
+                radar = base_radar
+                gps = base_gps
+
+            rows.append(
+                generate_sensor_fusion_sample(
+                    template_name=template_name,
+                    audio_score=audio,
+                    vibration_score=vibration,
+                    gas_score=gas,
+                    radar_score=radar,
+                    gps_score=gps,
+                    jitter=True
+                )
+            )
 
     df = pd.DataFrame(rows)
 
     manifest = {
-        "engine": "OMEGA-X Sensor Fusion Studio",
+        "engine": "OMEGA-X Sensor Fusion Studio V17.1",
         "template": template_name,
         "description": template.get("description", ""),
         "samples": int(samples),
+        "balanced_classes": bool(balanced_classes),
         "sensors": ["audio", "vibration", "gas", "radar", "gps"],
         "columns": list(df.columns),
+        "recommended_training_features": get_fusion_training_columns(template_name),
     }
 
     return df, manifest
+
+
+def get_fusion_training_columns(template_name=None):
+    template = get_fusion_template(template_name) if template_name else None
+    mode = template.get("mode", "threat") if template else "threat"
+
+    base_cols = [
+        "Label",
+        "AudioScore",
+        "VibrationScore",
+        "GasScore",
+        "RadarScore",
+        "GPSZoneScore",
+        "Confidence",
+    ]
+
+    if mode == "health":
+        base_cols.append("HealthScore")
+    else:
+        base_cols.append("FusionScore")
+
+    return base_cols
+
+
+def create_fusion_training_dataframe(fusion_df, template_name=None):
+    cols = get_fusion_training_columns(template_name)
+    available = [c for c in cols if c in fusion_df.columns]
+
+    return fusion_df[available].copy()
+
+
+def fusion_dataset_doctor(fusion_df, template_name=None):
+    advice = []
+    severity = []
+
+    if fusion_df is None or len(fusion_df) == 0:
+        return {
+            "overall_score": 0,
+            "advice": [{"severity": "high", "message": "Geen fusion dataset aanwezig."}],
+        }
+
+    df = fusion_df.copy()
+
+    if "Label" not in df.columns:
+        return {
+            "overall_score": 0,
+            "advice": [{"severity": "high", "message": "Fusion dataset mist een Label-kolom."}],
+        }
+
+    template = get_fusion_template(template_name) if template_name else None
+    mode = template.get("mode", "threat") if template else "threat"
+
+    label_counts = df["Label"].value_counts()
+    min_count = int(label_counts.min()) if len(label_counts) else 0
+    max_count = int(label_counts.max()) if len(label_counts) else 0
+
+    if len(label_counts) < 2:
+        advice.append("Fusion dataset heeft maar één klasse. Genereer balanced classes voor ML-training.")
+        severity.append("high")
+    elif max_count > 0 and min_count / max_count < 0.65:
+        weak_label = label_counts.idxmin()
+        advice.append(f"Klasse '{weak_label}' heeft relatief weinig samples. Gebruik balanced generation of verhoog sample count.")
+        severity.append("high")
+    else:
+        advice.append("Class balance ziet er goed uit voor fusion training.")
+        severity.append("info")
+
+    if "FusionScore" in df.columns and "HealthScore" in df.columns:
+        advice.append(
+            "FusionScore en HealthScore zijn logisch gekoppeld. Gebruik voor threat/security modellen meestal FusionScore; "
+            "gebruik voor predictive-maintenance modellen meestal HealthScore."
+        )
+        severity.append("info")
+
+    if mode == "health":
+        if "HealthScore" not in df.columns:
+            advice.append("Health-mode geselecteerd, maar HealthScore ontbreekt.")
+            severity.append("high")
+        else:
+            advice.append("Health-mode: HealthScore is de beste target/feature voor maintenance interpretatie.")
+            severity.append("info")
+    else:
+        if "FusionScore" not in df.columns:
+            advice.append("Threat/environment-mode geselecteerd, maar FusionScore ontbreekt.")
+            severity.append("high")
+        else:
+            advice.append("Threat/environment-mode: FusionScore is de belangrijkste samenvattende feature.")
+            severity.append("info")
+
+    sensor_cols = [
+        "AudioScore",
+        "VibrationScore",
+        "GasScore",
+        "RadarScore",
+        "GPSZoneScore",
+    ]
+
+    missing_sensors = [c for c in sensor_cols if c not in df.columns]
+
+    if missing_sensors:
+        advice.append(f"Ontbrekende sensor-kolommen: {', '.join(missing_sensors)}.")
+        severity.append("high")
+    else:
+        sensor_std = df[sensor_cols].std(numeric_only=True)
+        low_variance = sensor_std[sensor_std < 3.0].index.tolist()
+
+        if low_variance:
+            advice.append(f"Lage sensor-variatie bij: {', '.join(low_variance)}. Voeg scenario-jitter toe.")
+            severity.append("medium")
+        else:
+            advice.append("Sensorvariatie ziet er gezond uit.")
+            severity.append("info")
+
+    training_df = create_fusion_training_dataframe(df, template_name)
+
+    numeric_cols = [c for c in training_df.columns if c != "Label"]
+
+    if len(numeric_cols) >= 2 and len(df["Label"].unique()) >= 2:
+        try:
+            div, bal, sep = calculate_audit_scores(training_df[numeric_cols], training_df["Label"])
+        except Exception:
+            div, bal, sep = 0, 0, 0
+    else:
+        div, bal, sep = 0, 0, 0
+
+    if sep < 50 and len(df["Label"].unique()) >= 2:
+        advice.append("Fusion label separation is laag. Verhoog afstand tussen scenario scores of gebruik balanced generation.")
+        severity.append("high")
+    elif sep < 75 and len(df["Label"].unique()) >= 2:
+        advice.append("Fusion label separation is middelmatig. Extra sensorvariatie of scherpere scenario templates kunnen helpen.")
+        severity.append("medium")
+    else:
+        advice.append("Fusion label separation is bruikbaar tot goed.")
+        severity.append("info")
+
+    score = int((div * 0.30) + (bal * 0.30) + (sep * 0.40))
+
+    return {
+        "diversity_score": div,
+        "balance_score": bal,
+        "separation_score": sep,
+        "overall_score": score,
+        "label_counts": label_counts.to_dict(),
+        "recommended_training_features": get_fusion_training_columns(template_name),
+        "advice": [{"severity": s, "message": a} for s, a in zip(severity, advice)],
+    }
+
+
+def generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor):
+    pdf = FPDF()
+    pdf.add_page()
+
+    template_name = manifest.get("template", "Unknown")
+    description = manifest.get("description", "")
+    samples = manifest.get("samples", len(fusion_df))
+
+    pdf.set_font("Arial", "B", 18)
+    pdf.cell(200, 10, txt="OMEGA-X Sensor Fusion Report", ln=True, align="C")
+
+    pdf.set_font("Arial", "I", 11)
+    pdf.cell(200, 8, txt=f"Project: {project_name}", ln=True, align="C")
+    pdf.cell(200, 8, txt=f"Template: {template_name}", ln=True, align="C")
+
+    pdf.ln(8)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(200, 8, txt="Scenario Summary", ln=True)
+
+    pdf.set_font("Arial", "", 10)
+    pdf.multi_cell(0, 6, txt=f"Description: {description}")
+    pdf.cell(200, 7, txt=f"Total samples: {samples}", ln=True)
+    pdf.cell(200, 7, txt=f"Balanced classes: {manifest.get('balanced_classes', False)}", ln=True)
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(200, 8, txt="Fusion Dataset Scores", ln=True)
+
+    pdf.set_font("Arial", "", 10)
+    pdf.cell(200, 7, txt=f"Diversity: {doctor.get('diversity_score', 0)}%", ln=True)
+    pdf.cell(200, 7, txt=f"Balance: {doctor.get('balance_score', 0)}%", ln=True)
+    pdf.cell(200, 7, txt=f"Separation: {doctor.get('separation_score', 0)}%", ln=True)
+    pdf.cell(200, 7, txt=f"Overall: {doctor.get('overall_score', 0)}%", ln=True)
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(200, 8, txt="Label Distribution", ln=True)
+
+    pdf.set_font("Arial", "", 10)
+
+    label_counts = doctor.get("label_counts", {})
+
+    for label, count in label_counts.items():
+        pdf.cell(200, 6, txt=f"- {label}: {count}", ln=True)
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(200, 8, txt="Recommended Training Features", ln=True)
+
+    pdf.set_font("Arial", "", 10)
+
+    for col in doctor.get("recommended_training_features", []):
+        pdf.cell(200, 6, txt=f"- {col}", ln=True)
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(200, 8, txt="Fusion-Aware Dataset Doctor Advice", ln=True)
+
+    pdf.set_font("Arial", "", 10)
+
+    for item in doctor.get("advice", []):
+        msg = item.get("message", "")
+        sev = item.get("severity", "info")
+        pdf.multi_cell(0, 6, txt=f"[{sev.upper()}] {msg}")
+
+    return pdf.output(dest="S").encode("latin1")
+
+
+def create_sensor_fusion_export_bundle(project_name, fusion_df, manifest):
+    template_name = manifest.get("template")
+    doctor = fusion_dataset_doctor(fusion_df, template_name)
+    training_df = create_fusion_training_dataframe(fusion_df, template_name)
+    pdf_bytes = generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor)
+
+    bundle_manifest = dict(manifest)
+    bundle_manifest["doctor"] = doctor
+    bundle_manifest["training_file"] = "sensor_fusion_training_features.csv"
+    bundle_manifest["full_dataset_file"] = "sensor_fusion_full_dataset.csv"
+    bundle_manifest["report_file"] = "fusion_report.pdf"
+
+    zip_buf = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("sensor_fusion_full_dataset.csv", fusion_df.to_csv(index=False))
+        zf.writestr("sensor_fusion_training_features.csv", training_df.to_csv(index=False))
+        zf.writestr("manifest.json", json.dumps(bundle_manifest, indent=2))
+        zf.writestr("fusion_report.pdf", pdf_bytes)
+
+    return zip_buf.getvalue(), doctor, training_df
 
 
 # ============================================================
@@ -1465,6 +1775,9 @@ def dataset_doctor(X_df, y_series, feature_importance=None):
     div, bal, sep = calculate_audit_scores(X_df, y_series)
     label_counts = y_series.value_counts()
 
+    fusion_cols = {"AudioScore", "VibrationScore", "GasScore", "RadarScore", "GPSZoneScore", "FusionScore", "HealthScore", "Confidence"}
+    is_fusion_dataset = len(fusion_cols.intersection(set(X_df.columns))) >= 4
+
     if len(X_df) < 50:
         advice.append("Dataset is erg klein. Voeg minimaal 50-100 samples toe voor een betrouwbare eerste test.")
         severity.append("high")
@@ -1495,6 +1808,13 @@ def dataset_doctor(X_df, y_series, feature_importance=None):
             advice.append("Label separation is middelmatig. Extra onderscheidende features kunnen helpen.")
             severity.append("medium")
 
+    if is_fusion_dataset and "FusionScore" in X_df.columns and "HealthScore" in X_df.columns:
+        advice.append(
+            "FusionScore en HealthScore zijn bewust gekoppeld. Gebruik voor threat/security modellen FusionScore; "
+            "gebruik voor predictive-maintenance modellen HealthScore. Eén van beide kan vaak uit training_features worden gehouden."
+        )
+        severity.append("info")
+
     for col in X_df.columns:
         std = X_df[col].std()
         mean = X_df[col].mean()
@@ -1512,8 +1832,14 @@ def dataset_doctor(X_df, y_series, feature_importance=None):
         redundant = [column for column in upper.columns if any(upper[column] > 0.95)]
 
         if redundant:
-            advice.append(f"Redundante features gevonden: {', '.join(redundant)}. Overweeg pruning voor lagere latency.")
-            severity.append("medium")
+            if is_fusion_dataset and ("FusionScore" in redundant or "HealthScore" in redundant):
+                advice.append(
+                    "Redundantie in fusion features is deels normaal. Exporteer training_features.csv om alleen de juiste fusion-feature te gebruiken."
+                )
+                severity.append("info")
+            else:
+                advice.append(f"Redundante features gevonden: {', '.join(redundant)}. Overweeg pruning voor lagere latency.")
+                severity.append("medium")
 
     if feature_importance:
         weak_features = [f for f, s in feature_importance if s <= 0.1]
