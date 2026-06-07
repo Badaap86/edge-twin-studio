@@ -19,12 +19,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
 
 
+DB_NAME = "omega_v16.db"
+
+
 # ============================================================
 # DATABASE
 # ============================================================
-
-DB_NAME = "omega_v16.db"
-
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -71,6 +71,7 @@ def create_user(username, password):
     try:
         user_id = str(uuid.uuid4())
         api_key = "omg_" + secrets.token_hex(16)
+
         password_hash = bcrypt.hashpw(
             password.encode("utf-8"),
             bcrypt.gensalt()
@@ -1507,6 +1508,42 @@ def create_fusion_training_dataframe(fusion_df, template_name=None):
     return fusion_df[available].copy()
 
 
+# ============================================================
+# AUDIT
+# ============================================================
+
+def calculate_audit_scores(X_df, y_series):
+    if len(X_df) == 0:
+        return 0, 0, 0
+
+    v_c = y_series.value_counts()
+
+    try:
+        X_scaled = StandardScaler().fit_transform(X_df)
+    except Exception:
+        return 0, 0, 0
+
+    if len(X_scaled) > 1:
+        div = min(100, int((np.mean(pdist(X_scaled)) / 4.0) * 100))
+    else:
+        div = 0
+
+    if len(v_c) >= 2 and v_c.max() > 0 and (v_c.min() / v_c.max()) > 0.5:
+        bal = 100
+    else:
+        bal = 50
+
+    if len(y_series.unique()) >= 2 and v_c.min() >= 2:
+        try:
+            sep = int((silhouette_score(X_scaled, y_series) + 1) * 50)
+        except Exception:
+            sep = 0
+    else:
+        sep = 0
+
+    return div, bal, sep
+
+
 def fusion_dataset_doctor(fusion_df, template_name=None):
     advice = []
     severity = []
@@ -1614,179 +1651,6 @@ def fusion_dataset_doctor(fusion_df, template_name=None):
     }
 
 
-# ============================================================
-# PDF HELPERS - SAFE FPDF
-# ============================================================
-
-def clean_pdf_text(value):
-    text = str(value)
-
-    replacements = {
-        "—": "-",
-        "–": "-",
-        "•": "-",
-        "“": '"',
-        "”": '"',
-        "‘": "'",
-        "’": "'",
-        "→": "->",
-        "✅": "",
-        "⚠️": "",
-        "❌": "",
-        "🧩": "",
-        "🩺": "",
-        "_": " "
-    }
-
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-
-    return text.encode("latin-1", errors="ignore").decode("latin-1")
-
-
-def safe_pdf_cell(pdf, text, height=7):
-    text = clean_pdf_text(text)
-    pdf.set_x(10)
-    pdf.cell(190, height, txt=text[:120], ln=True)
-
-
-def safe_pdf_multicell(pdf, text, height=6):
-    text = clean_pdf_text(text)
-    pdf.set_x(10)
-    pdf.multi_cell(190, height, txt=text)
-
-
-def generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-
-    template_name = manifest.get("template", "Unknown")
-    description = manifest.get("description", "")
-    samples = manifest.get("samples", len(fusion_df))
-
-    pdf.set_font("Arial", "B", 18)
-    pdf.cell(0, 10, txt="OMEGA-X Sensor Fusion Report", ln=True, align="C")
-
-    pdf.set_font("Arial", "I", 11)
-    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
-    pdf.cell(0, 8, txt=clean_pdf_text(f"Template: {template_name}"), ln=True, align="C")
-
-    pdf.ln(8)
-
-    pdf.set_font("Arial", "B", 13)
-    safe_pdf_cell(pdf, "Scenario Summary", height=8)
-
-    pdf.set_font("Arial", "", 10)
-    safe_pdf_multicell(pdf, f"Description: {description}")
-    safe_pdf_cell(pdf, f"Total samples: {samples}")
-    safe_pdf_cell(pdf, f"Balanced classes: {manifest.get('balanced_classes', False)}")
-
-    pdf.ln(5)
-
-    pdf.set_font("Arial", "B", 13)
-    safe_pdf_cell(pdf, "Fusion Dataset Scores", height=8)
-
-    pdf.set_font("Arial", "", 10)
-    safe_pdf_cell(pdf, f"Diversity: {doctor.get('diversity_score', 0)}%")
-    safe_pdf_cell(pdf, f"Balance: {doctor.get('balance_score', 0)}%")
-    safe_pdf_cell(pdf, f"Separation: {doctor.get('separation_score', 0)}%")
-    safe_pdf_cell(pdf, f"Overall: {doctor.get('overall_score', 0)}%")
-
-    pdf.ln(5)
-
-    pdf.set_font("Arial", "B", 13)
-    safe_pdf_cell(pdf, "Label Distribution", height=8)
-
-    pdf.set_font("Arial", "", 10)
-
-    for label, count in doctor.get("label_counts", {}).items():
-        safe_pdf_cell(pdf, f"- {label}: {count}")
-
-    pdf.ln(5)
-
-    pdf.set_font("Arial", "B", 13)
-    safe_pdf_cell(pdf, "Recommended Training Features", height=8)
-
-    pdf.set_font("Arial", "", 10)
-
-    for col in doctor.get("recommended_training_features", []):
-        safe_pdf_cell(pdf, f"- {col}")
-
-    pdf.ln(5)
-
-    pdf.set_font("Arial", "B", 13)
-    safe_pdf_cell(pdf, "Fusion-Aware Dataset Doctor Advice", height=8)
-
-    pdf.set_font("Arial", "", 10)
-
-    for item in doctor.get("advice", []):
-        msg = item.get("message", "")
-        sev = item.get("severity", "info")
-        safe_pdf_multicell(pdf, f"[{sev.upper()}] {msg}")
-
-    return pdf.output(dest="S").encode("latin1", errors="ignore")
-
-
-def create_sensor_fusion_export_bundle(project_name, fusion_df, manifest):
-    template_name = manifest.get("template")
-    doctor = fusion_dataset_doctor(fusion_df, template_name)
-    training_df = create_fusion_training_dataframe(fusion_df, template_name)
-    pdf_bytes = generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor)
-
-    bundle_manifest = dict(manifest)
-    bundle_manifest["doctor"] = doctor
-    bundle_manifest["training_file"] = "sensor_fusion_training_features.csv"
-    bundle_manifest["full_dataset_file"] = "sensor_fusion_full_dataset.csv"
-    bundle_manifest["report_file"] = "fusion_report.pdf"
-
-    zip_buf = io.BytesIO()
-
-    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("sensor_fusion_full_dataset.csv", fusion_df.to_csv(index=False))
-        zf.writestr("sensor_fusion_training_features.csv", training_df.to_csv(index=False))
-        zf.writestr("manifest.json", json.dumps(bundle_manifest, indent=2))
-        zf.writestr("fusion_report.pdf", pdf_bytes)
-
-    return zip_buf.getvalue(), doctor, training_df
-
-
-# ============================================================
-# ML AUDIT
-# ============================================================
-
-def calculate_audit_scores(X_df, y_series):
-    if len(X_df) == 0:
-        return 0, 0, 0
-
-    v_c = y_series.value_counts()
-
-    try:
-        X_scaled = StandardScaler().fit_transform(X_df)
-    except Exception:
-        return 0, 0, 0
-
-    if len(X_scaled) > 1:
-        div = min(100, int((np.mean(pdist(X_scaled)) / 4.0) * 100))
-    else:
-        div = 0
-
-    if len(v_c) >= 2 and v_c.max() > 0 and (v_c.min() / v_c.max()) > 0.5:
-        bal = 100
-    else:
-        bal = 50
-
-    if len(y_series.unique()) >= 2 and v_c.min() >= 2:
-        try:
-            sep = int((silhouette_score(X_scaled, y_series) + 1) * 50)
-        except Exception:
-            sep = 0
-    else:
-        sep = 0
-
-    return div, bal, sep
-
-
 def dataset_doctor(X_df, y_series, feature_importance=None):
     advice = []
     severity = []
@@ -1889,6 +1753,155 @@ def dataset_doctor(X_df, y_series, feature_importance=None):
     }
 
 
+# ============================================================
+# PDF SAFE HELPERS
+# ============================================================
+
+def clean_pdf_text(value):
+    text = str(value)
+
+    replacements = {
+        "—": "-",
+        "–": "-",
+        "•": "-",
+        "“": '"',
+        "”": '"',
+        "‘": "'",
+        "’": "'",
+        "→": "->",
+        "✅": "",
+        "⚠️": "",
+        "❌": "",
+        "🧩": "",
+        "🩺": "",
+        "_": " "
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+
+    return text.encode("latin-1", errors="ignore").decode("latin-1")
+
+
+def safe_pdf_output(pdf):
+    out = pdf.output(dest="S")
+
+    if isinstance(out, bytes):
+        return out
+
+    if isinstance(out, bytearray):
+        return bytes(out)
+
+    return str(out).encode("latin1", errors="ignore")
+
+
+def safe_pdf_cell(pdf, text, height=7):
+    text = clean_pdf_text(text)
+    pdf.set_x(10)
+    pdf.cell(190, height, txt=text[:120], ln=True)
+
+
+def safe_pdf_multicell(pdf, text, height=6):
+    text = clean_pdf_text(text)
+    pdf.set_x(10)
+    pdf.multi_cell(190, height, txt=text)
+
+
+def generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    template_name = manifest.get("template", "Unknown")
+    description = manifest.get("description", "")
+    samples = manifest.get("samples", len(fusion_df))
+
+    pdf.set_font("Arial", "B", 18)
+    pdf.cell(0, 10, txt="OMEGA-X Sensor Fusion Report", ln=True, align="C")
+
+    pdf.set_font("Arial", "I", 11)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Template: {template_name}"), ln=True, align="C")
+
+    pdf.ln(8)
+
+    pdf.set_font("Arial", "B", 13)
+    safe_pdf_cell(pdf, "Scenario Summary", height=8)
+
+    pdf.set_font("Arial", "", 10)
+    safe_pdf_multicell(pdf, f"Description: {description}")
+    safe_pdf_cell(pdf, f"Total samples: {samples}")
+    safe_pdf_cell(pdf, f"Balanced classes: {manifest.get('balanced_classes', False)}")
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    safe_pdf_cell(pdf, "Fusion Dataset Scores", height=8)
+
+    pdf.set_font("Arial", "", 10)
+    safe_pdf_cell(pdf, f"Diversity: {doctor.get('diversity_score', 0)}%")
+    safe_pdf_cell(pdf, f"Balance: {doctor.get('balance_score', 0)}%")
+    safe_pdf_cell(pdf, f"Separation: {doctor.get('separation_score', 0)}%")
+    safe_pdf_cell(pdf, f"Overall: {doctor.get('overall_score', 0)}%")
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    safe_pdf_cell(pdf, "Label Distribution", height=8)
+
+    pdf.set_font("Arial", "", 10)
+
+    for label, count in doctor.get("label_counts", {}).items():
+        safe_pdf_cell(pdf, f"- {label}: {count}")
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    safe_pdf_cell(pdf, "Recommended Training Features", height=8)
+
+    pdf.set_font("Arial", "", 10)
+
+    for col in doctor.get("recommended_training_features", []):
+        safe_pdf_cell(pdf, f"- {col}")
+
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 13)
+    safe_pdf_cell(pdf, "Fusion-Aware Dataset Doctor Advice", height=8)
+
+    pdf.set_font("Arial", "", 10)
+
+    for item in doctor.get("advice", []):
+        msg = item.get("message", "")
+        sev = item.get("severity", "info")
+        safe_pdf_multicell(pdf, f"[{sev.upper()}] {msg}")
+
+    return safe_pdf_output(pdf)
+
+
+def create_sensor_fusion_export_bundle(project_name, fusion_df, manifest):
+    template_name = manifest.get("template")
+    doctor = fusion_dataset_doctor(fusion_df, template_name)
+    training_df = create_fusion_training_dataframe(fusion_df, template_name)
+    pdf_bytes = generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor)
+
+    bundle_manifest = dict(manifest)
+    bundle_manifest["doctor"] = doctor
+    bundle_manifest["training_file"] = "sensor_fusion_training_features.csv"
+    bundle_manifest["full_dataset_file"] = "sensor_fusion_full_dataset.csv"
+    bundle_manifest["report_file"] = "fusion_report.pdf"
+
+    zip_buf = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("sensor_fusion_full_dataset.csv", fusion_df.to_csv(index=False))
+        zf.writestr("sensor_fusion_training_features.csv", training_df.to_csv(index=False))
+        zf.writestr("manifest.json", json.dumps(bundle_manifest, indent=2))
+        zf.writestr("fusion_report.pdf", pdf_bytes)
+
+    return zip_buf.getvalue(), doctor, training_df
+
+
 def generate_pdf_report(proj_name, num_samples, num_classes, div, bal, sep, top_features, b_dat, best_board):
     pdf = FPDF()
     pdf.add_page()
@@ -1937,4 +1950,4 @@ def generate_pdf_report(proj_name, num_samples, num_classes, div, bal, sep, top_
             f"- {d['Board']}: Score {d['Score']:.0f}% | Latency: {d['Latency']:.1f} ms | RAM: {d.get('RAM', 0):.1f} KB"
         )
 
-    return pdf.output(dest="S").encode("latin1", errors="ignore")
+    return safe_pdf_output(pdf)
