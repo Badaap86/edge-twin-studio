@@ -17,7 +17,7 @@ import secrets
 
 
 # ============================================================
-# DATABASE ENGINE - V16 SAAS FOUNDATION
+# DATABASE ENGINE - V16.1 SAAS FOUNDATION
 # ============================================================
 
 DB_NAME = "omega_v16.db"
@@ -423,37 +423,207 @@ def generate_universal_signal(duration, sr, base_f, harm_r, imp_r, noise_l, norm
 
 
 # ============================================================
-# HARDWARE PROFILER
+# EXPANDED HARDWARE PROFILER - V16.1
 # ============================================================
 
 HARDWARE_PROFILES = {
-    "Xtensa LX7 (ESP32-S3)": {
+    "ESP32-S3": {
+        "cpu": "Xtensa LX7 dual-core",
+        "role": "Edge AI Node",
+        "power_class": "Medium",
         "fft_mult": 0.00008,
-        "feat_mult": 0.2,
-        "inf_mult": 1.5,
+        "feat_mult": 0.20,
+        "inf_mult": 1.50,
         "target_ram": 320,
-        "notes": "Sterk voor audio en TinyML. Goede keuze voor snelle inference.",
+        "recommended_for": "Audio TinyML, vibration classification, WiFi/BLE edge nodes.",
+        "gateway_fit": "No",
     },
-    "ARM Cortex-M4F (RAK4631)": {
+    "ESP32-P4": {
+        "cpu": "RISC-V high-performance MCU",
+        "role": "High-performance Edge AI Node",
+        "power_class": "Medium",
+        "fft_mult": 0.000045,
+        "feat_mult": 0.12,
+        "inf_mult": 1.00,
+        "target_ram": 768,
+        "recommended_for": "Heavy TinyML, higher sample rates, camera/audio edge intelligence.",
+        "gateway_fit": "Limited",
+    },
+    "ESP32-C6": {
+        "cpu": "RISC-V WiFi 6 / BLE / Thread",
+        "role": "Connected Low-cost Node",
+        "power_class": "Low-Medium",
+        "fft_mult": 0.00022,
+        "feat_mult": 0.55,
+        "inf_mult": 4.50,
+        "target_ram": 320,
+        "recommended_for": "Lightweight sensor inference, connected IoT nodes.",
+        "gateway_fit": "No",
+    },
+    "RAK4631 / nRF52840": {
+        "cpu": "ARM Cortex-M4F",
+        "role": "Ultra-low-power LoRa Sensor Node",
+        "power_class": "Very Low",
         "fft_mult": 0.00015,
-        "feat_mult": 0.4,
-        "inf_mult": 3.0,
+        "feat_mult": 0.40,
+        "inf_mult": 3.00,
         "target_ram": 256,
-        "notes": "Zuinig en geschikt voor LoRa/WisBlock deployments.",
+        "recommended_for": "LoRaWAN, battery-powered vibration, low-power remote sensing.",
+        "gateway_fit": "LoRa node / relay",
+    },
+    "nRF5340": {
+        "cpu": "Dual-core ARM Cortex-M33",
+        "role": "Advanced BLE/Edge AI Node",
+        "power_class": "Low",
+        "fft_mult": 0.00010,
+        "feat_mult": 0.25,
+        "inf_mult": 2.00,
+        "target_ram": 512,
+        "recommended_for": "BLE sensor fusion, secure low-power edge inference.",
+        "gateway_fit": "BLE gateway possible",
+    },
+    "nRF54L15": {
+        "cpu": "ARM Cortex-M33 next-gen low power",
+        "role": "Next-gen Ultra-low-power AI Node",
+        "power_class": "Very Low",
+        "fft_mult": 0.00009,
+        "feat_mult": 0.22,
+        "inf_mult": 1.80,
+        "target_ram": 256,
+        "recommended_for": "Future low-power BLE/TinyML deployments.",
+        "gateway_fit": "BLE node",
     },
     "STM32L4": {
+        "cpu": "ARM Cortex-M4F",
+        "role": "Industrial Low-power Node",
+        "power_class": "Low",
         "fft_mult": 0.00012,
-        "feat_mult": 0.3,
-        "inf_mult": 2.5,
+        "feat_mult": 0.30,
+        "inf_mult": 2.50,
         "target_ram": 320,
-        "notes": "Sterke industriële low-power optie.",
+        "recommended_for": "Industrial low-power vibration and condition monitoring.",
+        "gateway_fit": "No",
     },
-    "ARM Cortex-M0+ (RP2040)": {
+    "STM32U5": {
+        "cpu": "ARM Cortex-M33 ultra-low-power",
+        "role": "Secure Industrial Low-power Node",
+        "power_class": "Very Low",
+        "fft_mult": 0.00009,
+        "feat_mult": 0.22,
+        "inf_mult": 1.80,
+        "target_ram": 512,
+        "recommended_for": "Secure industrial sensing, low-power TinyML.",
+        "gateway_fit": "No",
+    },
+    "STM32H7": {
+        "cpu": "ARM Cortex-M7 high-performance",
+        "role": "High-performance Industrial Node",
+        "power_class": "Medium-High",
+        "fft_mult": 0.000035,
+        "feat_mult": 0.10,
+        "inf_mult": 0.80,
+        "target_ram": 1024,
+        "recommended_for": "High-speed vibration, audio DSP, industrial inference.",
+        "gateway_fit": "Limited",
+    },
+    "RP2040": {
+        "cpu": "Dual-core ARM Cortex-M0+",
+        "role": "Low-cost Sensor Node",
+        "power_class": "Medium",
         "fft_mult": 0.00080,
-        "feat_mult": 1.5,
-        "inf_mult": 12.0,
+        "feat_mult": 1.50,
+        "inf_mult": 12.00,
         "target_ram": 264,
-        "notes": "Goedkoop, maar minder geschikt voor zware FFT/TinyML workloads.",
+        "recommended_for": "Low-cost simple feature extraction, not ideal for heavy FFT.",
+        "gateway_fit": "No",
+    },
+    "RP2350": {
+        "cpu": "Dual-core Cortex-M33 / RISC-V",
+        "role": "Low-cost Improved Edge Node",
+        "power_class": "Medium",
+        "fft_mult": 0.00032,
+        "feat_mult": 0.80,
+        "inf_mult": 6.00,
+        "target_ram": 520,
+        "recommended_for": "Budget TinyML, improved over RP2040.",
+        "gateway_fit": "No",
+    },
+    "Teensy 4.1": {
+        "cpu": "ARM Cortex-M7 600 MHz",
+        "role": "Fast DSP Prototyping Node",
+        "power_class": "Medium-High",
+        "fft_mult": 0.000025,
+        "feat_mult": 0.08,
+        "inf_mult": 0.70,
+        "target_ram": 1024,
+        "recommended_for": "Very fast audio/vibration DSP prototyping.",
+        "gateway_fit": "No",
+    },
+    "Arduino Portenta H7": {
+        "cpu": "Dual-core STM32H747",
+        "role": "Professional Edge AI Node",
+        "power_class": "Medium-High",
+        "fft_mult": 0.000025,
+        "feat_mult": 0.08,
+        "inf_mult": 0.70,
+        "target_ram": 8192,
+        "recommended_for": "Professional prototyping, industrial AI, mixed workloads.",
+        "gateway_fit": "Limited",
+    },
+    "Raspberry Pi Zero 2 W": {
+        "cpu": "Quad-core ARM Cortex-A53",
+        "role": "Light Linux Gateway",
+        "power_class": "Medium",
+        "fft_mult": 0.000015,
+        "feat_mult": 0.05,
+        "inf_mult": 0.40,
+        "target_ram": 512000,
+        "recommended_for": "Light gateway, MQTT, local preprocessing, dashboard bridge.",
+        "gateway_fit": "Yes",
+    },
+    "Raspberry Pi 4": {
+        "cpu": "Quad-core ARM Cortex-A72",
+        "role": "Linux Gateway / Edge Server",
+        "power_class": "High",
+        "fft_mult": 0.000006,
+        "feat_mult": 0.02,
+        "inf_mult": 0.15,
+        "target_ram": 2048000,
+        "recommended_for": "Gateway, local server, MQTT, dashboards, heavier ML.",
+        "gateway_fit": "Yes",
+    },
+    "Raspberry Pi 5": {
+        "cpu": "Quad-core ARM Cortex-A76",
+        "role": "High-performance Linux Gateway",
+        "power_class": "High",
+        "fft_mult": 0.000003,
+        "feat_mult": 0.01,
+        "inf_mult": 0.08,
+        "target_ram": 4096000,
+        "recommended_for": "Fast gateway, edge server, local model training/inference.",
+        "gateway_fit": "Yes",
+    },
+    "Jetson Nano": {
+        "cpu": "ARM + NVIDIA GPU",
+        "role": "GPU Edge AI Gateway",
+        "power_class": "High",
+        "fft_mult": 0.000004,
+        "feat_mult": 0.015,
+        "inf_mult": 0.05,
+        "target_ram": 4096000,
+        "recommended_for": "GPU inference, camera/audio fusion, heavier AI workloads.",
+        "gateway_fit": "Yes",
+    },
+    "Generic Linux Gateway": {
+        "cpu": "x86/ARM Linux",
+        "role": "Industrial Gateway / Server",
+        "power_class": "High",
+        "fft_mult": 0.000003,
+        "feat_mult": 0.01,
+        "inf_mult": 0.05,
+        "target_ram": 8192000,
+        "recommended_for": "Industrial gateway, API server, database, dashboards, model orchestration.",
+        "gateway_fit": "Yes",
     },
 }
 
@@ -462,8 +632,29 @@ def get_available_hardware():
     return list(HARDWARE_PROFILES.keys())
 
 
+def get_hardware_profile(hw_name):
+    return HARDWARE_PROFILES.get(hw_name)
+
+
+def get_hardware_catalog():
+    rows = []
+
+    for name, profile in HARDWARE_PROFILES.items():
+        rows.append({
+            "board": name,
+            "cpu": profile.get("cpu", ""),
+            "role": profile.get("role", ""),
+            "power_class": profile.get("power_class", ""),
+            "target_ram_kb": profile.get("target_ram", 0),
+            "recommended_for": profile.get("recommended_for", ""),
+            "gateway_fit": profile.get("gateway_fit", "No"),
+        })
+
+    return pd.DataFrame(rows)
+
+
 def estimate_edge_load(hw_name, feat_n, sr, duration=1.0):
-    profile = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["ARM Cortex-M4F (RAK4631)"])
+    profile = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["RAK4631 / nRF52840"])
 
     fft_n = 1024 if sr <= 4000 else 2048
 
@@ -481,45 +672,131 @@ def estimate_edge_load(hw_name, feat_n, sr, duration=1.0):
 
 
 def calculate_deployment_score(hw_name, latency, ram_kb):
-    profile = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["ARM Cortex-M4F (RAK4631)"])
+    profile = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["RAK4631 / nRF52840"])
 
     latency_score = max(0, 100 - (latency / 20.0) * 50)
-    ram_score = max(0, 100 - (ram_kb / (profile["target_ram"] / 2)) * 50)
+    ram_score = max(0, 100 - (ram_kb / max(profile["target_ram"] / 2, 1)) * 50)
 
     base = (latency_score * 0.7) + (ram_score * 0.3)
 
-    if profile["fft_mult"] < 0.00010:
+    if profile["fft_mult"] < 0.00001:
+        base += 15
+    elif profile["fft_mult"] < 0.00005:
+        base += 12
+    elif profile["fft_mult"] < 0.00010:
         base += 10
     elif profile["fft_mult"] < 0.00020:
         base += 5
 
+    if profile.get("power_class", "").lower().startswith("very low"):
+        base += 3
+
     return float(min(100, max(0, base)))
 
 
-def hardware_auto_architect(num_features, sr, target="balanced"):
-    boards = get_available_hardware()
+def estimate_custom_hardware_load(
+    hardware_name,
+    ram_kb_available,
+    fft_speed_factor,
+    feature_speed_factor,
+    inference_ms,
+    feat_n,
+    sr,
+    duration=1.0
+):
+    fft_n = 1024 if sr <= 4000 else 2048
+
+    ram_required = (
+        (min(int(sr * duration), 8192) * 4)
+        + (fft_n * 8)
+        + 2048
+    ) / 1024
+
+    fft_ms = (fft_n * np.log2(fft_n)) * float(fft_speed_factor)
+    feature_ms = feat_n * float(feature_speed_factor)
+    total_latency = fft_ms + feature_ms + float(inference_ms)
+
+    latency_score = max(0, 100 - (total_latency / 20.0) * 50)
+    ram_score = max(0, 100 - (ram_required / max(ram_kb_available, 1)) * 100)
+
+    score = (latency_score * 0.7) + (ram_score * 0.3)
+
+    if ram_required > ram_kb_available:
+        score = min(score, 45)
+
+    result = {
+        "board": hardware_name,
+        "score": float(min(100, max(0, score))),
+        "latency_ms": float(total_latency),
+        "ram_required_kb": float(ram_required),
+        "ram_available_kb": float(ram_kb_available),
+        "fft_ms": float(fft_ms),
+        "feature_ms": float(feature_ms),
+        "inference_ms": float(inference_ms),
+        "fits_ram": bool(ram_required <= ram_kb_available),
+    }
+
+    if result["score"] >= 85:
+        verdict = "Excellent fit"
+    elif result["score"] >= 70:
+        verdict = "Good fit"
+    elif result["score"] >= 50:
+        verdict = "Prototype fit"
+    else:
+        verdict = "Not recommended"
+
+    result["verdict"] = verdict
+
+    return result
+
+
+def hardware_auto_architect(num_features, sr, target="balanced", selected_boards=None):
+    boards = selected_boards if selected_boards else get_available_hardware()
     results = []
 
     for board in boards:
+        if board not in HARDWARE_PROFILES:
+            continue
+
+        profile = HARDWARE_PROFILES[board]
+
         ram, l_fft, l_feat, l_inf = estimate_edge_load(board, num_features, sr)
         latency = l_fft + l_feat + l_inf
         score = calculate_deployment_score(board, latency, ram)
 
         if target == "low_power":
-            adjusted = score - (latency * 0.25)
+            power_bonus = 0
+            if profile["power_class"] == "Very Low":
+                power_bonus = 12
+            elif profile["power_class"] == "Low":
+                power_bonus = 8
+            elif profile["power_class"] == "Low-Medium":
+                power_bonus = 5
+
+            adjusted = score + power_bonus - (latency * 0.20)
+
         elif target == "performance":
             adjusted = score - (latency * 1.0)
+
+        elif target == "gateway":
+            gateway_bonus = 20 if profile.get("gateway_fit") == "Yes" else 0
+            adjusted = score + gateway_bonus - (latency * 0.35)
+
         else:
-            adjusted = score - (latency * 0.5)
+            adjusted = score - (latency * 0.50)
 
         results.append(
             {
                 "board": board,
+                "cpu": profile.get("cpu", ""),
+                "role": profile.get("role", ""),
+                "power_class": profile.get("power_class", ""),
                 "score": float(score),
                 "adjusted_score": float(adjusted),
                 "latency_ms": float(latency),
                 "ram_kb": float(ram),
-                "notes": HARDWARE_PROFILES.get(board, {}).get("notes", ""),
+                "notes": profile.get("recommended_for", ""),
+                "gateway_fit": profile.get("gateway_fit", "No"),
             }
         )
 
@@ -530,16 +807,37 @@ def hardware_auto_architect(num_features, sr, target="balanced"):
             "recommendation": "Unknown",
             "reason": "No hardware profiles available.",
             "ranking": [],
+            "node_recommendation": "Unknown",
+            "gateway_recommendation": "Unknown",
         }
 
     best = results[0]
 
+    node_candidates = [r for r in results if "Gateway" not in r["role"] and r["gateway_fit"] != "Yes"]
+    gateway_candidates = [r for r in results if r["gateway_fit"] == "Yes"]
+
+    best_node = node_candidates[0] if node_candidates else best
+    best_gateway = gateway_candidates[0] if gateway_candidates else None
+
+    if best_gateway:
+        gateway_name = best_gateway["board"]
+    else:
+        gateway_name = "Linux Gateway / Raspberry Pi 4"
+
+    fft_recommendation = 1024 if sr <= 4000 else 2048
+
+    reason = (
+        f"Beste keuze voor target '{target}' is {best['board']} "
+        f"met {best['latency_ms']:.1f} ms latency en {best['ram_kb']:.1f} KB RAM."
+    )
+
     return {
         "recommendation": best["board"],
-        "reason": (
-            f"Beste keuze voor target '{target}' is {best['board']} "
-            f"met {best['latency_ms']:.1f} ms latency en {best['ram_kb']:.1f} KB RAM."
-        ),
+        "node_recommendation": best_node["board"],
+        "gateway_recommendation": gateway_name,
+        "sample_rate": sr,
+        "fft_recommendation": fft_recommendation,
+        "reason": reason,
         "ranking": results,
     }
 
@@ -553,281 +851,76 @@ INDUSTRY_PACKS = {
         "description": "Universeel predictive-maintenance pack voor motoren, pompen, ventilatoren, compressoren, generatoren en lagers.",
         "sample_rate": 4000,
         "classes": {
-            "Normal": {
-                "base_f": 50.0,
-                "harm_r": 0.05,
-                "imp_r": 0.0,
-                "noise_l": 0.08,
-            },
-            "Unbalance": {
-                "base_f": 50.0,
-                "harm_r": 0.30,
-                "imp_r": 0.0,
-                "noise_l": 0.12,
-            },
-            "Misalignment": {
-                "base_f": 50.0,
-                "harm_r": 0.55,
-                "imp_r": 1.0,
-                "noise_l": 0.14,
-            },
-            "Mechanical_Looseness": {
-                "base_f": 50.0,
-                "harm_r": 0.90,
-                "imp_r": 4.0,
-                "noise_l": 0.17,
-            },
-            "Bearing_Wear": {
-                "base_f": 50.0,
-                "harm_r": 0.35,
-                "imp_r": 14.0,
-                "noise_l": 0.18,
-            },
-            "Critical_Failure": {
-                "base_f": 50.0,
-                "harm_r": 1.35,
-                "imp_r": 35.0,
-                "noise_l": 0.34,
-            },
+            "Normal": {"base_f": 50.0, "harm_r": 0.05, "imp_r": 0.0, "noise_l": 0.08},
+            "Unbalance": {"base_f": 50.0, "harm_r": 0.30, "imp_r": 0.0, "noise_l": 0.12},
+            "Misalignment": {"base_f": 50.0, "harm_r": 0.55, "imp_r": 1.0, "noise_l": 0.14},
+            "Mechanical_Looseness": {"base_f": 50.0, "harm_r": 0.90, "imp_r": 4.0, "noise_l": 0.17},
+            "Bearing_Wear": {"base_f": 50.0, "harm_r": 0.35, "imp_r": 14.0, "noise_l": 0.18},
+            "Critical_Failure": {"base_f": 50.0, "harm_r": 1.35, "imp_r": 35.0, "noise_l": 0.34},
         },
     },
-
     "Predictive Maintenance Aging Pack": {
         "description": "Universeel aging/digital-twin pack: gezond, lichte slijtage, middelmatige slijtage, zware slijtage en falen.",
         "sample_rate": 4000,
         "classes": {
-            "Healthy": {
-                "base_f": 50.0,
-                "harm_r": 0.05,
-                "imp_r": 0.0,
-                "noise_l": 0.07,
-            },
-            "Wear_10": {
-                "base_f": 50.2,
-                "harm_r": 0.12,
-                "imp_r": 2.0,
-                "noise_l": 0.09,
-            },
-            "Wear_25": {
-                "base_f": 50.5,
-                "harm_r": 0.25,
-                "imp_r": 6.0,
-                "noise_l": 0.12,
-            },
-            "Wear_50": {
-                "base_f": 51.0,
-                "harm_r": 0.55,
-                "imp_r": 14.0,
-                "noise_l": 0.18,
-            },
-            "Wear_75": {
-                "base_f": 51.8,
-                "harm_r": 0.95,
-                "imp_r": 25.0,
-                "noise_l": 0.26,
-            },
-            "Failure": {
-                "base_f": 52.5,
-                "harm_r": 1.45,
-                "imp_r": 38.0,
-                "noise_l": 0.36,
-            },
+            "Healthy": {"base_f": 50.0, "harm_r": 0.05, "imp_r": 0.0, "noise_l": 0.07},
+            "Wear_10": {"base_f": 50.2, "harm_r": 0.12, "imp_r": 2.0, "noise_l": 0.09},
+            "Wear_25": {"base_f": 50.5, "harm_r": 0.25, "imp_r": 6.0, "noise_l": 0.12},
+            "Wear_50": {"base_f": 51.0, "harm_r": 0.55, "imp_r": 14.0, "noise_l": 0.18},
+            "Wear_75": {"base_f": 51.8, "harm_r": 0.95, "imp_r": 25.0, "noise_l": 0.26},
+            "Failure": {"base_f": 52.5, "harm_r": 1.45, "imp_r": 38.0, "noise_l": 0.36},
         },
     },
-
     "Acoustic Event Detection Pack": {
         "description": "Universeel audio-event pack voor TinyML sound detection: background, engine, tools, impact, alarm en menselijke activiteit.",
         "sample_rate": 16000,
         "classes": {
-            "Background": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 0.0,
-                "noise_l": 0.08,
-            },
-            "Engine": {
-                "base_f": 45.0,
-                "harm_r": 0.65,
-                "imp_r": 0.0,
-                "noise_l": 0.20,
-            },
-            "Cutting_Tool": {
-                "base_f": 190.0,
-                "harm_r": 1.35,
-                "imp_r": 6.0,
-                "noise_l": 0.30,
-            },
-            "Impact": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 18.0,
-                "noise_l": 0.18,
-            },
-            "Alarm": {
-                "base_f": 850.0,
-                "harm_r": 0.45,
-                "imp_r": 0.0,
-                "noise_l": 0.10,
-            },
-            "Human_Activity": {
-                "base_f": 120.0,
-                "harm_r": 0.25,
-                "imp_r": 4.0,
-                "noise_l": 0.16,
-            },
+            "Background": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 0.0, "noise_l": 0.08},
+            "Engine": {"base_f": 45.0, "harm_r": 0.65, "imp_r": 0.0, "noise_l": 0.20},
+            "Cutting_Tool": {"base_f": 190.0, "harm_r": 1.35, "imp_r": 6.0, "noise_l": 0.30},
+            "Impact": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 18.0, "noise_l": 0.18},
+            "Alarm": {"base_f": 850.0, "harm_r": 0.45, "imp_r": 0.0, "noise_l": 0.10},
+            "Human_Activity": {"base_f": 120.0, "harm_r": 0.25, "imp_r": 4.0, "noise_l": 0.16},
         },
     },
-
     "Security & Tamper Pack": {
         "description": "Universeel security/tamper pack voor bouwplaatsen, containers, gevels, machines en remote assets.",
         "sample_rate": 16000,
         "classes": {
-            "Normal_Background": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 0.0,
-                "noise_l": 0.08,
-            },
-            "Impact_Tamper": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 25.0,
-                "noise_l": 0.20,
-            },
-            "Grinding": {
-                "base_f": 180.0,
-                "harm_r": 1.50,
-                "imp_r": 0.0,
-                "noise_l": 0.32,
-            },
-            "Drilling": {
-                "base_f": 130.0,
-                "harm_r": 1.10,
-                "imp_r": 8.0,
-                "noise_l": 0.28,
-            },
-            "Cutting": {
-                "base_f": 260.0,
-                "harm_r": 1.80,
-                "imp_r": 12.0,
-                "noise_l": 0.36,
-            },
-            "Climbing_Or_Handling": {
-                "base_f": 35.0,
-                "harm_r": 0.25,
-                "imp_r": 5.0,
-                "noise_l": 0.15,
-            },
-            "Vehicle_Nearby": {
-                "base_f": 45.0,
-                "harm_r": 0.60,
-                "imp_r": 0.0,
-                "noise_l": 0.22,
-            },
+            "Normal_Background": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 0.0, "noise_l": 0.08},
+            "Impact_Tamper": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 25.0, "noise_l": 0.20},
+            "Grinding": {"base_f": 180.0, "harm_r": 1.50, "imp_r": 0.0, "noise_l": 0.32},
+            "Drilling": {"base_f": 130.0, "harm_r": 1.10, "imp_r": 8.0, "noise_l": 0.28},
+            "Cutting": {"base_f": 260.0, "harm_r": 1.80, "imp_r": 12.0, "noise_l": 0.36},
+            "Climbing_Or_Handling": {"base_f": 35.0, "harm_r": 0.25, "imp_r": 5.0, "noise_l": 0.15},
+            "Vehicle_Nearby": {"base_f": 45.0, "harm_r": 0.60, "imp_r": 0.0, "noise_l": 0.22},
         },
     },
-
     "Environmental Monitoring Pack": {
         "description": "Universeel buitenomgeving-pack voor wind, regen, onweer, dieren, mensen, voertuigen en machines.",
         "sample_rate": 16000,
         "classes": {
-            "Quiet_Background": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 0.0,
-                "noise_l": 0.06,
-            },
-            "Wind": {
-                "base_f": 8.0,
-                "harm_r": 0.12,
-                "imp_r": 0.0,
-                "noise_l": 0.18,
-            },
-            "Rain": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 30.0,
-                "noise_l": 0.22,
-            },
-            "Thunder_Or_Low_Rumble": {
-                "base_f": 25.0,
-                "harm_r": 0.35,
-                "imp_r": 1.5,
-                "noise_l": 0.25,
-            },
-            "Animal_Or_Bird": {
-                "base_f": 450.0,
-                "harm_r": 0.35,
-                "imp_r": 3.0,
-                "noise_l": 0.12,
-            },
-            "Human_Activity": {
-                "base_f": 95.0,
-                "harm_r": 0.25,
-                "imp_r": 4.0,
-                "noise_l": 0.15,
-            },
-            "Vehicle": {
-                "base_f": 45.0,
-                "harm_r": 0.55,
-                "imp_r": 0.0,
-                "noise_l": 0.22,
-            },
-            "Machinery": {
-                "base_f": 80.0,
-                "harm_r": 0.85,
-                "imp_r": 3.0,
-                "noise_l": 0.25,
-            },
+            "Quiet_Background": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 0.0, "noise_l": 0.06},
+            "Wind": {"base_f": 8.0, "harm_r": 0.12, "imp_r": 0.0, "noise_l": 0.18},
+            "Rain": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 30.0, "noise_l": 0.22},
+            "Thunder_Or_Low_Rumble": {"base_f": 25.0, "harm_r": 0.35, "imp_r": 1.5, "noise_l": 0.25},
+            "Animal_Or_Bird": {"base_f": 450.0, "harm_r": 0.35, "imp_r": 3.0, "noise_l": 0.12},
+            "Human_Activity": {"base_f": 95.0, "harm_r": 0.25, "imp_r": 4.0, "noise_l": 0.15},
+            "Vehicle": {"base_f": 45.0, "harm_r": 0.55, "imp_r": 0.0, "noise_l": 0.22},
+            "Machinery": {"base_f": 80.0, "harm_r": 0.85, "imp_r": 3.0, "noise_l": 0.25},
         },
     },
-
     "Forestry & Remote Asset Pack": {
         "description": "Pack voor bosbouw, landbouw, afgelegen assets en remote site monitoring.",
         "sample_rate": 16000,
         "classes": {
-            "Forest_Normal": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 0.0,
-                "noise_l": 0.08,
-            },
-            "Chainsaw": {
-                "base_f": 85.0,
-                "harm_r": 1.20,
-                "imp_r": 0.0,
-                "noise_l": 0.28,
-            },
-            "Offroad_Vehicle": {
-                "base_f": 42.0,
-                "harm_r": 0.70,
-                "imp_r": 1.0,
-                "noise_l": 0.24,
-            },
-            "Human_Movement": {
-                "base_f": 70.0,
-                "harm_r": 0.25,
-                "imp_r": 5.0,
-                "noise_l": 0.14,
-            },
-            "Branch_Crack": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 8.0,
-                "noise_l": 0.15,
-            },
-            "Rain_And_Wind": {
-                "base_f": 12.0,
-                "harm_r": 0.12,
-                "imp_r": 22.0,
-                "noise_l": 0.26,
-            },
-            "Remote_Machinery": {
-                "base_f": 60.0,
-                "harm_r": 0.90,
-                "imp_r": 2.0,
-                "noise_l": 0.24,
-            },
+            "Forest_Normal": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 0.0, "noise_l": 0.08},
+            "Chainsaw": {"base_f": 85.0, "harm_r": 1.20, "imp_r": 0.0, "noise_l": 0.28},
+            "Offroad_Vehicle": {"base_f": 42.0, "harm_r": 0.70, "imp_r": 1.0, "noise_l": 0.24},
+            "Human_Movement": {"base_f": 70.0, "harm_r": 0.25, "imp_r": 5.0, "noise_l": 0.14},
+            "Branch_Crack": {"base_f": 0.0, "harm_r": 0.0, "imp_r": 8.0, "noise_l": 0.15},
+            "Rain_And_Wind": {"base_f": 12.0, "harm_r": 0.12, "imp_r": 22.0, "noise_l": 0.26},
+            "Remote_Machinery": {"base_f": 60.0, "harm_r": 0.90, "imp_r": 2.0, "noise_l": 0.24},
         },
     },
 }
@@ -881,12 +974,7 @@ def generate_industry_pack_dataset(pack_name, samples_per_class=100):
                 normalize=True,
             )
 
-            df = pd.DataFrame(
-                {
-                    "time": d["t"],
-                    "value": d["sig"],
-                }
-            )
+            df = pd.DataFrame({"time": d["t"], "value": d["sig"]})
 
             files.append(
                 {
@@ -976,12 +1064,7 @@ def generate_predictive_maintenance_aging_dataset(base_params, samples_per_stage
                 normalize=True,
             )
 
-            df = pd.DataFrame(
-                {
-                    "time": d["t"],
-                    "value": d["sig"],
-                }
-            )
+            df = pd.DataFrame({"time": d["t"], "value": d["sig"]})
 
             files.append(
                 {
@@ -1113,13 +1196,7 @@ def dataset_doctor(X_df, y_series, feature_importance=None):
         "balance_score": bal,
         "separation_score": sep,
         "overall_score": int((div * 0.35) + (bal * 0.30) + (sep * 0.35)),
-        "advice": [
-            {
-                "severity": s,
-                "message": a,
-            }
-            for s, a in zip(severity, advice)
-        ],
+        "advice": [{"severity": s, "message": a} for s, a in zip(severity, advice)],
     }
 
 
