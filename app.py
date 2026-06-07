@@ -143,7 +143,7 @@ with tab4:
         
         # --- MULTI-BOARD ---
         st.subheader("⚙️ Deployment Validation")
-        brds = ["ESP32-S3", "STM32L4", "RAK4631", "Cortex-M0+"]
+        brds = core.get_available_hardware()
         b_dat = []
         for b in brds:
             ram, l_fft, l_feat, l_inf = core.estimate_edge_load(b, len(f_cols), sr)
