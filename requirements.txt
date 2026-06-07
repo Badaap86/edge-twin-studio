@@ -4,3 +4,6 @@ pandas
 plotly
 scipy
 scikit-learn
+fpdf2
+fastapi
+uvicorn
