@@ -1,5 +1,18 @@
-streamlit
-numpy
-pandas
-plotly
-scipy
+import streamlit as st
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+import scipy.signal as signal
+import io
+import json
+import zipfile
+import warnings
+from scipy.stats import kurtosis
+from scipy.io import wavfile
+from scipy.spatial.distance import pdist, squareform
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.inspection import permutation_importance
+from sklearn.metrics import silhouette_score, confusion_matrix
+from sklearn.model_selection import cross_val_predict
