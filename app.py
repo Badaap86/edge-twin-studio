@@ -20,33 +20,76 @@ import core
 
 warnings.filterwarnings('ignore')
 st.set_page_config(page_title="OMEGA-X SaaS Studio", layout="wide")
-st.title("⚡ OMEGA-X SaaS Studio (V14.0)")
 
-# Initialize Database
+# Database voorbereiden
 core.init_db()
 
 # ============================================================
-# SaaS PROJECT MANAGEMENT
+# SAAS LOGIN & REGISTRATIE PORTAL (V15.0)
 # ============================================================
-if "dataset" not in st.session_state: st.session_state.dataset = pd.DataFrame()
-if "project_id" not in st.session_state: st.session_state.project_id = "proj_" + str(np.random.randint(1000, 9999))
+if "user" not in st.session_state:
+    st.title("🔒 OMEGA-X Enterprise Login")
+    st.write("Welkom bij de Industrial Edge AI SaaS. Log in om toegang te krijgen tot uw werkruimte.")
+    
+    tab_login, tab_register = st.tabs(["Inloggen", "Nieuw Account"])
+    
+    with tab_login:
+        with st.form("login_form"):
+            user_in = st.text_input("Gebruikersnaam")
+            pass_in = st.text_input("Wachtwoord", type="password")
+            if st.form_submit_button("Log In", type="primary"):
+                user = core.authenticate_user(user_in, pass_in)
+                if user:
+                    st.session_state.user = user
+                    st.session_state.dataset = pd.DataFrame()
+                    st.session_state.project_id = "proj_" + str(np.random.randint(1000, 9999))
+                    st.rerun()
+                else:
+                    st.error("Ongeldige inloggegevens.")
+                    
+    with tab_register:
+        with st.form("reg_form"):
+            new_user = st.text_input("Kies Gebruikersnaam")
+            new_pass = st.text_input("Kies Wachtwoord", type="password")
+            if st.form_submit_button("Account Aanmaken"):
+                if len(new_user) > 2 and len(new_pass) > 4:
+                    res = core.create_user(new_user, new_pass)
+                    if res: st.success("Account aangemaakt! Ga naar Inloggen.")
+                    else: st.error("Gebruikersnaam bestaat al.")
+                else: st.warning("Maak een sterker wachtwoord/gebruikersnaam.")
+    
+    st.stop() # Blokkeer de rest van de app als je niet bent ingelogd!
+
+# ============================================================
+# MAIN SAAS WORKSPACE (Na Login)
+# ============================================================
+st.title("⚡ OMEGA-X SaaS Studio (V15.0)")
 
 with st.sidebar:
-    st.header("🗂️ Cloud Projects (SQLite)")
+    st.header(f"👤 Ingelogd als: {st.session_state.user['username']}")
+    st.code(st.session_state.user['api_key'], language="bash")
+    st.caption("Gebruik deze API Key voor headless FastAPI requests.")
+    if st.button("Uitloggen", use_container_width=True):
+        del st.session_state.user
+        st.rerun()
+        
+    st.markdown("---")
+    st.header("🗂️ Cloud Projects")
     proj_name = st.text_input("Project Name", "New_Enterprise_AI")
     
     col_a, col_b = st.columns(2)
-    if col_a.button("💾 Save to DB"):
-        setts = {"base_f": st.session_state.get("base_f_slider", 50.0)} # Simplified for brevity
-        core.save_project(st.session_state.project_id, proj_name, st.session_state.dataset, setts)
-        st.success("Saved!")
+    if col_a.button("💾 Save"):
+        setts = {"base_f": st.session_state.get("base_f_slider", 50.0)}
+        core.save_project(st.session_state.project_id, st.session_state.user["id"], proj_name, st.session_state.dataset, setts)
+        st.success("Opgeslagen!")
         
-    db_projects = core.get_all_projects()
+    # FIX: Klant ziet nu UITSLUITEND eigen projecten
+    db_projects = core.get_user_projects(st.session_state.user["id"])
     if not db_projects.empty:
         sel_proj = st.selectbox("Load Project", db_projects["name"].tolist())
         if col_b.button("📂 Load"):
             proj_id = db_projects[db_projects["name"] == sel_proj].iloc[0]["id"]
-            loaded = core.load_project(proj_id)
+            loaded = core.load_project(proj_id, st.session_state.user["id"])
             if loaded:
                 st.session_state.project_id = proj_id
                 st.session_state.dataset = loaded["dataset"]
@@ -94,7 +137,6 @@ with tab3:
                 s_c = w_d.mean(axis=1) if len(w_d.shape) > 1 else w_d
             
             s_c = s_c.astype(float) - np.mean(s_c.astype(float))
-            # FIX: Original Deep Physics Extraction
             phys = core.reverse_engineer_physics(s_c, a_sr)
             
             c_s1, c_s2, c_s3, c_s4 = st.columns(4)
@@ -185,15 +227,17 @@ with tab4:
                 z_buf = io.BytesIO()
                 with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
                     zf.writestr("edge_dataset.csv", m_df.to_csv(index=False))
-                    pdf_bytes = core.generate_pdf_report(proj_name, len(X), len(y.unique()), div_score, bal_score, sep_score, top_feats, b_dat, best_board)
+                    pdf_bytes = core.generate_pdf_report(st.session_state.project_id, len(X), len(y.unique()), div_score, bal_score, sep_score, top_feats, b_dat, best_board)
                     zf.writestr("audit_report.pdf", pdf_bytes)
                     
                     meta = {
-                        "project": proj_name, "features": f_cols,
+                        "project": st.session_state.project_id,
+                        "user": st.session_state.user["username"],
+                        "features": f_cols,
                         "metrics": {"diversity": div_score, "balance": bal_score, "separation": sep_score},
                         "hardware_recommendation": best_board,
                         "top_features": [{"feature": f, "importance": s} for f, s in top_feats[:5]]
                     }
                     zf.writestr("metadata.json", json.dumps(meta, indent=2))
-                st.download_button("✅ Download Bundle (.ZIP)", data=z_buf.getvalue(), file_name=f"OMEGA_Bundle_{proj_name}.zip", mime="application/zip", use_container_width=True)
+                st.download_button("✅ Download Bundle (.ZIP)", data=z_buf.getvalue(), file_name=f"OMEGA_Bundle_{st.session_state.user['username']}.zip", mime="application/zip", use_container_width=True)
             else: st.error("Kan Bundle niet genereren zonder getraind model.")
