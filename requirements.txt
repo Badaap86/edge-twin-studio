@@ -7,3 +7,5 @@ scikit-learn
 fpdf2
 fastapi
 uvicorn
+sqlalchemy
+bcrypt
