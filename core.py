@@ -8,8 +8,43 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
 from fpdf import FPDF
 import io
+import sqlite3
+import json
+import datetime
 
-# Let op: Database functies (init_db, save_project, etc.) zijn succesvol verplaatst naar database.py!
+# ============================================================
+# DATABASE ENGINE (SQLite SaaS Foundation)
+# ============================================================
+def init_db():
+    conn = sqlite3.connect('omega_saas.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS projects
+                 (id TEXT PRIMARY KEY, name TEXT, created_at TEXT, dataset TEXT, settings TEXT)''')
+    conn.commit()
+    conn.close()
+
+def save_project(proj_id, name, dataset_df, settings_dict):
+    conn = sqlite3.connect('omega_saas.db')
+    c = conn.cursor()
+    c.execute("REPLACE INTO projects (id, name, created_at, dataset, settings) VALUES (?, ?, ?, ?, ?)",
+              (proj_id, name, str(datetime.datetime.now()), dataset_df.to_json(orient='records'), json.dumps(settings_dict)))
+    conn.commit()
+    conn.close()
+
+def load_project(proj_id):
+    conn = sqlite3.connect('omega_saas.db')
+    c = conn.cursor()
+    c.execute("SELECT name, dataset, settings FROM projects WHERE id=?", (proj_id,))
+    row = c.fetchone()
+    conn.close()
+    if row: return {"name": row[0], "dataset": pd.read_json(io.StringIO(row[1])), "settings": json.loads(row[2])}
+    return None
+
+def get_all_projects():
+    conn = sqlite3.connect('omega_saas.db')
+    df = pd.read_sql_query("SELECT id, name, created_at FROM projects", conn)
+    conn.close()
+    return df
 
 # ============================================================
 # DSP ENGINE (HERSTELDE DEEP CLONER)
@@ -74,23 +109,57 @@ def generate_universal_signal(duration, sr, base_f, harm_r, imp_r, noise_l, norm
     return {"t": t, "sig": sig, "fft_f": f, "fft_v": v, "sr": sr}
 
 # ============================================================
-# EDGE PROFILER & AUDIT ENGINE
+# UNIVERSAL EDGE PROFILER (V14.5)
 # ============================================================
-def estimate_edge_load(hw, feat_n, sr, duration=1.0):
+
+# Database met hardware profielen
+# Elk profiel heeft een baseline factor voor FFT, Feature Extraction, en Inference snelheid.
+HARDWARE_PROFILES = {
+    "Xtensa LX7 (ESP32-S3)": {"fft_mult": 0.00008, "feat_mult": 0.2, "inf_mult": 1.5, "target_ram": 320},
+    "Xtensa LX6 (ESP32)":    {"fft_mult": 0.00010, "feat_mult": 0.25, "inf_mult": 2.0, "target_ram": 320},
+    "ARM Cortex-M7 (STM32H7)": {"fft_mult": 0.00005, "feat_mult": 0.1, "inf_mult": 0.8, "target_ram": 512},
+    "ARM Cortex-M4F (nRF52840 / RAK4631)": {"fft_mult": 0.00015, "feat_mult": 0.4, "inf_mult": 3.0, "target_ram": 256},
+    "ARM Cortex-M3 (STM32F1)": {"fft_mult": 0.00030, "feat_mult": 0.8, "inf_mult": 6.0, "target_ram": 64},
+    "ARM Cortex-M0+ (RP2040)": {"fft_mult": 0.00080, "feat_mult": 1.5, "inf_mult": 12.0, "target_ram": 264},
+    "RISC-V (BL602)":        {"fft_mult": 0.00020, "feat_mult": 0.5, "inf_mult": 4.0, "target_ram": 276}
+}
+
+def get_available_hardware():
+    return list(HARDWARE_PROFILES.keys())
+
+def estimate_edge_load(hw_name, feat_n, sr, duration=1.0):
+    """Berekent de belasting op basis van universele profielen."""
+    # Fallback profiel als de naam niet wordt gevonden
+    profile = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["ARM Cortex-M4F (nRF52840 / RAK4631)"])
+    
     fft_n = 1024 if sr <= 4000 else 2048
     ram = ((min(int(sr * duration), 8192) * 4) + (fft_n * 8) + 2048) / 1024 
-    if "ESP32-S3" in hw: return ram, (fft_n * np.log2(fft_n)) * 0.00008, feat_n * 0.2, 1.5
-    elif "STM32L4" in hw: return ram, (fft_n * np.log2(fft_n)) * 0.00012, feat_n * 0.3, 2.5
-    elif "RAK4631" in hw: return ram, (fft_n * np.log2(fft_n)) * 0.00015, feat_n * 0.4, 3.0
-    else: return ram, (fft_n * np.log2(fft_n)) * 0.0008, feat_n * 1.5, 12.0
+    
+    l_fft = (fft_n * np.log2(fft_n)) * profile["fft_mult"]
+    l_feat = feat_n * profile["feat_mult"]
+    l_inf = profile["inf_mult"]
+    
+    return ram, l_fft, l_feat, l_inf
 
-def calculate_deployment_score(hw, latency, ram_kb):
-    base = (max(0, 100 - (latency / 20.0) * 50) * 0.7) + (max(0, 100 - (ram_kb / 120.0) * 50) * 0.3)
-    if "ESP32-S3" in hw: return min(100, base + 15)
-    elif "STM32L4" in hw: return min(100, base + 10)
-    elif "RAK4631" in hw: return min(100, base + 5)
-    return max(0, base - 20)
+def calculate_deployment_score(hw_name, latency, ram_kb):
+    profile = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["ARM Cortex-M4F (nRF52840 / RAK4631)"])
+    target_ram = profile["target_ram"]
+    
+    # Doel latency is arbitrair gezet op 20ms voor een perfecte score.
+    lat_score = max(0, 100 - (latency / 20.0) * 50)
+    ram_score = max(0, 100 - (ram_kb / (target_ram / 2)) * 50) # Bij 50% RAM gebruik begint de penalty
+    
+    base = (lat_score * 0.7) + (ram_score * 0.3)
+    
+    # Kleine bonus voor efficiëntere architecturen
+    if profile["fft_mult"] < 0.00010: base += 10 # Bijv. Cortex-M7 of LX7
+    elif profile["fft_mult"] < 0.00020: base += 5  # Bijv. Cortex-M4F
+    
+    return min(100, max(0, base))
 
+# ============================================================
+# ML AUDIT & PDF ENGINE
+# ============================================================
 def calculate_audit_scores(X_df, y_series):
     v_c = y_series.value_counts()
     X_scaled = StandardScaler().fit_transform(X_df)
