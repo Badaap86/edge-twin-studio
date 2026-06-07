@@ -276,7 +276,6 @@ def get_audio_features(sig, f_f, v_f):
         return 0.0, 0.0, 0.0, 0.0
 
     zcr = ((sig[:-1] * sig[1:]) < 0).sum() / len(sig)
-
     centroid = np.sum(f_f * v_f) / (np.sum(v_f) + eps)
 
     cum_e = np.cumsum(v_f)
@@ -349,10 +348,12 @@ def extract_features_from_bytes(file_bytes, filename, sr=16000):
             if df.shape[1] < 2:
                 return {"error": "CSV must contain at least two columns: time and value."}
             sig = df.iloc[:, 1].astype(float).values
+
         elif filename.endswith(".wav"):
             s_ext, w_d = wavfile.read(io.BytesIO(file_bytes))
             sr = s_ext
             sig = (w_d.mean(axis=1) if len(w_d.shape) > 1 else w_d).astype(float)
+
         else:
             return {"error": "Unsupported file type. Use CSV or WAV."}
 
@@ -544,12 +545,12 @@ def hardware_auto_architect(num_features, sr, target="balanced"):
 
 
 # ============================================================
-# INDUSTRY PACKS
+# UNIVERSAL INDUSTRY PACKS
 # ============================================================
 
 INDUSTRY_PACKS = {
-    "Bearing Failure Pack": {
-        "description": "Predictive maintenance pack voor motoren, pompen, ventilatoren en lagers.",
+    "Rotating Machinery Pack": {
+        "description": "Universeel predictive-maintenance pack voor motoren, pompen, ventilatoren, compressoren, generatoren en lagers.",
         "sample_rate": 4000,
         "classes": {
             "Normal": {
@@ -560,32 +561,229 @@ INDUSTRY_PACKS = {
             },
             "Unbalance": {
                 "base_f": 50.0,
-                "harm_r": 0.25,
+                "harm_r": 0.30,
                 "imp_r": 0.0,
                 "noise_l": 0.12,
             },
+            "Misalignment": {
+                "base_f": 50.0,
+                "harm_r": 0.55,
+                "imp_r": 1.0,
+                "noise_l": 0.14,
+            },
             "Mechanical_Looseness": {
                 "base_f": 50.0,
-                "harm_r": 0.85,
+                "harm_r": 0.90,
                 "imp_r": 4.0,
-                "noise_l": 0.16,
+                "noise_l": 0.17,
             },
-            "Bearing_Outer_Race": {
+            "Bearing_Wear": {
                 "base_f": 50.0,
                 "harm_r": 0.35,
-                "imp_r": 17.5,
+                "imp_r": 14.0,
                 "noise_l": 0.18,
             },
             "Critical_Failure": {
                 "base_f": 50.0,
-                "harm_r": 1.4,
+                "harm_r": 1.35,
                 "imp_r": 35.0,
-                "noise_l": 0.32,
+                "noise_l": 0.34,
             },
         },
     },
-    "Forestry Detection Pack": {
-        "description": "Audio/TinyML pack voor kettingzaag, voertuig en omgevingsgeluiden.",
+
+    "Predictive Maintenance Aging Pack": {
+        "description": "Universeel aging/digital-twin pack: gezond, lichte slijtage, middelmatige slijtage, zware slijtage en falen.",
+        "sample_rate": 4000,
+        "classes": {
+            "Healthy": {
+                "base_f": 50.0,
+                "harm_r": 0.05,
+                "imp_r": 0.0,
+                "noise_l": 0.07,
+            },
+            "Wear_10": {
+                "base_f": 50.2,
+                "harm_r": 0.12,
+                "imp_r": 2.0,
+                "noise_l": 0.09,
+            },
+            "Wear_25": {
+                "base_f": 50.5,
+                "harm_r": 0.25,
+                "imp_r": 6.0,
+                "noise_l": 0.12,
+            },
+            "Wear_50": {
+                "base_f": 51.0,
+                "harm_r": 0.55,
+                "imp_r": 14.0,
+                "noise_l": 0.18,
+            },
+            "Wear_75": {
+                "base_f": 51.8,
+                "harm_r": 0.95,
+                "imp_r": 25.0,
+                "noise_l": 0.26,
+            },
+            "Failure": {
+                "base_f": 52.5,
+                "harm_r": 1.45,
+                "imp_r": 38.0,
+                "noise_l": 0.36,
+            },
+        },
+    },
+
+    "Acoustic Event Detection Pack": {
+        "description": "Universeel audio-event pack voor TinyML sound detection: background, engine, tools, impact, alarm en menselijke activiteit.",
+        "sample_rate": 16000,
+        "classes": {
+            "Background": {
+                "base_f": 0.0,
+                "harm_r": 0.0,
+                "imp_r": 0.0,
+                "noise_l": 0.08,
+            },
+            "Engine": {
+                "base_f": 45.0,
+                "harm_r": 0.65,
+                "imp_r": 0.0,
+                "noise_l": 0.20,
+            },
+            "Cutting_Tool": {
+                "base_f": 190.0,
+                "harm_r": 1.35,
+                "imp_r": 6.0,
+                "noise_l": 0.30,
+            },
+            "Impact": {
+                "base_f": 0.0,
+                "harm_r": 0.0,
+                "imp_r": 18.0,
+                "noise_l": 0.18,
+            },
+            "Alarm": {
+                "base_f": 850.0,
+                "harm_r": 0.45,
+                "imp_r": 0.0,
+                "noise_l": 0.10,
+            },
+            "Human_Activity": {
+                "base_f": 120.0,
+                "harm_r": 0.25,
+                "imp_r": 4.0,
+                "noise_l": 0.16,
+            },
+        },
+    },
+
+    "Security & Tamper Pack": {
+        "description": "Universeel security/tamper pack voor bouwplaatsen, containers, gevels, machines en remote assets.",
+        "sample_rate": 16000,
+        "classes": {
+            "Normal_Background": {
+                "base_f": 0.0,
+                "harm_r": 0.0,
+                "imp_r": 0.0,
+                "noise_l": 0.08,
+            },
+            "Impact_Tamper": {
+                "base_f": 0.0,
+                "harm_r": 0.0,
+                "imp_r": 25.0,
+                "noise_l": 0.20,
+            },
+            "Grinding": {
+                "base_f": 180.0,
+                "harm_r": 1.50,
+                "imp_r": 0.0,
+                "noise_l": 0.32,
+            },
+            "Drilling": {
+                "base_f": 130.0,
+                "harm_r": 1.10,
+                "imp_r": 8.0,
+                "noise_l": 0.28,
+            },
+            "Cutting": {
+                "base_f": 260.0,
+                "harm_r": 1.80,
+                "imp_r": 12.0,
+                "noise_l": 0.36,
+            },
+            "Climbing_Or_Handling": {
+                "base_f": 35.0,
+                "harm_r": 0.25,
+                "imp_r": 5.0,
+                "noise_l": 0.15,
+            },
+            "Vehicle_Nearby": {
+                "base_f": 45.0,
+                "harm_r": 0.60,
+                "imp_r": 0.0,
+                "noise_l": 0.22,
+            },
+        },
+    },
+
+    "Environmental Monitoring Pack": {
+        "description": "Universeel buitenomgeving-pack voor wind, regen, onweer, dieren, mensen, voertuigen en machines.",
+        "sample_rate": 16000,
+        "classes": {
+            "Quiet_Background": {
+                "base_f": 0.0,
+                "harm_r": 0.0,
+                "imp_r": 0.0,
+                "noise_l": 0.06,
+            },
+            "Wind": {
+                "base_f": 8.0,
+                "harm_r": 0.12,
+                "imp_r": 0.0,
+                "noise_l": 0.18,
+            },
+            "Rain": {
+                "base_f": 0.0,
+                "harm_r": 0.0,
+                "imp_r": 30.0,
+                "noise_l": 0.22,
+            },
+            "Thunder_Or_Low_Rumble": {
+                "base_f": 25.0,
+                "harm_r": 0.35,
+                "imp_r": 1.5,
+                "noise_l": 0.25,
+            },
+            "Animal_Or_Bird": {
+                "base_f": 450.0,
+                "harm_r": 0.35,
+                "imp_r": 3.0,
+                "noise_l": 0.12,
+            },
+            "Human_Activity": {
+                "base_f": 95.0,
+                "harm_r": 0.25,
+                "imp_r": 4.0,
+                "noise_l": 0.15,
+            },
+            "Vehicle": {
+                "base_f": 45.0,
+                "harm_r": 0.55,
+                "imp_r": 0.0,
+                "noise_l": 0.22,
+            },
+            "Machinery": {
+                "base_f": 80.0,
+                "harm_r": 0.85,
+                "imp_r": 3.0,
+                "noise_l": 0.25,
+            },
+        },
+    },
+
+    "Forestry & Remote Asset Pack": {
+        "description": "Pack voor bosbouw, landbouw, afgelegen assets en remote site monitoring.",
         "sample_rate": 16000,
         "classes": {
             "Forest_Normal": {
@@ -596,15 +794,21 @@ INDUSTRY_PACKS = {
             },
             "Chainsaw": {
                 "base_f": 85.0,
-                "harm_r": 1.2,
+                "harm_r": 1.20,
                 "imp_r": 0.0,
                 "noise_l": 0.28,
             },
-            "Vehicle_Engine": {
-                "base_f": 45.0,
-                "harm_r": 0.55,
-                "imp_r": 0.0,
-                "noise_l": 0.20,
+            "Offroad_Vehicle": {
+                "base_f": 42.0,
+                "harm_r": 0.70,
+                "imp_r": 1.0,
+                "noise_l": 0.24,
+            },
+            "Human_Movement": {
+                "base_f": 70.0,
+                "harm_r": 0.25,
+                "imp_r": 5.0,
+                "noise_l": 0.14,
             },
             "Branch_Crack": {
                 "base_f": 0.0,
@@ -612,35 +816,17 @@ INDUSTRY_PACKS = {
                 "imp_r": 8.0,
                 "noise_l": 0.15,
             },
-        },
-    },
-    "Security Tool Pack": {
-        "description": "Pack voor grinder, cutting, impact en sabotage-achtige signalen.",
-        "sample_rate": 16000,
-        "classes": {
-            "Normal_Background": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 0.0,
-                "noise_l": 0.08,
+            "Rain_And_Wind": {
+                "base_f": 12.0,
+                "harm_r": 0.12,
+                "imp_r": 22.0,
+                "noise_l": 0.26,
             },
-            "Angle_Grinder": {
-                "base_f": 180.0,
-                "harm_r": 1.5,
-                "imp_r": 0.0,
-                "noise_l": 0.32,
-            },
-            "Metal_Cutting": {
-                "base_f": 260.0,
-                "harm_r": 1.8,
-                "imp_r": 12.0,
-                "noise_l": 0.35,
-            },
-            "Impact_Tamper": {
-                "base_f": 0.0,
-                "harm_r": 0.0,
-                "imp_r": 25.0,
-                "noise_l": 0.20,
+            "Remote_Machinery": {
+                "base_f": 60.0,
+                "harm_r": 0.90,
+                "imp_r": 2.0,
+                "noise_l": 0.24,
             },
         },
     },
