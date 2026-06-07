@@ -144,10 +144,12 @@ def extract_features_to_dataset(uploaded_files, label, sample_rate):
     return len(rows)
 
 
-def build_hardware_table(num_features, sample_rate):
+def build_hardware_table(num_features, sample_rate, selected_boards=None):
     b_dat = []
 
-    for board in core.get_available_hardware():
+    boards = selected_boards if selected_boards else core.get_available_hardware()
+
+    for board in boards:
         ram, l_fft, l_feat, l_inf = core.estimate_edge_load(
             board,
             num_features,
@@ -156,15 +158,21 @@ def build_hardware_table(num_features, sample_rate):
 
         latency = l_fft + l_feat + l_inf
         score = core.calculate_deployment_score(board, latency, ram)
+        profile = core.get_hardware_profile(board) if hasattr(core, "get_hardware_profile") else {}
 
         b_dat.append({
             "Board": board,
+            "CPU": profile.get("cpu", "") if profile else "",
+            "Role": profile.get("role", "") if profile else "",
+            "Power": profile.get("power_class", "") if profile else "",
             "Score": score,
             "Latency": latency,
             "RAM": ram,
             "FFT_ms": l_fft,
             "Feature_ms": l_feat,
             "Inference_ms": l_inf,
+            "Gateway Fit": profile.get("gateway_fit", "No") if profile else "No",
+            "Recommended For": profile.get("recommended_for", "") if profile else "",
         })
 
     return b_dat
@@ -434,7 +442,7 @@ noise_l = sidebar_slider_with_number(
 # MAIN UI
 # ============================================================
 
-st.title("⚡ OMEGA-X Enterprise Studio V16")
+st.title("⚡ OMEGA-X Enterprise Studio V16.1")
 st.caption(
     "Synthetic Sensor Data • Digital Twin Aging • AI Dataset Doctor • Hardware Auto Architect • Edge Impulse Bundle"
 )
@@ -1014,7 +1022,7 @@ with tab5:
                 range_y=[0, 100]
             )
             fig_hw.update_layout(
-                height=300,
+                height=330,
                 margin=dict(l=0, r=0, t=30, b=0)
             )
 
@@ -1061,13 +1069,13 @@ with tab5:
 
 
 # ============================================================
-# TAB 6 — HARDWARE AUTO ARCHITECT
+# TAB 6 — HARDWARE AUTO ARCHITECT V16.1
 # ============================================================
 
 with tab6:
-    st.header("🏗️ Hardware Auto Architect")
+    st.header("🏗️ Hardware Auto Architect V16.1")
     st.caption(
-        "Niet alleen hardware-scores, maar een concreet architectuuradvies voor edge deployment."
+        "Kies automatisch hardware, vergelijk specifieke boards, of voer custom klant-hardware in."
     )
 
     m_df = safe_dataframe_from_dataset()
@@ -1077,77 +1085,269 @@ with tab6:
     else:
         num_features_default = 7
 
-    a1, a2, a3 = st.columns(3)
-
-    with a1:
-        architect_features = st.number_input(
-            "Number of features",
-            min_value=1,
-            max_value=128,
-            value=int(num_features_default)
-        )
-
-    with a2:
-        architect_sr = st.selectbox(
-            "Sample rate",
-            [4000, 8000, 16000, 22050],
-            index=0 if sr == 4000 else 2
-        )
-
-    with a3:
-        architect_target = st.selectbox(
-            "Optimization target",
-            ["balanced", "low_power", "performance"]
-        )
-
-    architect = core.hardware_auto_architect(
-        num_features=int(architect_features),
-        sr=int(architect_sr),
-        target=architect_target
+    mode = st.radio(
+        "Hardware mode",
+        [
+            "Auto recommendation",
+            "Compare selected boards",
+            "Custom hardware"
+        ],
+        horizontal=True
     )
 
-    st.subheader("Recommended Architecture")
-    st.success(architect["reason"])
+    st.markdown("---")
 
-    ranking_df = pd.DataFrame(architect["ranking"])
+    if mode == "Auto recommendation":
+        st.subheader("Automatic Node + Gateway Recommendation")
 
-    if not ranking_df.empty:
-        st.dataframe(ranking_df, use_container_width=True)
+        a1, a2, a3 = st.columns(3)
 
-        fig_rank = px.bar(
-            ranking_df,
-            x="board",
-            y="adjusted_score",
-            color="adjusted_score",
-            text="adjusted_score",
-            color_continuous_scale="RdYlGn"
+        with a1:
+            architect_features = st.number_input(
+                "Number of features",
+                min_value=1,
+                max_value=256,
+                value=int(num_features_default),
+                key="auto_arch_features"
+            )
+
+        with a2:
+            architect_sr = st.selectbox(
+                "Sample rate",
+                [4000, 8000, 16000, 22050, 44100],
+                index=0 if sr == 4000 else 2,
+                key="auto_arch_sr"
+            )
+
+        with a3:
+            architect_target = st.selectbox(
+                "Optimization target",
+                ["balanced", "low_power", "performance", "gateway"],
+                key="auto_arch_target"
+            )
+
+        architect = core.hardware_auto_architect(
+            num_features=int(architect_features),
+            sr=int(architect_sr),
+            target=architect_target
         )
-        fig_rank.update_layout(
-            height=320,
-            margin=dict(l=0, r=0, t=30, b=0)
+
+        st.success(architect["reason"])
+
+        n1, n2, n3, n4 = st.columns(4)
+        n1.metric("Recommended Board", architect["recommendation"])
+        n2.metric("Node", architect.get("node_recommendation", "Unknown"))
+        n3.metric("Gateway", architect.get("gateway_recommendation", "Unknown"))
+        n4.metric("FFT", architect.get("fft_recommendation", 1024))
+
+        ranking_df = pd.DataFrame(architect["ranking"])
+
+        if not ranking_df.empty:
+            st.subheader("Hardware Ranking")
+            st.dataframe(ranking_df, use_container_width=True)
+
+            fig_rank = px.bar(
+                ranking_df,
+                x="board",
+                y="adjusted_score",
+                color="adjusted_score",
+                text="adjusted_score",
+                hover_data=["cpu", "role", "power_class", "latency_ms", "ram_kb", "gateway_fit"],
+                color_continuous_scale="RdYlGn"
+            )
+            fig_rank.update_layout(
+                height=420,
+                margin=dict(l=0, r=0, t=30, b=0)
+            )
+            st.plotly_chart(fig_rank, use_container_width=True)
+
+        st.markdown("---")
+        st.subheader("Suggested Edge Architecture")
+
+        rec_node = architect.get("node_recommendation", architect["recommendation"])
+        rec_gateway = architect.get("gateway_recommendation", "Linux Gateway / Raspberry Pi 4")
+
+        st.write(f"**Recommended node:** {rec_node}")
+        st.write(f"**Recommended gateway:** {rec_gateway}")
+        st.write(f"**Sampling:** {architect_sr} Hz")
+        st.write(f"**FFT:** {architect.get('fft_recommendation', 1024)}")
+        st.write("**Communication:** LoRa / WiFi / BLE / MQTT afhankelijk van project.")
+        st.write("**Architecture note:** Gebruik MCU-node voor lokale feature extraction en gateway voor opslag, dashboards, API en model-updates.")
+
+    elif mode == "Compare selected boards":
+        st.subheader("Compare Selected Hardware")
+
+        all_boards = core.get_available_hardware()
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            compare_features = st.number_input(
+                "Number of features",
+                min_value=1,
+                max_value=256,
+                value=int(num_features_default),
+                key="compare_features"
+            )
+
+        with c2:
+            compare_sr = st.selectbox(
+                "Sample rate",
+                [4000, 8000, 16000, 22050, 44100],
+                index=0 if sr == 4000 else 2,
+                key="compare_sr"
+            )
+
+        with c3:
+            compare_target = st.selectbox(
+                "Optimization target",
+                ["balanced", "low_power", "performance", "gateway"],
+                key="compare_target"
+            )
+
+        selected_boards = st.multiselect(
+            "Select boards to compare",
+            all_boards,
+            default=all_boards[:6]
         )
-        st.plotly_chart(fig_rank, use_container_width=True)
+
+        if selected_boards:
+            architect = core.hardware_auto_architect(
+                num_features=int(compare_features),
+                sr=int(compare_sr),
+                target=compare_target,
+                selected_boards=selected_boards
+            )
+
+            st.success(architect["reason"])
+
+            ranking_df = pd.DataFrame(architect["ranking"])
+
+            st.dataframe(ranking_df, use_container_width=True)
+
+            fig_compare = px.bar(
+                ranking_df,
+                x="board",
+                y="adjusted_score",
+                color="adjusted_score",
+                text="adjusted_score",
+                hover_data=["cpu", "role", "power_class", "latency_ms", "ram_kb", "gateway_fit"],
+                color_continuous_scale="RdYlGn"
+            )
+            fig_compare.update_layout(
+                height=420,
+                margin=dict(l=0, r=0, t=30, b=0)
+            )
+            st.plotly_chart(fig_compare, use_container_width=True)
+
+            st.markdown("---")
+            st.subheader("Selected Hardware Advice")
+            st.write(f"**Best selected board:** {architect['recommendation']}")
+            st.write(f"**Node recommendation:** {architect.get('node_recommendation', 'Unknown')}")
+            st.write(f"**Gateway recommendation:** {architect.get('gateway_recommendation', 'Linux Gateway / Raspberry Pi 4')}")
+        else:
+            st.warning("Selecteer minimaal één board.")
+
+    else:
+        st.subheader("Custom Customer Hardware")
+        st.caption(
+            "Gebruik dit als een klant eigen hardware heeft die niet in de database staat."
+        )
+
+        c1, c2 = st.columns(2)
+
+        with c1:
+            custom_name = st.text_input(
+                "Hardware name",
+                "Customer Custom MCU"
+            )
+
+            custom_ram = st.number_input(
+                "Available RAM (KB)",
+                min_value=16,
+                max_value=8192000,
+                value=320,
+                step=16
+            )
+
+            custom_features = st.number_input(
+                "Number of features",
+                min_value=1,
+                max_value=256,
+                value=int(num_features_default)
+            )
+
+            custom_sr = st.selectbox(
+                "Sample rate",
+                [4000, 8000, 16000, 22050, 44100],
+                index=0 if sr == 4000 else 2
+            )
+
+        with c2:
+            st.write("Speed factors")
+            st.caption("Lager = sneller. ESP32-S3 FFT factor is ongeveer 0.00008.")
+
+            custom_fft_factor = st.number_input(
+                "FFT speed factor",
+                min_value=0.000001,
+                max_value=0.005000,
+                value=0.000100,
+                step=0.000001,
+                format="%.6f"
+            )
+
+            custom_feature_factor = st.number_input(
+                "Feature speed factor",
+                min_value=0.01,
+                max_value=5.0,
+                value=0.30,
+                step=0.01
+            )
+
+            custom_inference_ms = st.number_input(
+                "Estimated inference latency (ms)",
+                min_value=0.01,
+                max_value=100.0,
+                value=2.0,
+                step=0.1
+            )
+
+        if st.button("Evaluate Custom Hardware", type="primary", use_container_width=True):
+            result = core.estimate_custom_hardware_load(
+                hardware_name=custom_name,
+                ram_kb_available=custom_ram,
+                fft_speed_factor=custom_fft_factor,
+                feature_speed_factor=custom_feature_factor,
+                inference_ms=custom_inference_ms,
+                feat_n=int(custom_features),
+                sr=int(custom_sr)
+            )
+
+            st.markdown("---")
+            st.subheader("Custom Hardware Result")
+
+            r1, r2, r3, r4 = st.columns(4)
+            r1.metric("Score", f"{result['score']:.1f}%")
+            r2.metric("Verdict", result["verdict"])
+            r3.metric("Latency", f"{result['latency_ms']:.1f} ms")
+            r4.metric("RAM Fit", "Yes" if result["fits_ram"] else "No")
+
+            st.dataframe(pd.DataFrame([result]), use_container_width=True)
+
+            if result["score"] >= 85:
+                st.success("Deze hardware lijkt uitstekend geschikt voor deze workload.")
+            elif result["score"] >= 70:
+                st.info("Deze hardware lijkt geschikt, maar test latency en RAM op echte hardware.")
+            elif result["score"] >= 50:
+                st.warning("Deze hardware is bruikbaar voor prototype, maar mogelijk niet productiegeschikt.")
+            else:
+                st.error("Deze hardware wordt niet aanbevolen voor deze workload.")
 
     st.markdown("---")
-    st.subheader("Suggested Edge Design")
+    st.subheader("Hardware Catalog")
 
-    recommended = architect["recommendation"]
-
-    if "ESP32-S3" in recommended:
-        st.write("**Node:** ESP32-S3")
-        st.write("**Gateway:** RAK4631 / Linux Gateway")
-        st.write(f"**Sampling:** {architect_sr} Hz")
-        st.write("**FFT:** 2048 for audio, 1024 for vibration")
-        st.write("**Use case:** snelle audio/TinyML inference")
-    elif "RAK4631" in recommended:
-        st.write("**Node:** RAK4631")
-        st.write("**Gateway:** RAK WisGate / LoRaWAN server")
-        st.write(f"**Sampling:** {architect_sr} Hz")
-        st.write("**FFT:** 1024 recommended")
-        st.write("**Use case:** low-power LoRa sensor nodes")
+    if hasattr(core, "get_hardware_catalog"):
+        catalog_df = core.get_hardware_catalog()
+        st.dataframe(catalog_df, use_container_width=True)
     else:
-        st.write(f"**Node:** {recommended}")
-        st.write("**Gateway:** depends on project")
-        st.write(f"**Sampling:** {architect_sr} Hz")
-        st.write("**FFT:** 1024 recommended")
-        st.write("**Use case:** cost-sensitive deployments")
+        st.info("Hardware catalog niet beschikbaar in core.py.")
