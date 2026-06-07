@@ -13,6 +13,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_predict
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import core 
 
 warnings.filterwarnings('ignore')
