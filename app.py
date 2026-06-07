@@ -252,31 +252,12 @@ def create_enterprise_bundle(
     return zip_buf.getvalue()
 
 
-def make_fusion_zip(fusion_df, manifest):
-    zip_buf = io.BytesIO()
+def add_fusion_training_to_audit_dataset(training_df):
+    clean_df = training_df.copy()
 
-    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("sensor_fusion_dataset.csv", fusion_df.to_csv(index=False))
-        zf.writestr("manifest.json", json.dumps(manifest, indent=2))
-
-    return zip_buf.getvalue()
-
-
-def add_fusion_to_audit_dataset(fusion_df):
-    numeric_cols = [
-        "Label",
-        "AudioScore",
-        "VibrationScore",
-        "GasScore",
-        "RadarScore",
-        "GPSZoneScore",
-        "FusionScore",
-        "HealthScore",
-        "Confidence",
-    ]
-
-    clean_cols = [c for c in numeric_cols if c in fusion_df.columns]
-    clean_df = fusion_df[clean_cols].copy()
+    if "Label" not in clean_df.columns:
+        st.error("Training dataset mist Label-kolom.")
+        return
 
     st.session_state.dataset = pd.concat(
         [safe_dataframe_from_dataset(), clean_df],
@@ -492,9 +473,9 @@ noise_l = sidebar_slider_with_number(
 # MAIN UI
 # ============================================================
 
-st.title("⚡ OMEGA-X Enterprise Studio V17")
+st.title("⚡ OMEGA-X Enterprise Studio V17.1")
 st.caption(
-    "Synthetic Sensor Data • Digital Twin Aging • Sensor Fusion • AI Dataset Doctor • Hardware Auto Architect"
+    "Synthetic Sensor Data • Digital Twin Aging • Sensor Fusion Reports • AI Dataset Doctor • Hardware Auto Architect"
 )
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
@@ -868,13 +849,13 @@ with tab4:
 
 
 # ============================================================
-# TAB 5 — SENSOR FUSION STUDIO
+# TAB 5 — SENSOR FUSION STUDIO V17.1
 # ============================================================
 
 with tab5:
-    st.header("🧩 Sensor Fusion Studio")
+    st.header("🧩 Sensor Fusion Studio V17.1")
     st.caption(
-        "Combineer audio, vibration, gas, radar en GPS/zone-context tot één fused risk/health score."
+        "Combineer audio, vibration, gas, radar en GPS/zone-context tot één fused risk/health score met professioneel exportpakket."
     )
 
     fusion_templates = core.get_fusion_templates()
@@ -988,7 +969,7 @@ with tab5:
     st.markdown("---")
     st.subheader("Generate Multi-Sensor Fusion Dataset")
 
-    d1, d2 = st.columns(2)
+    d1, d2, d3 = st.columns(3)
 
     with d1:
         fusion_samples = st.number_input(
@@ -1005,6 +986,12 @@ with tab5:
             value=True
         )
 
+    with d3:
+        balanced_classes = st.checkbox(
+            "Balanced classes",
+            value=True
+        )
+
     if st.button("🧩 Generate Fusion Dataset", type="primary", use_container_width=True):
         fusion_df, fusion_manifest = core.generate_sensor_fusion_dataset(
             template_name=selected_template,
@@ -1014,19 +1001,47 @@ with tab5:
             base_gas=gas_score,
             base_radar=radar_score,
             base_gps=gps_score,
-            include_scenario_variants=include_variants
+            include_scenario_variants=include_variants,
+            balanced_classes=balanced_classes
+        )
+
+        export_bundle, fusion_doctor, training_df = core.create_sensor_fusion_export_bundle(
+            project_name=project_name,
+            fusion_df=fusion_df,
+            manifest=fusion_manifest
         )
 
         st.session_state["last_fusion_df"] = fusion_df
         st.session_state["last_fusion_manifest"] = fusion_manifest
+        st.session_state["last_fusion_doctor"] = fusion_doctor
+        st.session_state["last_fusion_training_df"] = training_df
+        st.session_state["last_fusion_bundle"] = export_bundle
 
         st.success(f"{len(fusion_df)} fusion samples gegenereerd.")
 
     if "last_fusion_df" in st.session_state:
         fusion_df = st.session_state["last_fusion_df"]
         fusion_manifest = st.session_state["last_fusion_manifest"]
+        fusion_doctor = st.session_state["last_fusion_doctor"]
+        training_df = st.session_state["last_fusion_training_df"]
+        export_bundle = st.session_state["last_fusion_bundle"]
 
-        st.dataframe(fusion_df.head(100), use_container_width=True)
+        st.markdown("---")
+        st.subheader("Fusion Dataset Preview")
+
+        preview_tab_1, preview_tab_2 = st.tabs([
+            "Full dataset",
+            "Training features"
+        ])
+
+        with preview_tab_1:
+            st.dataframe(fusion_df.head(100), use_container_width=True)
+
+        with preview_tab_2:
+            st.dataframe(training_df.head(100), use_container_width=True)
+            st.caption(
+                "Dit is de aanbevolen ML-training versie. Metadata zoals Event en RecommendedAction blijft in de full dataset."
+            )
 
         label_counts = fusion_df["Label"].value_counts().reset_index()
         label_counts.columns = ["Label", "Count"]
@@ -1040,19 +1055,43 @@ with tab5:
         fig_labels.update_layout(height=320)
         st.plotly_chart(fig_labels, use_container_width=True)
 
-        zip_data = make_fusion_zip(fusion_df, fusion_manifest)
+        st.markdown("---")
+        st.subheader("🩺 Fusion-Aware Dataset Doctor")
+
+        fd1, fd2, fd3, fd4 = st.columns(4)
+
+        fd1.metric("Diversity", f"{fusion_doctor.get('diversity_score', 0)}%")
+        fd2.metric("Balance", f"{fusion_doctor.get('balance_score', 0)}%")
+        fd3.metric("Separation", f"{fusion_doctor.get('separation_score', 0)}%")
+        fd4.metric("Overall", f"{fusion_doctor.get('overall_score', 0)}%")
+
+        for item in fusion_doctor.get("advice", []):
+            sev = item.get("severity", "info")
+            msg = item.get("message", "")
+
+            if sev == "high":
+                st.error(msg)
+            elif sev == "medium":
+                st.warning(msg)
+            elif sev == "low":
+                st.info(msg)
+            else:
+                st.success(msg)
+
+        st.markdown("---")
+        st.subheader("Professional Fusion Export")
 
         st.download_button(
-            "📦 Download Sensor Fusion Dataset ZIP",
-            data=zip_data,
-            file_name=f"{project_name}_sensor_fusion_dataset.zip",
+            "📦 Download Professional Fusion Bundle",
+            data=export_bundle,
+            file_name=f"{project_name}_sensor_fusion_professional_bundle.zip",
             mime="application/zip",
             use_container_width=True
         )
 
-        if st.button("➕ Add Fusion Dataset to Enterprise Audit", use_container_width=True):
-            add_fusion_to_audit_dataset(fusion_df)
-            st.success("Fusion dataset toegevoegd aan Enterprise Audit pipeline.")
+        if st.button("➕ Add Training Features to Enterprise Audit", use_container_width=True):
+            add_fusion_training_to_audit_dataset(training_df)
+            st.success("Fusion training features toegevoegd aan Enterprise Audit pipeline.")
 
 
 # ============================================================
@@ -1316,11 +1355,11 @@ with tab6:
 
 
 # ============================================================
-# TAB 7 — HARDWARE AUTO ARCHITECT V17
+# TAB 7 — HARDWARE AUTO ARCHITECT V17.1
 # ============================================================
 
 with tab7:
-    st.header("🏗️ Hardware Auto Architect V17")
+    st.header("🏗️ Hardware Auto Architect V17.1")
     st.caption(
         "Kies automatisch hardware, vergelijk specifieke boards, of voer custom klant-hardware in."
     )
