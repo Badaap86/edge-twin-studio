@@ -8,43 +8,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
 from fpdf import FPDF
 import io
-import sqlite3
-import json
-import datetime
 
-# ============================================================
-# DATABASE ENGINE (SQLite SaaS Foundation)
-# ============================================================
-def init_db():
-    conn = sqlite3.connect('omega_saas.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS projects
-                 (id TEXT PRIMARY KEY, name TEXT, created_at TEXT, dataset TEXT, settings TEXT)''')
-    conn.commit()
-    conn.close()
-
-def save_project(proj_id, name, dataset_df, settings_dict):
-    conn = sqlite3.connect('omega_saas.db')
-    c = conn.cursor()
-    c.execute("REPLACE INTO projects (id, name, created_at, dataset, settings) VALUES (?, ?, ?, ?, ?)",
-              (proj_id, name, str(datetime.datetime.now()), dataset_df.to_json(orient='records'), json.dumps(settings_dict)))
-    conn.commit()
-    conn.close()
-
-def load_project(proj_id):
-    conn = sqlite3.connect('omega_saas.db')
-    c = conn.cursor()
-    c.execute("SELECT name, dataset, settings FROM projects WHERE id=?", (proj_id,))
-    row = c.fetchone()
-    conn.close()
-    if row: return {"name": row[0], "dataset": pd.read_json(io.StringIO(row[1])), "settings": json.loads(row[2])}
-    return None
-
-def get_all_projects():
-    conn = sqlite3.connect('omega_saas.db')
-    df = pd.read_sql_query("SELECT id, name, created_at FROM projects", conn)
-    conn.close()
-    return df
+# Let op: Database functies (init_db, save_project, etc.) zijn succesvol verplaatst naar database.py!
 
 # ============================================================
 # DSP ENGINE (HERSTELDE DEEP CLONER)
