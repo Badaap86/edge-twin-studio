@@ -164,29 +164,44 @@ def generate_universal_signal(duration, sr, base_f, harm_r, imp_r, noise_l, norm
     sr = int(sr)
     t = np.linspace(0, duration, int(sr * duration), endpoint=False)
     sig = np.sin(2 * np.pi * base_f * t) if base_f > 0 else np.zeros_like(t)
+
     if harm_r > 0 and base_f > 0:
         for h in range(2, 6):
             sig += (harm_r / h) * np.sin(2 * np.pi * (base_f * h) * t)
+
     if imp_r > 0:
         for i_t in np.arange(0, duration, 1.0 / max(imp_r, 1e-6)):
             idx = int((i_t + np.random.uniform(-0.02, 0.02)) * sr)
             if 0 <= idx < len(t):
                 decay = np.exp(-25 * (t[idx:] - i_t))
                 sig[idx:] += 2.5 * np.random.normal(0, 1, len(decay)) * decay
+
     sig += np.random.normal(0, noise_l, len(t))
+
     max_val = np.max(np.abs(sig)) if len(sig) else 0.0
     if normalize and max_val > 0:
         sig = sig / max_val
+
     f, v = calculate_fft(sig, sr)
-    return {"t": t, "sig": sig, "fft_f": f, "fft_v": v, "sr": sr}
+
+    return {
+        "t": t,
+        "sig": sig,
+        "fft_f": f,
+        "fft_v": v,
+        "sr": sr,
+    }
 
 
 def extract_signal_features(sig, sr, label=None):
     sig = np.asarray(sig, dtype=float)
     sig = sig - np.mean(sig)
+
     f_f, v_f = calculate_fft(sig, sr)
+
     rms = float(np.sqrt(np.mean(sig ** 2))) if len(sig) else 0.0
     zcr, centroid, rolloff, flatness = get_audio_features(sig, f_f, v_f)
+
     out = {
         "RMS": rms,
         "Std": float(np.std(sig)) if len(sig) else 0.0,
@@ -197,25 +212,32 @@ def extract_signal_features(sig, sr, label=None):
         "SpectralRolloff": rolloff,
         "SpectralFlatness": flatness,
     }
+
     if label is not None:
         out = {"Label": label, **out}
+
     return out
 
 
 def extract_features_from_bytes(file_bytes, filename, sr=16000):
     try:
         lower = filename.lower()
+
         if lower.endswith(".csv"):
             df = pd.read_csv(io.BytesIO(file_bytes))
             if df.shape[1] < 2:
                 return {"error": "CSV must contain at least two columns."}
             sig = df.iloc[:, 1].astype(float).values
+
         elif lower.endswith(".wav"):
             sr, wav_data = wavfile.read(io.BytesIO(file_bytes))
             sig = (wav_data.mean(axis=1) if len(wav_data.shape) > 1 else wav_data).astype(float)
+
         else:
             return {"error": "Unsupported file type. Use CSV or WAV."}
+
         return extract_signal_features(sig, sr)
+
     except Exception as e:
         return {"error": str(e)}
 
@@ -271,10 +293,13 @@ def get_industry_pack(pack_name):
 
 def generate_industry_pack_dataset(pack_name, samples_per_class=50):
     pack = get_industry_pack(pack_name)
+
     if not pack:
         return pd.DataFrame(), {"error": "Unknown pack"}
+
     rows = []
     sr = pack["sample_rate"]
+
     for label, params in pack["classes"].items():
         for _ in range(int(samples_per_class)):
             p = {
@@ -283,15 +308,33 @@ def generate_industry_pack_dataset(pack_name, samples_per_class=50):
                 "imp_r": max(0, params["imp_r"] + np.random.normal(0, max(params["imp_r"] * 0.04, 0.2))),
                 "noise_l": max(0.001, params["noise_l"] * np.random.uniform(0.85, 1.20)),
             }
-            d = generate_universal_signal(2.0, sr, p["base_f"], p["harm_r"], p["imp_r"], p["noise_l"])
+
+            d = generate_universal_signal(
+                duration=2.0,
+                sr=sr,
+                base_f=p["base_f"],
+                harm_r=p["harm_r"],
+                imp_r=p["imp_r"],
+                noise_l=p["noise_l"],
+            )
+
             rows.append(extract_signal_features(d["sig"], sr, label))
+
     df = pd.DataFrame(rows)
-    manifest = {"pack_name": pack_name, "sample_rate": sr, "samples_per_class": samples_per_class, "classes": list(pack["classes"].keys())}
+
+    manifest = {
+        "pack_name": pack_name,
+        "sample_rate": sr,
+        "samples_per_class": samples_per_class,
+        "classes": list(pack["classes"].keys()),
+    }
+
     return df, manifest
 
 
 def apply_aging_profile(base_params, aging_percent):
     aging = np.clip(float(aging_percent), 0, 100) / 100.0
+
     return {
         "base_f": float(base_params.get("base_f", 50)) * (1 + 0.03 * aging),
         "harm_r": float(base_params.get("harm_r", 0.05)) * (1 + 2.8 * aging),
@@ -308,29 +351,77 @@ FUSION_TEMPLATES = {
     "Smart Forestry Threat": {
         "description": "Kettingzaag, voertuig, menselijke activiteit en remote-zone risico.",
         "mode": "threat",
-        "weights": {"audio": 0.35, "vibration": 0.15, "gas": 0.05, "radar": 0.25, "gps": 0.20},
-        "defaults": {"audio": 85, "vibration": 30, "gas": 10, "radar": 75, "gps": 80},
+        "weights": {
+            "audio": 0.35,
+            "vibration": 0.15,
+            "gas": 0.05,
+            "radar": 0.25,
+            "gps": 0.20,
+        },
+        "defaults": {
+            "audio": 85,
+            "vibration": 30,
+            "gas": 10,
+            "radar": 75,
+            "gps": 80,
+        },
         "classes": ["Normal", "Human_Activity", "Vehicle", "Chainsaw", "Critical_Threat"],
     },
     "Construction Site Tamper": {
         "description": "Grinding, cutting, impact, handling en voertuigactiviteit.",
         "mode": "threat",
-        "weights": {"audio": 0.30, "vibration": 0.30, "gas": 0.05, "radar": 0.25, "gps": 0.10},
-        "defaults": {"audio": 75, "vibration": 80, "gas": 5, "radar": 70, "gps": 40},
+        "weights": {
+            "audio": 0.30,
+            "vibration": 0.30,
+            "gas": 0.05,
+            "radar": 0.25,
+            "gps": 0.10,
+        },
+        "defaults": {
+            "audio": 75,
+            "vibration": 80,
+            "gas": 5,
+            "radar": 70,
+            "gps": 40,
+        },
         "classes": ["Normal", "Handling", "Impact", "Tool_Use", "Critical_Tamper"],
     },
     "Predictive Maintenance Fusion": {
         "description": "Machine health analyse met audio, vibratie, gas/temperatuur en asset context.",
         "mode": "health",
-        "weights": {"audio": 0.25, "vibration": 0.45, "gas": 0.20, "radar": 0.05, "gps": 0.05},
-        "defaults": {"audio": 35, "vibration": 85, "gas": 40, "radar": 0, "gps": 5},
+        "weights": {
+            "audio": 0.25,
+            "vibration": 0.45,
+            "gas": 0.20,
+            "radar": 0.05,
+            "gps": 0.05,
+        },
+        "defaults": {
+            "audio": 35,
+            "vibration": 85,
+            "gas": 40,
+            "radar": 0,
+            "gps": 5,
+        },
         "classes": ["Healthy", "Early_Wear", "Wear", "Failure_Risk", "Critical_Failure"],
     },
     "Remote Asset Security": {
         "description": "Containers, machines, landbouwassets en afgelegen infrastructuur.",
         "mode": "threat",
-        "weights": {"audio": 0.25, "vibration": 0.25, "gas": 0.10, "radar": 0.30, "gps": 0.10},
-        "defaults": {"audio": 55, "vibration": 65, "gas": 10, "radar": 80, "gps": 50},
+        "weights": {
+            "audio": 0.25,
+            "vibration": 0.25,
+            "gas": 0.10,
+            "radar": 0.30,
+            "gps": 0.10,
+        },
+        "defaults": {
+            "audio": 55,
+            "vibration": 65,
+            "gas": 10,
+            "radar": 80,
+            "gps": 50,
+        },
         "classes": ["Normal", "Approach", "Handling", "Tamper", "Critical_Theft_Risk"],
     },
 }
@@ -399,9 +490,17 @@ def get_fusion_template(template_name):
     return FUSION_TEMPLATES.get(template_name)
 
 
-def calculate_fusion_score(audio_score, vibration_score, gas_score, radar_score, gps_score, template_name="Smart Forestry Threat"):
+def calculate_fusion_score(
+    audio_score,
+    vibration_score,
+    gas_score,
+    radar_score,
+    gps_score,
+    template_name="Smart Forestry Threat",
+):
     template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
     weights = template["weights"]
+
     values = {
         "audio": float(np.clip(audio_score, 0, 100)),
         "vibration": float(np.clip(vibration_score, 0, 100)),
@@ -409,9 +508,11 @@ def calculate_fusion_score(audio_score, vibration_score, gas_score, radar_score,
         "radar": float(np.clip(radar_score, 0, 100)),
         "gps": float(np.clip(gps_score, 0, 100)),
     }
+
     fusion = float(np.clip(sum(values[k] * weights.get(k, 0.0) for k in values), 0, 100))
     health = float(np.clip(100 - fusion, 0, 100))
     confidence = float(np.clip(100 - np.std(list(values.values())) * 0.75, 0, 100))
+
     if fusion < 20:
         level = "LOW"
     elif fusion < 45:
@@ -420,6 +521,7 @@ def calculate_fusion_score(audio_score, vibration_score, gas_score, radar_score,
         level = "HIGH"
     else:
         level = "CRITICAL"
+
     if template.get("mode") == "health":
         if health > 80:
             event, action = "Healthy", "Continue monitoring."
@@ -438,22 +540,36 @@ def calculate_fusion_score(audio_score, vibration_score, gas_score, radar_score,
             event, action = "Likely event", "Send alert / verify situation."
         else:
             event, action = "Critical threat", "Immediate response recommended."
-    return {"fusion_score": fusion, "health_score": health, "confidence": confidence, "level": level, "event": event, "recommended_action": action, "sensor_values": values, "weights": weights}
+
+    return {
+        "fusion_score": fusion,
+        "health_score": health,
+        "confidence": confidence,
+        "level": level,
+        "event": event,
+        "recommended_action": action,
+        "sensor_values": values,
+        "weights": weights,
+    }
 
 
 def fusion_score_target_for_label(label, classes):
     if label not in classes:
         return 50.0
+
     idx = classes.index(label)
     low = (idx / len(classes)) * 100
     high = ((idx + 1) / len(classes)) * 100
+
     return float((low + high) / 2.0)
 
 
 def fusion_label_from_score(score, template_name):
     template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
     classes = template.get("classes", ["Normal", "Elevated", "High", "Critical"])
+
     idx = int(np.floor((float(np.clip(score, 0, 100)) / 100.0) * len(classes)))
+
     return classes[min(max(idx, 0), len(classes) - 1)]
 
 
@@ -461,6 +577,7 @@ def generate_balanced_sensor_values_for_target(template_name, target_score):
     template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
     weights = template["weights"]
     base = float(np.clip(target_score, 0, 100))
+
     return (
         np.clip(base + np.random.normal(0, 12) + weights.get("audio", 0.2) * 15, 0, 100),
         np.clip(base + np.random.normal(0, 12) + weights.get("vibration", 0.2) * 15, 0, 100),
@@ -470,15 +587,33 @@ def generate_balanced_sensor_values_for_target(template_name, target_score):
     )
 
 
-def generate_sensor_fusion_sample(template_name, audio_score, vibration_score, gas_score, radar_score, gps_score, jitter=True):
+def generate_sensor_fusion_sample(
+    template_name,
+    audio_score,
+    vibration_score,
+    gas_score,
+    radar_score,
+    gps_score,
+    jitter=True,
+):
     if jitter:
         audio_score = np.clip(audio_score + np.random.normal(0, 5), 0, 100)
         vibration_score = np.clip(vibration_score + np.random.normal(0, 5), 0, 100)
         gas_score = np.clip(gas_score + np.random.normal(0, 4), 0, 100)
         radar_score = np.clip(radar_score + np.random.normal(0, 6), 0, 100)
         gps_score = np.clip(gps_score + np.random.normal(0, 4), 0, 100)
-    result = calculate_fusion_score(audio_score, vibration_score, gas_score, radar_score, gps_score, template_name)
+
+    result = calculate_fusion_score(
+        audio_score,
+        vibration_score,
+        gas_score,
+        radar_score,
+        gps_score,
+        template_name,
+    )
+
     label = fusion_label_from_score(result["fusion_score"], template_name)
+
     return {
         "Label": label,
         "Template": template_name,
@@ -499,8 +634,19 @@ def generate_sensor_fusion_sample(template_name, audio_score, vibration_score, g
 def get_fusion_training_columns(template_name=None):
     template = get_fusion_template(template_name) if template_name else None
     mode = template.get("mode", "threat") if template else "threat"
-    cols = ["Label", "AudioScore", "VibrationScore", "GasScore", "RadarScore", "GPSZoneScore", "Confidence"]
+
+    cols = [
+        "Label",
+        "AudioScore",
+        "VibrationScore",
+        "GasScore",
+        "RadarScore",
+        "GPSZoneScore",
+        "Confidence",
+    ]
+
     cols.append("HealthScore" if mode == "health" else "FusionScore")
+
     return cols
 
 
@@ -509,36 +655,75 @@ def create_fusion_training_dataframe(fusion_df, template_name=None):
     return fusion_df[[c for c in cols if c in fusion_df.columns]].copy()
 
 
-def generate_sensor_fusion_dataset(template_name, samples=500, base_audio=50, base_vibration=50, base_gas=20, base_radar=50, base_gps=50, include_scenario_variants=True, balanced_classes=True):
+def generate_sensor_fusion_dataset(
+    template_name,
+    samples=500,
+    base_audio=50,
+    base_vibration=50,
+    base_gas=20,
+    base_radar=50,
+    base_gps=50,
+    include_scenario_variants=True,
+    balanced_classes=True,
+):
     template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
     classes = template.get("classes", ["Normal", "Elevated", "High", "Critical"])
     defaults = template.get("defaults", {})
+
     base_audio = defaults.get("audio", base_audio)
     base_vibration = defaults.get("vibration", base_vibration)
     base_gas = defaults.get("gas", base_gas)
     base_radar = defaults.get("radar", base_radar)
     base_gps = defaults.get("gps", base_gps)
+
     rows = []
     samples = int(samples)
+
     if balanced_classes and classes:
         per_class = max(1, samples // len(classes))
         plan = []
+
         for label in classes:
             plan.extend([label] * per_class)
+
         while len(plan) < samples:
             plan.append(np.random.choice(classes))
+
         np.random.shuffle(plan)
+
         for label in plan[:samples]:
             target = fusion_score_target_for_label(label, classes)
             vals = generate_balanced_sensor_values_for_target(template_name, target)
             row = generate_sensor_fusion_sample(template_name, *vals, jitter=True)
             row["Label"] = label
             rows.append(row)
+
     else:
         for _ in range(samples):
-            multiplier = np.random.choice([np.random.uniform(0.1, 0.35), np.random.uniform(0.35, 0.65), np.random.uniform(0.65, 0.9), np.random.uniform(0.9, 1.15)]) if include_scenario_variants else 1.0
-            rows.append(generate_sensor_fusion_sample(template_name, base_audio * multiplier, base_vibration * multiplier, base_gas * multiplier, base_radar * multiplier, base_gps * multiplier, jitter=True))
+            if include_scenario_variants:
+                multiplier = np.random.choice([
+                    np.random.uniform(0.1, 0.35),
+                    np.random.uniform(0.35, 0.65),
+                    np.random.uniform(0.65, 0.9),
+                    np.random.uniform(0.9, 1.15),
+                ])
+            else:
+                multiplier = 1.0
+
+            rows.append(
+                generate_sensor_fusion_sample(
+                    template_name,
+                    base_audio * multiplier,
+                    base_vibration * multiplier,
+                    base_gas * multiplier,
+                    base_radar * multiplier,
+                    base_gps * multiplier,
+                    jitter=True,
+                )
+            )
+
     df = pd.DataFrame(rows)
+
     manifest = {
         "engine": "EdgeTwin Studio V18 - Powered by OMEGA-X Engine",
         "template": template_name,
@@ -549,17 +734,36 @@ def generate_sensor_fusion_dataset(template_name, samples=500, base_audio=50, ba
         "columns": list(df.columns),
         "recommended_training_features": get_fusion_training_columns(template_name),
     }
+
     return df, manifest
 
 
 def run_demo_project(demo_name):
     demo = get_demo_project(demo_name)
+
     if not demo:
         raise ValueError("Unknown demo project")
-    fusion_df, manifest = generate_sensor_fusion_dataset(demo["template"], samples=demo["samples"], balanced_classes=True)
+
+    fusion_df, manifest = generate_sensor_fusion_dataset(
+        demo["template"],
+        samples=demo["samples"],
+        balanced_classes=True,
+    )
+
     doctor = fusion_dataset_doctor(fusion_df, demo["template"])
     training_df = create_fusion_training_dataframe(fusion_df, demo["template"])
-    hw = hardware_auto_architect(num_features=max(1, len(training_df.columns) - 1), sr=16000 if "Forestry" in demo["template"] or "Security" in demo["template"] else 4000, target=demo["hardware_target"])
+
+    if "Forestry" in demo["template"] or "Security" in demo["template"]:
+        sr = 16000
+    else:
+        sr = 4000
+
+    hw = hardware_auto_architect(
+        num_features=max(1, len(training_df.columns) - 1),
+        sr=sr,
+        target=demo["hardware_target"],
+    )
+
     commercial_summary = {
         "demo_name": demo_name,
         "title": demo["title"],
@@ -571,7 +775,16 @@ def run_demo_project(demo_name):
         "recommended_board": hw["recommendation"],
         "overall_score": doctor["overall_score"],
     }
-    return {"demo": demo, "fusion_df": fusion_df, "manifest": manifest, "doctor": doctor, "training_df": training_df, "hardware": hw, "commercial_summary": commercial_summary}
+
+    return {
+        "demo": demo,
+        "fusion_df": fusion_df,
+        "manifest": manifest,
+        "doctor": doctor,
+        "training_df": training_df,
+        "hardware": hw,
+        "commercial_summary": commercial_summary,
+    }
 
 
 # ============================================================
@@ -579,13 +792,83 @@ def run_demo_project(demo_name):
 # ============================================================
 
 HARDWARE_PROFILES = {
-    "ESP32-S3": {"cpu": "Xtensa LX7 dual-core", "role": "Edge AI Node", "power_class": "Medium", "fft_mult": 0.00008, "feat_mult": 0.20, "inf_mult": 1.50, "target_ram": 320, "gateway_fit": "No", "notes": "Audio TinyML, vibration classification, WiFi/BLE edge nodes."},
-    "RAK4631 / nRF52840": {"cpu": "ARM Cortex-M4F", "role": "Ultra-low-power LoRa Node", "power_class": "Very Low", "fft_mult": 0.00015, "feat_mult": 0.40, "inf_mult": 3.00, "target_ram": 256, "gateway_fit": "LoRa node", "notes": "LoRaWAN and battery-powered remote sensing."},
-    "STM32U5": {"cpu": "ARM Cortex-M33", "role": "Secure Industrial Low-power Node", "power_class": "Very Low", "fft_mult": 0.00009, "feat_mult": 0.22, "inf_mult": 1.80, "target_ram": 512, "gateway_fit": "No", "notes": "Secure industrial sensing and low-power TinyML."},
-    "STM32H7": {"cpu": "ARM Cortex-M7", "role": "High-performance Industrial Node", "power_class": "Medium-High", "fft_mult": 0.000035, "feat_mult": 0.10, "inf_mult": 0.80, "target_ram": 1024, "gateway_fit": "Limited", "notes": "High-speed vibration, audio DSP and industrial inference."},
-    "Raspberry Pi Zero 2 W": {"cpu": "Quad-core ARM Cortex-A53", "role": "Light Linux Gateway", "power_class": "Medium", "fft_mult": 0.000015, "feat_mult": 0.05, "inf_mult": 0.40, "target_ram": 512000, "gateway_fit": "Yes", "notes": "Light MQTT gateway and dashboard bridge."},
-    "Raspberry Pi 5": {"cpu": "Quad-core ARM Cortex-A76", "role": "High-performance Linux Gateway", "power_class": "High", "fft_mult": 0.000003, "feat_mult": 0.01, "inf_mult": 0.08, "target_ram": 4096000, "gateway_fit": "Yes", "notes": "Fast gateway, local model training and dashboards."},
-    "Generic Linux Gateway": {"cpu": "x86/ARM Linux", "role": "Industrial Gateway / Server", "power_class": "High", "fft_mult": 0.000003, "feat_mult": 0.01, "inf_mult": 0.05, "target_ram": 8192000, "gateway_fit": "Yes", "notes": "API server, database, dashboards and model orchestration."},
+    "ESP32-S3": {
+        "cpu": "Xtensa LX7 dual-core",
+        "role": "Edge AI Node",
+        "power_class": "Medium",
+        "fft_mult": 0.00008,
+        "feat_mult": 0.20,
+        "inf_mult": 1.50,
+        "target_ram": 320,
+        "gateway_fit": "No",
+        "notes": "Audio TinyML, vibration classification, WiFi/BLE edge nodes.",
+    },
+    "RAK4631 / nRF52840": {
+        "cpu": "ARM Cortex-M4F",
+        "role": "Ultra-low-power LoRa Node",
+        "power_class": "Very Low",
+        "fft_mult": 0.00015,
+        "feat_mult": 0.40,
+        "inf_mult": 3.00,
+        "target_ram": 256,
+        "gateway_fit": "LoRa node",
+        "notes": "LoRaWAN and battery-powered remote sensing.",
+    },
+    "STM32U5": {
+        "cpu": "ARM Cortex-M33",
+        "role": "Secure Industrial Low-power Node",
+        "power_class": "Very Low",
+        "fft_mult": 0.00009,
+        "feat_mult": 0.22,
+        "inf_mult": 1.80,
+        "target_ram": 512,
+        "gateway_fit": "No",
+        "notes": "Secure industrial sensing and low-power TinyML.",
+    },
+    "STM32H7": {
+        "cpu": "ARM Cortex-M7",
+        "role": "High-performance Industrial Node",
+        "power_class": "Medium-High",
+        "fft_mult": 0.000035,
+        "feat_mult": 0.10,
+        "inf_mult": 0.80,
+        "target_ram": 1024,
+        "gateway_fit": "Limited",
+        "notes": "High-speed vibration, audio DSP and industrial inference.",
+    },
+    "Raspberry Pi Zero 2 W": {
+        "cpu": "Quad-core ARM Cortex-A53",
+        "role": "Light Linux Gateway",
+        "power_class": "Medium",
+        "fft_mult": 0.000015,
+        "feat_mult": 0.05,
+        "inf_mult": 0.40,
+        "target_ram": 512000,
+        "gateway_fit": "Yes",
+        "notes": "Light MQTT gateway and dashboard bridge.",
+    },
+    "Raspberry Pi 5": {
+        "cpu": "Quad-core ARM Cortex-A76",
+        "role": "High-performance Linux Gateway",
+        "power_class": "High",
+        "fft_mult": 0.000003,
+        "feat_mult": 0.01,
+        "inf_mult": 0.08,
+        "target_ram": 4096000,
+        "gateway_fit": "Yes",
+        "notes": "Fast gateway, local model training and dashboards.",
+    },
+    "Generic Linux Gateway": {
+        "cpu": "x86/ARM Linux",
+        "role": "Industrial Gateway / Server",
+        "power_class": "High",
+        "fft_mult": 0.000003,
+        "feat_mult": 0.01,
+        "inf_mult": 0.05,
+        "target_ram": 8192000,
+        "gateway_fit": "Yes",
+        "notes": "API server, database, dashboards and model orchestration.",
+    },
 }
 
 
@@ -594,27 +877,48 @@ def get_available_hardware():
 
 
 def get_hardware_catalog():
-    return pd.DataFrame([
-        {"board": name, "cpu": p["cpu"], "role": p["role"], "power_class": p["power_class"], "target_ram_kb": p["target_ram"], "gateway_fit": p["gateway_fit"], "notes": p["notes"]}
-        for name, p in HARDWARE_PROFILES.items()
-    ])
+    rows = []
+
+    for name, p in HARDWARE_PROFILES.items():
+        rows.append({
+            "board": name,
+            "cpu": p["cpu"],
+            "role": p["role"],
+            "power_class": p["power_class"],
+            "target_ram_kb": p["target_ram"],
+            "gateway_fit": p["gateway_fit"],
+            "notes": p["notes"],
+        })
+
+    return pd.DataFrame(rows)
 
 
 def estimate_edge_load(hw_name, feat_n, sr, duration=1.0):
     p = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["RAK4631 / nRF52840"])
+
     fft_n = 1024 if sr <= 4000 else 2048
-    ram = ((min(int(sr * duration), 8192) * 4) + (fft_n * 8) + 2048) / 1024
+
+    ram = (
+        (min(int(sr * duration), 8192) * 4)
+        + (fft_n * 8)
+        + 2048
+    ) / 1024
+
     fft_ms = (fft_n * np.log2(fft_n)) * p["fft_mult"]
     feat_ms = feat_n * p["feat_mult"]
     inf_ms = p["inf_mult"]
+
     return float(ram), float(fft_ms), float(feat_ms), float(inf_ms)
 
 
 def calculate_deployment_score(hw_name, latency, ram_kb):
     p = HARDWARE_PROFILES.get(hw_name, HARDWARE_PROFILES["RAK4631 / nRF52840"])
+
     lat_score = max(0, 100 - (latency / 20.0) * 50)
     ram_score = max(0, 100 - (ram_kb / max(p["target_ram"] / 2, 1)) * 50)
+
     score = lat_score * 0.7 + ram_score * 0.3
+
     if p["fft_mult"] < 0.00001:
         score += 15
     elif p["fft_mult"] < 0.00005:
@@ -623,35 +927,67 @@ def calculate_deployment_score(hw_name, latency, ram_kb):
         score += 10
     elif p["fft_mult"] < 0.00020:
         score += 5
+
     if p["power_class"] == "Very Low":
         score += 3
+
     return float(np.clip(score, 0, 100))
 
 
 def hardware_auto_architect(num_features, sr, target="balanced", selected_boards=None):
     boards = selected_boards or get_available_hardware()
     rows = []
+
     for board in boards:
         if board not in HARDWARE_PROFILES:
             continue
+
         p = HARDWARE_PROFILES[board]
         ram, fft_ms, feat_ms, inf_ms = estimate_edge_load(board, num_features, sr)
         latency = fft_ms + feat_ms + inf_ms
         score = calculate_deployment_score(board, latency, ram)
+
         adjusted = score
+
         if target == "low_power":
-            adjusted += {"Very Low": 12, "Low": 8, "Medium": 3}.get(p["power_class"], 0) - latency * 0.20
+            adjusted += {
+                "Very Low": 12,
+                "Low": 8,
+                "Medium": 3,
+            }.get(p["power_class"], 0) - latency * 0.20
+
         elif target == "performance":
             adjusted -= latency * 1.0
+
         elif target == "gateway":
             adjusted += 20 if p["gateway_fit"] == "Yes" else 0
             adjusted -= latency * 0.35
+
         else:
             adjusted -= latency * 0.50
-        rows.append({"board": board, "cpu": p["cpu"], "role": p["role"], "power_class": p["power_class"], "score": score, "adjusted_score": adjusted, "latency_ms": latency, "ram_kb": ram, "gateway_fit": p["gateway_fit"], "notes": p["notes"]})
+
+        rows.append({
+            "board": board,
+            "cpu": p["cpu"],
+            "role": p["role"],
+            "power_class": p["power_class"],
+            "score": score,
+            "adjusted_score": adjusted,
+            "latency_ms": latency,
+            "ram_kb": ram,
+            "gateway_fit": p["gateway_fit"],
+            "notes": p["notes"],
+        })
+
     rows = sorted(rows, key=lambda r: r["adjusted_score"], reverse=True)
+
     best = rows[0] if rows else {"board": "Unknown"}
-    return {"recommendation": best["board"], "ranking": rows, "reason": f"Best fit for {target}: {best['board']} with {best.get('latency_ms', 0):.1f} ms estimated latency."}
+
+    return {
+        "recommendation": best["board"],
+        "ranking": rows,
+        "reason": f"Best fit for {target}: {best['board']} with {best.get('latency_ms', 0):.1f} ms estimated latency.",
+    }
 
 
 # ============================================================
@@ -661,91 +997,211 @@ def hardware_auto_architect(num_features, sr, target="balanced", selected_boards
 def calculate_audit_scores(X_df, y_series):
     if X_df is None or len(X_df) == 0 or y_series is None or len(y_series) == 0:
         return 0, 0, 0
+
     try:
         X_scaled = StandardScaler().fit_transform(X_df)
     except Exception:
         return 0, 0, 0
+
     label_counts = y_series.value_counts()
-    div = min(100, int((np.mean(pdist(X_scaled)) / 4.0) * 100)) if len(X_scaled) > 1 else 0
-    bal = 100 if len(label_counts) >= 2 and label_counts.max() > 0 and (label_counts.min() / label_counts.max()) > 0.5 else 50
+
+    if len(X_scaled) > 1:
+        div = min(100, int((np.mean(pdist(X_scaled)) / 4.0) * 100))
+    else:
+        div = 0
+
+    if len(label_counts) >= 2 and label_counts.max() > 0 and (label_counts.min() / label_counts.max()) > 0.5:
+        bal = 100
+    else:
+        bal = 50
+
     try:
-        sep = int((silhouette_score(X_scaled, y_series) + 1) * 50) if len(y_series.unique()) >= 2 and label_counts.min() >= 2 else 0
+        if len(y_series.unique()) >= 2 and label_counts.min() >= 2:
+            sep = int((silhouette_score(X_scaled, y_series) + 1) * 50)
+        else:
+            sep = 0
     except Exception:
         sep = 0
+
     return div, bal, sep
 
 
 def fusion_dataset_doctor(fusion_df, template_name=None):
     if fusion_df is None or len(fusion_df) == 0 or "Label" not in fusion_df.columns:
-        return {"overall_score": 0, "advice": [{"severity": "high", "message": "Geen geldige fusion dataset aanwezig."}]}
+        return {
+            "overall_score": 0,
+            "advice": [
+                {
+                    "severity": "high",
+                    "message": "Geen geldige fusion dataset aanwezig.",
+                }
+            ],
+        }
+
     df = fusion_df.copy()
     label_counts = df["Label"].value_counts()
+
     advice = []
     severity = []
+
     if len(label_counts) < 2:
-        advice.append("Dataset heeft maar een klasse. Genereer balanced classes."); severity.append("high")
+        advice.append("Dataset heeft maar een klasse. Genereer balanced classes.")
+        severity.append("high")
+
     elif label_counts.min() / max(label_counts.max(), 1) < 0.65:
-        advice.append("Class balance is zwak. Gebruik balanced generation of verhoog sample count."); severity.append("high")
+        advice.append("Class balance is zwak. Gebruik balanced generation of verhoog sample count.")
+        severity.append("high")
+
     else:
-        advice.append("Class balance ziet er goed uit."); severity.append("info")
-    sensor_cols = ["AudioScore", "VibrationScore", "GasScore", "RadarScore", "GPSZoneScore"]
+        advice.append("Class balance ziet er goed uit.")
+        severity.append("info")
+
+    sensor_cols = [
+        "AudioScore",
+        "VibrationScore",
+        "GasScore",
+        "RadarScore",
+        "GPSZoneScore",
+    ]
+
     missing = [c for c in sensor_cols if c not in df.columns]
+
     if missing:
-        advice.append(f"Ontbrekende sensor-kolommen: {', '.join(missing)}."); severity.append("high")
+        advice.append(f"Ontbrekende sensor-kolommen: {', '.join(missing)}.")
+        severity.append("high")
+
     else:
         low_var = df[sensor_cols].std(numeric_only=True)
         low_var = low_var[low_var < 3].index.tolist()
+
         if low_var:
-            advice.append(f"Lage sensor-variatie bij: {', '.join(low_var)}."); severity.append("medium")
+            advice.append(f"Lage sensor-variatie bij: {', '.join(low_var)}.")
+            severity.append("medium")
         else:
-            advice.append("Sensorvariatie ziet er gezond uit."); severity.append("info")
+            advice.append("Sensorvariatie ziet er gezond uit.")
+            severity.append("info")
+
     training_df = create_fusion_training_dataframe(df, template_name)
     numeric = [c for c in training_df.columns if c != "Label"]
-    div, bal, sep = calculate_audit_scores(training_df[numeric], training_df["Label"]) if numeric else (0, 0, 0)
-    if sep < 50 and len(label_counts) >= 2:
-        advice.append("Label separation is laag. Maak scenario's sterker verschillend."); severity.append("high")
-    elif sep < 75 and len(label_counts) >= 2:
-        advice.append("Label separation is middelmatig. Dit is bruikbaar voor demo, maar optimalisatie kan beter."); severity.append("medium")
+
+    if numeric:
+        div, bal, sep = calculate_audit_scores(training_df[numeric], training_df["Label"])
     else:
-        advice.append("Label separation is goed bruikbaar."); severity.append("info")
+        div, bal, sep = 0, 0, 0
+
+    if sep < 50 and len(label_counts) >= 2:
+        advice.append("Label separation is laag. Maak scenario's sterker verschillend.")
+        severity.append("high")
+
+    elif sep < 75 and len(label_counts) >= 2:
+        advice.append("Label separation is middelmatig. Dit is bruikbaar voor demo, maar optimalisatie kan beter.")
+        severity.append("medium")
+
+    else:
+        advice.append("Label separation is goed bruikbaar.")
+        severity.append("info")
+
     score = int(div * 0.30 + bal * 0.30 + sep * 0.40)
-    return {"diversity_score": div, "balance_score": bal, "separation_score": sep, "overall_score": score, "label_counts": label_counts.to_dict(), "recommended_training_features": get_fusion_training_columns(template_name), "advice": [{"severity": s, "message": a} for s, a in zip(severity, advice)]}
+
+    return {
+        "diversity_score": div,
+        "balance_score": bal,
+        "separation_score": sep,
+        "overall_score": score,
+        "label_counts": label_counts.to_dict(),
+        "recommended_training_features": get_fusion_training_columns(template_name),
+        "advice": [
+            {
+                "severity": s,
+                "message": a,
+            }
+            for s, a in zip(severity, advice)
+        ],
+    }
 
 
 def dataset_doctor(X_df, y_series):
     div, bal, sep = calculate_audit_scores(X_df, y_series)
+
     advice = []
     severity = []
+
     if len(X_df) < 100:
-        advice.append("Dataset is nog klein. Richt op 200+ samples voor een sterkere pilot."); severity.append("medium")
+        advice.append("Dataset is nog klein. Richt op 200+ samples voor een sterkere pilot.")
+        severity.append("medium")
+
     counts = y_series.value_counts()
+
     if len(counts) < 2:
-        advice.append("Er is maar een label aanwezig."); severity.append("high")
+        advice.append("Er is maar een label aanwezig.")
+        severity.append("high")
+
     elif counts.min() / max(counts.max(), 1) < 0.5:
-        advice.append("Class balance is zwak. Voeg samples toe aan de kleinste klasse."); severity.append("high")
+        advice.append("Class balance is zwak. Voeg samples toe aan de kleinste klasse.")
+        severity.append("high")
+
     if sep < 50:
-        advice.append("Label separation is laag. Klassen lijken te veel op elkaar."); severity.append("high")
+        advice.append("Label separation is laag. Klassen lijken te veel op elkaar.")
+        severity.append("high")
+
     elif sep < 75:
-        advice.append("Label separation is middelmatig. Extra onderscheidende features kunnen helpen."); severity.append("medium")
+        advice.append("Label separation is middelmatig. Extra onderscheidende features kunnen helpen.")
+        severity.append("medium")
+
     if not advice:
-        advice.append("Dataset ziet er gezond uit voor een eerste ML-training."); severity.append("info")
-    return {"diversity_score": div, "balance_score": bal, "separation_score": sep, "overall_score": int(div * 0.35 + bal * 0.30 + sep * 0.35), "advice": [{"severity": s, "message": a} for s, a in zip(severity, advice)]}
+        advice.append("Dataset ziet er gezond uit voor een eerste ML-training.")
+        severity.append("info")
+
+    return {
+        "diversity_score": div,
+        "balance_score": bal,
+        "separation_score": sep,
+        "overall_score": int(div * 0.35 + bal * 0.30 + sep * 0.35),
+        "advice": [
+            {
+                "severity": s,
+                "message": a,
+            }
+            for s, a in zip(severity, advice)
+        ],
+    }
 
 
 def clean_pdf_text(value):
     text = str(value)
-    replacements = {"—": "-", "–": "-", "•": "-", "“": '"', "”": '"', "‘": "'", "’": "'", "→": "->", "✅": "", "⚠️": "", "❌": "", "🧩": "", "🩺": "", "_": " "}
+
+    replacements = {
+        "—": "-",
+        "–": "-",
+        "•": "-",
+        "“": '"',
+        "”": '"',
+        "‘": "'",
+        "’": "'",
+        "→": "->",
+        "✅": "",
+        "⚠️": "",
+        "❌": "",
+        "🧩": "",
+        "🩺": "",
+        "_": " ",
+    }
+
     for old, new in replacements.items():
         text = text.replace(old, new)
+
     return text.encode("latin-1", errors="ignore").decode("latin-1")
 
 
 def safe_pdf_output(pdf):
     out = pdf.output(dest="S")
+
     if isinstance(out, bytes):
         return out
+
     if isinstance(out, bytearray):
         return bytes(out)
+
     return str(out).encode("latin1", errors="ignore")
 
 
@@ -765,18 +1221,23 @@ def generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor, commer
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
+
     pdf.set_font("Arial", "B", 18)
     pdf.cell(0, 10, txt="EdgeTwin Studio Report", ln=True, align="C")
+
     pdf.set_font("Arial", "I", 11)
     pdf.cell(0, 8, txt=clean_pdf_text("Powered by OMEGA-X Synthetic Sensor Engine"), ln=True, align="C")
     pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+
     pdf.ln(8)
+
     if commercial_summary:
         safe_pdf_cell(pdf, "Executive Summary", 8, True)
         safe_pdf_multicell(pdf, f"Problem: {commercial_summary.get('problem', '')}")
         safe_pdf_multicell(pdf, f"Solution: {commercial_summary.get('solution', '')}")
         safe_pdf_multicell(pdf, f"Output: {commercial_summary.get('output', '')}")
         pdf.ln(4)
+
     safe_pdf_cell(pdf, "Dataset Readiness", 8, True)
     safe_pdf_cell(pdf, f"Template: {manifest.get('template', 'Unknown')}")
     safe_pdf_cell(pdf, f"Samples: {manifest.get('samples', len(fusion_df))}")
@@ -784,22 +1245,36 @@ def generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor, commer
     safe_pdf_cell(pdf, f"Balance: {doctor.get('balance_score', 0)}%")
     safe_pdf_cell(pdf, f"Separation: {doctor.get('separation_score', 0)}%")
     safe_pdf_cell(pdf, f"Overall: {doctor.get('overall_score', 0)}%")
+
     pdf.ln(4)
+
     safe_pdf_cell(pdf, "Label Distribution", 8, True)
+
     for label, count in doctor.get("label_counts", {}).items():
         safe_pdf_cell(pdf, f"- {label}: {count}")
+
     pdf.ln(4)
+
     safe_pdf_cell(pdf, "Dataset Doctor Advice", 8, True)
+
     for item in doctor.get("advice", []):
         safe_pdf_multicell(pdf, f"[{item.get('severity', 'info').upper()}] {item.get('message', '')}")
+
     pdf.ln(4)
+
     safe_pdf_cell(pdf, "Recommended Training Features", 8, True)
+
     for col in doctor.get("recommended_training_features", []):
         safe_pdf_cell(pdf, f"- {col}")
+
     if commercial_summary:
         pdf.ln(4)
         safe_pdf_cell(pdf, "Recommended Next Step", 8, True)
-        safe_pdf_multicell(pdf, commercial_summary.get("cta", "Upload real sensor files or request a custom industry pack."))
+        safe_pdf_multicell(
+            pdf,
+            commercial_summary.get("cta", "Upload real sensor files or request a custom industry pack."),
+        )
+
     return safe_pdf_output(pdf)
 
 
@@ -807,16 +1282,27 @@ def create_sensor_fusion_export_bundle(project_name, fusion_df, manifest, commer
     template_name = manifest.get("template")
     doctor = fusion_dataset_doctor(fusion_df, template_name)
     training_df = create_fusion_training_dataframe(fusion_df, template_name)
-    pdf_bytes = generate_fusion_pdf_report(project_name, fusion_df, manifest, doctor, commercial_summary)
+
+    pdf_bytes = generate_fusion_pdf_report(
+        project_name,
+        fusion_df,
+        manifest,
+        doctor,
+        commercial_summary,
+    )
+
     bundle_manifest = dict(manifest)
     bundle_manifest["doctor"] = doctor
     bundle_manifest["commercial_summary"] = commercial_summary or {}
+
     zip_buf = io.BytesIO()
+
     with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("sensor_fusion_full_dataset.csv", fusion_df.to_csv(index=False))
         zf.writestr("sensor_fusion_training_features.csv", training_df.to_csv(index=False))
         zf.writestr("manifest.json", json.dumps(bundle_manifest, indent=2))
         zf.writestr("fusion_report.pdf", pdf_bytes)
+
     return zip_buf.getvalue(), doctor, training_df
 
 
@@ -824,29 +1310,46 @@ def create_enterprise_bundle(project_name, dataset_df, audit_result, hardware_re
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
+
     pdf.set_font("Arial", "B", 18)
     pdf.cell(0, 10, txt="EdgeTwin Enterprise Audit", ln=True, align="C")
+
     pdf.set_font("Arial", "I", 11)
     pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+
     pdf.ln(8)
+
     safe_pdf_cell(pdf, "Readiness Scores", 8, True)
     safe_pdf_cell(pdf, f"Diversity: {audit_result.get('diversity_score', 0)}%")
     safe_pdf_cell(pdf, f"Balance: {audit_result.get('balance_score', 0)}%")
     safe_pdf_cell(pdf, f"Separation: {audit_result.get('separation_score', 0)}%")
     safe_pdf_cell(pdf, f"Overall: {audit_result.get('overall_score', 0)}%")
+
     pdf.ln(4)
+
     safe_pdf_cell(pdf, "Advice", 8, True)
+
     for item in audit_result.get("advice", []):
         safe_pdf_multicell(pdf, f"[{item.get('severity', 'info').upper()}] {item.get('message', '')}")
+
     if hardware_result:
         pdf.ln(4)
         safe_pdf_cell(pdf, "Hardware Recommendation", 8, True)
         safe_pdf_cell(pdf, f"Recommended board: {hardware_result.get('recommendation', 'Unknown')}")
         safe_pdf_multicell(pdf, hardware_result.get("reason", ""))
-    metadata = {"project_name": project_name, "created_at": str(datetime.datetime.now()), "audit": audit_result, "hardware": hardware_result or {}}
+
+    metadata = {
+        "project_name": project_name,
+        "created_at": str(datetime.datetime.now()),
+        "audit": audit_result,
+        "hardware": hardware_result or {},
+    }
+
     zip_buf = io.BytesIO()
+
     with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("edge_dataset.csv", dataset_df.to_csv(index=False))
         zf.writestr("metadata.json", json.dumps(metadata, indent=2))
         zf.writestr("audit_report.pdf", safe_pdf_output(pdf))
+
     return zip_buf.getvalue()
