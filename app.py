@@ -49,6 +49,20 @@ def set_param_value(key, value):
     st.session_state[f"{key}_number_widget"] = value
 
 
+def queue_param_update(values):
+    st.session_state["_pending_param_update"] = values
+
+
+def apply_pending_param_updates():
+    if "_pending_param_update" in st.session_state:
+        values = st.session_state["_pending_param_update"]
+
+        for key, value in values.items():
+            set_param_value(key, value)
+
+        del st.session_state["_pending_param_update"]
+
+
 def sync_from_slider(key):
     value = float(st.session_state[f"{key}_slider_widget"])
     st.session_state[key] = value
@@ -238,6 +252,38 @@ def create_enterprise_bundle(
     return zip_buf.getvalue()
 
 
+def make_fusion_zip(fusion_df, manifest):
+    zip_buf = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("sensor_fusion_dataset.csv", fusion_df.to_csv(index=False))
+        zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+
+    return zip_buf.getvalue()
+
+
+def add_fusion_to_audit_dataset(fusion_df):
+    numeric_cols = [
+        "Label",
+        "AudioScore",
+        "VibrationScore",
+        "GasScore",
+        "RadarScore",
+        "GPSZoneScore",
+        "FusionScore",
+        "HealthScore",
+        "Confidence",
+    ]
+
+    clean_cols = [c for c in numeric_cols if c in fusion_df.columns]
+    clean_df = fusion_df[clean_cols].copy()
+
+    st.session_state.dataset = pd.concat(
+        [safe_dataframe_from_dataset(), clean_df],
+        ignore_index=True
+    )
+
+
 # ============================================================
 # LOGIN / REGISTER
 # ============================================================
@@ -307,6 +353,8 @@ if "project_id" not in st.session_state:
 
 if "project_name" not in st.session_state:
     st.session_state.project_name = "New_Enterprise_AI"
+
+apply_pending_param_updates()
 
 
 # ============================================================
@@ -378,10 +426,12 @@ if not user_projects.empty:
 
             settings = loaded.get("settings", {})
 
-            set_param_value("base_f_slider", float(settings.get("base_f", 50.0)))
-            set_param_value("harm_r_slider", float(settings.get("harm_r", 0.0)))
-            set_param_value("imp_r_slider", float(settings.get("imp_r", 0.0)))
-            set_param_value("noise_l_slider", float(settings.get("noise_l", 0.1)))
+            queue_param_update({
+                "base_f_slider": float(settings.get("base_f", 50.0)),
+                "harm_r_slider": float(settings.get("harm_r", 0.0)),
+                "imp_r_slider": float(settings.get("imp_r", 0.0)),
+                "noise_l_slider": float(settings.get("noise_l", 0.1)),
+            })
 
             st.sidebar.success(f"Loaded {loaded['name']}")
             st.rerun()
@@ -442,16 +492,17 @@ noise_l = sidebar_slider_with_number(
 # MAIN UI
 # ============================================================
 
-st.title("⚡ OMEGA-X Enterprise Studio V16.1")
+st.title("⚡ OMEGA-X Enterprise Studio V17")
 st.caption(
-    "Synthetic Sensor Data • Digital Twin Aging • AI Dataset Doctor • Hardware Auto Architect • Edge Impulse Bundle"
+    "Synthetic Sensor Data • Digital Twin Aging • Sensor Fusion • AI Dataset Doctor • Hardware Auto Architect"
 )
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📈 Canvas",
     "📦 Dataset Generator",
     "🧬 Digital Twin Aging",
     "🧪 Deep Cloner",
+    "🧩 Sensor Fusion Studio",
     "🤖 Enterprise Audit",
     "🏗️ Hardware Architect"
 ])
@@ -804,10 +855,12 @@ with tab4:
             c_s4.metric("Noise Estimate", f"{phys['noise']:.3f}")
 
             if st.button("🔄 Sync Sliders", type="primary"):
-                set_param_value("base_f_slider", float(np.clip(phys["base_f"], 0.0, 1000.0)))
-                set_param_value("harm_r_slider", float(np.clip(phys["harm_r"], 0.0, 2.0)))
-                set_param_value("imp_r_slider", float(np.clip(phys["imp_r"], 0.0, 50.0)))
-                set_param_value("noise_l_slider", float(np.clip(phys["noise"], 0.0, 1.0)))
+                queue_param_update({
+                    "base_f_slider": float(np.clip(phys["base_f"], 0.0, 1000.0)),
+                    "harm_r_slider": float(np.clip(phys["harm_r"], 0.0, 2.0)),
+                    "imp_r_slider": float(np.clip(phys["imp_r"], 0.0, 50.0)),
+                    "noise_l_slider": float(np.clip(phys["noise"], 0.0, 1.0)),
+                })
                 st.rerun()
 
         except Exception as e:
@@ -815,10 +868,198 @@ with tab4:
 
 
 # ============================================================
-# TAB 5 — ENTERPRISE AUDIT + DATASET DOCTOR
+# TAB 5 — SENSOR FUSION STUDIO
 # ============================================================
 
 with tab5:
+    st.header("🧩 Sensor Fusion Studio")
+    st.caption(
+        "Combineer audio, vibration, gas, radar en GPS/zone-context tot één fused risk/health score."
+    )
+
+    fusion_templates = core.get_fusion_templates()
+    selected_template = st.selectbox(
+        "Fusion scenario template",
+        fusion_templates
+    )
+
+    template = core.get_fusion_template(selected_template)
+
+    if template:
+        st.info(template["description"])
+        st.write(f"**Mode:** {template.get('mode', 'threat')}")
+        st.write("**Weights:**")
+        st.json(template["weights"])
+
+    defaults = template.get("defaults", {}) if template else {}
+
+    st.markdown("---")
+    st.subheader("Live Fusion Inputs")
+
+    f1, f2, f3, f4, f5 = st.columns(5)
+
+    with f1:
+        audio_score = st.slider(
+            "Audio score",
+            0,
+            100,
+            int(defaults.get("audio", 50))
+        )
+
+    with f2:
+        vibration_score = st.slider(
+            "Vibration score",
+            0,
+            100,
+            int(defaults.get("vibration", 50))
+        )
+
+    with f3:
+        gas_score = st.slider(
+            "Gas / environmental score",
+            0,
+            100,
+            int(defaults.get("gas", 20))
+        )
+
+    with f4:
+        radar_score = st.slider(
+            "Radar movement score",
+            0,
+            100,
+            int(defaults.get("radar", 50))
+        )
+
+    with f5:
+        gps_score = st.slider(
+            "GPS / zone risk score",
+            0,
+            100,
+            int(defaults.get("gps", 50))
+        )
+
+    fusion_result = core.calculate_fusion_score(
+        audio_score=audio_score,
+        vibration_score=vibration_score,
+        gas_score=gas_score,
+        radar_score=radar_score,
+        gps_score=gps_score,
+        template_name=selected_template
+    )
+
+    st.markdown("---")
+    st.subheader("Fusion Result")
+
+    r1, r2, r3, r4, r5 = st.columns(5)
+
+    r1.metric("Fusion Score", f"{fusion_result['fusion_score']:.1f}%")
+    r2.metric("Health Score", f"{fusion_result['health_score']:.1f}%")
+    r3.metric("Confidence", f"{fusion_result['confidence']:.1f}%")
+    r4.metric("Level", fusion_result["level"])
+    r5.metric("Event", fusion_result["event"])
+
+    if fusion_result["level"] == "CRITICAL":
+        st.error(f"Recommended action: {fusion_result['recommended_action']}")
+    elif fusion_result["level"] == "HIGH":
+        st.warning(f"Recommended action: {fusion_result['recommended_action']}")
+    elif fusion_result["level"] == "ELEVATED":
+        st.info(f"Recommended action: {fusion_result['recommended_action']}")
+    else:
+        st.success(f"Recommended action: {fusion_result['recommended_action']}")
+
+    sensor_df = pd.DataFrame([
+        {"Sensor": "Audio", "Score": audio_score},
+        {"Sensor": "Vibration", "Score": vibration_score},
+        {"Sensor": "Gas / Environment", "Score": gas_score},
+        {"Sensor": "Radar", "Score": radar_score},
+        {"Sensor": "GPS / Zone", "Score": gps_score},
+    ])
+
+    fig_sensor = px.bar(
+        sensor_df,
+        x="Sensor",
+        y="Score",
+        range_y=[0, 100],
+        title="Sensor Contribution Scores"
+    )
+    fig_sensor.update_layout(height=320)
+    st.plotly_chart(fig_sensor, use_container_width=True)
+
+    st.markdown("---")
+    st.subheader("Generate Multi-Sensor Fusion Dataset")
+
+    d1, d2 = st.columns(2)
+
+    with d1:
+        fusion_samples = st.number_input(
+            "Fusion samples",
+            min_value=50,
+            max_value=10000,
+            value=500,
+            step=50
+        )
+
+    with d2:
+        include_variants = st.checkbox(
+            "Include scenario variants",
+            value=True
+        )
+
+    if st.button("🧩 Generate Fusion Dataset", type="primary", use_container_width=True):
+        fusion_df, fusion_manifest = core.generate_sensor_fusion_dataset(
+            template_name=selected_template,
+            samples=int(fusion_samples),
+            base_audio=audio_score,
+            base_vibration=vibration_score,
+            base_gas=gas_score,
+            base_radar=radar_score,
+            base_gps=gps_score,
+            include_scenario_variants=include_variants
+        )
+
+        st.session_state["last_fusion_df"] = fusion_df
+        st.session_state["last_fusion_manifest"] = fusion_manifest
+
+        st.success(f"{len(fusion_df)} fusion samples gegenereerd.")
+
+    if "last_fusion_df" in st.session_state:
+        fusion_df = st.session_state["last_fusion_df"]
+        fusion_manifest = st.session_state["last_fusion_manifest"]
+
+        st.dataframe(fusion_df.head(100), use_container_width=True)
+
+        label_counts = fusion_df["Label"].value_counts().reset_index()
+        label_counts.columns = ["Label", "Count"]
+
+        fig_labels = px.bar(
+            label_counts,
+            x="Label",
+            y="Count",
+            title="Fusion Dataset Label Distribution"
+        )
+        fig_labels.update_layout(height=320)
+        st.plotly_chart(fig_labels, use_container_width=True)
+
+        zip_data = make_fusion_zip(fusion_df, fusion_manifest)
+
+        st.download_button(
+            "📦 Download Sensor Fusion Dataset ZIP",
+            data=zip_data,
+            file_name=f"{project_name}_sensor_fusion_dataset.zip",
+            mime="application/zip",
+            use_container_width=True
+        )
+
+        if st.button("➕ Add Fusion Dataset to Enterprise Audit", use_container_width=True):
+            add_fusion_to_audit_dataset(fusion_df)
+            st.success("Fusion dataset toegevoegd aan Enterprise Audit pipeline.")
+
+
+# ============================================================
+# TAB 6 — ENTERPRISE AUDIT + DATASET DOCTOR
+# ============================================================
+
+with tab6:
     st.header("🤖 Enterprise AI Intelligence")
     st.caption(
         "Upload CSV/WAV data, extraheer features, controleer ML-readiness en genereer een Edge Impulse bundle."
@@ -861,6 +1102,11 @@ with tab5:
         else:
             feature_cols = [c for c in m_df.columns if c != "Label"]
             X = m_df[feature_cols].replace([np.inf, -np.inf], 0).fillna(0)
+
+            for col in X.columns:
+                X[col] = pd.to_numeric(X[col], errors="coerce")
+
+            X = X.fillna(0)
             y = m_df["Label"]
             label_counts = y.value_counts()
 
@@ -1019,7 +1265,8 @@ with tab5:
                 color="Score",
                 text="Score",
                 color_continuous_scale="RdYlGn",
-                range_y=[0, 100]
+                range_y=[0, 100],
+                hover_data=["CPU", "Role", "Power", "Latency", "RAM"]
             )
             fig_hw.update_layout(
                 height=330,
@@ -1069,11 +1316,11 @@ with tab5:
 
 
 # ============================================================
-# TAB 6 — HARDWARE AUTO ARCHITECT V16.1
+# TAB 7 — HARDWARE AUTO ARCHITECT V17
 # ============================================================
 
-with tab6:
-    st.header("🏗️ Hardware Auto Architect V16.1")
+with tab7:
+    st.header("🏗️ Hardware Auto Architect V17")
     st.caption(
         "Kies automatisch hardware, vergelijk specifieke boards, of voer custom klant-hardware in."
     )
