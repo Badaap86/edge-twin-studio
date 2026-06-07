@@ -1,4 +1,3 @@
-# api.py
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.responses import Response
