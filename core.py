@@ -17,7 +17,7 @@ import secrets
 
 
 # ============================================================
-# DATABASE ENGINE - V16.1 SAAS FOUNDATION
+# DATABASE ENGINE - V17 SAAS FOUNDATION
 # ============================================================
 
 DB_NAME = "omega_v16.db"
@@ -423,7 +423,7 @@ def generate_universal_signal(duration, sr, base_f, harm_r, imp_r, noise_l, norm
 
 
 # ============================================================
-# EXPANDED HARDWARE PROFILER - V16.1
+# EXPANDED HARDWARE PROFILER - V17
 # ============================================================
 
 HARDWARE_PROFILES = {
@@ -1085,6 +1085,341 @@ def generate_predictive_maintenance_aging_dataset(base_params, samples_per_stage
     }
 
     return files, manifest
+
+
+# ============================================================
+# SENSOR FUSION STUDIO - V17
+# ============================================================
+
+FUSION_TEMPLATES = {
+    "Smart Forestry Threat": {
+        "description": "Detectie van kettingzaag, voertuig, menselijke activiteit en remote-zone risico.",
+        "mode": "threat",
+        "weights": {
+            "audio": 0.35,
+            "vibration": 0.15,
+            "gas": 0.05,
+            "radar": 0.25,
+            "gps": 0.20,
+        },
+        "defaults": {
+            "audio": 85,
+            "vibration": 30,
+            "gas": 10,
+            "radar": 75,
+            "gps": 80,
+        },
+        "classes": ["Normal", "Human_Activity", "Vehicle", "Chainsaw", "Critical_Threat"],
+    },
+    "Construction Site Tamper": {
+        "description": "Detectie van grinding, cutting, impact, handling en voertuigactiviteit.",
+        "mode": "threat",
+        "weights": {
+            "audio": 0.30,
+            "vibration": 0.30,
+            "gas": 0.05,
+            "radar": 0.25,
+            "gps": 0.10,
+        },
+        "defaults": {
+            "audio": 75,
+            "vibration": 80,
+            "gas": 5,
+            "radar": 70,
+            "gps": 40,
+        },
+        "classes": ["Normal", "Handling", "Impact", "Tool_Use", "Critical_Tamper"],
+    },
+    "Predictive Maintenance Fusion": {
+        "description": "Machine health analyse met audio, vibratie, gas/temperatuur-indicator en stationaire asset context.",
+        "mode": "health",
+        "weights": {
+            "audio": 0.25,
+            "vibration": 0.45,
+            "gas": 0.20,
+            "radar": 0.05,
+            "gps": 0.05,
+        },
+        "defaults": {
+            "audio": 35,
+            "vibration": 85,
+            "gas": 40,
+            "radar": 0,
+            "gps": 5,
+        },
+        "classes": ["Healthy", "Early_Wear", "Wear", "Failure_Risk", "Critical_Failure"],
+    },
+    "Remote Asset Security": {
+        "description": "Bescherming van containers, machines, landbouwassets en afgelegen infrastructuur.",
+        "mode": "threat",
+        "weights": {
+            "audio": 0.25,
+            "vibration": 0.25,
+            "gas": 0.10,
+            "radar": 0.30,
+            "gps": 0.10,
+        },
+        "defaults": {
+            "audio": 55,
+            "vibration": 65,
+            "gas": 10,
+            "radar": 80,
+            "gps": 50,
+        },
+        "classes": ["Normal", "Approach", "Handling", "Tamper", "Critical_Theft_Risk"],
+    },
+    "Environmental Risk Fusion": {
+        "description": "Buitenomgeving analyse voor wind, regen, onweer, mens, voertuig en machinery context.",
+        "mode": "environment",
+        "weights": {
+            "audio": 0.30,
+            "vibration": 0.10,
+            "gas": 0.25,
+            "radar": 0.20,
+            "gps": 0.15,
+        },
+        "defaults": {
+            "audio": 45,
+            "vibration": 20,
+            "gas": 50,
+            "radar": 30,
+            "gps": 40,
+        },
+        "classes": ["Calm", "Weather", "Movement", "Machinery", "Environmental_Risk"],
+    },
+}
+
+
+def get_fusion_templates():
+    return list(FUSION_TEMPLATES.keys())
+
+
+def get_fusion_template(template_name):
+    return FUSION_TEMPLATES.get(template_name)
+
+
+def calculate_fusion_score(
+    audio_score,
+    vibration_score,
+    gas_score,
+    radar_score,
+    gps_score,
+    template_name="Smart Forestry Threat"
+):
+    template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
+    weights = template["weights"]
+    mode = template.get("mode", "threat")
+
+    sensor_values = {
+        "audio": float(np.clip(audio_score, 0, 100)),
+        "vibration": float(np.clip(vibration_score, 0, 100)),
+        "gas": float(np.clip(gas_score, 0, 100)),
+        "radar": float(np.clip(radar_score, 0, 100)),
+        "gps": float(np.clip(gps_score, 0, 100)),
+    }
+
+    raw_score = sum(sensor_values[k] * weights.get(k, 0.0) for k in sensor_values.keys())
+    raw_score = float(np.clip(raw_score, 0, 100))
+
+    agreement_values = np.array(list(sensor_values.values()), dtype=float)
+    confidence = 100.0 - float(np.std(agreement_values) * 0.75)
+    confidence = float(np.clip(confidence, 0, 100))
+
+    if raw_score < 20:
+        level = "LOW"
+    elif raw_score < 45:
+        level = "ELEVATED"
+    elif raw_score < 70:
+        level = "HIGH"
+    else:
+        level = "CRITICAL"
+
+    if mode == "health":
+        health_score = float(np.clip(100.0 - raw_score, 0, 100))
+        if health_score > 80:
+            event = "Healthy"
+            action = "Continue monitoring."
+        elif health_score > 60:
+            event = "Early wear"
+            action = "Schedule inspection."
+        elif health_score > 35:
+            event = "Failure risk"
+            action = "Plan maintenance soon."
+        else:
+            event = "Critical failure risk"
+            action = "Immediate maintenance recommended."
+
+        result = {
+            "mode": mode,
+            "fusion_score": raw_score,
+            "health_score": health_score,
+            "confidence": confidence,
+            "level": level,
+            "event": event,
+            "recommended_action": action,
+            "sensor_values": sensor_values,
+            "weights": weights,
+        }
+    else:
+        if raw_score < 20:
+            event = "Normal"
+            action = "No action required."
+        elif raw_score < 45:
+            event = "Suspicious activity"
+            action = "Increase monitoring."
+        elif raw_score < 70:
+            event = "Likely event"
+            action = "Send alert / verify situation."
+        else:
+            event = "Critical threat"
+            action = "Immediate response recommended."
+
+        result = {
+            "mode": mode,
+            "fusion_score": raw_score,
+            "health_score": float(np.clip(100.0 - raw_score, 0, 100)),
+            "confidence": confidence,
+            "level": level,
+            "event": event,
+            "recommended_action": action,
+            "sensor_values": sensor_values,
+            "weights": weights,
+        }
+
+    return result
+
+
+def fusion_label_from_score(score, template_name):
+    template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
+    classes = template.get("classes", ["Normal", "Elevated", "High", "Critical"])
+
+    if len(classes) == 0:
+        return "Unknown"
+
+    score = float(np.clip(score, 0, 100))
+
+    idx = int(np.floor((score / 100.0) * len(classes)))
+    idx = min(max(idx, 0), len(classes) - 1)
+
+    return classes[idx]
+
+
+def generate_sensor_fusion_sample(
+    template_name,
+    audio_score,
+    vibration_score,
+    gas_score,
+    radar_score,
+    gps_score,
+    jitter=True
+):
+    if jitter:
+        audio_score = np.clip(audio_score + np.random.normal(0, 5), 0, 100)
+        vibration_score = np.clip(vibration_score + np.random.normal(0, 5), 0, 100)
+        gas_score = np.clip(gas_score + np.random.normal(0, 4), 0, 100)
+        radar_score = np.clip(radar_score + np.random.normal(0, 6), 0, 100)
+        gps_score = np.clip(gps_score + np.random.normal(0, 4), 0, 100)
+
+    result = calculate_fusion_score(
+        audio_score=audio_score,
+        vibration_score=vibration_score,
+        gas_score=gas_score,
+        radar_score=radar_score,
+        gps_score=gps_score,
+        template_name=template_name
+    )
+
+    label = fusion_label_from_score(result["fusion_score"], template_name)
+
+    row = {
+        "Label": label,
+        "Template": template_name,
+        "AudioScore": float(audio_score),
+        "VibrationScore": float(vibration_score),
+        "GasScore": float(gas_score),
+        "RadarScore": float(radar_score),
+        "GPSZoneScore": float(gps_score),
+        "FusionScore": float(result["fusion_score"]),
+        "HealthScore": float(result["health_score"]),
+        "Confidence": float(result["confidence"]),
+        "Level": result["level"],
+        "Event": result["event"],
+        "RecommendedAction": result["recommended_action"],
+    }
+
+    return row
+
+
+def generate_sensor_fusion_dataset(
+    template_name,
+    samples=500,
+    base_audio=50,
+    base_vibration=50,
+    base_gas=20,
+    base_radar=50,
+    base_gps=50,
+    include_scenario_variants=True
+):
+    rows = []
+
+    template = get_fusion_template(template_name) or FUSION_TEMPLATES["Smart Forestry Threat"]
+    defaults = template.get("defaults", {})
+
+    base_audio = defaults.get("audio", base_audio)
+    base_vibration = defaults.get("vibration", base_vibration)
+    base_gas = defaults.get("gas", base_gas)
+    base_radar = defaults.get("radar", base_radar)
+    base_gps = defaults.get("gps", base_gps)
+
+    for _ in range(int(samples)):
+        if include_scenario_variants:
+            scenario_shift = np.random.choice(["normal", "medium", "high", "critical"], p=[0.30, 0.30, 0.25, 0.15])
+
+            if scenario_shift == "normal":
+                multiplier = np.random.uniform(0.10, 0.35)
+            elif scenario_shift == "medium":
+                multiplier = np.random.uniform(0.35, 0.65)
+            elif scenario_shift == "high":
+                multiplier = np.random.uniform(0.65, 0.90)
+            else:
+                multiplier = np.random.uniform(0.90, 1.15)
+
+            audio = np.clip(base_audio * multiplier + np.random.normal(0, 8), 0, 100)
+            vibration = np.clip(base_vibration * multiplier + np.random.normal(0, 8), 0, 100)
+            gas = np.clip(base_gas * multiplier + np.random.normal(0, 6), 0, 100)
+            radar = np.clip(base_radar * multiplier + np.random.normal(0, 10), 0, 100)
+            gps = np.clip(base_gps * multiplier + np.random.normal(0, 6), 0, 100)
+        else:
+            audio = base_audio
+            vibration = base_vibration
+            gas = base_gas
+            radar = base_radar
+            gps = base_gps
+
+        rows.append(
+            generate_sensor_fusion_sample(
+                template_name=template_name,
+                audio_score=audio,
+                vibration_score=vibration,
+                gas_score=gas,
+                radar_score=radar,
+                gps_score=gps,
+                jitter=True
+            )
+        )
+
+    df = pd.DataFrame(rows)
+
+    manifest = {
+        "engine": "OMEGA-X Sensor Fusion Studio",
+        "template": template_name,
+        "description": template.get("description", ""),
+        "samples": int(samples),
+        "sensors": ["audio", "vibration", "gas", "radar", "gps"],
+        "columns": list(df.columns),
+    }
+
+    return df, manifest
 
 
 # ============================================================
