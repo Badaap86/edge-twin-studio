@@ -138,4 +138,33 @@ def generate_pdf_report(proj_name, num_samples, num_classes, div, bal, sep, top_
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 18)
-    pdf.cell(200, 10, txt=f"OMEGA-X Enterprise Audit", ln=True, align='
+    pdf.cell(200, 10, txt="OMEGA-X Enterprise Audit", ln=True, align="C")
+    pdf.set_font("Arial", 'I', 12)
+    pdf.cell(200, 10, txt=f"Project ID: {proj_name}", ln=True, align="C")
+    pdf.ln(10)
+    
+    overall_status = "PRODUCTION READY" if all(s > 80 for s in [div, bal, sep]) else "OPTIMIZATION REQUIRED"
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt=f"Overall Status: {overall_status}", ln=True)
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(200, 8, txt=f"Total Samples: {num_samples} | Unique Classes: {num_classes}", ln=True)
+    pdf.cell(200, 8, txt=f"Dataset Diversity: {div}% | Class Balance: {bal}% | Label Separation: {sep}%", ln=True)
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt="Top Features (Permutation Importance):", ln=True)
+    pdf.set_font("Arial", '', 11)
+    if top_features:
+        for f, score in top_features[:5]: 
+            pdf.cell(200, 7, txt=f"- {f}: {score:.1f}% impact", ln=True)
+    else: 
+        pdf.cell(200, 7, txt="Not enough data to calculate feature importance.", ln=True)
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt=f"Hardware Recommendation: {best_board}", ln=True)
+    pdf.set_font("Arial", '', 11)
+    for d in b_dat: 
+        pdf.cell(200, 7, txt=f"- {d['Board']}: Score {d['Score']:.0f}% (Lat: {d['Latency']:.1f}ms)", ln=True)
+        
+    return pdf.output(dest='S').encode('latin1')
