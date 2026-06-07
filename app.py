@@ -2,22 +2,32 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 import scipy.signal as signal
 import io
 import json
 import zipfile
-import time
+import warnings
 from scipy.stats import kurtosis
+from scipy.io import wavfile
+from scipy.spatial.distance import pdist, squareform
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.inspection import permutation_importance
+from sklearn.metrics import silhouette_score, confusion_matrix
+from sklearn.model_selection import cross_val_predict
+
+warnings.filterwarnings('ignore')
 
 # ============================================================
 # APP CONFIG
 # ============================================================
-st.set_page_config(page_title="OMEGA-X Edge Data Platform", layout="wide", initial_sidebar_state="expanded")
-st.title("⚡ OMEGA-X Edge Data Platform (V4.1)")
-st.caption("Multi-Modal Synthetic Generation • Anomaly Detection • Feature Extraction")
+st.set_page_config(page_title="OMEGA-X Enterprise Studio", layout="wide", initial_sidebar_state="expanded")
+st.title("⚡ OMEGA-X Enterprise Studio (V10.0)")
+st.caption("Universal Synthesis • Edge Profiling • Advanced ML Intelligence")
 
 # ============================================================
-# CORE DSP (DIGITAL SIGNAL PROCESSING) FUNCTIONS
+# REST-API READY CORE FUNCTIONS
 # ============================================================
 def calculate_fft(signal_data, sample_rate):
     window = np.hanning(len(signal_data))
@@ -29,363 +39,324 @@ def calculate_spectrogram(signal_data, sample_rate):
     f_spec, t_spec, Sxx = signal.spectrogram(signal_data, sample_rate, nperseg=256, noverlap=128)
     return f_spec, t_spec, Sxx
 
-# --- AUDIO AI FEATURE EXTRACTORS ---
-def get_zero_crossing_rate(sig):
-    return ((sig[:-1] * sig[1:]) < 0).sum() / len(sig)
+def get_audio_features(sig, f_f, v_f):
+    eps = 1e-10 
+    zcr = ((sig[:-1] * sig[1:]) < 0).sum() / len(sig)
+    centroid = np.sum(f_f * v_f) / (np.sum(v_f) + eps)
+    
+    cum_energy = np.cumsum(v_f)
+    tot_energy = cum_energy[-1]
+    rolloff = 0
+    if tot_energy > 0:
+        rolloff_idx = np.where(cum_energy >= 0.85 * tot_energy)[0][0]
+        rolloff = f_f[rolloff_idx]
+        
+    geom_mean = np.exp(np.mean(np.log(v_f + eps)))
+    arith_mean = np.mean(v_f) + eps
+    flatness = geom_mean / arith_mean
+    
+    return zcr, centroid, rolloff, flatness
 
-def get_spectral_centroid(fft_f, fft_v):
-    if np.sum(fft_v) == 0: return 0
-    return np.sum(fft_f * fft_v) / np.sum(fft_v)
-
-def get_spectral_rolloff(fft_f, fft_v, percentile=0.85):
-    cumulative_energy = np.cumsum(fft_v)
-    total_energy = cumulative_energy[-1]
-    if total_energy == 0: return 0
-    rolloff_idx = np.where(cumulative_energy >= percentile * total_energy)[0][0]
-    return fft_f[rolloff_idx]
-
-# ============================================================
-# SENSOR 1: VIBRATION (KINEMATIC PHYSICS ENGINE)
-# ============================================================
-@st.cache_data
-def generate_vibration_data(condition, severity, rpm, duration=2.0, apply_randomness=False):
-    sample_rate = 4000
+def generate_universal_signal(duration, sample_rate, base_freq, harmonic_ratio, impact_rate, noise_level, normalize=True):
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    sig = np.zeros_like(t)
     
-    act_rpm = rpm * np.random.normal(1.0, 0.02) if apply_randomness else rpm
-    act_sev = np.clip(severity * np.random.normal(1.0, 0.10) if apply_randomness else severity, 0.01, 1.0)
-    
-    f_1x = act_rpm / 60.0
-    phase_1x = 2 * np.pi * f_1x * t
-    vibration = 0.2 * np.sin(phase_1x)
-    
-    noise_scale = np.random.uniform(0.85, 1.15) if apply_randomness else 1.0
-    vibration += 0.05 * np.sin(2 * np.pi * 50 * t) + (np.random.normal(0, 0.1 * noise_scale, len(t)) * (1 + act_sev))
-    
-    bpfo = f_1x * 3.58
-    res_freq = np.random.normal(1200.0, 15.0) if apply_randomness else 1200.0
+    if base_freq > 0:
+        sig += np.sin(2 * np.pi * base_freq * t)
+    if harmonic_ratio > 0:
+        for h in range(2, 6):
+            sig += (harmonic_ratio / h) * np.sin(2 * np.pi * (base_freq * h) * t)
+    if impact_rate > 0:
+        impact_interval = 1.0 / impact_rate
+        for i_t in np.arange(0, duration, impact_interval):
+            jitter = np.random.uniform(-0.02, 0.02)
+            idx = int((i_t + jitter) * sample_rate)
+            if 0 <= idx < len(t):
+                decay = np.exp(-25 * (t[idx:] - i_t))
+                burst = np.random.normal(0, 1, len(decay)) * decay
+                sig[idx:] += 2.5 * burst
+                
+    sig += np.random.normal(0, noise_level, len(t))
+    if normalize:
+        max_val = np.max(np.abs(sig))
+        if max_val > 0: sig = sig / max_val
+            
+    f, v = calculate_fft(sig, sample_rate)
+    return {"t": t, "sig": sig, "fft_f": f, "fft_v": v, "sr": sample_rate}
 
-    if condition == "Unbalance":
-        vibration += 1.5 * act_sev * np.sin(phase_1x)
-    elif condition == "Mechanical Looseness":
-        for h in range(1, 6): vibration += (1.2 / h) * act_sev * np.sin(h * phase_1x)
-        vibration += np.random.normal(0, 0.1, len(t)) * act_sev * 2.0
-    elif condition == "BPFO (Outer Race)":
-        impacts = np.maximum(0, np.cos(2 * np.pi * bpfo * t)) ** 20 * (0.8 + 0.4 * np.random.rand(len(t)))
-        vibration += 2.0 * act_sev * np.sin(2 * np.pi * res_freq * t) * impacts * (1 + 0.6 * np.cos(phase_1x))
-    elif condition == "Unknown Anomaly (Random)":
-        # Simuleert een willekeurige, onbekende verstoring voor Anomaly Detection
-        vibration += act_sev * np.random.normal(0, 2.0, len(t)) * np.sin(2 * np.pi * np.random.uniform(10, 500) * t)
+def estimate_edge_load(hw_choice, num_features, sample_rate, duration=1.0):
+    window_size = min(int(sample_rate * duration), 8192)
+    fft_n = 1024 if sample_rate <= 4000 else 2048
+    ram_buffer_kb = (window_size * 4) / 1024 
+    ram_fft_kb = (fft_n * 4 * 2) / 1024 
+    ram_total_kb = ram_buffer_kb + ram_fft_kb + 2.0 
+    
+    if "ESP32-S3" in hw_choice: return "Xtensa LX7 (SIMD)", ram_total_kb, (fft_n * np.log2(fft_n)) * 0.00008, num_features * 0.2, 1.5
+    elif "WisBlock" in hw_choice: return "ARM Cortex-M4F", ram_total_kb, (fft_n * np.log2(fft_n)) * 0.00015, num_features * 0.4, 3.0
+    else: return "ARM Cortex-M0+", ram_total_kb, (fft_n * np.log2(fft_n)) * 0.0008, num_features * 1.5, 12.0
 
-    f, v = calculate_fft(vibration, sample_rate)
-    return {"t": t, "sig": vibration, "fft_f": f, "fft_v": v, "rpm": act_rpm, "sev": act_sev, "bpfo": bpfo, "res": res_freq, "sr": sample_rate}
-
+def calculate_deployment_score(hw_choice, latency, ram_kb, target_latency=20.0, target_ram=120.0):
+    lat_score = max(0, 100 - (latency / target_latency) * 50)
+    ram_score = max(0, 100 - (ram_kb / target_ram) * 50)
+    base_score = (lat_score * 0.7) + (ram_score * 0.3)
+    
+    if "ESP32-S3" in hw_choice: return min(100, base_score + 15)
+    elif "WisBlock" in hw_choice: return min(100, base_score + 5)
+    else: return max(0, base_score - 20)
 # ============================================================
-# SENSOR 2: ACOUSTIC (AUDIO PHYSICS ENGINE)
+# STATE & WORKSPACE INITIALIZATION
 # ============================================================
-@st.cache_data
-def generate_acoustic_data(condition, severity, duration=2.0, apply_randomness=False):
-    sample_rate = 16000
-    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
-    
-    act_sev = np.clip(severity * np.random.normal(1.0, 0.10) if apply_randomness else severity, 0.01, 1.0)
-    
-    # Base layer: Ambient forest/wind noise
-    audio = np.random.normal(0, 0.05, len(t))
-    
-    if condition == "Chainsaw":
-        f0 = 80 + (np.random.normal(0, 5) if apply_randomness else 0)
-        saw = signal.sawtooth(2 * np.pi * f0 * t)
-        mod = 1 + 0.5 * np.sin(2 * np.pi * 3 * t)
-        grit = np.random.normal(0, 0.2, len(t))
-        audio += act_sev * (saw * mod + grit)
-    elif condition == "Gunshot":
-        impact_t = 0.5 + (np.random.uniform(-0.2, 0.2) if apply_randomness else 0)
-        idx = int(impact_t * sample_rate)
-        if idx < len(t):
-            decay = np.exp(-15 * (t[idx:] - impact_t))
-            burst = np.random.normal(0, 1, len(decay)) * decay
-            audio[idx:] += act_sev * 4.0 * burst
-    elif condition == "Engine Drone":
-        f_drone = 50 + (np.random.normal(0, 2) if apply_randomness else 0)
-        audio += act_sev * 0.8 * np.sin(2 * np.pi * f_drone * t)
-        audio += act_sev * 0.4 * np.sin(2 * np.pi * (f_drone * 1.5) * t)
-    elif condition == "Unknown Anomaly (Random)":
-        # Simuleert ongeclassificeerde herrie (krakende takken, machines, ruis)
-        sweep = signal.chirp(t, f0=100, f1=2000, t1=duration, method='logarithmic')
-        broadband = np.random.uniform(-1, 1, len(t))
-        envelope = np.abs(np.sin(2 * np.pi * np.random.uniform(0.5, 5) * t))
-        audio += act_sev * 2.0 * (sweep * 0.5 + broadband * 0.5) * envelope
+if "hw_target_val" not in st.session_state: st.session_state.hw_target_val = "ESP32-S3 (LilyGO / Vector AI)"
+if "modality_val" not in st.session_state: st.session_state.modality_val = "Vibration / IMU (4 kHz)"
+if "normalize_val" not in st.session_state: st.session_state.normalize_val = True
 
-    audio = np.clip(audio, -1.0, 1.0)
-    f, v = calculate_fft(audio, sample_rate)
-    return {"t": t, "sig": audio, "fft_f": f, "fft_v": v, "sev": act_sev, "sr": sample_rate}
-
-# ============================================================
-# GLOBAL UI & MODALITY STATE
-# ============================================================
-st.sidebar.header("📡 1. Sensor Modality")
-modality = st.sidebar.radio("Selecteer het type ML Sensor", ["Vibration (Accelerometer)", "Acoustic (Microphone)"])
-
-st.sidebar.markdown("---")
-st.sidebar.header("⚙️ 2. Generator Controls")
-
-if modality == "Vibration (Accelerometer)":
-    if "rpm" not in st.session_state: st.session_state.rpm = 1500
-    rpm = st.sidebar.slider("Basis RPM", 600, 3000, value=st.session_state.rpm, step=10)
-    st.session_state.rpm = rpm
-    cond_options = ["Baseline (Normal)", "Unbalance", "Mechanical Looseness", "BPFO (Outer Race)", "Unknown Anomaly (Random)"]
-else:
-    cond_options = ["Baseline (Ambient/Normal)", "Chainsaw", "Gunshot", "Engine Drone", "Unknown Anomaly (Random)"]
-
-if "severity" not in st.session_state: st.session_state.severity = 80
-severity_percent = st.sidebar.slider("Signal Severity (%)", 0, 100, value=st.session_state.severity, step=5)
-severity = severity_percent / 100.0
-st.session_state.severity = severity_percent
-
-condition = st.sidebar.selectbox("Gesimuleerde Conditie", cond_options)
-apply_randomness = st.sidebar.checkbox("Actieve Dataset Jitter (Realism)", value=True)
+if "base_f_slider" not in st.session_state: st.session_state.base_f_slider = 50.0
+if "harm_r_slider" not in st.session_state: st.session_state.harm_r_slider = 0.0
+if "imp_r_slider" not in st.session_state: st.session_state.imp_r_slider = 0.0
+if "noise_l_slider" not in st.session_state: st.session_state.noise_l_slider = 0.1
 
 if "master_training_dataset" not in st.session_state: st.session_state.master_training_dataset = pd.DataFrame()
-if "current_modality" not in st.session_state: st.session_state.current_modality = modality
+if "project_name" not in st.session_state: st.session_state.project_name = "Forest_Guardian_V1"
 
-if st.session_state.current_modality != modality:
-    st.session_state.master_training_dataset = pd.DataFrame()
-    st.session_state.current_modality = modality
+st.sidebar.header("🗂️ Workspace")
+st.session_state.project_name = st.sidebar.text_input("Project Name", st.session_state.project_name)
 
-# ============================================================
-# ACTIVE DATASET GENERATION
-# ============================================================
-if modality == "Vibration (Accelerometer)":
-    data_live = generate_vibration_data(condition, severity, rpm, apply_randomness=apply_randomness)
-    data_ref = generate_vibration_data("Baseline (Normal)", 0.0, rpm, apply_randomness=False)
-else:
-    data_live = generate_acoustic_data(condition, severity, apply_randomness=apply_randomness)
-    data_ref = generate_acoustic_data("Baseline (Ambient/Normal)", 0.0, apply_randomness=False)
+# --- SAVE WORKSPACE ---
+project_state = {
+    "version": "OMEGA-X V10.0",
+    "project_name": st.session_state.project_name,
+    "global_settings": {"hardware_target": st.session_state.hw_target_val, "modality": st.session_state.modality_val, "normalize": st.session_state.normalize_val},
+    "sliders": {"base_f": st.session_state.base_f_slider, "harm_r": st.session_state.harm_r_slider, "imp_r": st.session_state.imp_r_slider, "noise_l": st.session_state.noise_l_slider},
+    "dataset": st.session_state.master_training_dataset.to_dict(orient="records")
+}
+st.sidebar.download_button("💾 Save Workspace (.json)", data=json.dumps(project_state, indent=4), file_name=f"omega_ws_{st.session_state.project_name}.json", mime="application/json", use_container_width=True)
 
-# ============================================================
-# TAB CONFIGURATION
-# ============================================================
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 1. Synthetic Generator", "📦 2. Batch Generator", "🔍 3. Upload Analyzer", "🧪 4. Data Multiplier", "🤖 5. ML Pipeline"])
+# --- LOAD WORKSPACE ---
+uploaded_ws = st.sidebar.file_uploader("📂 Load Workspace", type=["json"])
+if uploaded_ws:
+    try:
+        loaded = json.load(uploaded_ws)
+        st.session_state.project_name = loaded.get("project_name", "Loaded_Project")
+        st.session_state.hw_target_val = loaded.get("global_settings", {}).get("hardware_target", "ESP32-S3 (LilyGO / Vector AI)")
+        st.session_state.modality_val = loaded.get("global_settings", {}).get("modality", "Vibration / IMU (4 kHz)")
+        st.session_state.normalize_val = loaded.get("global_settings", {}).get("normalize", True)
+        st.session_state.base_f_slider = loaded["sliders"]["base_f"]
+        st.session_state.harm_r_slider = loaded["sliders"]["harm_r"]
+        st.session_state.imp_r_slider = loaded["sliders"]["imp_r"]
+        st.session_state.noise_l_slider = loaded["sliders"]["noise_l"]
+        st.session_state.master_training_dataset = pd.DataFrame(loaded.get("dataset", []))
+        st.sidebar.success("✅ Workspace Loaded!")
+    except Exception as e: st.sidebar.error("Invalid Workspace")
 
+st.sidebar.markdown("---")
+hardware_target = st.sidebar.selectbox("Deployment Board", ["ESP32-S3 (LilyGO / Vector AI)", "nRF52840 (RAK WisBlock M4F)", "Generic Cortex-M0+"], key="hw_target_val")
+st.sidebar.markdown("---")
+modality = st.sidebar.radio("Data Profiling", ["Vibration / IMU (4 kHz)", "Acoustic / Audio (16 kHz)"], key="modality_val")
+sr = 4000 if "Vibration" in modality else 16000
+
+current_class = st.sidebar.text_input("Dataset Label", "Baseline_Normal")
+base_f = st.sidebar.slider("Base Frequency (Hz)", 0.0, 1000.0, key="base_f_slider", step=5.0)
+harm_r = st.sidebar.slider("Harmonic Ratio", 0.0, 2.0, key="harm_r_slider", step=0.05)
+imp_r = st.sidebar.slider("Transient Impact Rate (Hz)", 0.0, 50.0, key="imp_r_slider", step=0.5)
+noise_l = st.sidebar.slider("Noise Floor (SNR)", 0.0, 1.0, key="noise_l_slider", step=0.02)
+do_normalize = st.sidebar.checkbox("Normalize Amplitude", key="normalize_val")
+
+data_live = generate_universal_signal(duration=2.0, sample_rate=sr, base_freq=base_f, harmonic_ratio=harm_r, impact_rate=imp_r, noise_level=noise_l, normalize=do_normalize)
 # ============================================================
-# TAB 1: SYNTHETIC GENERATOR
+# TABS 1, 2, 3
 # ============================================================
+tab1, tab2, tab3, tab4 = st.tabs(["📈 1. Studio Canvas", "📦 2. Batch Generator", "🧪 3. Reverse Engineer", "🤖 4. AutoML & Deployment"])
+
 with tab1:
-    st.header(f"Synthetic {modality.split(' ')[0]} Simulator")
+    st.header(f"Live DSP Canvas: `{current_class}`")
     c_sig, c_fft = st.columns(2)
+    fig_sig = go.Figure(go.Scatter(x=data_live["t"][:2000], y=data_live["sig"][:2000], mode="lines", line=dict(color='#1f77b4')))
+    c_sig.plotly_chart(fig_sig.update_layout(height=300, margin=dict(l=0, r=0, t=30, b=0)), use_container_width=True)
+    fig_fft = go.Figure(go.Scatter(x=data_live["fft_f"], y=data_live["fft_v"], mode="lines", line=dict(color='#1f77b4')))
+    c_fft.plotly_chart(fig_fft.update_layout(height=300, xaxis_range=[0, 1500 if sr == 4000 else 4000], margin=dict(l=0, r=0, t=30, b=0)), use_container_width=True)
 
-    with c_sig:
-        st.subheader("Time Domain Signal")
-        fig_sig = go.Figure()
-        fig_sig.add_trace(go.Scatter(x=data_ref["t"][:1000], y=data_ref["sig"][:1000], mode="lines", name="Baseline (Normal)", line=dict(color='#2ca02c', dash='dot')))
-        fig_sig.add_trace(go.Scatter(x=data_live["t"][:1000], y=data_live["sig"][:1000], mode="lines", name=condition, line=dict(color='#d62728')))
-        fig_sig.update_layout(height=300, margin=dict(l=0, r=0, t=30, b=0))
-        st.plotly_chart(fig_sig, use_container_width=True)
-
-    with c_fft:
-        st.subheader("Frequency Domain (FFT)")
-        fig_fft = go.Figure()
-        fig_fft.add_trace(go.Scatter(x=data_ref["fft_f"], y=data_ref["fft_v"], mode="lines", name="Baseline (Normal)", line=dict(color='#2ca02c', dash='dot')))
-        fig_fft.add_trace(go.Scatter(x=data_live["fft_f"], y=data_live["fft_v"], mode="lines", name=condition, line=dict(color='#d62728')))
-        x_max = 1500 if modality == "Vibration (Accelerometer)" else 4000
-        fig_fft.update_layout(height=300, xaxis_range=[0, x_max], margin=dict(l=0, r=0, t=30, b=0))
-        st.plotly_chart(fig_fft, use_container_width=True)
-
-    st.subheader("Spectrogram (Time/Frequency Evolution)")
-    f_spec, t_spec, Sxx = calculate_spectrogram(data_live["sig"], data_live["sr"])
-    max_f = np.where(f_spec <= x_max)[0][-1] if len(f_spec) > 0 else len(f_spec)
-    fig_spec = go.Figure(data=go.Heatmap(z=10 * np.log10(Sxx[:max_f, :] + 1e-10), x=t_spec, y=f_spec[:max_f], colorscale="Viridis"))
-    fig_spec.update_layout(height=300, margin=dict(l=0, r=0, t=10, b=0))
-    st.plotly_chart(fig_spec, use_container_width=True)
-
-# ============================================================
-# TAB 2: BATCH GENERATOR
-# ============================================================
 with tab2:
-    st.header(f"📦 {modality.split(' ')[0]} Batch Generator")
-    profile = st.selectbox("Dataset Size Profile", ["Quick Test (20/cond)", "Research (100/cond)", "Production (500/cond)"])
-    batch_size = int(profile.split('(')[1].split('/')[0])
-    
-    if st.button(f"🚀 Generate Dataset ({batch_size * len(cond_options)} files)", type="primary"):
-        my_bar = st.progress(0, text="Generating datasets...")
+    st.header(f"📦 Audit-Proof Dataset Production")
+    batch_size = st.number_input("Samples to generate", 10, 5000, 100, 50)
+    if st.button(f"🚀 Produce '{current_class}' Dataset", type="primary"):
+        my_bar = st.progress(0, text="Generating API-ready batch...")
         zip_buf = io.BytesIO()
-        metadata = []
+        manifest = {"project_name": st.session_state.project_name, "generator_version": "OMEGA-X 10.0", "global_settings": {"sample_rate": sr, "duration_seconds": 2.0, "normalization_applied": do_normalize}, "files": []}
         
         with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zipf:
-            for idx, cond in enumerate(cond_options):
-                sev_base = 0.0 if "Baseline" in cond else severity
-                folder = cond.replace(' ', '_').replace('(', '').replace(')', '').lower()
-                
-                for i in range(batch_size):
-                    if modality == "Vibration (Accelerometer)":
-                        d = generate_vibration_data(cond, sev_base, rpm, apply_randomness=apply_randomness)
-                        metadata.append({"file": f"{folder}_{i:03d}.csv", "label": cond, "rpm": round(d["rpm"],2)})
-                    else:
-                        d = generate_acoustic_data(cond, sev_base, apply_randomness=apply_randomness)
-                        metadata.append({"file": f"{folder}_{i:03d}.csv", "label": cond})
-                        
-                    zipf.writestr(f"{folder}/{folder}_{i:03d}.csv", pd.DataFrame({'time': d["t"], 'value': d["sig"]}).to_csv(index=False))
-                my_bar.progress((idx + 1) / len(cond_options))
-                
-            zipf.writestr("metadata.json", json.dumps(metadata, indent=4))
-        
+            for i in range(batch_size):
+                j_b, j_h, j_i, j_n = max(0, base_f + np.random.normal(0, base_f*0.02)), max(0, harm_r + np.random.normal(0, 0.05)), max(0, imp_r + np.random.normal(0, imp_r*0.05)), max(0.001, noise_l * np.random.uniform(0.9, 1.1))
+                d = generate_universal_signal(2.0, sr, j_b, j_h, j_i, j_n, do_normalize)
+                fname = f"{current_class.lower()}_{i:04d}.csv"
+                zipf.writestr(fname, pd.DataFrame({'time': d["t"], 'value': d["sig"]}).to_csv(index=False))
+                manifest["files"].append({"filename": fname, "label": current_class, "parameters": {"base_freq": round(j_b, 2), "harmonic_ratio": round(j_h, 3), "impact_rate": round(j_i, 2), "noise_floor": round(j_n, 3)}})
+                my_bar.progress((i + 1) / batch_size)
+            zipf.writestr("dataset_manifest.json", json.dumps(manifest, indent=4))
         my_bar.empty()
-        st.success("✅ Batch generation complete!")
-        st.download_button("📦 Download Dataset (.ZIP)", data=zip_buf.getvalue(), file_name=f"omega_x_{modality[:3].lower()}_batch.zip", mime="application/zip")
+        st.success(f"✅ Download Ready! ({batch_size} files + manifest.json)")
+        st.download_button("📦 Download .ZIP", data=zip_buf.getvalue(), file_name=f"dataset_{current_class}.zip", mime="application/zip")
 
-# ============================================================
-# TAB 3 & 4: ANALYZER & CLONER
-# ============================================================
-with tab4:
-    st.header("🧪 Physics-Aware Clone Engine")
-    st.write(f"Upload a small `{modality.split(' ')[0]}` sample to extract its physical signature and generate clones.")
-    
-    up_clone = st.file_uploader("Upload reference CSV", type=['csv'], key="clone_up")
+with tab3:
+    st.header("🧪 Reverse Engineer (Deep Spectral Cloner)")
+    up_clone = st.file_uploader("Upload Signal", type=['csv', 'wav'], key="clone_up")
     if up_clone:
         try:
-            df_c = pd.read_csv(up_clone)
-            if df_c.shape[1] >= 2:
-                sig_c = df_c.iloc[:, 1].values
-                sr_c = 16000 if modality == "Acoustic (Microphone)" else 4000
-                f_c, v_c = calculate_fft(sig_c - np.mean(sig_c), sr_c)
-                
-                if modality == "Vibration (Accelerometer)":
-                    crest = np.max(np.abs(sig_c)) / max(np.sqrt(np.mean(sig_c**2)), 1e-6)
-                    kurt = pd.Series(sig_c).kurt()
-                    if crest > 4.0 and kurt > 3.0: det_cond = "BPFO (Outer Race)"
-                    elif crest > 2.5: det_cond = "Mechanical Looseness"
-                    elif np.sqrt(np.mean(sig_c**2)) > 0.15: det_cond = "Unbalance"
-                    else: det_cond = "Baseline (Normal)"
-                    st.info(f"🧬 Detected Vibration Profile: **{det_cond}**")
-                else:
-                    zcr = get_zero_crossing_rate(sig_c)
-                    if zcr > 0.2: det_cond = "Chainsaw"
-                    elif np.max(np.abs(sig_c)) > 0.8: det_cond = "Gunshot"
-                    else: det_cond = "Baseline (Ambient/Normal)"
-                    st.info(f"🧬 Detected Acoustic Profile: **{det_cond}** (ZCR: {zcr:.3f})")
+            actual_sr = sr 
+            if up_clone.name.endswith('.csv'):
+                sig_c = pd.read_csv(up_clone).iloc[:, 1].values
+            elif up_clone.name.endswith('.wav'):
+                actual_sr, wav_data = wavfile.read(io.BytesIO(up_clone.read()))
+                sig_c = wav_data.mean(axis=1) if len(wav_data.shape) > 1 else wav_data
+                sig_c = sig_c.astype(float)
+                if np.max(np.abs(sig_c)) > 0: sig_c = sig_c / np.max(np.abs(sig_c)) 
+            
+            sig_c = sig_c - np.mean(sig_c)
+            f_c, v_c = calculate_fft(sig_c, actual_sr)
+            dom_idx = np.argmax(v_c[1:]) + 1
+            ext_base = f_c[dom_idx]
+            ext_harm = sum(v_c[np.argmin(np.abs(f_c - (h * ext_base)))] for h in range(2, 6)) / max(v_c[dom_idx], 1e-6)
+            peaks, _ = signal.find_peaks(np.abs(sig_c), height=np.mean(np.abs(sig_c)) + 2.5 * np.std(sig_c), distance=actual_sr/100)
+            
+            c_s1, c_s2, c_s3, c_s4 = st.columns(4)
+            c_s1.metric("Detected Base Freq", f"{ext_base:.1f} Hz")
+            c_s2.metric("Harmonic Energy", f"{ext_harm:.2f}")
+            c_s3.metric("Impact Rate", f"{len(peaks) / (len(sig_c) / actual_sr):.1f} Hz")
+            c_s4.metric("Noise Estimate", f"{np.median(np.abs(sig_c)):.3f}")
 
-                clones = st.slider("Clones to Generate", 50, 500, 100)
-                if st.button("Clone & Multiply", type="primary"):
-                    st.success("Logica werkt! Implementeer ZIP export hier zoals in Tab 2.")
+            if st.button("🔄 Sync to Studio Sliders", type="primary"):
+                st.session_state.base_f_slider = float(np.clip(ext_base, 0.0, 1000.0))
+                st.session_state.harm_r_slider = float(np.clip(ext_harm, 0.0, 2.0))
+                st.session_state.imp_r_slider = float(np.clip(len(peaks) / (len(sig_c) / actual_sr), 0.0, 50.0))
+                st.session_state.noise_l_slider = float(np.clip(np.median(np.abs(sig_c)), 0.0, 1.0))
+                st.rerun()
         except Exception as e: st.error(f"Error: {e}")
-
 # ============================================================
-# TAB 5: MULTI-MODAL ML PIPELINE (CLASSIFICATION & ANOMALY)
+# TAB 4: AUTOML, DEPLOYMENT & ENTERPRISE AUDIT (V10.0)
 # ============================================================
-with tab5:
-    st.header("🤖 Multi-Modal Feature Pipeline")
-    st.write("Verzamel data voor Supervised Classification (Specifieke defecten) of Unsupervised Anomaly Detection (Alleen normaal vs. onbekend).")
+with tab4:
+    st.header("🤖 Enterprise AI Intelligence & Deployment")
 
-    # --- NIEUW: ML STRATEGY KEUZE ---
-    ml_strategy = st.radio("Edge Impulse ML Strategy:", ["Supervised Classification (Multiple Labels)", "Unsupervised Anomaly Detection (Normal vs. Rest)"])
-
-    raw_files = st.file_uploader("Upload Raw CSVs", type=["csv"], accept_multiple_files=True)
+    raw_files = st.file_uploader("Upload Data (CSV/WAV) voor Extractie", type=["csv", "wav"], accept_multiple_files=True)
+    lbl = st.selectbox("Wijs Label toe", [current_class, "Anomaly", "Baseline", "Test_Class"])
     
-    if raw_files:
-        if ml_strategy == "Unsupervised Anomaly Detection (Normal vs. Rest)":
-            st.info("💡 Voor Anomaly Detection train je uitsluitend op de 'Baseline (Normal)'. Gebruik de Anomaly labels alleen als Test Data.")
-            lbl_options = ["Baseline (Normal)", "Test Data: Anomaly"]
-        else:
-            lbl_options = cond_options
-            
-        lbl = st.selectbox("Assign Label", lbl_options)
-        
-        if st.button("Extract Features", type="primary"):
-            rows = []
-            for file in raw_files:
-                try:
-                    df = pd.read_csv(file)
-                    sig = df.iloc[:, 1].astype(float).values
-                    sr_feat = 16000 if modality == "Acoustic (Microphone)" else 4000
-                    f_f, v_f = calculate_fft(sig - np.mean(sig), sr_feat)
-                    
-                    rms_val = np.sqrt(np.mean(sig**2))
-                    dom_f = f_f[np.argmax(v_f[1:]) + 1]
-                    
-                    feat_dict = {"Label": lbl}
-                    if modality == "Vibration (Accelerometer)":
-                        fund_amp = v_f[np.argmax(v_f[1:]) + 1]
-                        harm_sum = sum(v_f[np.argmin(np.abs(f_f - (h * dom_f)))] for h in range(2, 6))
-                        
-                        feat_dict.update({
-                            "RMS": rms_val,
-                            "Kurtosis": kurtosis(sig),
-                            "CrestFactor": np.max(np.abs(sig)) / max(rms_val, 1e-6),
-                            "DominantFreq": dom_f,
-                            "HarmonicRatio": harm_sum / max(fund_amp, 1e-6)
-                        })
-                    else: # AUDIO FEATURES
-                        feat_dict.update({
-                            "RMS": rms_val,
-                            "ZeroCrossingRate": get_zero_crossing_rate(sig),
-                            "SpectralCentroid": get_spectral_centroid(f_f, v_f),
-                            "SpectralRolloff": get_spectral_rolloff(f_f, v_f),
-                            "PeakAmplitude": np.max(v_f)
-                        })
-                    rows.append(feat_dict)
-                except Exception: pass
-            
-            if rows:
-                st.session_state.master_training_dataset = pd.concat([st.session_state.master_training_dataset, pd.DataFrame(rows)], ignore_index=True)
-                st.success(f"✅ Extracted features from {len(rows)} files!")
+    if raw_files and st.button("Extract & Add to Pipeline", type="primary"):
+        rows = []
+        for file in raw_files:
+            try:
+                actual_sr = sr
+                if file.name.endswith('.csv'):
+                    sig = pd.read_csv(file).iloc[:, 1].astype(float).values
+                elif file.name.endswith('.wav'):
+                    actual_sr, wav_data = wavfile.read(io.BytesIO(file.read()))
+                    sig = (wav_data.mean(axis=1) if len(wav_data.shape) > 1 else wav_data).astype(float)
+                
+                f_f, v_f = calculate_fft(sig - np.mean(sig), actual_sr)
+                rms_val = np.sqrt(np.mean(sig**2))
+                zcr, centroid, rolloff, flatness = get_audio_features(sig, f_f, v_f)
+                
+                rows.append({"Label": lbl, "RMS": rms_val, "Kurtosis": kurtosis(sig), "CrestFactor": np.max(np.abs(sig)) / max(rms_val, 1e-6), "ZCR": zcr, "SpectralCentroid": centroid, "SpectralRolloff": rolloff, "SpectralFlatness": flatness})
+            except Exception: pass
+        if rows:
+            st.session_state.master_training_dataset = pd.concat([st.session_state.master_training_dataset, pd.DataFrame(rows)], ignore_index=True)
+            st.success(f"Geëxtraheerd: {len(rows)} signatures!")
 
     st.divider()
     m_df = st.session_state.master_training_dataset
+    
     if len(m_df) > 0:
-        st.subheader(f"📊 Dataset Quality Engine ({modality.split(' ')[0]})")
+        feature_cols = [col for col in m_df.columns if col != "Label"]
+        X = m_df[feature_cols].replace([np.inf, -np.inf], 0).fillna(0)
+        y = m_df["Label"]
+        lbl_cnts = y.value_counts()
         
-        lbl_cnts = m_df["Label"].value_counts()
-        q_score = 100
-        variance_penalty = 0
+        # --- 1. ENTERPRISE STATUS DASHBOARD ---
+        st.subheader("📊 Dataset Readiness Audit")
         
-        # Balance & Size Check aangescherpt voor Anomaly Detection
-        if ml_strategy == "Unsupervised Anomaly Detection (Normal vs. Rest)":
-            if "Baseline (Normal)" not in lbl_cnts:
-                q_score -= 80
-                st.error("🔴 LET OP: Een Anomaly model vereist een grote 'Baseline (Normal)' dataset om op te trainen.")
-            elif lbl_cnts.get("Baseline (Normal)", 0) < 100:
-                q_score -= 20
-        else:
-            if len(lbl_cnts) < 2: q_score -= 50
-            elif (lbl_cnts.min() / lbl_cnts.max()) < 0.3: q_score -= 30
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        div_score = min(100, int((np.mean(pdist(X_scaled)) / 4.0) * 100)) if len(X_scaled) > 1 else 0
+        bal_score = 100 if len(lbl_cnts) >= 2 and (lbl_cnts.min() / lbl_cnts.max()) > 0.5 else 50
+        sep_score = int((silhouette_score(X_scaled, y) + 1) * 50) if len(y.unique()) >= 2 and len(X) > 5 else 0
+        
+        mcu, ram_req, ms_fft, ms_feat, ms_inf = estimate_edge_load(hardware_target, len(feature_cols), sr)
+        total_lat = ms_fft + ms_feat + ms_inf
+        deploy_score = calculate_deployment_score(hardware_target, total_lat, ram_req)
+        
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        col_m1.metric("Dataset Diversity", f"{div_score}%")
+        col_m2.metric("Dataset Balance", f"{bal_score}%")
+        col_m3.metric("Label Separation", f"{sep_score}%")
+        col_m4.metric("Deployment Readiness", f"{deploy_score}%")
+        
+        overall_ready = all(s > 80 for s in [div_score, bal_score, sep_score, deploy_score])
+        st.info(f"**Overall Status:** {'🟢 PRODUCTION READY' if overall_ready else '🟡 OPTIMALISATIE VEREIST'}")
+        
+        c_i1, c_i2 = st.columns([1, 1])
+        
+        # --- 2. AUTO FEATURE PRUNING ---
+        with c_i1:
+            st.subheader("✂️ Auto Feature Pruning")
+            corr_matrix = X.corr().abs()
+            upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+            to_drop = [column for column in upper.columns if any(upper[column] > 0.95)]
             
-        if len(m_df) < 50: q_score -= 30
-        
-        # Feature Health Check
-        health_list = []
-        for col in m_df.columns:
-            if col != "Label":
-                mean_v, std_v = m_df[col].mean(), m_df[col].std()
-                cv = std_v / max(abs(mean_v), 1e-6)
-                if pd.isna(std_v) or std_v == 0: 
-                    stat, variance_penalty = "🔴 CRITICAL", variance_penalty + 10
-                elif cv < 0.05: 
-                    stat, variance_penalty = "🟡 LOW", variance_penalty + 3
-                else: stat = "🟢 GOOD"
-                health_list.append({"Feature": col, "Variance": stat, "CV": f"{cv:.3f}"})
+            st.write(f"**Current Feature Set:** {len(feature_cols)} features")
+            if to_drop:
+                st.warning(f"Overtollige/Redundante features: `{', '.join(to_drop)}`")
+                _, _, _, ms_feat_new, _ = estimate_edge_load(hardware_target, len(feature_cols) - len(to_drop), sr)
+                lat_reduc_pct = ((ms_feat - ms_feat_new) / total_lat) * 100 if total_lat > 0 else 0
+                st.success(f"**Advies:** Verwijder deze uit C++. Latency reductie: **{lat_reduc_pct:.1f}%**")
+            else:
+                st.success("🟢 Feature set is wiskundig optimaal.")
+
+        # --- 3. HARDWARE PROFILER ---
+        with c_i2:
+            st.subheader("⚙️ Edge Hardware Profiler")
+            st.markdown(f"**Target MCU:** `{mcu}`")
+            st.write(f"- RAM Allocatie: **{ram_req:.1f} KB**")
+            st.write(f"- FFT Processing: **{ms_fft:.2f} ms**")
+            st.write(f"- Feature Extraction: **{ms_feat:.1f} ms**")
+            st.write(f"- ML Inference: **{ms_inf:.1f} ms**")
+            st.progress(deploy_score / 100.0, text=f"Deployment Totaal Score: {deploy_score}%")
+
+        st.markdown("---")
+
+        # --- 4. PERMUTATION IMPORTANCE & CONFUSION MATRIX ---
+        if len(lbl_cnts) >= 2 and all(count >= 5 for count in lbl_cnts):
+            c_ml1, c_ml2 = st.columns([1, 1])
+            
+            try:
+                rf = RandomForestClassifier(n_estimators=50, random_state=42)
+                rf.fit(X, y)
                 
-        q_score = max(0, min(100, int(q_score - variance_penalty)))
-        
-        col_m1, col_m2 = st.columns([1, 2])
-        col_m1.metric("Enterprise Quality Score", f"{q_score}%")
-        col_m2.dataframe(pd.DataFrame(health_list), use_container_width=True, height=150)
-        
-        st.dataframe(m_df, use_container_width=True)
-        
-        st.markdown("### 🚀 Export to Edge Impulse")
-        c_ex1, c_ex2, c_ex3 = st.columns(3)
-        
-        json_meta = json.dumps({"sensor": modality, "strategy": ml_strategy, "samples": len(m_df), "quality": q_score}, indent=4)
-        csv_str = m_df.to_csv(index=False)
-        
-        zip_buf = io.BytesIO()
-        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr("edge_impulse_dataset.csv", csv_str)
-            zf.writestr("metadata.json", json_meta)
-            
-        c_ex1.download_button("📦 Download Production .ZIP", data=zip_buf.getvalue(), file_name="omega_x_dataset.zip", mime="application/zip", use_container_width=True)
-        c_ex2.download_button("⚡ Download Raw .CSV", data=csv_str, file_name="edge_impulse.csv", mime="text/csv", use_container_width=True)
-        if c_ex3.button("🗑️ Clear Pipeline", use_container_width=True):
+                with c_ml1:
+                    st.subheader("🎯 Feature Importance (Permutation)")
+                    perm_imp = permutation_importance(rf, X, y, n_repeats=5, random_state=42)
+                    imp_df = pd.DataFrame({"Feature": feature_cols, "Belang": (perm_imp.importances_mean * 100).round(1)}).sort_values(by="Belang", ascending=False)
+                    fig_imp = px.bar(imp_df, x="Belang", y="Feature", orientation='h')
+                    fig_imp.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+                    st.plotly_chart(fig_imp, use_container_width=True)
+
+                with c_ml2:
+                    st.subheader("🔍 Cross-Validated Confusion Matrix")
+                    pred = cross_val_predict(rf, X, y, cv=min(5, len(m_df)//2))
+                    labels = sorted(y.unique())
+                    cm = confusion_matrix(y, pred, labels=labels)
+                    fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale='Blues', x=[f"Pred: {l}" for l in labels], y=[f"True: {l}" for l in labels])
+                    fig_cm.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+                    st.plotly_chart(fig_cm, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Matrix simulatie faalde: {e}")
+        else:
+            st.info("Voeg minimaal 2 labels toe (met elk 5+ samples) om Importance & Confusion Matrix te genereren.")
+
+        # --- EXPORT PIPELINE ---
+        st.markdown("### 🚀 Dataset Export")
+        c_ex1, c_ex2 = st.columns([1, 3])
+        c_ex1.download_button("⚡ Download CSV (Edge Impulse)", data=m_df.to_csv(index=False), file_name="edge_impulse.csv", mime="text/csv", use_container_width=True)
+        if c_ex1.button("🗑️ Clear Pipeline", use_container_width=True):
             st.session_state.master_training_dataset = pd.DataFrame()
             st.rerun()
+        c_ex2.dataframe(m_df, use_container_width=True, height=150)
