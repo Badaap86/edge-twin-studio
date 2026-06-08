@@ -120,7 +120,7 @@ PLAN_SAMPLE_LIMITS = {
 
 
 def _ensure_project_storage_columns(cursor):
-    """Add V31.1 storage metadata columns without breaking old SQLite databases."""
+    """Add V31.2 storage metadata columns without breaking old SQLite databases."""
     try:
         cursor.execute("PRAGMA table_info(projects)")
         existing = {row[1] for row in cursor.fetchall()}
@@ -310,7 +310,7 @@ def authenticate_user(username, password):
 
 
 def save_project(proj_id, user_id, name, dataset_df, settings_dict):
-    """Save project metadata in SQLite and large datasets in V31.1 file storage.
+    """Save project metadata in SQLite and large datasets in V31.2 file storage.
 
     Backward compatible: if file storage fails, the old JSON-in-SQLite path is used.
     """
@@ -336,7 +336,7 @@ def save_project(proj_id, user_id, name, dataset_df, settings_dict):
                 ds_hash = meta.get("hash", ds_hash)
                 rows = int(meta.get("rows", rows))
                 cols = int(meta.get("cols", cols))
-                storage_mode = "file_storage_v31_1"
+                storage_mode = "file_storage_v31_2"
             else:
                 raise RuntimeError("storage layer unavailable")
         except Exception:
@@ -18576,3 +18576,6792 @@ def create_checkout_readiness_v57_bundle(project_name, snapshot, dataset_df=None
             zf.writestr('dataset_snapshot.csv', dataset_df.head(500).to_csv(index=False))
         zf.writestr('README.txt', 'EdgeTwin Studio V57 Checkout Readiness bundle. This prepares manual/Stripe-style checkout gating but does not process payments by itself.\n')
     return zip_buf.getvalue()
+
+
+# ============================================================
+# V58 — Cloud Production Architecture & Migration Planner
+# ============================================================
+
+CLOUD_STAGE_PROFILES_V58 = {
+    "Local/private beta": {
+        "frontend": "Streamlit app on local machine or Streamlit Cloud",
+        "backend": "Core.py monolith acceptable for limited beta",
+        "database": "SQLite metadata acceptable only for internal/private beta",
+        "storage": "Local file storage acceptable for local/private tests; not durable on ephemeral hosts",
+        "payments": "Manual invoice/payment link",
+        "priority": "Validate workflow and customer value before heavy infrastructure spend",
+    },
+    "Paid pilot delivery": {
+        "frontend": "Streamlit customer/founder app with locked paid exports",
+        "backend": "Core services still acceptable if usage is low, but prepare FastAPI extraction",
+        "database": "PostgreSQL/Supabase/Neon recommended for customer/project metadata",
+        "storage": "S3-compatible object storage recommended for datasets, reports and bundles",
+        "payments": "Manual invoice first; Stripe checkout only for standardized packages",
+        "priority": "Reliability, backups, access control and delivery audit trail",
+    },
+    "Public SaaS": {
+        "frontend": "Streamlit or React frontend behind authenticated customer portal",
+        "backend": "FastAPI backend with jobs/queues for long-running generation and exports",
+        "database": "PostgreSQL mandatory for multi-user SaaS metadata and usage tracking",
+        "storage": "S3/R2/MinIO object storage mandatory for dataset and bundle durability",
+        "payments": "Stripe subscriptions + invoice fallback + plan-limit enforcement",
+        "priority": "Scalability, security, billing, monitoring, backups and customer data governance",
+    },
+    "Enterprise/on-prem": {
+        "frontend": "Customer-hosted portal or restricted admin dashboard",
+        "backend": "FastAPI services, worker queue and strict tenant isolation",
+        "database": "Customer-managed PostgreSQL or approved enterprise DB",
+        "storage": "Customer-managed object storage or isolated MinIO/S3 bucket",
+        "payments": "Contract/invoice, not self-service checkout",
+        "priority": "Security review, data residency, audit logs, support model and legal scope",
+    },
+}
+
+
+def get_cloud_stage_options_v58():
+    return list(CLOUD_STAGE_PROFILES_V58.keys())
+
+
+def build_cloud_production_architecture_v58(
+    project_name="EdgeTwin Studio",
+    target_stage="Paid pilot delivery",
+    expected_monthly_users=10,
+    expected_monthly_projects=25,
+    expected_max_dataset_rows=25000,
+    data_sensitivity="Customer sensor data, no personal audio expected",
+    current_frontend="Streamlit app",
+    current_backend="Streamlit monolith / core.py",
+    current_database="SQLite metadata",
+    current_storage="Local file storage",
+    payment_mode="Manual invoice first",
+    wants_public_signup=False,
+    needs_real_uploads=True,
+    needs_api=False,
+    needs_stripe=False,
+    selected_plan="Founder Test Mode",
+    dataset_df=None,
+):
+    target_stage = target_stage if target_stage in CLOUD_STAGE_PROFILES_V58 else "Paid pilot delivery"
+    profile = CLOUD_STAGE_PROFILES_V58[target_stage]
+    rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else int(expected_max_dataset_rows or 0)
+    expected_monthly_users = int(expected_monthly_users or 0)
+    expected_monthly_projects = int(expected_monthly_projects or 0)
+    expected_max_dataset_rows = int(expected_max_dataset_rows or rows or 0)
+
+    blockers = []
+    warnings = []
+
+    current_db_l = str(current_database).lower()
+    current_storage_l = str(current_storage).lower()
+    payment_l = str(payment_mode).lower()
+
+    if target_stage in {"Public SaaS", "Enterprise/on-prem"} and "sqlite" in current_db_l:
+        blockers.append("SQLite is not suitable as the primary database for public SaaS or enterprise multi-user operation.")
+    elif target_stage == "Paid pilot delivery" and "sqlite" in current_db_l:
+        warnings.append("SQLite can work for private paid pilots, but PostgreSQL migration should be planned before scaling users.")
+
+    if target_stage in {"Public SaaS", "Enterprise/on-prem"} and ("local" in current_storage_l or "file" in current_storage_l):
+        blockers.append("Local file storage is not durable enough for public/enterprise customer datasets and deliverables.")
+    elif "local" in current_storage_l and needs_real_uploads:
+        warnings.append("Local storage is acceptable for controlled beta, but real customer uploads should move to S3/MinIO/R2 before public launch.")
+
+    if expected_monthly_users > 50 and "core.py" in str(current_backend).lower():
+        warnings.append("Many users/projects expected. Split long-running analysis/export work into FastAPI + worker jobs.")
+    if expected_monthly_projects > 100:
+        warnings.append("High project volume expected. Add usage tracking, quotas, and background jobs before public launch.")
+    if expected_max_dataset_rows > 50000:
+        warnings.append("Large datasets expected. Use object storage, chunked processing and avoid full in-memory audits.")
+    if wants_public_signup and target_stage == "Local/private beta":
+        blockers.append("Public signup should not be enabled while still in local/private beta architecture.")
+    if needs_stripe and "stripe" not in payment_l and target_stage in {"Public SaaS", "Paid pilot delivery"}:
+        warnings.append("Stripe is requested but not connected yet. Keep manual invoice/payment link until checkout logic is legally and operationally ready.")
+    if needs_api and target_stage in {"Public SaaS", "Enterprise/on-prem"} and "fastapi" not in str(current_backend).lower():
+        blockers.append("Public/enterprise API requires a real FastAPI backend with auth, rate limits and audit logging.")
+    if "audio" in str(data_sensitivity).lower():
+        warnings.append("Audio uploads may contain privacy-sensitive content. Keep raw audio private by default and prefer feature-level learning.")
+
+    architecture_layers = [
+        {"layer": "Frontend", "recommended": profile["frontend"], "current": current_frontend},
+        {"layer": "Backend/API", "recommended": profile["backend"], "current": current_backend},
+        {"layer": "Database", "recommended": profile["database"], "current": current_database},
+        {"layer": "Dataset/object storage", "recommended": profile["storage"], "current": current_storage},
+        {"layer": "Payments", "recommended": profile["payments"], "current": payment_mode},
+        {"layer": "Secrets/config", "recommended": "Environment variables / Streamlit secrets / cloud secrets manager", "current": "Manual/local config assumed"},
+        {"layer": "Observability", "recommended": "Error Observatory + server logs + export events + backup checks", "current": "V33/V37/V49 internal logs"},
+        {"layer": "Backups", "recommended": "Database backups + object storage versioning + downloadable delivery archives", "current": "Local/manual backups unless configured"},
+    ]
+
+    migration_phases = [
+        {"phase": "1. Keep beta simple", "action": "Run customer/founder Streamlit app with strict private beta access and manual delivery.", "why": "Validate customer value before cloud complexity."},
+        {"phase": "2. Durable storage", "action": "Move dataset/report bundles to S3-compatible storage while keeping metadata in DB.", "why": "Protect customer deliverables and avoid ephemeral host storage risk."},
+        {"phase": "3. PostgreSQL metadata", "action": "Move users/projects/usage/license metadata from SQLite to PostgreSQL/Supabase/Neon.", "why": "Required for multi-user reliability and safer backups."},
+        {"phase": "4. FastAPI service split", "action": "Extract analysis, upload, export, checkout and report generation into FastAPI endpoints/jobs.", "why": "Prevents the UI from doing heavy backend work and prepares API customers."},
+        {"phase": "5. Billing & tenant controls", "action": "Connect Stripe/manual invoice workflow, plan limits, tenant isolation and admin review.", "why": "Needed before public SaaS and scaled paid downloads."},
+    ]
+
+    score = 100
+    score -= len(blockers) * 30
+    score -= len(warnings) * 7
+    if target_stage == "Local/private beta":
+        score += 8
+    if target_stage == "Paid pilot delivery" and "sqlite" not in current_db_l:
+        score += 5
+    score = int(np.clip(score, 0, 100))
+
+    if blockers:
+        decision = "NO-GO"
+        readiness = "Not ready for selected target stage"
+    elif score >= 85:
+        decision = "GO"
+        readiness = "Architecture is acceptable for the selected stage"
+    elif score >= 65:
+        decision = "CONDITIONAL GO"
+        readiness = "Acceptable with controlled limits and migration plan"
+    else:
+        decision = "NO-GO"
+        readiness = "Too risky without infrastructure work"
+
+    immediate_next_actions = []
+    if blockers:
+        immediate_next_actions.extend(blockers[:3])
+    if not immediate_next_actions:
+        if target_stage == "Paid pilot delivery":
+            immediate_next_actions = [
+                "Keep manual invoices/payment links for first paid pilots.",
+                "Use privacy-safe upload mode and delivery bundles for each customer.",
+                "Plan PostgreSQL + object storage before public signup or larger customer volume.",
+            ]
+        elif target_stage == "Public SaaS":
+            immediate_next_actions = [
+                "Move metadata to PostgreSQL.",
+                "Move datasets/bundles to S3-compatible object storage.",
+                "Split heavy analysis/export jobs into FastAPI/worker tasks.",
+            ]
+        else:
+            immediate_next_actions = ["Keep scope controlled", "Log every customer delivery", "Collect beta feedback before scaling"]
+
+    return {
+        "version": "V58",
+        "project_name": project_name,
+        "target_stage": target_stage,
+        "selected_plan": selected_plan,
+        "architecture_score": score,
+        "decision": decision,
+        "readiness": readiness,
+        "expected_monthly_users": expected_monthly_users,
+        "expected_monthly_projects": expected_monthly_projects,
+        "expected_max_dataset_rows": expected_max_dataset_rows,
+        "data_sensitivity": data_sensitivity,
+        "profile_priority": profile["priority"],
+        "blockers": blockers,
+        "warnings": warnings,
+        "architecture_layers": architecture_layers,
+        "migration_phases": migration_phases,
+        "immediate_next_actions": immediate_next_actions,
+        "safe_claims": [
+            "Current architecture is suitable only for the selected readiness stage.",
+            "Private beta and paid pilot can start before full SaaS infrastructure if scope and access are controlled.",
+            "Public SaaS requires stronger database, object storage, backups, billing and monitoring controls.",
+        ],
+        "claims_to_avoid": [
+            "Do not claim public SaaS-scale readiness while using local-only storage/SQLite.",
+            "Do not promise enterprise data residency or compliance without customer-specific review.",
+            "Do not enable public signup/payment before auth, storage, billing and retention are hardened.",
+        ],
+        "created_at": _now(),
+    }
+
+
+def create_cloud_production_architecture_v58_bundle(project_name, snapshot, dataset_df=None):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Cloud Production Architecture V58', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 7, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align='C')
+    pdf.ln(6)
+    safe_pdf_cell(pdf, 'Architecture Summary', 8, True)
+    safe_pdf_cell(pdf, f"Target stage: {snapshot.get('target_stage')}")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Architecture score: {snapshot.get('architecture_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get('readiness', ''))
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Immediate Next Actions', 8, True)
+    for item in snapshot.get('immediate_next_actions', []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Blockers', 8, True)
+    for item in snapshot.get('blockers', []) or ['No hard blockers recorded for selected stage.']:
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Warnings', 8, True)
+    for item in snapshot.get('warnings', []) or ['No warnings recorded.']:
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Migration Phases', 8, True)
+    for item in snapshot.get('migration_phases', []):
+        safe_pdf_multicell(pdf, f"- {item.get('phase')}: {item.get('action')}")
+
+    arch_df = pd.DataFrame(snapshot.get('architecture_layers', []))
+    phases_df = pd.DataFrame(snapshot.get('migration_phases', []))
+    issues_df = pd.DataFrame(
+        [{"type": "blocker", "message": x} for x in snapshot.get('blockers', [])] +
+        [{"type": "warning", "message": x} for x in snapshot.get('warnings', [])]
+    )
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('cloud_architecture_v58.pdf', safe_pdf_output(pdf))
+        zf.writestr('cloud_architecture_v58.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('architecture_layers_v58.csv', arch_df.to_csv(index=False))
+        zf.writestr('migration_phases_v58.csv', phases_df.to_csv(index=False))
+        zf.writestr('architecture_issues_v58.csv', issues_df.to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr('dataset_snapshot.csv', dataset_df.head(500).to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V58 Cloud Production Architecture bundle. Use this to plan the move from controlled beta to paid pilot/public SaaS infrastructure.\n')
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V59 — Hardware Reference Demo / Edge Node Proof Kit
+# ============================================================
+
+HARDWARE_REFERENCE_PROFILES_V59 = {
+    "Vibration Predictive Maintenance": {
+        "default_board": "ESP32-S3",
+        "default_sensors": ["Vibration", "Audio"],
+        "edge_route": "Edge Impulse classifier + optional anomaly baseline",
+        "target_environment": "bench machine / pump / motor test",
+        "minimum_demo_days": 1,
+        "goal": "Prove the pipeline can classify normal versus wear/failure-risk vibration/audio patterns on edge hardware.",
+    },
+    "Acoustic Tamper / Security": {
+        "default_board": "ESP32-S3",
+        "default_sensors": ["Audio", "Vibration", "Radar"],
+        "edge_route": "Edge Impulse classifier + thresholded event scoring",
+        "target_environment": "door, container, facade or tool-tamper test location",
+        "minimum_demo_days": 1,
+        "goal": "Prove the pipeline can distinguish normal background from impact, drilling, grinding or tamper-like events.",
+    },
+    "Remote Forestry / Asset Monitoring": {
+        "default_board": "RAK4631 / nRF52840",
+        "default_sensors": ["Audio", "Radar", "GPS / Zone", "Vibration"],
+        "edge_route": "LoRa node event scoring + gateway verification + optional Edge Impulse export",
+        "target_environment": "remote outdoor / farm / forestry test area",
+        "minimum_demo_days": 3,
+        "goal": "Prove remote monitoring workflow with normal background, vehicle/human/chainsaw-like activity and low-power reporting.",
+    },
+}
+
+
+def get_hardware_reference_profiles_v59():
+    return list(HARDWARE_REFERENCE_PROFILES_V59.keys())
+
+
+def build_hardware_reference_demo_v59(
+    project_name="EdgeTwin Reference Demo",
+    demo_type="Vibration Predictive Maintenance",
+    board="Auto",
+    sensors=None,
+    target_environment=None,
+    expected_demo_days=2,
+    edge_impulse_route="Auto",
+    has_real_uploads=False,
+    has_edge_impulse_export=False,
+    has_deployment_plan=False,
+    has_privacy_learning_plan=False,
+    dataset_df=None,
+):
+    profile = HARDWARE_REFERENCE_PROFILES_V59.get(demo_type, HARDWARE_REFERENCE_PROFILES_V59["Vibration Predictive Maintenance"])
+    sensors = sensors or profile["default_sensors"]
+    if board == "Auto" or not board:
+        board = profile["default_board"]
+    if edge_impulse_route == "Auto" or not edge_impulse_route:
+        edge_impulse_route = profile["edge_route"]
+    target_environment = target_environment or profile["target_environment"]
+    expected_demo_days = int(expected_demo_days or profile["minimum_demo_days"])
+    dataset_rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+    dataset_cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+
+    blockers = []
+    warnings = []
+
+    if dataset_rows < 100:
+        blockers.append("Generate or upload at least 100 feature rows before claiming hardware-reference readiness.")
+    elif dataset_rows < 500:
+        warnings.append("Dataset is enough for a controlled demo, but more rows improve the credibility of the reference test.")
+    if expected_demo_days < profile["minimum_demo_days"]:
+        warnings.append(f"Recommended minimum for this demo is {profile['minimum_demo_days']} day(s); current plan is {expected_demo_days}.")
+    if not has_edge_impulse_export:
+        warnings.append("Edge Impulse export has not been confirmed. Prepare anomaly/classifier export before flashing/demoing hardware.")
+    if not has_deployment_plan:
+        warnings.append("Deployment plan/BOM is not confirmed. Generate deployment planner output before customer-facing hardware proof.")
+    if not has_privacy_learning_plan and has_real_uploads:
+        warnings.append("Real uploads are involved; create the privacy-safe field learning plan before reusing any data patterns.")
+    if len(sensors) < 1:
+        blockers.append("At least one sensor must be selected for a hardware reference demo.")
+
+    demo_steps = [
+        {"step": "1. Generate pilot dataset", "owner": "EdgeTwin", "output": "Training/evaluation features with labels and readiness score"},
+        {"step": "2. Export model route", "owner": "EdgeTwin / Edge Impulse", "output": "Anomaly or classifier export with recommended features"},
+        {"step": "3. Flash reference firmware", "owner": "Founder/engineer", "output": f"{board} running feature extraction / event scoring"},
+        {"step": "4. Run controlled events", "owner": "Founder/customer", "output": "Normal and event-like sensor recordings with notes"},
+        {"step": "5. Compare expected vs observed", "owner": "EdgeTwin", "output": "Evidence table, false positives/false negatives, next fixes"},
+        {"step": "6. Decide pilot readiness", "owner": "Founder", "output": "GO / CONDITIONAL GO / NO-GO for customer demo or paid pilot"},
+    ]
+
+    data_collection_plan = []
+    normal_labels = ["Normal", "Baseline_Normal", "Healthy", "Forest_Normal", "Normal_Background"]
+    event_labels = ["Warning", "Event", "Impact", "Drilling", "Grinding", "Bearing_Wear", "Failure_Risk", "Critical"]
+    for label in normal_labels[:3]:
+        data_collection_plan.append({"class": label, "minimum_segments": 20, "notes": "Collect stable normal/background samples in the target environment."})
+    for label in event_labels[:5]:
+        data_collection_plan.append({"class": label, "minimum_segments": 10, "notes": "Use safe controlled events only; do not create dangerous conditions."})
+
+    acceptance_criteria = [
+        "Reference demo runs end-to-end without manual file surgery.",
+        "Normal/background samples produce lower anomaly/event scores than controlled events.",
+        "At least one export route is ready: Edge Impulse anomaly or classifier.",
+        "Report states pilot-only scope and field validation requirement.",
+        "No raw customer data is reused outside the project without explicit consent.",
+    ]
+
+    bom = [
+        {"item": board, "role": "reference edge node", "required": "yes"},
+        {"item": ", ".join(sensors), "role": "sensor stack", "required": "yes"},
+        {"item": "USB power / battery / stable supply", "role": "demo power", "required": "yes"},
+        {"item": "Laptop with EdgeTwin + Edge Impulse access", "role": "analysis/export", "required": "yes"},
+        {"item": "Simple enclosure / mounting tape / cable relief", "role": "controlled test setup", "required": "recommended"},
+    ]
+
+    score = 100
+    score -= len(blockers) * 30
+    score -= len(warnings) * 8
+    if has_real_uploads:
+        score += 6
+    if has_edge_impulse_export:
+        score += 6
+    if has_deployment_plan:
+        score += 4
+    if has_privacy_learning_plan:
+        score += 4
+    score = int(np.clip(score, 0, 100))
+
+    if blockers:
+        decision = "NO-GO"
+        readiness = "Not ready for hardware reference demo yet"
+    elif score >= 85:
+        decision = "GO"
+        readiness = "Ready for a controlled hardware reference demo"
+    elif score >= 65:
+        decision = "CONDITIONAL GO"
+        readiness = "Ready only as an internal/controlled demo with limitations"
+    else:
+        decision = "NO-GO"
+        readiness = "Too many gaps before hardware proof"
+
+    next_actions = []
+    if blockers:
+        next_actions.extend(blockers[:3])
+    else:
+        next_actions = [
+            "Generate Edge Impulse export bundle if not already done.",
+            "Run a short controlled reference test and capture normal/event notes.",
+            "Feed observed field features back into Real Upload V56 / Field Evidence V39.",
+            "Only use this as pilot evidence, not production certification.",
+        ]
+
+    return {
+        "version": "V59",
+        "project_name": project_name,
+        "demo_type": demo_type,
+        "goal": profile["goal"],
+        "board": board,
+        "sensors": sensors,
+        "target_environment": target_environment,
+        "edge_impulse_route": edge_impulse_route,
+        "expected_demo_days": expected_demo_days,
+        "dataset_rows": dataset_rows,
+        "dataset_cols": dataset_cols,
+        "has_real_uploads": bool(has_real_uploads),
+        "has_edge_impulse_export": bool(has_edge_impulse_export),
+        "has_deployment_plan": bool(has_deployment_plan),
+        "has_privacy_learning_plan": bool(has_privacy_learning_plan),
+        "hardware_reference_score": score,
+        "decision": decision,
+        "readiness": readiness,
+        "blockers": blockers,
+        "warnings": warnings,
+        "bom": bom,
+        "demo_steps": demo_steps,
+        "data_collection_plan": data_collection_plan,
+        "acceptance_criteria": acceptance_criteria,
+        "next_actions": next_actions,
+        "safe_claims": [
+            "This is a controlled hardware reference demo plan, not production certification.",
+            "The purpose is to prove the EdgeTwin-to-edge-hardware pipeline and identify gaps before wider field deployment.",
+            "Customer data remains private unless privacy-safe learning is explicitly enabled.",
+        ],
+        "claims_to_avoid": [
+            "Do not claim production accuracy from one reference demo.",
+            "Do not claim hardware is certified for safety/security-critical deployment.",
+            "Do not reuse raw customer field data globally without explicit written consent.",
+        ],
+        "created_at": _now(),
+    }
+
+
+def create_hardware_reference_demo_v59_bundle(project_name, snapshot, dataset_df=None):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Hardware Reference Demo V59', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 7, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align='C')
+    pdf.ln(6)
+    safe_pdf_cell(pdf, 'Reference Demo Summary', 8, True)
+    safe_pdf_cell(pdf, f"Demo type: {snapshot.get('demo_type')}")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('hardware_reference_score')}%")
+    safe_pdf_cell(pdf, f"Board: {snapshot.get('board')}")
+    safe_pdf_cell(pdf, f"Sensors: {', '.join(snapshot.get('sensors', []))}")
+    safe_pdf_multicell(pdf, snapshot.get('readiness', ''))
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Goal', 8, True)
+    safe_pdf_multicell(pdf, snapshot.get('goal', ''))
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Next Actions', 8, True)
+    for item in snapshot.get('next_actions', []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Acceptance Criteria', 8, True)
+    for item in snapshot.get('acceptance_criteria', []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Safe Claims', 8, True)
+    for item in snapshot.get('safe_claims', []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    bom_df = pd.DataFrame(snapshot.get('bom', []))
+    steps_df = pd.DataFrame(snapshot.get('demo_steps', []))
+    data_plan_df = pd.DataFrame(snapshot.get('data_collection_plan', []))
+    issues_df = pd.DataFrame(
+        [{"type": "blocker", "message": x} for x in snapshot.get('blockers', [])] +
+        [{"type": "warning", "message": x} for x in snapshot.get('warnings', [])]
+    )
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('hardware_reference_demo_v59.pdf', safe_pdf_output(pdf))
+        zf.writestr('hardware_reference_demo_v59.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('reference_bom_v59.csv', bom_df.to_csv(index=False))
+        zf.writestr('demo_steps_v59.csv', steps_df.to_csv(index=False))
+        zf.writestr('data_collection_plan_v59.csv', data_plan_df.to_csv(index=False))
+        zf.writestr('hardware_reference_issues_v59.csv', issues_df.to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr('dataset_snapshot.csv', dataset_df.head(500).to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V59 Hardware Reference Demo bundle. Use this to prove the EdgeTwin-to-edge-hardware pipeline in a controlled pilot-only setup.\n')
+    return zip_buf.getvalue()
+
+# ============================================================
+# V60 — Commercial Release Candidate / Final Launch Gate
+# ============================================================
+
+def _v60_score_from_snapshot(snapshot, keys=None, default=0):
+    if not isinstance(snapshot, dict) or not snapshot:
+        return int(default)
+    keys = keys or [
+        "commercial_release_score", "product_readiness_score", "security_score", "governance_score",
+        "launch_experience_score", "checkout_score", "delivery_score", "paid_pilot_score",
+        "pricing_offer_score", "cloud_architecture_score", "hardware_reference_score", "privacy_score",
+        "upload_readiness_score", "founder_ops_score", "operational_score", "success_score", "score",
+        "trust_score", "readiness_score", "assurance_score"
+    ]
+    for key in keys:
+        try:
+            value = snapshot.get(key)
+            if isinstance(value, (int, float, np.integer, np.floating)):
+                return int(np.clip(float(value), 0, 100))
+        except Exception:
+            continue
+    # Try one level deep for common summary blocks.
+    for maybe in ["summary", "snapshot", "result"]:
+        sub = snapshot.get(maybe)
+        if isinstance(sub, dict):
+            score = _v60_score_from_snapshot(sub, keys=keys, default=None)
+            if score is not None:
+                return int(score)
+    return int(default)
+
+
+def _v60_bool_score(value, weight=100):
+    return int(weight if bool(value) else 0)
+
+
+def build_commercial_release_candidate_v60(
+    project_name="EdgeTwin_Project",
+    release_target="Paid pilot launch",
+    customer_mode_ready=True,
+    founder_mode_ready=True,
+    pricing_ready=False,
+    delivery_ready=False,
+    real_data_ready=False,
+    hardware_reference_ready=False,
+    cloud_plan_ready=False,
+    legal_review_done=False,
+    payment_provider_connected=False,
+    selected_plan="Founder Test Mode",
+    dataset_df=None,
+    evidence_snapshots=None,
+):
+    """Final commercial launch gate for V60.
+
+    This does not certify production safety. It combines evidence coverage, commercial
+    readiness and risk controls to decide whether EdgeTwin should stay internal,
+    move to private beta, offer paid pilots, or prepare for public SaaS preview.
+    """
+    evidence_snapshots = evidence_snapshots or {}
+    rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+    cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+
+    evidence_specs = [
+        ("Customer Mode", customer_mode_ready, 12, "Customer-facing route is clear enough for non-experts."),
+        ("Founder Mode", founder_mode_ready, 8, "Founder/operator tools remain available behind the scenes."),
+        ("Pricing/Offer", pricing_ready or bool(evidence_snapshots.get("pricing_offer")), 10, "Pricing and offer logic is ready."),
+        ("Proposal/SOW", bool(evidence_snapshots.get("proposal_sow")), 7, "Scope and acceptance criteria are documented."),
+        ("Checkout/Invoice Readiness", bool(evidence_snapshots.get("checkout_v57")) or payment_provider_connected, 7, "Checkout or manual invoice process is controlled."),
+        ("Delivery Portal", delivery_ready or bool(evidence_snapshots.get("delivery")), 8, "Customer handoff/delivery process exists."),
+        ("Privacy-Safe Learning", real_data_ready or bool(evidence_snapshots.get("privacy_learning_v52")), 9, "Real data learning path has privacy controls."),
+        ("Real Upload Intake", bool(evidence_snapshots.get("real_upload_v56")), 7, "Customer upload intake is inspected and gated."),
+        ("Cloud Architecture Plan", cloud_plan_ready or bool(evidence_snapshots.get("cloud_architecture_v58")), 8, "Cloud migration plan is documented."),
+        ("Hardware Reference", hardware_reference_ready or bool(evidence_snapshots.get("hardware_reference_v59")), 7, "Reference proof path exists for edge hardware pipeline."),
+        ("Security / Access", bool(evidence_snapshots.get("security_v41")), 6, "Access, upload and security checks are represented."),
+        ("Customer Assurance", bool(evidence_snapshots.get("customer_assurance")), 5, "Data ownership and governance language is represented."),
+        ("Founder Ops", bool(evidence_snapshots.get("founder_ops_v49")), 4, "Founder workload and follow-up controls exist."),
+        ("Legal/Terms Review", legal_review_done, 2, "External/legal review is done or explicitly planned."),
+    ]
+
+    max_score = sum(w for _, _, w, _ in evidence_specs)
+    earned = sum(w for _, ok, w, _ in evidence_specs if ok)
+    coverage_score = int(np.clip((earned / max(max_score, 1)) * 100, 0, 100))
+
+    snapshot_scores = []
+    for name, snap in evidence_snapshots.items():
+        score = _v60_score_from_snapshot(snap, default=None)
+        if score is not None:
+            snapshot_scores.append(score)
+    existing_evidence_score = int(np.mean(snapshot_scores)) if snapshot_scores else 70
+
+    data_score = 70
+    if rows >= 200:
+        data_score += 10
+    if rows >= 1000:
+        data_score += 5
+    if real_data_ready or evidence_snapshots.get("real_upload_v56"):
+        data_score += 10
+    if hardware_reference_ready or evidence_snapshots.get("hardware_reference_v59"):
+        data_score += 5
+    data_score = int(np.clip(data_score, 0, 100))
+
+    target = str(release_target or "Paid pilot launch")
+    target_penalty = 0
+    if target == "Public SaaS preview":
+        if not cloud_plan_ready and not evidence_snapshots.get("cloud_architecture_v58"):
+            target_penalty += 12
+        if not payment_provider_connected:
+            target_penalty += 6
+        if not legal_review_done:
+            target_penalty += 8
+    elif target == "Enterprise/on-prem evaluation":
+        if not legal_review_done:
+            target_penalty += 8
+        if not evidence_snapshots.get("customer_assurance"):
+            target_penalty += 6
+    elif target == "Paid pilot launch":
+        if not pricing_ready and not evidence_snapshots.get("pricing_offer"):
+            target_penalty += 8
+        if not delivery_ready and not evidence_snapshots.get("delivery"):
+            target_penalty += 8
+
+    score = int(np.clip((coverage_score * 0.48) + (existing_evidence_score * 0.27) + (data_score * 0.25) - target_penalty, 0, 100))
+
+    must_fix = []
+    warnings = []
+    if not customer_mode_ready:
+        must_fix.append("Customer Mode is not marked ready; keep the product internal until the customer route is clear.")
+    if not founder_mode_ready:
+        must_fix.append("Founder Mode/operator controls are not marked ready.")
+    if target in {"Paid pilot launch", "Public SaaS preview", "Enterprise/on-prem evaluation"} and not (pricing_ready or evidence_snapshots.get("pricing_offer")):
+        must_fix.append("Pricing/offer evidence is missing for a commercial release.")
+    if target in {"Paid pilot launch", "Public SaaS preview", "Enterprise/on-prem evaluation"} and not (delivery_ready or evidence_snapshots.get("delivery")):
+        must_fix.append("Customer delivery/handoff evidence is missing.")
+    if target == "Public SaaS preview" and not (cloud_plan_ready or evidence_snapshots.get("cloud_architecture_v58")):
+        must_fix.append("Public SaaS preview needs a cloud architecture/migration plan.")
+    if target == "Public SaaS preview" and not legal_review_done:
+        warnings.append("Legal/terms review is not marked done; keep claims conservative and beta-limited.")
+    if rows == 0:
+        warnings.append("No active dataset is loaded. Generate or upload a pilot dataset before using this as customer evidence.")
+    if not (real_data_ready or evidence_snapshots.get("real_upload_v56") or evidence_snapshots.get("privacy_learning_v52")):
+        warnings.append("Real-data path is weak. Synthetic-only pilots should be positioned as pilot preparation, not production proof.")
+    if not (hardware_reference_ready or evidence_snapshots.get("hardware_reference_v59")):
+        warnings.append("Hardware reference proof is not marked ready. Use controlled reference demos before strong hardware claims.")
+    if not payment_provider_connected:
+        warnings.append("Payment provider is not connected. Use manual invoice/paid-download readiness rather than automated checkout claims.")
+
+    if must_fix:
+        decision = "NO-GO" if score < 72 else "CONDITIONAL GO"
+    elif score >= 86:
+        decision = "GO"
+    elif score >= 68:
+        decision = "CONDITIONAL GO"
+    else:
+        decision = "NO-GO"
+
+    if decision == "GO":
+        launch_stage = "Commercial release candidate"
+        recommended_next_step = "Use this build for controlled paid pilot conversations. Keep production claims conservative and collect customer feedback."
+    elif decision == "CONDITIONAL GO":
+        launch_stage = "Controlled beta / limited paid pilot"
+        recommended_next_step = "Use only with selected beta or paid-pilot customers after fixing the listed launch blockers."
+    else:
+        launch_stage = "Internal only"
+        recommended_next_step = "Do not present this as launch-ready. Fix must-fix items and re-run V60."
+
+    evidence_matrix = []
+    for name, ok, weight, description in evidence_specs:
+        evidence_matrix.append({
+            "area": name,
+            "ready": bool(ok),
+            "weight": int(weight),
+            "description": description,
+            "status": "Ready" if ok else "Missing / needs attention",
+        })
+
+    recommended_actions = [
+        "Run one complete Customer Mode flow from start to proposal before every serious demo.",
+        "Keep Founder Mode as the control room; do not expose admin/security/storage pages to normal customers.",
+        "Use paid pilot language unless field evidence and legal review justify stronger claims.",
+        "Collect customer feedback after every delivery and feed objections back into offer/pricing/UX.",
+    ]
+    if target == "Public SaaS preview":
+        recommended_actions.append("Prioritize PostgreSQL, object storage, background jobs and billing integration before wider public launch.")
+    if not hardware_reference_ready:
+        recommended_actions.append("Plan one small hardware reference demo for vibration or acoustic tamper to strengthen trust.")
+
+    safe_claims = [
+        "EdgeTwin Studio helps teams move from sensor use-case to pilot-ready Edge AI package faster.",
+        "The platform generates datasets, readiness checks, hardware guidance, reports and Edge Impulse/TinyML export preparation.",
+        "Reliability scores are pilot estimates and must be validated with real field data before production use.",
+        "Customer data can remain project-private; broader learning is opt-in and feature-focused.",
+    ]
+    claims_to_avoid = [
+        "Do not claim production certification or guaranteed accuracy.",
+        "Do not claim synthetic data replaces field validation.",
+        "Do not claim public SaaS readiness until cloud storage, billing, tenant isolation and legal terms are production hardened.",
+        "Do not reuse raw customer audio/GPS/data globally without explicit written permission.",
+    ]
+
+    return {
+        "version": "V60",
+        "project_name": project_name,
+        "created_at": _now(),
+        "release_target": target,
+        "selected_plan": selected_plan,
+        "commercial_release_score": score,
+        "coverage_score": coverage_score,
+        "evidence_score": existing_evidence_score,
+        "data_score": data_score,
+        "target_penalty": target_penalty,
+        "decision": decision,
+        "launch_stage": launch_stage,
+        "dataset_rows": rows,
+        "dataset_cols": cols,
+        "must_fix": must_fix,
+        "warnings": warnings,
+        "recommended_next_step": recommended_next_step,
+        "recommended_actions": recommended_actions,
+        "evidence_matrix": evidence_matrix,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "disclaimer": "V60 is a commercial release gate for launch readiness. It is not a legal, safety or production certification.",
+    }
+
+
+def create_commercial_release_candidate_v60_bundle(project_name, snapshot, dataset_df=None):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Commercial Release Candidate V60", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Release Decision", 8, True)
+    safe_pdf_cell(pdf, f"Target: {snapshot.get('release_target')}")
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('commercial_release_score')}%")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Launch stage: {snapshot.get('launch_stage')}")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Must Fix", 8, True)
+    for item in snapshot.get("must_fix", []) or ["No launch-blocking issues recorded."]:
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Warnings", 8, True)
+    for item in snapshot.get("warnings", []) or ["No warnings recorded."]:
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Safe Claims", 8, True)
+    for item in snapshot.get("safe_claims", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Claims To Avoid", 8, True)
+    for item in snapshot.get("claims_to_avoid", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("commercial_release_candidate_v60.pdf", safe_pdf_output(pdf))
+        zf.writestr("commercial_release_candidate_v60.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("release_evidence_matrix_v60.csv", pd.DataFrame(snapshot.get("evidence_matrix", [])).to_csv(index=False))
+        zf.writestr("must_fix_v60.csv", pd.DataFrame({"item": snapshot.get("must_fix", [])}).to_csv(index=False))
+        zf.writestr("warnings_v60.csv", pd.DataFrame({"item": snapshot.get("warnings", [])}).to_csv(index=False))
+        zf.writestr("safe_claims_v60.csv", pd.DataFrame({"safe_claim": snapshot.get("safe_claims", [])}).to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr("dataset_snapshot.csv", dataset_df.head(1000).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V60 Commercial Release Candidate bundle. Use this to decide if the build is ready for demo, paid pilot, public preview or internal-only status.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V60.1 — Launch Stabilization & Strategic Moat Gate
+# ============================================================
+
+def build_launch_stabilization_and_moat_v60_1(
+    project_name,
+    release_target="Paid pilot launch",
+    full_test_passed=False,
+    no_critical_errors=True,
+    customer_mode_clean=True,
+    founder_controls_hidden=True,
+    safe_claims_locked=True,
+    privacy_terms_ready=False,
+    payment_lock_safe=False,
+    storage_backup_plan=True,
+    cloud_migration_plan=False,
+    hardware_reference_evidence=False,
+    legal_review_started=False,
+    buyer_target="Edge AI platform",
+    moat_notes="",
+    dataset_df=None,
+    evidence_snapshots=None,
+):
+    evidence_snapshots = evidence_snapshots or {}
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns)) if rows else 0
+
+    checks = [
+        ("Full test/check-up passed", full_test_passed, 15, "Run a comprehensive check before wider launch."),
+        ("No known critical errors", no_critical_errors, 15, "No active Streamlit/backend blocking errors."),
+        ("Customer Mode clean", customer_mode_clean, 12, "Customer route is simple and non-technical."),
+        ("Founder controls hidden", founder_controls_hidden, 10, "Admin/operator pages are not exposed to normal buyers."),
+        ("Safe claims locked", safe_claims_locked, 10, "No guaranteed accuracy/production safety claims."),
+        ("Privacy/consent wording ready", privacy_terms_ready, 10, "Customer data learning is private by default and opt-in."),
+        ("Payment/download locks safe", payment_lock_safe, 8, "Paid downloads and invoice flow are controlled."),
+        ("Storage/back-up plan documented", storage_backup_plan, 8, "Dataset files and metadata have a clear storage plan."),
+        ("Cloud migration plan documented", cloud_migration_plan, 7, "PostgreSQL/object storage/FastAPI migration path exists."),
+        ("Hardware reference proof path exists", hardware_reference_evidence, 3, "Small hardware proof path strengthens credibility."),
+        ("Legal/terms review started", legal_review_started, 2, "Not required for private demo, required before broad paid launch."),
+    ]
+    stability_score = int(max(0, min(100, sum(weight for _, ok, weight, _ in checks if ok))))
+
+    evidence_items = [
+        ("Customer route system", bool(evidence_snapshots.get("customer_mode_v50") or customer_mode_clean), "V50/V51 simple customer flow"),
+        ("Trust and privacy system", bool(evidence_snapshots.get("privacy_learning_v52") or privacy_terms_ready), "V52 privacy-safe field learning"),
+        ("Launch and sales assets", bool(evidence_snapshots.get("launch_experience_v53") or evidence_snapshots.get("launch_assets_v54")), "V53/V54 launch copy and sales material"),
+        ("Real upload intake", bool(evidence_snapshots.get("real_upload_v56") or rows > 0), "V56 customer data intake path"),
+        ("Commercial handoff", bool(evidence_snapshots.get("pricing_offer") or evidence_snapshots.get("proposal_sow") or evidence_snapshots.get("checkout_v57") or payment_lock_safe), "Pricing, SOW, checkout readiness"),
+        ("Founder operating system", bool(evidence_snapshots.get("founder_ops_v49")), "Founder workload and follow-up control"),
+        ("Cloud roadmap", bool(evidence_snapshots.get("cloud_architecture_v58") or cloud_migration_plan), "Migration plan for real SaaS"),
+        ("Hardware reference proof", bool(evidence_snapshots.get("hardware_reference_v59") or hardware_reference_evidence), "Edge node proof kit"),
+        ("Release gate", bool(evidence_snapshots.get("commercial_release_v60")), "V60 final commercial release candidate"),
+    ]
+    evidence_score = int(round(sum(1 for _, ok, _ in evidence_items if ok) / max(1, len(evidence_items)) * 100))
+
+    dataset_signal = 0
+    if rows >= 1000:
+        dataset_signal = 18
+    elif rows >= 300:
+        dataset_signal = 12
+    elif rows >= 50:
+        dataset_signal = 7
+    elif rows > 0:
+        dataset_signal = 4
+
+    moat_score = int(max(0, min(100, int(round(
+        0.38 * evidence_score +
+        0.27 * stability_score +
+        15 * int(privacy_terms_ready) +
+        12 * int(hardware_reference_evidence) +
+        dataset_signal
+    )))))
+
+    buyer_target_bonus = 5 if buyer_target and buyer_target != "Not targeting buyers yet" else 0
+    buyer_signal_score = int(max(0, min(100, int(round(0.55 * moat_score + 0.35 * stability_score + buyer_target_bonus + (5 if legal_review_started else 0))))))
+
+    must_fix = []
+    if not full_test_passed:
+        must_fix.append("Run and archive a full V60/V60.1 check-up before broader launch.")
+    if not no_critical_errors:
+        must_fix.append("Fix all known critical Streamlit/backend errors before any customer demo.")
+    if not customer_mode_clean:
+        must_fix.append("Simplify Customer Mode before showing to non-technical buyers.")
+    if not founder_controls_hidden:
+        must_fix.append("Hide Founder/Admin controls from customer mode before public demos.")
+    if not safe_claims_locked:
+        must_fix.append("Lock safe claims and remove any guaranteed accuracy/production safety language.")
+    if not privacy_terms_ready:
+        must_fix.append("Add privacy/consent wording before accepting real customer data.")
+    if not payment_lock_safe:
+        must_fix.append("Verify checkout/download locks before taking paid orders.")
+    if release_target in ["Public demo preview", "Strategic partner / buyer demo"] and not cloud_migration_plan:
+        must_fix.append("Document cloud migration/back-up plan before broad public or strategic partner demos.")
+
+    warnings = []
+    if not hardware_reference_evidence:
+        warnings.append("Hardware reference proof is not required for software demo, but strongly improves buyer/customer trust.")
+    if not legal_review_started:
+        warnings.append("Legal review is still pending; keep all launches as beta/paid pilot preview with conservative claims.")
+    if rows == 0:
+        warnings.append("No dataset is loaded in this project snapshot; demo evidence will be stronger with a generated or uploaded dataset.")
+
+    if stability_score >= 88 and len(must_fix) == 0:
+        decision = "STABLE BETA GO"
+        launch_status = "Controlled beta / paid-pilot ready"
+        recommended_next_step = "Use this build for selected customer demos or paid-pilot conversations while collecting feedback and evidence."
+    elif stability_score >= 70 and no_critical_errors and customer_mode_clean:
+        decision = "CONTROLLED LAUNCH"
+        launch_status = "Limited demo only"
+        recommended_next_step = "Use only with selected leads; fix the must-fix list before paid or broader public exposure."
+    else:
+        decision = "STABILIZE FIRST"
+        launch_status = "Internal hardening"
+        recommended_next_step = "Do not push this as launch-ready yet. Freeze features, fix blockers and run a full check-up."
+
+    moat_evidence = []
+    for name, ok, description in evidence_items:
+        moat_evidence.append({
+            "asset": name,
+            "present": bool(ok),
+            "description": description,
+            "strategic_value": "High" if ok else "Missing / weak",
+        })
+
+    stabilization_sprint = [
+        "Freeze feature additions until the next full check-up passes.",
+        "Run the complete Customer Mode route as a buyer would see it.",
+        "Run Founder Mode only for pricing, delivery, privacy and release gates.",
+        "Create one clean demo project with screenshots, generated bundle and safe claims.",
+        "Record unresolved risks in the V60.1 bundle before talking to serious leads.",
+    ]
+    if not hardware_reference_evidence:
+        stabilization_sprint.append("Plan one small vibration or acoustic hardware reference proof, not months of field testing.")
+    if not payment_lock_safe:
+        stabilization_sprint.append("Keep payment manual until checkout/download locks are verified.")
+
+    data_room_checklist = [
+        "Current source ZIP and release notes",
+        "Full test reports and smoke tests",
+        "Customer Mode screenshots and demo script",
+        "Pricing, Proposal/SOW and Checkout bundles",
+        "Privacy-safe learning policy and consent wording",
+        "Cloud migration roadmap and storage plan",
+        "Hardware reference proof plan or results",
+        "Known limitations and no-guarantee claims list",
+        "Customer feedback / beta notes as soon as available",
+    ]
+
+    safe_positioning = [
+        "EdgeTwin Studio is a pilot-ready Edge AI dataset and readiness package generator.",
+        "It helps teams move from sensor idea to dataset, trust checks, hardware guidance and delivery bundle faster.",
+        "It supports privacy-safe real-data learning where customer data remains private by default.",
+        "It is suitable for controlled beta and paid-pilot conversations when release gates pass.",
+    ]
+    claims_to_avoid = [
+        "Do not claim guaranteed accuracy, certification or production safety.",
+        "Do not claim buyout-readiness or valuation certainty.",
+        "Do not claim synthetic data replaces real field validation.",
+        "Do not claim public SaaS scalability until cloud backend, object storage, tenant isolation and billing are hardened.",
+    ]
+
+    return {
+        "version": "V60.1",
+        "project_name": project_name,
+        "created_at": _now(),
+        "release_target": release_target,
+        "buyer_target": buyer_target,
+        "stability_score": stability_score,
+        "moat_score": moat_score,
+        "buyer_signal_score": buyer_signal_score,
+        "evidence_score": evidence_score,
+        "dataset_rows": rows,
+        "dataset_cols": cols,
+        "decision": decision,
+        "launch_status": launch_status,
+        "must_fix": must_fix,
+        "warnings": warnings,
+        "recommended_next_step": recommended_next_step,
+        "checks": [{"check": name, "ready": bool(ok), "weight": weight, "description": desc} for name, ok, weight, desc in checks],
+        "moat_evidence": moat_evidence,
+        "stabilization_sprint": stabilization_sprint,
+        "data_room_checklist": data_room_checklist,
+        "safe_positioning": safe_positioning,
+        "claims_to_avoid": claims_to_avoid,
+        "moat_notes": moat_notes,
+        "disclaimer": "V60.1 is a launch stabilization and strategic-readiness tool. It is not legal, investment, valuation or acquisition advice.",
+    }
+
+
+def create_launch_stabilization_v60_1_bundle(project_name, snapshot, dataset_df=None):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Launch Stabilization V60.1", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Stabilization Decision", 8, True)
+    safe_pdf_cell(pdf, f"Target: {snapshot.get('release_target')}")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Stability: {snapshot.get('stability_score')}%")
+    safe_pdf_cell(pdf, f"Moat: {snapshot.get('moat_score')}%")
+    safe_pdf_cell(pdf, f"Buyer signal: {snapshot.get('buyer_signal_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Must Fix", 8, True)
+    for item in snapshot.get("must_fix", []) or ["No launch-blocking items recorded."]:
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Stabilization Sprint", 8, True)
+    for item in snapshot.get("stabilization_sprint", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Safe Positioning", 8, True)
+    for item in snapshot.get("safe_positioning", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Claims To Avoid", 8, True)
+    for item in snapshot.get("claims_to_avoid", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("launch_stabilization_v60_1.pdf", safe_pdf_output(pdf))
+        zf.writestr("launch_stabilization_v60_1.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("checks_v60_1.csv", pd.DataFrame(snapshot.get("checks", [])).to_csv(index=False))
+        zf.writestr("moat_evidence_v60_1.csv", pd.DataFrame(snapshot.get("moat_evidence", [])).to_csv(index=False))
+        zf.writestr("data_room_checklist_v60_1.csv", pd.DataFrame({"item": snapshot.get("data_room_checklist", [])}).to_csv(index=False))
+        zf.writestr("must_fix_v60_1.csv", pd.DataFrame({"item": snapshot.get("must_fix", [])}).to_csv(index=False))
+        zf.writestr("warnings_v60_1.csv", pd.DataFrame({"item": snapshot.get("warnings", [])}).to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr("dataset_snapshot.csv", dataset_df.head(1000).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V60.1 Launch Stabilization bundle. Use this for controlled beta / paid-pilot readiness and strategic moat documentation. No acquisition or valuation outcome is guaranteed.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V61 — Traction & Proof Dashboard / Buyer Evidence System
+# ============================================================
+
+def build_traction_proof_dashboard_v61(
+    project_name,
+    period_name="Current beta period",
+    launch_goal="First paid pilots",
+    leads_total=0,
+    qualified_leads=0,
+    demo_calls=0,
+    beta_test_runs=0,
+    proposals_sent=0,
+    paid_pilots_sold=0,
+    pilots_delivered=0,
+    real_data_uploads=0,
+    privacy_opt_ins=0,
+    generated_datasets=0,
+    customer_feedback_score=0.0,
+    pipeline_value_eur=0.0,
+    collected_revenue_eur=0.0,
+    avg_hours_saved_per_pilot=0.0,
+    reference_customer_available=False,
+    repeatable_niche_found=False,
+    partner_or_buyer_inquiries=0,
+    evidence_notes="",
+    evidence_snapshots=None,
+):
+    """Build a brutally honest traction dashboard.
+
+    V61 is not about adding more product features. It measures proof:
+    demand, conversion, revenue signal, real data signal, repeatability and buyer-readiness.
+    """
+    evidence_snapshots = evidence_snapshots or {}
+
+    def _num(v, default=0.0):
+        try:
+            if v is None:
+                return default
+            return float(v)
+        except Exception:
+            return default
+
+    leads_total = int(max(0, _num(leads_total)))
+    qualified_leads = int(max(0, _num(qualified_leads)))
+    demo_calls = int(max(0, _num(demo_calls)))
+    beta_test_runs = int(max(0, _num(beta_test_runs)))
+    proposals_sent = int(max(0, _num(proposals_sent)))
+    paid_pilots_sold = int(max(0, _num(paid_pilots_sold)))
+    pilots_delivered = int(max(0, _num(pilots_delivered)))
+    real_data_uploads = int(max(0, _num(real_data_uploads)))
+    privacy_opt_ins = int(max(0, _num(privacy_opt_ins)))
+    generated_datasets = int(max(0, _num(generated_datasets)))
+    partner_or_buyer_inquiries = int(max(0, _num(partner_or_buyer_inquiries)))
+    customer_feedback_score = float(max(0, min(5, _num(customer_feedback_score))))
+    pipeline_value_eur = float(max(0, _num(pipeline_value_eur)))
+    collected_revenue_eur = float(max(0, _num(collected_revenue_eur)))
+    avg_hours_saved_per_pilot = float(max(0, _num(avg_hours_saved_per_pilot)))
+
+    lead_to_qualified = round((qualified_leads / leads_total) * 100, 1) if leads_total else 0.0
+    qualified_to_demo = round((demo_calls / qualified_leads) * 100, 1) if qualified_leads else 0.0
+    demo_to_proposal = round((proposals_sent / demo_calls) * 100, 1) if demo_calls else 0.0
+    proposal_to_paid = round((paid_pilots_sold / proposals_sent) * 100, 1) if proposals_sent else 0.0
+    paid_to_delivered = round((pilots_delivered / paid_pilots_sold) * 100, 1) if paid_pilots_sold else 0.0
+    opt_in_rate = round((privacy_opt_ins / real_data_uploads) * 100, 1) if real_data_uploads else 0.0
+
+    demand_score = min(100, leads_total * 5 + qualified_leads * 8 + demo_calls * 10)
+    conversion_score = min(100, proposals_sent * 13 + paid_pilots_sold * 25 + pilots_delivered * 18)
+    revenue_signal_score = min(100, int(round(collected_revenue_eur / 100.0 + pipeline_value_eur / 250.0 + paid_pilots_sold * 18)))
+    data_signal_score = min(100, generated_datasets * 4 + real_data_uploads * 14 + privacy_opt_ins * 10)
+    feedback_score = min(100, int(round(customer_feedback_score * 20 + (15 if reference_customer_available else 0))))
+    repeatability_score = min(100, (25 if repeatable_niche_found else 0) + min(35, generated_datasets * 5) + min(25, demo_calls * 5) + min(15, paid_pilots_sold * 5))
+    strategic_interest_score = min(100, partner_or_buyer_inquiries * 25 + (20 if repeatable_niche_found else 0) + (20 if reference_customer_available else 0) + min(25, collected_revenue_eur / 250.0))
+
+    traction_score = int(round(
+        0.18 * demand_score +
+        0.20 * conversion_score +
+        0.20 * revenue_signal_score +
+        0.16 * data_signal_score +
+        0.12 * feedback_score +
+        0.14 * repeatability_score
+    ))
+    traction_score = int(max(0, min(100, traction_score)))
+
+    buyer_readiness_score = int(round(
+        0.24 * traction_score +
+        0.19 * revenue_signal_score +
+        0.16 * data_signal_score +
+        0.16 * strategic_interest_score +
+        0.13 * repeatability_score +
+        0.12 * feedback_score
+    ))
+    buyer_readiness_score = int(max(0, min(100, buyer_readiness_score)))
+
+    if paid_pilots_sold >= 3 and collected_revenue_eur > 0 and real_data_uploads >= 2 and repeatable_niche_found:
+        proof_stage = "Early commercial proof"
+        decision = "PROOF BUILDING GO"
+        recommended_next_step = "Double down on the niche that produced paid pilots, collect before/after time-saved evidence and turn the best case into a reference story."
+    elif paid_pilots_sold >= 1 or collected_revenue_eur > 0:
+        proof_stage = "First revenue signal"
+        decision = "KEEP SELLING CONTROLLED PILOTS"
+        recommended_next_step = "Focus on delivery quality, testimonials, real-data uploads and one repeatable offer before public SaaS scaling."
+    elif demo_calls >= 3 or qualified_leads >= 5 or proposals_sent >= 1:
+        proof_stage = "Demand validation"
+        decision = "CONVERT INTEREST INTO PAID PILOT"
+        recommended_next_step = "Use V55/V56/V57 to move the strongest leads from demo to proposal to paid pilot."
+    else:
+        proof_stage = "Pre-traction"
+        decision = "GET FIRST EXTERNAL SIGNALS"
+        recommended_next_step = "Run targeted outreach and customer demos. The product is strong, but strategic value needs external proof."
+
+    must_collect_next = []
+    if leads_total == 0:
+        must_collect_next.append("Add at least 10 targeted leads or prospects to validate demand.")
+    if demo_calls == 0:
+        must_collect_next.append("Run at least 3 structured demo calls using the V55 beta script.")
+    if proposals_sent == 0:
+        must_collect_next.append("Send at least 1 concrete proposal/SOW to test willingness to pay.")
+    if paid_pilots_sold == 0:
+        must_collect_next.append("Close the first paid pilot, even if discounted, to turn the project into commercial proof.")
+    if real_data_uploads == 0:
+        must_collect_next.append("Get at least one real CSV/WAV upload through V56 to prove the real-data intake path.")
+    if customer_feedback_score < 4:
+        must_collect_next.append("Collect clear customer feedback and improve the confusing parts before scaling outreach.")
+    if not repeatable_niche_found:
+        must_collect_next.append("Pick one repeatable wedge niche instead of selling to everyone at once.")
+    if not reference_customer_available:
+        must_collect_next.append("Work toward one referenceable customer story or anonymized case study.")
+
+    proof_metrics = [
+        {"metric": "Leads total", "value": leads_total, "why_it_matters": "Top-of-funnel demand."},
+        {"metric": "Qualified leads", "value": qualified_leads, "why_it_matters": "Real fit, not random interest."},
+        {"metric": "Demo calls", "value": demo_calls, "why_it_matters": "Customer learning velocity."},
+        {"metric": "Proposals sent", "value": proposals_sent, "why_it_matters": "Willingness-to-pay test."},
+        {"metric": "Paid pilots sold", "value": paid_pilots_sold, "why_it_matters": "Strongest early proof signal."},
+        {"metric": "Pilots delivered", "value": pilots_delivered, "why_it_matters": "Delivery credibility."},
+        {"metric": "Real-data uploads", "value": real_data_uploads, "why_it_matters": "Engine reliability improvement path."},
+        {"metric": "Privacy opt-ins", "value": privacy_opt_ins, "why_it_matters": "Safe field learning moat."},
+        {"metric": "Generated datasets", "value": generated_datasets, "why_it_matters": "Usage depth."},
+        {"metric": "Pipeline value EUR", "value": round(pipeline_value_eur, 2), "why_it_matters": "Near-term revenue opportunity."},
+        {"metric": "Collected revenue EUR", "value": round(collected_revenue_eur, 2), "why_it_matters": "Actual proof of payment."},
+        {"metric": "Avg hours saved per pilot", "value": round(avg_hours_saved_per_pilot, 2), "why_it_matters": "Economic ROI story."},
+    ]
+
+    conversion_funnel = [
+        {"step": "Lead -> Qualified", "rate_percent": lead_to_qualified, "count_from": leads_total, "count_to": qualified_leads},
+        {"step": "Qualified -> Demo", "rate_percent": qualified_to_demo, "count_from": qualified_leads, "count_to": demo_calls},
+        {"step": "Demo -> Proposal", "rate_percent": demo_to_proposal, "count_from": demo_calls, "count_to": proposals_sent},
+        {"step": "Proposal -> Paid", "rate_percent": proposal_to_paid, "count_from": proposals_sent, "count_to": paid_pilots_sold},
+        {"step": "Paid -> Delivered", "rate_percent": paid_to_delivered, "count_from": paid_pilots_sold, "count_to": pilots_delivered},
+        {"step": "Real upload -> Privacy opt-in", "rate_percent": opt_in_rate, "count_from": real_data_uploads, "count_to": privacy_opt_ins},
+    ]
+
+    evidence_assets = [
+        {"asset": "Customer route", "present": bool(evidence_snapshots.get("customer_mode_v50") or evidence_snapshots.get("customer_ui_v51")), "source": "V50/V51"},
+        {"asset": "Privacy-safe learning", "present": bool(evidence_snapshots.get("field_learning_v52")), "source": "V52"},
+        {"asset": "Launch and sales copy", "present": bool(evidence_snapshots.get("launch_experience_v53") or evidence_snapshots.get("launch_assets_v54")), "source": "V53/V54"},
+        {"asset": "Beta script", "present": bool(evidence_snapshots.get("first_customer_beta_v55")), "source": "V55"},
+        {"asset": "Real upload intake", "present": bool(evidence_snapshots.get("real_upload_v56") or real_data_uploads > 0), "source": "V56"},
+        {"asset": "Checkout readiness", "present": bool(evidence_snapshots.get("checkout_v57")), "source": "V57"},
+        {"asset": "Cloud roadmap", "present": bool(evidence_snapshots.get("cloud_architecture_v58")), "source": "V58"},
+        {"asset": "Hardware proof kit", "present": bool(evidence_snapshots.get("hardware_reference_v59")), "source": "V59"},
+        {"asset": "Release/stabilization gate", "present": bool(evidence_snapshots.get("commercial_release_v60") or evidence_snapshots.get("launch_stabilization_v60_1")), "source": "V60/V60.1"},
+    ]
+
+    next_30_days = [
+        "Run 5 targeted customer conversations in one narrow niche.",
+        "Push the strongest lead to a small paid pilot instead of more free feedback.",
+        "Get at least one real data upload through the V56 flow.",
+        "Collect one clear before/after value metric: hours saved, faster pilot start or reduced uncertainty.",
+        "Write one anonymized mini case study from the best demo/pilot.",
+    ]
+    if paid_pilots_sold == 0:
+        next_30_days.insert(0, "Make the first paid pilot the only priority; avoid adding more features until one customer pays.")
+    if partner_or_buyer_inquiries > 0:
+        next_30_days.append("Keep buyer/partner conversations high-level until more customer/revenue evidence exists.")
+
+    buyer_data_room = [
+        "Traction metrics by period",
+        "Demo/proposal/pilot funnel evidence",
+        "Revenue pipeline and paid pilot receipts",
+        "Customer feedback and testimonials/case studies",
+        "Real-data upload and privacy opt-in counts",
+        "Generated dataset counts and examples",
+        "Release test reports and known limitations",
+        "Cloud migration roadmap",
+        "Hardware reference proof plan/results",
+        "Safe claims and no-guarantee wording",
+    ]
+
+    safe_claims = [
+        "EdgeTwin can shorten the path from sensor idea to pilot-ready Edge AI package.",
+        "EdgeTwin provides dataset generation, readiness checks, privacy-safe real-data intake and delivery assets for controlled pilots.",
+        "Traction evidence is tracked separately from product claims so the business can improve honestly.",
+    ]
+    claims_to_avoid = [
+        "Do not claim acquisition or valuation certainty.",
+        "Do not claim market proof before customers pay or provide strong feedback.",
+        "Do not claim production accuracy from synthetic or early field data alone.",
+        "Do not treat pipeline value as revenue until paid/contracted.",
+    ]
+
+    return {
+        "version": "V61",
+        "project_name": project_name,
+        "created_at": _now(),
+        "period_name": period_name,
+        "launch_goal": launch_goal,
+        "proof_stage": proof_stage,
+        "decision": decision,
+        "traction_score": traction_score,
+        "buyer_readiness_score": buyer_readiness_score,
+        "demand_score": int(demand_score),
+        "conversion_score": int(conversion_score),
+        "revenue_signal_score": int(revenue_signal_score),
+        "data_signal_score": int(data_signal_score),
+        "feedback_score": int(feedback_score),
+        "repeatability_score": int(repeatability_score),
+        "strategic_interest_score": int(strategic_interest_score),
+        "recommended_next_step": recommended_next_step,
+        "must_collect_next": must_collect_next,
+        "proof_metrics": proof_metrics,
+        "conversion_funnel": conversion_funnel,
+        "evidence_assets": evidence_assets,
+        "next_30_days": next_30_days,
+        "buyer_data_room": buyer_data_room,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "evidence_notes": evidence_notes,
+        "raw_inputs": {
+            "leads_total": leads_total,
+            "qualified_leads": qualified_leads,
+            "demo_calls": demo_calls,
+            "beta_test_runs": beta_test_runs,
+            "proposals_sent": proposals_sent,
+            "paid_pilots_sold": paid_pilots_sold,
+            "pilots_delivered": pilots_delivered,
+            "real_data_uploads": real_data_uploads,
+            "privacy_opt_ins": privacy_opt_ins,
+            "generated_datasets": generated_datasets,
+            "customer_feedback_score": customer_feedback_score,
+            "pipeline_value_eur": pipeline_value_eur,
+            "collected_revenue_eur": collected_revenue_eur,
+            "avg_hours_saved_per_pilot": avg_hours_saved_per_pilot,
+            "reference_customer_available": bool(reference_customer_available),
+            "repeatable_niche_found": bool(repeatable_niche_found),
+            "partner_or_buyer_inquiries": partner_or_buyer_inquiries,
+        },
+        "disclaimer": "V61 tracks traction and buyer-readiness evidence. It is not valuation, investment, legal or acquisition advice.",
+    }
+
+
+def create_traction_proof_v61_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Traction & Proof Dashboard V61", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Proof Decision", 8, True)
+    safe_pdf_cell(pdf, f"Stage: {snapshot.get('proof_stage')}")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Traction score: {snapshot.get('traction_score')}%")
+    safe_pdf_cell(pdf, f"Buyer readiness: {snapshot.get('buyer_readiness_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Must Collect Next", 8, True)
+    for item in snapshot.get("must_collect_next", []) or ["No immediate proof gaps recorded."]:
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Next 30 Days", 8, True)
+    for item in snapshot.get("next_30_days", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Safe Claims", 8, True)
+    for item in snapshot.get("safe_claims", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Claims To Avoid", 8, True)
+    for item in snapshot.get("claims_to_avoid", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("traction_proof_dashboard_v61.pdf", safe_pdf_output(pdf))
+        zf.writestr("traction_proof_dashboard_v61.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("proof_metrics_v61.csv", pd.DataFrame(snapshot.get("proof_metrics", [])).to_csv(index=False))
+        zf.writestr("conversion_funnel_v61.csv", pd.DataFrame(snapshot.get("conversion_funnel", [])).to_csv(index=False))
+        zf.writestr("evidence_assets_v61.csv", pd.DataFrame(snapshot.get("evidence_assets", [])).to_csv(index=False))
+        zf.writestr("must_collect_next_v61.csv", pd.DataFrame({"item": snapshot.get("must_collect_next", [])}).to_csv(index=False))
+        zf.writestr("buyer_data_room_v61.csv", pd.DataFrame({"item": snapshot.get("buyer_data_room", [])}).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V61 Traction & Proof bundle. Use this to track customer proof, paid-pilot evidence, revenue signal and buyer-readiness. No acquisition or valuation result is guaranteed.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V62 — ROI & Value Proof Center / Customer Business Case
+# ============================================================
+
+def _v62_bool_score(value, points=100):
+    return points if bool(value) else 0
+
+
+def build_roi_value_case_v62(
+    project_name,
+    customer_segment="Industrial maintenance",
+    use_case="Reduce time and uncertainty when starting an Edge AI sensor pilot",
+    pilot_package="Professional Pilot Bundle",
+    estimated_hours_without_edgetwin=80.0,
+    estimated_hours_with_edgetwin=24.0,
+    blended_hourly_cost_eur=75.0,
+    expected_pilot_price_eur=1500.0,
+    hardware_budget_eur=350.0,
+    current_delay_weeks=3.0,
+    risk_reduction_score=70,
+    real_data_available=False,
+    privacy_learning_allowed=False,
+    evidence_snapshots=None,
+    evidence_notes="",
+):
+    evidence_snapshots = evidence_snapshots or {}
+
+    hours_without = max(0.0, float(estimated_hours_without_edgetwin or 0))
+    hours_with = max(0.0, float(estimated_hours_with_edgetwin or 0))
+    hourly_cost = max(0.0, float(blended_hourly_cost_eur or 0))
+    pilot_price = max(0.0, float(expected_pilot_price_eur or 0))
+    hardware_budget = max(0.0, float(hardware_budget_eur or 0))
+    delay_weeks = max(0.0, float(current_delay_weeks or 0))
+    risk_reduction_score = int(max(0, min(100, risk_reduction_score or 0)))
+
+    time_saved_hours = max(0.0, hours_without - hours_with)
+    time_savings_eur = round(time_saved_hours * hourly_cost, 2)
+    direct_project_cost = round(pilot_price + hardware_budget, 2)
+    net_value_eur = round(time_savings_eur - direct_project_cost, 2)
+    roi_percent = int(round((net_value_eur / direct_project_cost) * 100)) if direct_project_cost > 0 else 0
+    speedup_percent = int(round((time_saved_hours / hours_without) * 100)) if hours_without > 0 else 0
+    payback_hours_saved_needed = round(direct_project_cost / hourly_cost, 2) if hourly_cost > 0 else 0
+
+    evidence_score = 0
+    evidence_items = {
+        "Traction dashboard": bool(evidence_snapshots.get("traction_proof_v61")),
+        "Real upload intake": bool(evidence_snapshots.get("real_upload_v56") or real_data_available),
+        "Privacy-safe learning": bool(evidence_snapshots.get("privacy_learning_v52") or privacy_learning_allowed),
+        "Proposal/SOW": bool(evidence_snapshots.get("proposal_sow")),
+        "Checkout readiness": bool(evidence_snapshots.get("checkout_v57")),
+        "Hardware reference": bool(evidence_snapshots.get("hardware_reference_v59")),
+        "Commercial release gate": bool(evidence_snapshots.get("commercial_release_v60")),
+    }
+    evidence_score = int(round(sum(1 for v in evidence_items.values() if v) / max(1, len(evidence_items)) * 100))
+
+    time_value_score = int(max(0, min(100, round(speedup_percent))))
+    roi_score = 100 if roi_percent >= 200 else 85 if roi_percent >= 100 else 70 if roi_percent >= 25 else 55 if roi_percent >= 0 else 35
+    budget_fit_score = 100 if direct_project_cost <= max(1, time_savings_eur) else max(25, int(round((time_savings_eur / max(1, direct_project_cost)) * 80)))
+    data_confidence_score = 85 if real_data_available else 62
+    privacy_score = 90 if privacy_learning_allowed else 78
+
+    value_proof_score = int(round(
+        0.22 * time_value_score +
+        0.22 * roi_score +
+        0.16 * budget_fit_score +
+        0.15 * risk_reduction_score +
+        0.13 * evidence_score +
+        0.07 * data_confidence_score +
+        0.05 * privacy_score
+    ))
+    value_proof_score = int(max(0, min(100, value_proof_score)))
+
+    if value_proof_score >= 82 and roi_percent >= 25 and evidence_score >= 45:
+        decision = "GO"
+        value_stage = "Strong paid-pilot value case"
+        recommended_next_step = "Use this business case in the proposal/SOW and ask for a paid pilot with clear acceptance criteria."
+    elif value_proof_score >= 65 and roi_percent >= 0:
+        decision = "CONDITIONAL GO"
+        value_stage = "Promising but needs proof"
+        recommended_next_step = "Use a controlled pilot price, collect real-data evidence and validate the time-saved assumptions with the customer."
+    else:
+        decision = "NO-GO"
+        value_stage = "Weak value proof"
+        recommended_next_step = "Do not sell this as a premium offer yet. Reduce scope, gather stronger pain evidence or choose a better-fit use-case."
+
+    proof_needed_next = []
+    if not real_data_available:
+        proof_needed_next.append("Ask for one small real CSV/WAV sample so the value case is not purely synthetic.")
+    if evidence_score < 50:
+        proof_needed_next.append("Generate more supporting evidence: proposal, checkout readiness, hardware reference and traction proof.")
+    if roi_percent < 25:
+        proof_needed_next.append("Validate hours saved and price assumptions; ROI is not yet strong enough for a premium claim.")
+    if speedup_percent < 30:
+        proof_needed_next.append("Improve the workflow or narrow scope until the pilot clearly saves time.")
+    if risk_reduction_score < 60:
+        proof_needed_next.append("Clarify which risks EdgeTwin reduces: data readiness, sensor choice, labels, hardware uncertainty or delivery scope.")
+    if not privacy_learning_allowed:
+        proof_needed_next.append("Keep customer data private by default; offer opt-in feature learning only when the customer understands the benefit.")
+
+    customer_questions = [
+        "How many engineering hours would your team normally spend before a first Edge AI pilot is ready?",
+        "What is the business cost of delaying this pilot by another few weeks?",
+        "Do you already have CSV/WAV/IMU/audio samples we can inspect safely?",
+        "Which result would make this pilot worth paying for: faster decision, fewer failed tests, better hardware direction or clearer report?",
+        "Who needs to approve the pilot budget and what evidence do they need?",
+    ]
+
+    value_narrative = [
+        f"Estimated time saved: {round(time_saved_hours, 2)} hours compared with the customer's manual path.",
+        f"Estimated direct time value: EUR {time_savings_eur:,.2f} based on EUR {hourly_cost:,.2f}/hour.",
+        f"Estimated pilot cost: EUR {direct_project_cost:,.2f}, including quote and hardware/test budget.",
+        f"Estimated ROI: {roi_percent}% before production deployment; treat this as a pilot business-case estimate.",
+        f"Main value angle: faster pilot decision-making and lower uncertainty around data, labels, hardware and delivery scope.",
+    ]
+
+    economic_summary = [
+        {"item": "Estimated manual hours", "value": round(hours_without, 2), "unit": "hours"},
+        {"item": "Estimated EdgeTwin-assisted hours", "value": round(hours_with, 2), "unit": "hours"},
+        {"item": "Time saved", "value": round(time_saved_hours, 2), "unit": "hours"},
+        {"item": "Speedup", "value": speedup_percent, "unit": "%"},
+        {"item": "Blended hourly cost", "value": round(hourly_cost, 2), "unit": "EUR/hour"},
+        {"item": "Estimated time savings", "value": time_savings_eur, "unit": "EUR"},
+        {"item": "Pilot quote", "value": round(pilot_price, 2), "unit": "EUR"},
+        {"item": "Hardware/test budget", "value": round(hardware_budget, 2), "unit": "EUR"},
+        {"item": "Direct pilot cost", "value": direct_project_cost, "unit": "EUR"},
+        {"item": "Net value estimate", "value": net_value_eur, "unit": "EUR"},
+        {"item": "ROI estimate", "value": roi_percent, "unit": "%"},
+        {"item": "Hours saved needed for payback", "value": payback_hours_saved_needed, "unit": "hours"},
+        {"item": "Delay avoided", "value": round(delay_weeks, 2), "unit": "weeks"},
+    ]
+
+    safe_value_claims = [
+        "EdgeTwin can estimate time saved and reduce uncertainty in controlled Edge AI pilot preparation.",
+        "The ROI case is a pilot business-case estimate based on customer-provided assumptions.",
+        "Real customer data and field validation improve confidence before production deployment.",
+        "EdgeTwin helps package dataset, readiness, hardware direction, reporting and commercial handoff into one workflow.",
+    ]
+    claims_to_avoid = [
+        "Do not claim guaranteed ROI before the customer validates the assumptions.",
+        "Do not claim production accuracy or safety certification from pilot-readiness evidence.",
+        "Do not count pipeline value or estimated savings as actual revenue.",
+        "Do not reuse customer data for global learning without explicit consent and minimization.",
+    ]
+
+    customer_business_case = (
+        f"For {customer_segment}, the proposed {pilot_package} targets: {use_case}. "
+        f"Based on the current assumptions, EdgeTwin could save about {round(time_saved_hours, 1)} hours "
+        f"and create an estimated EUR {time_savings_eur:,.2f} of direct time value against EUR {direct_project_cost:,.2f} of pilot cost. "
+        f"This produces an estimated ROI of {roi_percent}% for the pilot preparation phase. "
+        "This is not a production-performance guarantee; it is a decision-support business case for a controlled pilot."
+    )
+
+    return {
+        "version": "V62",
+        "project_name": project_name,
+        "created_at": _now(),
+        "customer_segment": customer_segment,
+        "use_case": use_case,
+        "pilot_package": pilot_package,
+        "value_stage": value_stage,
+        "decision": decision,
+        "value_proof_score": value_proof_score,
+        "time_value_score": time_value_score,
+        "roi_score": roi_score,
+        "budget_fit_score": budget_fit_score,
+        "risk_reduction_score": risk_reduction_score,
+        "evidence_score": evidence_score,
+        "data_confidence_score": data_confidence_score,
+        "privacy_score": privacy_score,
+        "time_saved_hours": round(time_saved_hours, 2),
+        "time_savings_eur": time_savings_eur,
+        "direct_project_cost_eur": direct_project_cost,
+        "net_value_eur": net_value_eur,
+        "roi_percent": roi_percent,
+        "speedup_percent": speedup_percent,
+        "payback_hours_saved_needed": payback_hours_saved_needed,
+        "current_delay_weeks": round(delay_weeks, 2),
+        "recommended_next_step": recommended_next_step,
+        "customer_business_case": customer_business_case,
+        "economic_summary": economic_summary,
+        "evidence_items": [{"item": k, "present": v} for k, v in evidence_items.items()],
+        "proof_needed_next": proof_needed_next,
+        "customer_questions": customer_questions,
+        "value_narrative": value_narrative,
+        "safe_value_claims": safe_value_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "evidence_notes": evidence_notes,
+        "raw_inputs": {
+            "estimated_hours_without_edgetwin": hours_without,
+            "estimated_hours_with_edgetwin": hours_with,
+            "blended_hourly_cost_eur": hourly_cost,
+            "expected_pilot_price_eur": pilot_price,
+            "hardware_budget_eur": hardware_budget,
+            "real_data_available": bool(real_data_available),
+            "privacy_learning_allowed": bool(privacy_learning_allowed),
+        },
+        "disclaimer": "V62 is a customer business-case estimate for pilot selling. It is not financial, legal, investment, acquisition or production-performance advice.",
+    }
+
+
+def create_roi_value_v62_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin ROI & Value Proof Center V62", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Value Decision", 8, True)
+    safe_pdf_cell(pdf, f"Stage: {snapshot.get('value_stage')}")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Value proof score: {snapshot.get('value_proof_score')}%")
+    safe_pdf_cell(pdf, f"Estimated ROI: {snapshot.get('roi_percent')}%")
+    safe_pdf_cell(pdf, f"Estimated time saved: {snapshot.get('time_saved_hours')} hours")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Customer Business Case", 8, True)
+    safe_pdf_multicell(pdf, snapshot.get("customer_business_case", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Proof Needed Next", 8, True)
+    for item in snapshot.get("proof_needed_next", []) or ["No major proof gaps recorded."]:
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Safe Value Claims", 8, True)
+    for item in snapshot.get("safe_value_claims", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Claims To Avoid", 8, True)
+    for item in snapshot.get("claims_to_avoid", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("roi_value_proof_v62.pdf", safe_pdf_output(pdf))
+        zf.writestr("roi_value_proof_v62.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("economic_summary_v62.csv", pd.DataFrame(snapshot.get("economic_summary", [])).to_csv(index=False))
+        zf.writestr("evidence_items_v62.csv", pd.DataFrame(snapshot.get("evidence_items", [])).to_csv(index=False))
+        zf.writestr("proof_needed_next_v62.csv", pd.DataFrame({"item": snapshot.get("proof_needed_next", [])}).to_csv(index=False))
+        zf.writestr("customer_questions_v62.csv", pd.DataFrame({"question": snapshot.get("customer_questions", [])}).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V62 ROI & Value Proof bundle. Use this to support pilot pricing and customer business-case discussions. It is not financial, legal, investment or production-performance advice.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V63 — Case Study & Customer Proof Pack / Buyer Evidence Story
+# ============================================================
+
+def build_case_study_proof_pack_v63(
+    project_name,
+    customer_segment="Industrial maintenance / operations team",
+    use_case="Reduce uncertainty before starting an Edge AI sensor pilot",
+    problem_before="Manual data preparation, unclear labels, uncertain hardware direction and no clear pilot-readiness report.",
+    outcome_summary="EdgeTwin generated a pilot package with dataset, reliability checks, hardware direction, report and commercial handoff.",
+    pilot_stage="Proposal sent",
+    publish_mode="Anonymous public case study",
+    customer_rating=7,
+    real_data_used=False,
+    written_permission=False,
+    anonymise_customer=True,
+    include_roi=True,
+    evidence_snapshots=None,
+):
+    evidence_snapshots = evidence_snapshots or {}
+    rating = int(max(0, min(10, customer_rating or 0)))
+    rating_score = rating * 10
+
+    evidence_items = {
+        "ROI/value proof available": bool(evidence_snapshots.get("roi_value_v62")) and bool(include_roi),
+        "Traction metrics available": bool(evidence_snapshots.get("traction_proof_v61")),
+        "Real upload inspected": bool(evidence_snapshots.get("real_upload_v56") or real_data_used),
+        "Privacy learning plan available": bool(evidence_snapshots.get("field_learning_v52")),
+        "Proposal/SOW available": bool(evidence_snapshots.get("proposal_sow")),
+        "Checkout readiness available": bool(evidence_snapshots.get("checkout_v57")),
+        "Delivery evidence available": bool(evidence_snapshots.get("delivery_portal")),
+        "Hardware reference proof available": bool(evidence_snapshots.get("hardware_reference_v59")),
+    }
+    evidence_score = int(round(sum(1 for v in evidence_items.values() if v) / max(1, len(evidence_items)) * 100))
+
+    stage_score_map = {
+        "Demo completed": 50,
+        "Proposal sent": 62,
+        "Paid pilot accepted": 78,
+        "Pilot delivered": 90,
+        "Reference approved": 100,
+    }
+    stage_score = stage_score_map.get(pilot_stage, 60)
+
+    permission_score = 100 if written_permission else 55 if publish_mode == "Internal only" else 35
+    privacy_score = 95 if anonymise_customer else 75 if written_permission else 40
+    real_data_score = 85 if real_data_used else 65
+
+    proof_score = int(round(
+        0.24 * evidence_score +
+        0.22 * stage_score +
+        0.18 * rating_score +
+        0.14 * privacy_score +
+        0.12 * real_data_score +
+        0.10 * permission_score
+    ))
+    proof_score = int(max(0, min(100, proof_score)))
+
+    public_requested = publish_mode in ["Anonymous public case study", "Named public case study with written approval"]
+    publish_readiness_score = int(round(0.45 * permission_score + 0.35 * privacy_score + 0.20 * stage_score))
+    buyer_evidence_score = int(round(0.45 * evidence_score + 0.35 * stage_score + 0.20 * rating_score))
+
+    if public_requested and written_permission and proof_score >= 78 and anonymise_customer:
+        decision = "PUBLIC READY"
+        recommended_next_step = "Use the anonymised case study externally and keep the written approval with the customer record."
+    elif proof_score >= 65:
+        decision = "INTERNAL READY"
+        recommended_next_step = "Use this internally for sales calls, buyer evidence and founder notes. Ask for written permission before public use."
+    else:
+        decision = "NEEDS MORE PROOF"
+        recommended_next_step = "Collect stronger customer feedback, delivery evidence, real-data proof or written permission before using this as a reference asset."
+
+    proof_gaps = []
+    if not written_permission and public_requested:
+        proof_gaps.append("Get written permission before using the case study publicly.")
+    if not anonymise_customer and not written_permission:
+        proof_gaps.append("Do not expose customer/company details without written approval.")
+    if evidence_score < 50:
+        proof_gaps.append("Generate stronger supporting evidence: ROI, delivery, real upload, privacy plan and hardware proof.")
+    if rating < 7:
+        proof_gaps.append("Customer feedback is not strong enough yet; improve outcome or keep the story internal.")
+    if pilot_stage in ["Demo completed", "Proposal sent"]:
+        proof_gaps.append("The case study is early-stage. Label it as a pilot/demo story, not a delivered production case.")
+    if not real_data_used:
+        proof_gaps.append("If possible, add a small real-data upload inspection to strengthen credibility.")
+
+    anonymised_segment = customer_segment if written_permission and not anonymise_customer else f"an anonymised {customer_segment.lower()}"
+    roi_snapshot = evidence_snapshots.get("roi_value_v62") if isinstance(evidence_snapshots.get("roi_value_v62"), dict) else {}
+    roi_line = ""
+    if include_roi and roi_snapshot:
+        roi_line = f" The estimated pilot-preparation ROI was {roi_snapshot.get('roi_percent', 'not recorded')}%, based on customer-provided assumptions."
+
+    public_case_study_draft = (
+        f"{anonymised_segment.capitalize()} wanted to explore an Edge AI sensor pilot for: {use_case}. "
+        f"Before using EdgeTwin, the team faced: {problem_before} "
+        f"EdgeTwin helped generate a structured pilot package: {outcome_summary} "
+        f"The current pilot stage is '{pilot_stage}' and the customer feedback rating is {rating}/10."
+        f"{roi_line} This should be presented as pilot-readiness proof, not a production accuracy guarantee."
+    )
+
+    buyer_evidence_summary = (
+        f"Proof score {proof_score}%, buyer evidence score {buyer_evidence_score}%, publish readiness {publish_readiness_score}%. "
+        f"Evidence coverage is {evidence_score}%. Stage: {pilot_stage}. This asset supports sales/reference conversations and future data-room evidence, "
+        "but it does not prove guaranteed production performance or acquisition value."
+    )
+
+    testimonial_request_email = (
+        "Subject: Quick approval request for anonymised EdgeTwin pilot story\n\n"
+        "Hi [Name],\n\n"
+        "Thanks again for reviewing the EdgeTwin pilot workflow with us. We are preparing a short, anonymised case-study note about the problem, the pilot package generated and the next-step readiness findings.\n\n"
+        "We will not include confidential data, raw files, machine identifiers, locations, company names or production-performance claims without written approval.\n\n"
+        "Could you confirm whether we may use an anonymised version of the story externally?\n\n"
+        "Kind regards,\nEdgeTwin Studio"
+    )
+
+    short_social_proof = (
+        f"New EdgeTwin pilot proof: {anonymised_segment} used EdgeTwin to structure an Edge AI sensor pilot, "
+        "including dataset generation, readiness checks, hardware direction and safe next-step reporting. Field validation remains required before production deployment."
+    )
+
+    proof_assets = [
+        {"asset": "Anonymised case study draft", "status": "ready" if proof_score >= 60 else "draft"},
+        {"asset": "Testimonial permission email", "status": "ready"},
+        {"asset": "Buyer evidence summary", "status": "ready" if buyer_evidence_score >= 60 else "needs evidence"},
+        {"asset": "Proof gaps list", "status": "ready"},
+        {"asset": "Safe claims / claims to avoid", "status": "ready"},
+    ]
+    for k, v in evidence_items.items():
+        proof_assets.append({"asset": k, "status": "available" if v else "missing"})
+
+    safe_claims = [
+        "EdgeTwin can package pilot-readiness evidence into a structured, customer-safe case study.",
+        "Case-study claims should describe the pilot workflow, outputs and decision support, not guaranteed production accuracy.",
+        "External use requires written permission and removal of confidential identifiers unless explicitly approved.",
+        "Real-data inspection and customer feedback strengthen the proof story over purely synthetic demos.",
+    ]
+    claims_to_avoid = [
+        "Do not publish customer names, locations, raw audio, machine IDs or confidential files without written permission.",
+        "Do not claim guaranteed ROI, production reliability, certification or safety performance from a pilot case study.",
+        "Do not treat pipeline value, customer interest or internal proof as actual revenue.",
+        "Do not imply acquisition/buyout value from a single case study.",
+    ]
+
+    return {
+        "version": "V63",
+        "project_name": project_name,
+        "created_at": _now(),
+        "customer_segment": customer_segment,
+        "use_case": use_case,
+        "pilot_stage": pilot_stage,
+        "publish_mode": publish_mode,
+        "decision": decision,
+        "proof_score": proof_score,
+        "publish_readiness_score": publish_readiness_score,
+        "buyer_evidence_score": buyer_evidence_score,
+        "evidence_score": evidence_score,
+        "stage_score": stage_score,
+        "rating_score": rating_score,
+        "privacy_score": privacy_score,
+        "permission_score": permission_score,
+        "real_data_score": real_data_score,
+        "recommended_next_step": recommended_next_step,
+        "public_case_study_draft": public_case_study_draft,
+        "buyer_evidence_summary": buyer_evidence_summary,
+        "testimonial_request_email": testimonial_request_email,
+        "short_social_proof": short_social_proof,
+        "proof_assets": proof_assets,
+        "proof_gaps": proof_gaps,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "evidence_items": [{"item": k, "present": v} for k, v in evidence_items.items()],
+        "raw_inputs": {
+            "problem_before": problem_before,
+            "outcome_summary": outcome_summary,
+            "customer_rating": rating,
+            "real_data_used": bool(real_data_used),
+            "written_permission": bool(written_permission),
+            "anonymise_customer": bool(anonymise_customer),
+            "include_roi": bool(include_roi),
+        },
+        "disclaimer": "V63 creates sales/reference proof assets. It is not legal advice, customer consent management, a production-performance guarantee or acquisition/valuation advice.",
+    }
+
+
+def create_case_study_v63_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Case Study & Customer Proof Pack V63", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Proof Decision", 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Proof score: {snapshot.get('proof_score')}%")
+    safe_pdf_cell(pdf, f"Publish readiness: {snapshot.get('publish_readiness_score')}%")
+    safe_pdf_cell(pdf, f"Buyer evidence score: {snapshot.get('buyer_evidence_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Case Study Draft", 8, True)
+    safe_pdf_multicell(pdf, snapshot.get("public_case_study_draft", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Buyer Evidence Summary", 8, True)
+    safe_pdf_multicell(pdf, snapshot.get("buyer_evidence_summary", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Proof Gaps", 8, True)
+    for item in snapshot.get("proof_gaps", []) or ["No major proof gaps recorded."]:
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Safe Claims", 8, True)
+    for item in snapshot.get("safe_claims", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Claims To Avoid", 8, True)
+    for item in snapshot.get("claims_to_avoid", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("case_study_customer_proof_v63.pdf", safe_pdf_output(pdf))
+        zf.writestr("case_study_customer_proof_v63.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("case_study_draft_v63.txt", snapshot.get("public_case_study_draft", ""))
+        zf.writestr("testimonial_request_email_v63.txt", snapshot.get("testimonial_request_email", ""))
+        zf.writestr("social_proof_snippet_v63.txt", snapshot.get("short_social_proof", ""))
+        zf.writestr("proof_assets_v63.csv", pd.DataFrame(snapshot.get("proof_assets", [])).to_csv(index=False))
+        zf.writestr("evidence_items_v63.csv", pd.DataFrame(snapshot.get("evidence_items", [])).to_csv(index=False))
+        zf.writestr("proof_gaps_v63.csv", pd.DataFrame({"item": snapshot.get("proof_gaps", [])}).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V63 Case Study & Customer Proof bundle. Use this for sales/reference proof and buyer evidence. Do not publish customer-identifying information or guaranteed outcome claims without written approval.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V64 BUYER DATA ROOM / STRATEGIC PARTNER READINESS
+# ============================================================
+
+def _v64_bool_score(value, weight):
+    return weight if bool(value) else 0
+
+
+def build_buyer_dataroom_v64(project_name, strategic_goal, target_buyer_type, moat_summary, flags=None, evidence_snapshots=None):
+    flags = flags or {}
+    evidence_snapshots = evidence_snapshots or {}
+
+    proof_components = {
+        "paid pilots": _v64_bool_score(flags.get("has_paid_pilots"), 18),
+        "real uploads": _v64_bool_score(flags.get("has_real_uploads"), 14),
+        "case study": _v64_bool_score(flags.get("has_case_study"), 12),
+        "revenue signal": _v64_bool_score(flags.get("has_revenue_signal"), 14),
+        "privacy controls": _v64_bool_score(flags.get("has_privacy_controls"), 12),
+        "cloud plan": _v64_bool_score(flags.get("has_cloud_plan"), 10),
+        "hardware reference": _v64_bool_score(flags.get("has_hardware_reference"), 10),
+        "codebase documented": _v64_bool_score(flags.get("codebase_documented"), 10),
+    }
+    proof_completeness_score = int(min(100, sum(proof_components.values())))
+
+    evidence_count = sum(1 for value in evidence_snapshots.values() if bool(value))
+    evidence_score = min(100, int(evidence_count * 10))
+
+    strategic_base = 30
+    if target_buyer_type != "Unknown / not defined yet":
+        strategic_base += 12
+    if "acquisition" in (strategic_goal or "").lower():
+        strategic_base += 6
+    if flags.get("has_privacy_controls"):
+        strategic_base += 10
+    if flags.get("has_real_uploads"):
+        strategic_base += 14
+    if flags.get("has_paid_pilots"):
+        strategic_base += 18
+    if flags.get("has_hardware_reference"):
+        strategic_base += 8
+    strategic_value_score = int(min(100, strategic_base))
+
+    data_room_readiness_score = int(round((proof_completeness_score * 0.45) + (evidence_score * 0.25) + (strategic_value_score * 0.30)))
+
+    if data_room_readiness_score >= 80 and flags.get("has_paid_pilots") and flags.get("has_privacy_controls"):
+        decision = "PARTNER READY"
+        recommended_next_step = "You can prepare a controlled partner/buyer conversation, but share only a sanitized data-room package under the right confidentiality process."
+    elif data_room_readiness_score >= 55:
+        decision = "BUILD MORE PROOF"
+        recommended_next_step = "Keep selling controlled pilots and collect stronger proof before any serious buyer/partner outreach."
+    else:
+        decision = "INTERNAL ONLY"
+        recommended_next_step = "Use this internally. Do not frame EdgeTwin as buyer-ready yet; focus on paid pilots, real upload proof and privacy-safe learning evidence."
+
+    data_room_folders = [
+        {"folder": "01_Product_Overview", "status": "ready", "contents": "Positioning, customer mode screenshots, launch assets, safe claims."},
+        {"folder": "02_Technology_Architecture", "status": "partial", "contents": "Streamlit app, core engine, storage layer, cloud migration plan, API roadmap."},
+        {"folder": "03_Proof_and_Traction", "status": "ready" if flags.get("has_revenue_signal") else "needs proof", "contents": "Leads, demos, paid pilots, pipeline, generated datasets, customer feedback."},
+        {"folder": "04_Data_and_Privacy", "status": "ready" if flags.get("has_privacy_controls") else "needs policy", "contents": "Privacy modes, opt-in learning, raw-data restrictions, retention/deletion plan."},
+        {"folder": "05_Customer_Proof", "status": "ready" if flags.get("has_case_study") else "needs case study", "contents": "Case studies, testimonial requests, anonymized proof packs."},
+        {"folder": "06_Hardware_and_Field_Proof", "status": "ready" if flags.get("has_hardware_reference") else "planned", "contents": "Reference demo plan, acceptance criteria, hardware route."},
+        {"folder": "07_Commercial_Model", "status": "ready" if flags.get("has_revenue_signal") else "draft", "contents": "Pricing, ROI proof, proposal/SOW, checkout readiness, delivery bundles."},
+        {"folder": "08_Risks_and_Limits", "status": "must include", "contents": "Pilot-only claims, field validation requirement, cloud production gaps, legal review gaps."},
+    ]
+
+    moat_checklist = [
+        {"item": "End-to-end sensor pilot workflow", "status": "strong", "note": "Idea to data, trust, hardware, proposal, delivery and feedback."},
+        {"item": "Privacy-safe field learning", "status": "important", "note": "Turns customer uploads into safer feature-level learning with consent."},
+        {"item": "Proof/traction system", "status": "growing", "note": "V61-V64 create evidence loops; proof still depends on real customers."},
+        {"item": "Hardware reference credibility", "status": "planned" if not flags.get("has_hardware_reference") else "started", "note": "Small reference demo is enough for controlled credibility."},
+        {"item": "Cloud production readiness", "status": "partial", "note": "Private beta is reasonable; public SaaS needs PostgreSQL/object storage/API workers."},
+    ]
+
+    missing = []
+    if not flags.get("has_paid_pilots"):
+        missing.append("Get at least one paid pilot or signed LOI; this is the strongest buyer signal.")
+    if not flags.get("has_real_uploads"):
+        missing.append("Collect at least one real upload dataset through the privacy-safe intake flow.")
+    if not flags.get("has_case_study"):
+        missing.append("Convert the first useful pilot into an anonymized case study with written approval where possible.")
+    if not flags.get("has_privacy_controls"):
+        missing.append("Document consent, retention, deletion and raw-data restrictions before broader external sharing.")
+    if not flags.get("has_cloud_plan"):
+        missing.append("Keep the migration plan clear: PostgreSQL, object storage, FastAPI/jobs and billing later.")
+    if not flags.get("has_hardware_reference"):
+        missing.append("Run one small hardware reference proof to show the pipeline can touch real edge hardware.")
+
+    next_30_day_plan = missing[:4] or [
+        "Package the data room in sanitized form and prepare a short partner discovery narrative.",
+        "Keep collecting customer proof: one new pilot, one real upload and one publishable case study.",
+        "Avoid valuation/buyout talk until there is repeatable revenue or strong strategic pull.",
+    ]
+
+    strategic_narrative = (
+        f"EdgeTwin Studio is positioned as a pilot-readiness system for sensor and edge-AI projects. "
+        f"For {target_buyer_type}, the strategic angle is that EdgeTwin reduces the messy early stage between sensor idea, usable dataset, trust checks, hardware direction, commercial scope and delivery. "
+        f"Current goal: {strategic_goal}. Moat thesis: {moat_summary}"
+    )
+
+    buyer_questions = [
+        "How many real customers or paid pilots exist?",
+        "How much time or cost does EdgeTwin save compared with manual pilot preparation?",
+        "Which parts are unique versus generic Streamlit/app glue?",
+        "How is customer data protected, retained, deleted and optionally used for learning?",
+        "What real field or hardware proof exists?",
+        "What must change before public SaaS scale?",
+        "Can the system be transferred, documented and operated by another team?",
+    ]
+
+    shareable_with_care = [
+        "Anonymized product screenshots and demo workflow.",
+        "High-level architecture and migration roadmap.",
+        "Aggregated traction metrics without customer-identifying information.",
+        "Anonymized case studies with written permission where needed.",
+        "Safe positioning: pilot-ready package, field validation required.",
+    ]
+
+    do_not_share_publicly = [
+        "Raw customer data, uploaded audio/GPS/location data or filenames containing confidential details.",
+        "API secrets, auth logic details, database files or private logs.",
+        "Customer names, contracts, prices or feedback without permission.",
+        "Claims of guaranteed production accuracy or certified safety performance.",
+        "Unverified valuation or buyout statements.",
+    ]
+
+    claims_to_avoid = [
+        "Do not claim EdgeTwin guarantees model accuracy, safety compliance or production deployment success.",
+        "Do not claim customer data is anonymous unless it is truly non-identifiable and documented as such.",
+        "Do not pitch a buyout as likely; pitch proof, traction and strategic fit.",
+        "Do not call the current Streamlit/private-beta stack a fully hardened public SaaS without the cloud migration work.",
+    ]
+
+    return {
+        "version": "V64",
+        "project_name": project_name,
+        "strategic_goal": strategic_goal,
+        "target_buyer_type": target_buyer_type,
+        "decision": decision,
+        "data_room_readiness_score": data_room_readiness_score,
+        "strategic_value_score": strategic_value_score,
+        "proof_completeness_score": proof_completeness_score,
+        "evidence_score": evidence_score,
+        "proof_components": proof_components,
+        "recommended_next_step": recommended_next_step,
+        "strategic_narrative": strategic_narrative,
+        "data_room_folders": data_room_folders,
+        "moat_checklist": moat_checklist,
+        "missing_evidence": missing,
+        "next_30_day_plan": next_30_day_plan,
+        "buyer_questions": buyer_questions,
+        "shareable_with_care": shareable_with_care,
+        "do_not_share_publicly": do_not_share_publicly,
+        "claims_to_avoid": claims_to_avoid,
+        "raw_inputs": {"flags": flags, "moat_summary": moat_summary},
+        "disclaimer": "V64 is a strategic evidence organizer only. It is not legal, financial, tax, investment, valuation or acquisition advice and does not guarantee buyer interest.",
+    }
+
+
+def create_buyer_dataroom_v64_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Buyer Data Room V64", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Decision", 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Data-room readiness: {snapshot.get('data_room_readiness_score')}%")
+    safe_pdf_cell(pdf, f"Strategic value signal: {snapshot.get('strategic_value_score')}%")
+    safe_pdf_cell(pdf, f"Proof completeness: {snapshot.get('proof_completeness_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Strategic Narrative", 8, True)
+    safe_pdf_multicell(pdf, snapshot.get("strategic_narrative", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Next 30-Day Proof Plan", 8, True)
+    for item in snapshot.get("next_30_day_plan", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Do Not Share Publicly", 8, True)
+    for item in snapshot.get("do_not_share_publicly", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Claims To Avoid", 8, True)
+    for item in snapshot.get("claims_to_avoid", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("buyer_dataroom_v64.pdf", safe_pdf_output(pdf))
+        zf.writestr("buyer_dataroom_v64.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("strategic_narrative_v64.txt", snapshot.get("strategic_narrative", ""))
+        zf.writestr("data_room_folders_v64.csv", pd.DataFrame(snapshot.get("data_room_folders", [])).to_csv(index=False))
+        zf.writestr("moat_checklist_v64.csv", pd.DataFrame(snapshot.get("moat_checklist", [])).to_csv(index=False))
+        zf.writestr("next_30_day_plan_v64.csv", pd.DataFrame({"item": snapshot.get("next_30_day_plan", [])}).to_csv(index=False))
+        zf.writestr("buyer_questions_v64.csv", pd.DataFrame({"question": snapshot.get("buyer_questions", [])}).to_csv(index=False))
+        zf.writestr("sensitive_items_v64.csv", pd.DataFrame({"do_not_share_publicly": snapshot.get("do_not_share_publicly", [])}).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V64 Buyer Data Room bundle. Use for internal strategic readiness and controlled partner/buyer preparation only. Not legal, financial, valuation or acquisition advice.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V65 IP & MOAT REGISTRY / DEFENSIBILITY CENTER
+# ============================================================
+
+def _v65_bool_score(value, weight):
+    return weight if bool(value) else 0
+
+
+def _v65_list_from_text(text):
+    if not text:
+        return []
+    raw = []
+    for line in str(text).replace(';', '\n').splitlines():
+        cleaned = line.strip(" -•\t")
+        if cleaned:
+            raw.append(cleaned)
+    if not raw and str(text).strip():
+        raw = [str(text).strip()]
+    return raw
+
+
+def build_ip_moat_registry_v65(project_name, product_summary, unique_assets_text, flags=None, evidence_snapshots=None):
+    """Create an internal, non-legal IP/moat registry for strategic defensibility.
+
+    This does not decide legal IP ownership and is not patent/legal advice. It helps a founder
+    organize what should be documented, protected, proven and never casually shared.
+    """
+    flags = flags or {}
+    evidence_snapshots = evidence_snapshots or {}
+    assets = _v65_list_from_text(unique_assets_text)
+
+    ip_clarity_components = {
+        "code ownership tracked": _v65_bool_score(flags.get("owns_code"), 16),
+        "architecture documented": _v65_bool_score(flags.get("architecture_documented"), 14),
+        "open-source review started": _v65_bool_score(flags.get("open_source_reviewed"), 12),
+        "secrets removed from shareable artifacts": _v65_bool_score(flags.get("secrets_removed"), 12),
+        "data rights policy documented": _v65_bool_score(flags.get("data_rights_policy"), 14),
+        "customer consent workflow exists": _v65_bool_score(flags.get("customer_consent_workflow"), 12),
+        "brand/product naming consistent": _v65_bool_score(flags.get("brand_assets"), 8),
+        "transfer docs started": _v65_bool_score(flags.get("transfer_docs"), 12),
+    }
+    ip_clarity_score = int(min(100, sum(ip_clarity_components.values())))
+
+    moat_components = {
+        "end-to-end workflow": 16,
+        "privacy-safe learning": _v65_bool_score(flags.get("privacy_safe_learning"), 16),
+        "real upload flow": _v65_bool_score(flags.get("real_upload_flow"), 14),
+        "traction evidence": _v65_bool_score(flags.get("traction_evidence"), 14),
+        "ROI proof": _v65_bool_score(flags.get("roi_proof"), 10),
+        "case study proof": _v65_bool_score(flags.get("case_study_proof"), 10),
+        "hardware reference proof": _v65_bool_score(flags.get("hardware_reference"), 10),
+        "data room structure": _v65_bool_score(flags.get("buyer_dataroom"), 10),
+    }
+    defensibility_score = int(min(100, sum(moat_components.values()) + min(10, len(assets) * 2)))
+
+    transfer_components = {
+        "smoke/comprehensive tests": _v65_bool_score(flags.get("reproducible_tests"), 18),
+        "storage architecture documented": _v65_bool_score(flags.get("storage_documented"), 12),
+        "cloud migration plan": _v65_bool_score(flags.get("cloud_plan"), 14),
+        "founder ops documented": _v65_bool_score(flags.get("founder_ops"), 10),
+        "commercial packages documented": _v65_bool_score(flags.get("commercial_packages"), 12),
+        "customer safety claims documented": _v65_bool_score(flags.get("safe_claims"), 12),
+        "known limits documented": _v65_bool_score(flags.get("known_limits"), 12),
+        "operator handoff started": _v65_bool_score(flags.get("operator_handoff"), 10),
+    }
+    transfer_readiness_score = int(min(100, sum(transfer_components.values())))
+
+    evidence_count = sum(1 for value in evidence_snapshots.values() if bool(value))
+    evidence_score = int(min(100, evidence_count * 9))
+    strategic_asset_score = int(round(ip_clarity_score * 0.30 + defensibility_score * 0.35 + transfer_readiness_score * 0.20 + evidence_score * 0.15))
+
+    risk_items = []
+    if not flags.get("open_source_reviewed"):
+        risk_items.append("Open-source/license review is not complete; do not present the codebase as cleanly transferable yet.")
+    if not flags.get("data_rights_policy") or not flags.get("customer_consent_workflow"):
+        risk_items.append("Data rights/consent workflow must be documented before using customer field data as a strategic asset.")
+    if not flags.get("secrets_removed"):
+        risk_items.append("Secrets, tokens, private logs and customer identifiers must be removed from shareable artifacts.")
+    if not flags.get("traction_evidence"):
+        risk_items.append("The moat is weaker without customer usage, paid pilots, real uploads or repeated workflow proof.")
+    if not flags.get("transfer_docs"):
+        risk_items.append("Founder knowledge is still inside your head; document operating steps to reduce key-person risk.")
+
+    if strategic_asset_score >= 82 and ip_clarity_score >= 75 and len(risk_items) <= 1:
+        decision = "STRATEGIC ASSET READY"
+        recommended_next_step = "Keep collecting proof and prepare sanitized strategic materials. Share details only under the right confidentiality and legal process."
+    elif strategic_asset_score >= 58:
+        decision = "PROTECT AND PROVE"
+        recommended_next_step = "The asset is promising, but strengthen documentation, data rights, tests, proof and transferability before serious partner/buyer conversations."
+    else:
+        decision = "INTERNAL MOAT BUILDING"
+        recommended_next_step = "Use this internally. First document the engine, remove sharing risks and collect proof from pilots or real-data flows."
+
+    asset_register = [
+        {"asset": "OMEGA-X/EdgeTwin core workflow", "type": "workflow/IP", "protection": "document internally; share only high-level narrative", "status": "core"},
+        {"asset": "Dataset Doctor + trust/reliability gates", "type": "engine logic", "protection": "trade-secret style documentation; avoid publishing detailed scoring internals", "status": "core"},
+        {"asset": "Privacy-safe field learning system", "type": "data governance workflow", "protection": "document consent/retention/deletion; raw data locked by default", "status": "strategic"},
+        {"asset": "Customer/founder mode operating system", "type": "product workflow", "protection": "screenshots are shareable; internals stay private", "status": "product"},
+        {"asset": "Proposal/checkout/delivery proof loop", "type": "commercial workflow", "protection": "share customer-facing outputs, not internal scoring logic", "status": "commercial"},
+    ]
+    for idx, asset in enumerate(assets, start=1):
+        asset_register.append({"asset": asset, "type": "founder-defined", "protection": "classify before sharing", "status": f"custom-{idx}"})
+
+    trade_secret_candidates = [
+        "Scoring recipes that combine dataset structure, reliability, field evidence, privacy and commercial readiness.",
+        "End-to-end pilot packaging workflow from use-case to dataset, trust gates, hardware advice, proposal and delivery.",
+        "Privacy-safe learning pattern that favors feature-level/aggregate learning over raw customer data reuse.",
+        "Internal checklists and gates that prevent unsafe claims and protect founder time.",
+    ]
+
+    ownership_checklist = [
+        {"item": "Confirm all code was created by you/your tooling or is properly licensed.", "status": "ready" if flags.get("owns_code") else "needs review"},
+        {"item": "List third-party packages and licenses from requirements.txt.", "status": "ready" if flags.get("open_source_reviewed") else "needs review"},
+        {"item": "Keep customer data rights separate from product engine rights.", "status": "ready" if flags.get("data_rights_policy") else "needs policy"},
+        {"item": "Do not expose raw scoring internals in public marketing.", "status": "recommended"},
+        {"item": "Keep screenshots and demo datasets sanitized.", "status": "ready" if flags.get("secrets_removed") else "needs cleanup"},
+    ]
+
+    open_source_review_notes = [
+        "Create a simple dependency list: package, purpose, license, risk level.",
+        "Avoid copying proprietary code snippets from other tools into core product code.",
+        "Keep model/data assets separate from open-source package dependencies.",
+        "For serious sale/investment conversations, use a qualified legal review; this tool is only an organizer.",
+    ]
+
+    must_fix = risk_items[:]
+    if not flags.get("reproducible_tests"):
+        must_fix.append("Keep smoke/comprehensive tests current so another operator can verify the build.")
+    if not flags.get("cloud_plan"):
+        must_fix.append("Maintain the cloud migration plan so the asset is not perceived as only a local Streamlit prototype.")
+    if not flags.get("known_limits"):
+        must_fix.append("Document limits clearly: pilot-ready, field validation required, no guaranteed production accuracy.")
+
+    next_30_day_plan = [
+        "Create a sanitized product architecture one-pager: frontend, core engine, storage, privacy, export/delivery flows.",
+        "Export a dependency/license inventory and mark any packages needing later legal review.",
+        "Write a short internal memo: what is proprietary workflow, what is customer data, what is third-party dependency.",
+        "Collect one new piece of proof: paid pilot, real upload, case study, reference hardware test or strong customer feedback.",
+    ]
+
+    safe_external_positioning = [
+        "EdgeTwin creates pilot-ready sensor/edge-AI packages with datasets, trust checks, hardware advice and delivery outputs.",
+        "Customer data remains private by default; privacy-safe learning requires explicit consent.",
+        "The current product is suitable for controlled beta/paid pilot workflows, with field validation required before production use.",
+    ]
+
+    do_not_share_publicly = [
+        "Detailed scoring formulas, thresholds and private engine internals.",
+        "Raw customer uploads, filenames, locations, timestamps or confidential labels.",
+        "API keys, database files, auth secrets, private logs or internal test data.",
+        "Unverified claims about valuation, acquisition likelihood, certification or guaranteed accuracy.",
+    ]
+
+    claims_to_avoid = [
+        "Do not say the IP is legally protected unless you have actual legal protection or review.",
+        "Do not claim customer data can be reused globally unless consent, anonymization and retention are documented.",
+        "Do not describe pilot readiness as production certification.",
+        "Do not expose the full moat in public material; explain value, not the internal recipe.",
+    ]
+
+    return {
+        "version": "V65",
+        "project_name": project_name,
+        "product_summary": product_summary,
+        "decision": decision,
+        "strategic_asset_score": strategic_asset_score,
+        "ip_clarity_score": ip_clarity_score,
+        "defensibility_score": defensibility_score,
+        "transfer_readiness_score": transfer_readiness_score,
+        "evidence_score": evidence_score,
+        "recommended_next_step": recommended_next_step,
+        "ip_clarity_components": ip_clarity_components,
+        "moat_components": moat_components,
+        "transfer_components": transfer_components,
+        "asset_register": asset_register,
+        "trade_secret_candidates": trade_secret_candidates,
+        "ownership_checklist": ownership_checklist,
+        "open_source_review_notes": open_source_review_notes,
+        "must_fix": must_fix,
+        "next_30_day_plan": next_30_day_plan,
+        "safe_external_positioning": safe_external_positioning,
+        "do_not_share_publicly": do_not_share_publicly,
+        "claims_to_avoid": claims_to_avoid,
+        "raw_inputs": {"flags": flags, "unique_assets": assets},
+        "disclaimer": "V65 is an internal strategic organizer only. It is not legal, patent, IP, tax, valuation, investment or acquisition advice.",
+    }
+
+
+def create_ip_moat_registry_v65_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin IP & Moat Registry V65", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Strategic Asset Decision", 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Strategic asset score: {snapshot.get('strategic_asset_score')}%")
+    safe_pdf_cell(pdf, f"IP clarity: {snapshot.get('ip_clarity_score')}%")
+    safe_pdf_cell(pdf, f"Defensibility: {snapshot.get('defensibility_score')}%")
+    safe_pdf_cell(pdf, f"Transfer readiness: {snapshot.get('transfer_readiness_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Asset Register", 8, True)
+    for item in snapshot.get("asset_register", [])[:10]:
+        safe_pdf_multicell(pdf, f"- {item.get('asset')} | {item.get('type')} | {item.get('protection')}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Must Fix Before Serious External Sharing", 8, True)
+    for item in snapshot.get("must_fix", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Do Not Share Publicly", 8, True)
+    for item in snapshot.get("do_not_share_publicly", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("ip_moat_registry_v65.pdf", safe_pdf_output(pdf))
+        zf.writestr("ip_moat_registry_v65.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("asset_register_v65.csv", pd.DataFrame(snapshot.get("asset_register", [])).to_csv(index=False))
+        zf.writestr("ownership_checklist_v65.csv", pd.DataFrame(snapshot.get("ownership_checklist", [])).to_csv(index=False))
+        zf.writestr("trade_secret_candidates_v65.txt", "\n".join(snapshot.get("trade_secret_candidates", [])))
+        zf.writestr("must_fix_v65.csv", pd.DataFrame({"item": snapshot.get("must_fix", [])}).to_csv(index=False))
+        zf.writestr("next_30_day_plan_v65.csv", pd.DataFrame({"item": snapshot.get("next_30_day_plan", [])}).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V65 IP & Moat Registry bundle. Internal strategic organizer only. Not legal, patent, IP, valuation, investment or acquisition advice.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V66 — Continuous Improvement & Quality Flywheel
+# ============================================================
+
+def _v66_clip(value, low=0, high=100):
+    try:
+        return int(max(low, min(high, round(float(value)))))
+    except Exception:
+        return low
+
+
+def _v66_bool_score(value, points):
+    return int(points if bool(value) else 0)
+
+
+def build_continuous_improvement_flywheel_v66(project_name, release_target, quality_inputs, evidence_snapshots=None, customer_notes="", founder_constraints=""):
+    """Build a practical continuous-improvement plan for EdgeTwin.
+
+    V66 is deliberately not a new customer feature. It is an internal quality flywheel:
+    gather evidence, detect friction, rank improvements, protect reliability, and keep the
+    product moving toward a stronger commercial/buyout-ready asset without feature chaos.
+    """
+    quality_inputs = quality_inputs or {}
+    evidence_snapshots = evidence_snapshots or {}
+
+    test_pass_rate = _v66_clip(quality_inputs.get("test_pass_rate", 90))
+    open_bugs = max(0, int(quality_inputs.get("open_bugs", 3) or 0))
+    customer_friction = _v66_clip(quality_inputs.get("customer_friction", 35))
+    ui_clarity = _v66_clip(quality_inputs.get("ui_clarity", 78))
+    engine_confidence = _v66_clip(quality_inputs.get("engine_confidence", 82))
+    cloud_readiness = _v66_clip(quality_inputs.get("cloud_readiness", 58))
+    support_load_hours = max(0, float(quality_inputs.get("support_load_hours", 8) or 0))
+    field_evidence_strength = _v66_clip(quality_inputs.get("field_evidence_strength", 45))
+    proof_strength = _v66_clip(quality_inputs.get("proof_strength", 55))
+    privacy_confidence = _v66_clip(quality_inputs.get("privacy_confidence", 90))
+
+    bug_health = _v66_clip(100 - open_bugs * 7)
+    friction_health = _v66_clip(100 - customer_friction)
+    support_health = _v66_clip(100 - support_load_hours * 3)
+
+    foundation_flags = quality_inputs.get("foundation_flags", {}) or {}
+    foundation_components = {
+        "recent full test": _v66_bool_score(foundation_flags.get("recent_full_test"), 10),
+        "no critical errors": _v66_bool_score(foundation_flags.get("no_critical_errors"), 13),
+        "customer mode live": _v66_bool_score(foundation_flags.get("customer_mode_live"), 9),
+        "real upload flow live": _v66_bool_score(foundation_flags.get("real_upload_flow"), 9),
+        "privacy-safe learning live": _v66_bool_score(foundation_flags.get("privacy_safe_learning"), 11),
+        "payment/download locks ready": _v66_bool_score(foundation_flags.get("payment_lock_ready"), 8),
+        "commercial launch gate exists": _v66_bool_score(foundation_flags.get("launch_gate_exists"), 8),
+        "hardware reference planned": _v66_bool_score(foundation_flags.get("hardware_reference_planned"), 7),
+        "terms/privacy review started": _v66_bool_score(foundation_flags.get("terms_review_started"), 5),
+    }
+    foundation_score = _v66_clip(sum(foundation_components.values()))
+
+    evidence_count = sum(1 for value in evidence_snapshots.values() if bool(value))
+    evidence_coverage = _v66_clip(evidence_count * 7)
+
+    quality_score = _v66_clip(
+        test_pass_rate * 0.16
+        + bug_health * 0.11
+        + friction_health * 0.11
+        + ui_clarity * 0.10
+        + engine_confidence * 0.14
+        + cloud_readiness * 0.08
+        + support_health * 0.08
+        + field_evidence_strength * 0.09
+        + proof_strength * 0.08
+        + privacy_confidence * 0.05
+    )
+    ultimate_product_score = _v66_clip(quality_score * 0.58 + foundation_score * 0.22 + evidence_coverage * 0.20)
+
+    blockers = []
+    if open_bugs > 5:
+        blockers.append("Too many open bugs for a broader public launch; reduce critical/visible issues first.")
+    if test_pass_rate < 85:
+        blockers.append("Test pass rate should be improved before calling this stable.")
+    if customer_friction > 45:
+        blockers.append("Customer flow still feels too hard; simplify before wider demos.")
+    if privacy_confidence < 80:
+        blockers.append("Privacy-safe learning must stay strong before using real customer field data.")
+    if field_evidence_strength < 45 and release_target in ["Paid pilot launch", "Public SaaS preview", "Strategic partner readiness"]:
+        blockers.append("Collect at least one real upload or hardware reference proof before stronger commercial claims.")
+    if not foundation_flags.get("terms_review_started") and release_target in ["Public SaaS preview", "Strategic partner readiness"]:
+        blockers.append("Terms/privacy/legal review is not started; keep external launch controlled.")
+
+    if ultimate_product_score >= 86 and len(blockers) == 0:
+        decision = "PUBLIC BETA CANDIDATE"
+        recommended_next_step = "Proceed with a controlled public beta preview while continuing measured quality and proof collection."
+    elif ultimate_product_score >= 72 and len(blockers) <= 2:
+        decision = "IMPROVE AND SELL CONTROLLED PILOTS"
+        recommended_next_step = "Keep selling controlled paid pilots, collect proof, and run one focused improvement sprint before broader launch."
+    elif ultimate_product_score >= 55:
+        decision = "HARDEN BEFORE BROADER USE"
+        recommended_next_step = "Do not expand too quickly. Fix friction, tests, proof gaps and support load before adding new market exposure."
+    else:
+        decision = "INTERNAL QUALITY BUILD"
+        recommended_next_step = "Use this internally only until the foundation, customer route and proof are stronger."
+
+    def backlog_item(area, signal, impact, effort, action, owner="Founder/EdgeTwin"):
+        priority = _v66_clip(impact * 1.8 - effort * 0.9)
+        return {"area": area, "signal": signal, "impact": impact, "effort": effort, "priority": priority, "action": action, "owner": owner}
+
+    backlog = []
+    if customer_friction > 25:
+        backlog.append(backlog_item("Customer UX", f"friction={customer_friction}%", 82, 38, "Reduce the customer route to fewer choices, clearer next-step buttons and less technical wording."))
+    if ui_clarity < 85:
+        backlog.append(backlog_item("UI polish", f"ui_clarity={ui_clarity}%", 70, 42, "Improve cards, spacing, status badges, copy hierarchy and download grouping in Customer Mode."))
+    if open_bugs > 0:
+        backlog.append(backlog_item("Reliability", f"open_bugs={open_bugs}", 88, 35, "Run regression checks, fix visible errors and keep a must-fix list before launch."))
+    if test_pass_rate < 95:
+        backlog.append(backlog_item("Testing", f"test_pass_rate={test_pass_rate}%", 76, 33, "Expand comprehensive tests around session_state, bundle generation, save/load and real uploads."))
+    if field_evidence_strength < 70:
+        backlog.append(backlog_item("Field proof", f"field_evidence={field_evidence_strength}%", 90, 55, "Collect one real-upload proof or one small hardware reference demo instead of months of fieldwork."))
+    if cloud_readiness < 75:
+        backlog.append(backlog_item("Cloud readiness", f"cloud_readiness={cloud_readiness}%", 68, 58, "Prepare the migration plan: PostgreSQL, object storage, worker jobs and billing integration after paid-pilot proof."))
+    if support_load_hours > 6:
+        backlog.append(backlog_item("Founder ops", f"support_load={support_load_hours}h/week", 80, 30, "Automate follow-ups, require customer inputs before custom work, and push requests through lead/pricing/SOW gates."))
+    if proof_strength < 75:
+        backlog.append(backlog_item("Proof engine", f"proof_strength={proof_strength}%", 86, 45, "Turn every demo/pilot into traction, ROI, case-study and data-room evidence."))
+    if privacy_confidence < 90:
+        backlog.append(backlog_item("Privacy", f"privacy_confidence={privacy_confidence}%", 84, 36, "Keep raw data private by default and add stronger retention/delete/export wording."))
+    if len(backlog) == 0:
+        backlog.append(backlog_item("Focus", "no major weak signal", 60, 20, "Do not add feature chaos. Run customer tests and polish the highest-value route."))
+
+    backlog = sorted(backlog, key=lambda item: item["priority"], reverse=True)
+
+    customer_simplification_plan = [
+        "Keep Customer Mode to one obvious path: choose problem -> upload/generate -> readiness -> handoff/proposal.",
+        "Move engineering details under Advanced details; customer-facing screens should show outcome, risk and next step.",
+        "Use clear badges: Pilot-ready, Needs real data, Field validation required, Proposal-ready, Not production-certified.",
+        "Group downloads into Pilot Bundle, Report, Proposal/Next Step instead of scattering buttons everywhere.",
+    ]
+
+    engine_reliability_plan = [
+        "Keep the Dataset Doctor, Reliability Engine, Synthetic-to-Real Bridge, Normality Engine and privacy gates active behind the simple UI.",
+        "Prioritize real upload feature extraction and field-evidence proof over adding more synthetic templates.",
+        "Log every generated bundle, score and customer feedback item as future evidence for quality and buyer-readiness.",
+        "Never weaken disclaimers: pilot-ready does not mean production-certified or guaranteed accuracy.",
+    ]
+
+    founder_automation_plan = [
+        "Use Lead Intake before spending time on custom work.",
+        "Use Pricing Offer and Proposal/SOW before giving detailed custom deliverables.",
+        "Use Quote-to-Cash/Checkout gates before paid downloads or delivery.",
+        "Use Founder Ops weekly to stop low-value work and keep a short do-now queue.",
+    ]
+
+    thirty_day_sprint = [
+        "Day 1-3: run full test, fix visible bugs and verify Customer Mode route end-to-end.",
+        "Day 4-7: create one clean demo script and one safe landing-page message from V54/V55.",
+        "Week 2: run 3 to 5 customer conversations; capture friction, objections, requested inputs and willingness to pay.",
+        "Week 3: push every serious lead through ROI, Pricing, Proposal/SOW and Checkout readiness.",
+        "Week 4: turn results into traction proof, case study draft and data-room evidence.",
+    ]
+
+    dont_do_next = [
+        "Do not add a large new technical module unless it improves trust, proof, customer simplicity or paid pilot conversion.",
+        "Do not promise autonomous production accuracy without real field validation.",
+        "Do not expose scoring recipes, customer data, secrets or raw uploads in public materials.",
+        "Do not spend founder time on unqualified leads without budget, data, scope or decision path.",
+    ]
+
+    success_metrics = [
+        {"metric": "Customer route completion", "target": ">= 70% of demo users reach readiness/next-step screen"},
+        {"metric": "Qualified lead conversion", "target": ">= 25% of serious demos produce a proposal request"},
+        {"metric": "Paid pilot proof", "target": "1 paid pilot, then 3, then 10 repeatable conversations"},
+        {"metric": "Real-data proof", "target": "At least 1 real upload or hardware reference proof per core use-case"},
+        {"metric": "Founder load", "target": "Keep custom/manual work under 6 hours per week unless paid"},
+    ]
+
+    safe_claims = [
+        "EdgeTwin helps generate pilot-ready sensor/edge-AI packages with datasets, readiness checks, reports and next-step guidance.",
+        "The system is designed to reduce pilot uncertainty and founder/customer workload, while keeping field validation required before production deployment.",
+        "Customer data is private by default; privacy-safe learning requires explicit permission and favors feature-level/aggregate patterns.",
+    ]
+
+    claims_to_avoid = [
+        "Do not claim best-in-world, certified, production-safe or guaranteed accuracy without independent proof.",
+        "Do not imply customer raw data is used to improve the engine unless explicit consent and policy are in place.",
+        "Do not present acquisition/buyout outcomes as likely or guaranteed; treat them as a long-term strategic north star.",
+        "Do not sell public SaaS at scale before cloud, security, privacy, support and payment systems are ready.",
+    ]
+
+    return {
+        "version": "V66",
+        "project_name": project_name,
+        "release_target": release_target,
+        "decision": decision,
+        "ultimate_product_score": ultimate_product_score,
+        "quality_score": quality_score,
+        "foundation_score": foundation_score,
+        "evidence_coverage": evidence_coverage,
+        "bug_health": bug_health,
+        "friction_health": friction_health,
+        "support_health": support_health,
+        "recommended_next_step": recommended_next_step,
+        "blockers": blockers,
+        "foundation_components": foundation_components,
+        "improvement_backlog": backlog,
+        "customer_simplification_plan": customer_simplification_plan,
+        "engine_reliability_plan": engine_reliability_plan,
+        "founder_automation_plan": founder_automation_plan,
+        "thirty_day_sprint": thirty_day_sprint,
+        "dont_do_next": dont_do_next,
+        "success_metrics": success_metrics,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "customer_notes": customer_notes,
+        "founder_constraints": founder_constraints,
+        "raw_inputs": _json_safe(quality_inputs),
+        "evidence_snapshots": {k: bool(v) for k, v in evidence_snapshots.items()},
+        "disclaimer": "V66 is an internal continuous-improvement planning tool. Scores are directional and not legal, financial, certification, valuation or acquisition advice.",
+    }
+
+
+def create_continuous_improvement_v66_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Continuous Improvement Flywheel V66", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Quality Decision", 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Ultimate product score: {snapshot.get('ultimate_product_score')}%")
+    safe_pdf_cell(pdf, f"Quality score: {snapshot.get('quality_score')}%")
+    safe_pdf_cell(pdf, f"Foundation score: {snapshot.get('foundation_score')}%")
+    safe_pdf_cell(pdf, f"Evidence coverage: {snapshot.get('evidence_coverage')}%")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Top Improvement Backlog", 8, True)
+    for item in snapshot.get("improvement_backlog", [])[:8]:
+        safe_pdf_multicell(pdf, f"- {item.get('area')}: {item.get('action')} (priority {item.get('priority')})")
+
+    if snapshot.get("blockers"):
+        pdf.ln(3)
+        safe_pdf_cell(pdf, "Blockers", 8, True)
+        for item in snapshot.get("blockers", []):
+            safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "30-Day Sprint", 8, True)
+    for item in snapshot.get("thirty_day_sprint", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Do Not Do Next", 8, True)
+    for item in snapshot.get("dont_do_next", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("continuous_improvement_v66.pdf", safe_pdf_output(pdf))
+        zf.writestr("continuous_improvement_v66.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("improvement_backlog_v66.csv", pd.DataFrame(snapshot.get("improvement_backlog", [])).to_csv(index=False))
+        zf.writestr("success_metrics_v66.csv", pd.DataFrame(snapshot.get("success_metrics", [])).to_csv(index=False))
+        zf.writestr("thirty_day_sprint_v66.txt", "\n".join(snapshot.get("thirty_day_sprint", [])))
+        zf.writestr("do_not_do_next_v66.txt", "\n".join(snapshot.get("dont_do_next", [])))
+        zf.writestr("safe_claims_v66.txt", "\n".join(snapshot.get("safe_claims", [])))
+        zf.writestr("claims_to_avoid_v66.txt", "\n".join(snapshot.get("claims_to_avoid", [])))
+        zf.writestr("README.txt", "EdgeTwin Studio V66 Continuous Improvement & Quality Flywheel bundle. Internal planning tool only.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V67 — Reliability Calibration & Benchmarking Center
+# ============================================================
+
+def _v67_clip(value, low=0, high=100):
+    try:
+        return int(max(low, min(high, round(float(value)))))
+    except Exception:
+        return low
+
+
+def _v67_bool_points(value, points):
+    return points if bool(value) else 0
+
+
+def _v67_nested_score(obj, keys, default=0):
+    if not isinstance(obj, dict):
+        return default
+    for key in keys:
+        try:
+            val = obj.get(key)
+            if isinstance(val, (int, float)):
+                return _v67_clip(val)
+            if isinstance(val, str) and val.strip().replace('.', '', 1).isdigit():
+                return _v67_clip(float(val))
+        except Exception:
+            pass
+    return default
+
+
+def build_reliability_calibration_v67(
+    project_name,
+    dataset_df=None,
+    calibration_target="Paid pilot",
+    use_case_risk="Medium",
+    real_sample_count=0,
+    target_confidence=85,
+    false_alarm_tolerance="Medium",
+    missing_cost="Medium",
+    evidence_flags=None,
+    related_snapshots=None,
+    notes="",
+):
+    """Build an honest reliability calibration benchmark for pilot/customer readiness.
+
+    V67 does not certify a model. It calibrates the *evidence level* behind the
+    current EdgeTwin package so the customer sees a safer readiness decision.
+    """
+    evidence_flags = evidence_flags or {}
+    related_snapshots = related_snapshots or {}
+    df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+
+    rows = int(len(df))
+    cols = int(len(df.columns)) if rows else 0
+    label_count = 0
+    min_class_rows = 0
+    balance_score = 0
+    if rows and "Label" in df.columns:
+        vc = df["Label"].astype(str).value_counts()
+        label_count = int(len(vc))
+        min_class_rows = int(vc.min()) if len(vc) else 0
+        if len(vc) > 1 and vc.max() > 0:
+            balance_score = _v67_clip((vc.min() / vc.max()) * 100)
+        elif len(vc) == 1:
+            balance_score = 35
+
+    size_score = _v67_clip(min(rows, 2000) / 2000 * 100)
+    class_score = _v67_clip(min(label_count, 4) / 4 * 100)
+    min_class_score = _v67_clip(min(min_class_rows, 100) / 100 * 100)
+    data_quality_score = _v67_clip(size_score * 0.30 + class_score * 0.25 + balance_score * 0.25 + min_class_score * 0.20)
+
+    fusion_doctor = related_snapshots.get("fusion_doctor", {}) or {}
+    doctor_score = _v67_nested_score(fusion_doctor, ["overall_score", "readiness_score", "score"], default=0)
+    trust_gate = related_snapshots.get("trust_gate", {}) or {}
+    trust_score = _v67_nested_score(trust_gate, ["trust_score", "overall_score", "score"], default=0)
+    real_upload = related_snapshots.get("real_upload_v56", {}) or {}
+    real_upload_score = _v67_nested_score(real_upload, ["upload_readiness_score", "readiness_score", "score"], default=0)
+    privacy = related_snapshots.get("privacy_learning_v52", {}) or {}
+    privacy_score = _v67_nested_score(privacy, ["privacy_score", "score"], default=0)
+    field_evidence = related_snapshots.get("field_evidence_v2", {}) or {}
+    field_score = _v67_nested_score(field_evidence, ["field_evidence_score", "evidence_score", "score"], default=0)
+    hardware_reference = related_snapshots.get("hardware_reference_v59", {}) or {}
+    hardware_score = _v67_nested_score(hardware_reference, ["hardware_reference_score", "proof_score", "score"], default=0)
+
+    real_sample_score = _v67_clip(min(int(real_sample_count), 500) / 500 * 100)
+    evidence_score = _v67_clip(
+        _v67_bool_points(evidence_flags.get("dataset_generated"), 10)
+        + _v67_bool_points(evidence_flags.get("real_upload_done"), 13)
+        + _v67_bool_points(evidence_flags.get("privacy_plan_done"), 11)
+        + _v67_bool_points(evidence_flags.get("synthetic_to_real_done"), 10)
+        + _v67_bool_points(evidence_flags.get("normality_checked"), 10)
+        + _v67_bool_points(evidence_flags.get("field_evidence_done"), 16)
+        + _v67_bool_points(evidence_flags.get("trusted_claims"), 10)
+        + _v67_bool_points(evidence_flags.get("customer_acceptance_defined"), 10)
+        + _v67_bool_points(evidence_flags.get("full_test_recent"), 10)
+    )
+
+    external_validation_score = _v67_clip(real_sample_score * 0.42 + max(field_score, hardware_score) * 0.32 + real_upload_score * 0.26)
+    engine_signal_score = _v67_clip(max(doctor_score, 0) * 0.40 + max(trust_score, 0) * 0.25 + data_quality_score * 0.35)
+
+    risk_penalty = {
+        "Low": 0,
+        "Medium": 5,
+        "High": 12,
+        "Safety-critical / restricted": 24,
+    }.get(use_case_risk, 8)
+    missed_detection_penalty = {"Low": 0, "Medium": 4, "High": 10, "Severe": 18}.get(missing_cost, 5)
+    false_alarm_penalty = {"High": 0, "Medium": 3, "Low": 8}.get(false_alarm_tolerance, 3)
+    confidence_penalty = _v67_clip(max(0, int(target_confidence) - 85) * 1.1)
+
+    calibration_score = _v67_clip(
+        data_quality_score * 0.23
+        + evidence_score * 0.25
+        + engine_signal_score * 0.20
+        + external_validation_score * 0.22
+        + max(privacy_score, 75 if evidence_flags.get("privacy_plan_done") else 0) * 0.10
+        - risk_penalty
+        - missed_detection_penalty
+        - false_alarm_penalty
+        - confidence_penalty
+    )
+
+    if calibration_score >= 88 and external_validation_score >= 65 and len(df) > 0:
+        decision = "CALIBRATED PILOT GO"
+        evidence_grade = "A-"
+        recommended_next_step = "Use this as a controlled paid pilot package. Keep field validation and acceptance criteria explicit before production use."
+    elif calibration_score >= 74:
+        decision = "CONTROLLED PILOT GO"
+        evidence_grade = "B"
+        recommended_next_step = "Proceed with a controlled pilot, but collect more real upload or hardware reference evidence before stronger claims."
+    elif calibration_score >= 58:
+        decision = "NEEDS REAL DATA"
+        evidence_grade = "C"
+        recommended_next_step = "Do not oversell. Ask for labelled customer samples or run a small hardware reference demo before paid delivery claims."
+    else:
+        decision = "NO-GO UNTIL CALIBRATED"
+        evidence_grade = "D"
+        recommended_next_step = "Keep this internal/demo-only until dataset coverage, real evidence, privacy plan and acceptance criteria are stronger."
+
+    benchmark_matrix = [
+        {
+            "benchmark": "Synthetic pilot dataset",
+            "status": "present" if rows > 0 else "missing",
+            "score": data_quality_score,
+            "why_it_matters": "Checks class balance, label coverage and baseline training shape.",
+        },
+        {
+            "benchmark": "Real upload inspection",
+            "status": "present" if evidence_flags.get("real_upload_done") else "missing",
+            "score": max(real_upload_score, real_sample_score),
+            "why_it_matters": "Confirms whether generated signals resemble customer reality.",
+        },
+        {
+            "benchmark": "Privacy-safe learning plan",
+            "status": "present" if evidence_flags.get("privacy_plan_done") else "missing",
+            "score": max(privacy_score, 75 if evidence_flags.get("privacy_plan_done") else 0),
+            "why_it_matters": "Keeps customer data private by default while allowing opt-in feature learning.",
+        },
+        {
+            "benchmark": "Normal vs abnormal baseline",
+            "status": "present" if evidence_flags.get("normality_checked") else "missing",
+            "score": 85 if evidence_flags.get("normality_checked") else 0,
+            "why_it_matters": "Improves anomaly readiness and reduces unrealistic label assumptions.",
+        },
+        {
+            "benchmark": "Field evidence / hardware reference",
+            "status": "present" if evidence_flags.get("field_evidence_done") else "missing",
+            "score": max(field_score, hardware_score, 75 if evidence_flags.get("field_evidence_done") else 0),
+            "why_it_matters": "Shows the pipeline works outside synthetic-only simulation.",
+        },
+        {
+            "benchmark": "Customer acceptance criteria",
+            "status": "present" if evidence_flags.get("customer_acceptance_defined") else "missing",
+            "score": 85 if evidence_flags.get("customer_acceptance_defined") else 0,
+            "why_it_matters": "Prevents confusion about what the pilot proves and what it does not prove.",
+        },
+    ]
+
+    proof_gaps = []
+    if rows == 0:
+        proof_gaps.append("No pilot dataset is loaded; generate a dataset or upload customer data before calibration.")
+    if label_count < 2:
+        proof_gaps.append("At least two classes/labels are needed for most classifier-style pilot claims.")
+    if real_sample_count < 50 and not evidence_flags.get("real_upload_done"):
+        proof_gaps.append("Real upload evidence is weak; request labelled samples or run a small reference demo.")
+    if not evidence_flags.get("privacy_plan_done"):
+        proof_gaps.append("Create the V52 privacy-safe learning plan before using customer field data in any broader learning story.")
+    if not evidence_flags.get("field_evidence_done") and calibration_target in ["Hardware reference", "Public beta", "Enterprise/on-prem evaluation"]:
+        proof_gaps.append("Hardware/field evidence is not present; keep external claims controlled until a reference proof exists.")
+    if use_case_risk in ["High", "Safety-critical / restricted"]:
+        proof_gaps.append("High-risk use cases require stricter validation, disclaimers and possibly expert/legal review.")
+    if not evidence_flags.get("customer_acceptance_defined"):
+        proof_gaps.append("Define acceptance criteria in Proposal/SOW or Paid Pilot before delivery.")
+
+    calibration_actions = [
+        "Keep synthetic data as a fast-start pilot asset, not as proof of production performance.",
+        "Use V56 Real Upload to extract safe feature rows from customer WAV/CSV files before stronger readiness claims.",
+        "Use V52 privacy mode to keep raw customer data private by default and allow only explicit feature-level learning.",
+        "Run one small hardware reference test for the top use-case instead of months of broad fieldwork.",
+        "Re-run V67 after real upload, hardware reference or customer acceptance evidence improves.",
+    ]
+    if real_sample_count < 50:
+        calibration_actions.insert(1, "Ask for at least 50 labelled real samples across normal/abnormal classes for a stronger pilot match.")
+    if balance_score < 70 and rows > 0:
+        calibration_actions.insert(2, "Improve class balance or add weak-class examples before claiming strong classifier readiness.")
+    if missing_cost in ["High", "Severe"]:
+        calibration_actions.append("For high missed-detection cost, use conservative thresholds and explicitly require field validation before action automation.")
+
+    acceptance_criteria = [
+        "Customer confirms target event/classes and expected operating environment.",
+        "Pilot report states dataset origin, synthetic/real split and reliability limitations.",
+        "Real-data upload or hardware reference proof is collected before production deployment claims.",
+        "False alarm / missed detection tolerance is agreed before delivery.",
+        "Field validation is required before autonomous or safety-critical use.",
+    ]
+
+    safe_claims = [
+        "EdgeTwin calibrates pilot-readiness using dataset structure, real-upload evidence, privacy status and field/hardware proof signals.",
+        "The package is designed to reduce uncertainty before an Edge AI pilot, not to certify production accuracy.",
+        "Reliability improves when customers provide labelled real samples or when a hardware reference test is completed.",
+    ]
+    blocked_claims = [
+        "Guaranteed production accuracy",
+        "Certified safety or compliance readiness",
+        "Works in every environment without field validation",
+        "Customer raw data improves the global engine by default",
+    ]
+    claims_to_avoid = [
+        "Do not call the output production-ready unless field validation and acceptance testing prove it.",
+        "Do not imply synthetic-only datasets represent every real-world condition.",
+        "Do not use customer raw data for global learning without explicit permission and a clear policy.",
+        "Do not hide high-risk use-case limitations from the customer.",
+    ]
+
+    score_components = [
+        {"component": "Dataset quality", "score": data_quality_score},
+        {"component": "Evidence coverage", "score": evidence_score},
+        {"component": "Engine signal", "score": engine_signal_score},
+        {"component": "External validation", "score": external_validation_score},
+        {"component": "Privacy readiness", "score": max(privacy_score, 75 if evidence_flags.get("privacy_plan_done") else 0)},
+        {"component": "Risk penalty", "score": -int(risk_penalty + missed_detection_penalty + false_alarm_penalty + confidence_penalty)},
+    ]
+
+    return {
+        "version": "V67",
+        "project_name": project_name,
+        "calibration_target": calibration_target,
+        "use_case_risk": use_case_risk,
+        "decision": decision,
+        "evidence_grade": evidence_grade,
+        "calibration_score": calibration_score,
+        "data_quality_score": data_quality_score,
+        "evidence_score": evidence_score,
+        "engine_signal_score": engine_signal_score,
+        "external_validation_score": external_validation_score,
+        "real_sample_score": real_sample_score,
+        "target_confidence": int(target_confidence),
+        "false_alarm_tolerance": false_alarm_tolerance,
+        "missing_cost": missing_cost,
+        "rows": rows,
+        "columns": cols,
+        "label_count": label_count,
+        "min_class_rows": min_class_rows,
+        "balance_score": balance_score,
+        "recommended_next_step": recommended_next_step,
+        "benchmark_matrix": benchmark_matrix,
+        "score_components": score_components,
+        "proof_gaps": proof_gaps,
+        "calibration_actions": calibration_actions,
+        "acceptance_criteria": acceptance_criteria,
+        "safe_claims": safe_claims,
+        "blocked_claims": blocked_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "evidence_flags": {k: bool(v) for k, v in evidence_flags.items()},
+        "notes": notes,
+        "disclaimer": "V67 is a reliability calibration and benchmarking planner. It is not certification, legal advice, a safety assessment or a guarantee of production accuracy.",
+    }
+
+
+def create_reliability_calibration_v67_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Reliability Calibration V67", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Calibration Decision", 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Calibration score: {snapshot.get('calibration_score')}%")
+    safe_pdf_cell(pdf, f"Evidence grade: {snapshot.get('evidence_grade')}")
+    safe_pdf_cell(pdf, f"Dataset rows: {snapshot.get('rows')}")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Benchmark Matrix", 8, True)
+    for item in snapshot.get("benchmark_matrix", []):
+        safe_pdf_multicell(pdf, f"- {item.get('benchmark')}: {item.get('status')} / {item.get('score')}% - {item.get('why_it_matters')}")
+
+    if snapshot.get("proof_gaps"):
+        pdf.ln(3)
+        safe_pdf_cell(pdf, "Proof Gaps", 8, True)
+        for item in snapshot.get("proof_gaps", []):
+            safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Calibration Actions", 8, True)
+    for item in snapshot.get("calibration_actions", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Safe Claims", 8, True)
+    for item in snapshot.get("safe_claims", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("reliability_calibration_v67.pdf", safe_pdf_output(pdf))
+        zf.writestr("reliability_calibration_v67.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("benchmark_matrix_v67.csv", pd.DataFrame(snapshot.get("benchmark_matrix", [])).to_csv(index=False))
+        zf.writestr("score_components_v67.csv", pd.DataFrame(snapshot.get("score_components", [])).to_csv(index=False))
+        zf.writestr("calibration_actions_v67.txt", "\n".join(snapshot.get("calibration_actions", [])))
+        zf.writestr("proof_gaps_v67.txt", "\n".join(snapshot.get("proof_gaps", [])))
+        zf.writestr("safe_claims_v67.txt", "\n".join(snapshot.get("safe_claims", [])))
+        zf.writestr("claims_to_avoid_v67.txt", "\n".join(snapshot.get("claims_to_avoid", [])))
+        zf.writestr("README.txt", "EdgeTwin Studio V67 Reliability Calibration bundle. Pilot planning only; field validation required before production use.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V68 — Automation Orchestrator / Next Best Action Engine
+# ============================================================
+
+def _v68_clip(value, low=0, high=100):
+    try:
+        return int(max(low, min(high, round(float(value)))))
+    except Exception:
+        return 0
+
+
+def _v68_has_snapshot(obj):
+    return isinstance(obj, dict) and len(obj) > 0
+
+
+def _v68_score_from_snapshot(obj, keys):
+    if not isinstance(obj, dict):
+        return 0
+    for key in keys:
+        val = obj.get(key)
+        if isinstance(val, (int, float)):
+            return _v68_clip(val)
+    decision = str(obj.get("decision", obj.get("status", ""))).upper()
+    if "GO" in decision and "NO-GO" not in decision:
+        return 85
+    if "CONDITIONAL" in decision or "NEEDS" in decision:
+        return 62
+    if "NO-GO" in decision or "BLOCK" in decision:
+        return 30
+    return 50 if obj else 0
+
+
+def build_automation_orchestrator_v68(
+    project_name,
+    dataset_df=None,
+    snapshots=None,
+    automation_goal="Controlled paid pilot",
+    customer_self_service=True,
+    auto_generate_bundles=True,
+    auto_followup_queue=True,
+    require_human_approval=True,
+    allow_payment_without_review=False,
+    allow_raw_data_global_learning=False,
+    notes="",
+):
+    """Create a practical automation map without removing human safety gates."""
+    snapshots = snapshots or {}
+    df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    rows = int(len(df))
+    cols = int(len(df.columns)) if isinstance(df, pd.DataFrame) else 0
+    has_labels = bool("Label" in df.columns) if isinstance(df, pd.DataFrame) else False
+    label_count = int(df["Label"].nunique()) if has_labels and rows else 0
+
+    components = [
+        {
+            "component": "Customer start / guided route",
+            "snapshot_key": "customer_ui_v51",
+            "present": _v68_has_snapshot(snapshots.get("customer_ui_v51")) or _v68_has_snapshot(snapshots.get("customer_mode_v50")),
+            "automation_level": "Mostly automatic",
+            "human_gate": "Optional founder review for high-value leads",
+            "reason": "Customer Mode hides complexity and guides the user through the pilot route.",
+        },
+        {
+            "component": "Use-case to pilot package",
+            "snapshot_key": "auto_pilot_or_dataset",
+            "present": rows > 0 or _v68_has_snapshot(snapshots.get("auto_pilot")),
+            "automation_level": "Automatic after customer input",
+            "human_gate": "Founder review before paid delivery if the use-case is high-risk",
+            "reason": "Dataset generation, doctor checks and bundle creation can be triggered from the wizard.",
+        },
+        {
+            "component": "Real upload intake",
+            "snapshot_key": "real_upload_v56",
+            "present": _v68_has_snapshot(snapshots.get("real_upload_v56")),
+            "automation_level": "Automatic inspection",
+            "human_gate": "Review privacy flags and labels before using uploaded data",
+            "reason": "WAV/CSV inspection, feature rows and upload readiness are already structured.",
+        },
+        {
+            "component": "Privacy-safe learning",
+            "snapshot_key": "field_learning_v52",
+            "present": _v68_has_snapshot(snapshots.get("field_learning_v52")),
+            "automation_level": "Policy-driven automation",
+            "human_gate": "Explicit consent required before feature learning; raw data remains restricted",
+            "reason": "Private-only is default and learning modes are controlled.",
+        },
+        {
+            "component": "Reliability calibration",
+            "snapshot_key": "reliability_calibration_v67",
+            "present": _v68_has_snapshot(snapshots.get("reliability_calibration_v67")),
+            "automation_level": "Automatic scoring",
+            "human_gate": "Do not allow production claims without field validation",
+            "reason": "Calibration checks dataset, evidence, real upload, privacy and hardware proof signals.",
+        },
+        {
+            "component": "Proposal / SOW",
+            "snapshot_key": "proposal_sow",
+            "present": _v68_has_snapshot(snapshots.get("proposal_sow")),
+            "automation_level": "Draft automatic, signature manual",
+            "human_gate": "Founder/customer approval before contract or payment",
+            "reason": "Scope, deliverables, exclusions and safe claims can be generated.",
+        },
+        {
+            "component": "Pricing / ROI / quote",
+            "snapshot_key": "pricing_roi_checkout",
+            "present": any(_v68_has_snapshot(snapshots.get(k)) for k in ["pricing_offer", "roi_value_v62", "checkout_v57", "quote_to_cash"]),
+            "automation_level": "Assisted automation",
+            "human_gate": "Founder approval before final quote/invoice",
+            "reason": "Offer, ROI and checkout readiness are structured but payment is not yet connected.",
+        },
+        {
+            "component": "Delivery and follow-up",
+            "snapshot_key": "delivery_founder_ops",
+            "present": any(_v68_has_snapshot(snapshots.get(k)) for k in ["customer_delivery", "founder_ops_v49", "customer_success"]),
+            "automation_level": "Checklist and email draft automatic",
+            "human_gate": "Founder approval before customer delivery and follow-up emails",
+            "reason": "Delivery bundle, founder ops queue and follow-up logic reduce manual work.",
+        },
+        {
+            "component": "Traction / proof / data room",
+            "snapshot_key": "proof_system",
+            "present": any(_v68_has_snapshot(snapshots.get(k)) for k in ["traction_proof_v61", "case_study_v63", "buyer_dataroom_v64", "ip_moat_v65"]),
+            "automation_level": "Evidence collection assisted",
+            "human_gate": "Founder chooses what is safe to share externally",
+            "reason": "Proof assets, case studies, buyer data room and moat notes are generated from evidence.",
+        },
+    ]
+
+    for item in components:
+        item["status"] = "connected" if item["present"] else "missing / not run yet"
+        item["score"] = 100 if item["present"] else 35
+
+    connected = sum(1 for c in components if c["present"])
+    coverage_score = _v68_clip(connected / max(1, len(components)) * 100)
+
+    dataset_score = 0
+    if rows >= 500 and label_count >= 2:
+        dataset_score = 90
+    elif rows >= 100 and label_count >= 2:
+        dataset_score = 75
+    elif rows > 0:
+        dataset_score = 55
+
+    reliability_score = _v68_score_from_snapshot(snapshots.get("reliability_calibration_v67"), ["calibration_score", "reliability_score", "overall_score"])
+    privacy_score = _v68_score_from_snapshot(snapshots.get("field_learning_v52"), ["privacy_score", "readiness_score", "overall_score"])
+    checkout_score = _v68_score_from_snapshot(snapshots.get("checkout_v57"), ["checkout_score", "readiness_score", "overall_score"])
+    founder_ops_score = _v68_score_from_snapshot(snapshots.get("founder_ops_v49"), ["founder_ops_score", "workload_score", "automation_score", "overall_score"])
+
+    safety_score = 100
+    if not require_human_approval:
+        safety_score -= 25
+    if allow_payment_without_review:
+        safety_score -= 30
+    if allow_raw_data_global_learning:
+        safety_score -= 35
+    if not _v68_has_snapshot(snapshots.get("field_learning_v52")):
+        safety_score -= 10
+    safety_score = _v68_clip(safety_score)
+
+    automation_score = _v68_clip(
+        coverage_score * 0.34
+        + dataset_score * 0.13
+        + reliability_score * 0.17
+        + max(privacy_score, 70 if _v68_has_snapshot(snapshots.get("field_learning_v52")) else 0) * 0.12
+        + max(checkout_score, 55 if any(_v68_has_snapshot(snapshots.get(k)) for k in ["pricing_offer", "proposal_sow"]) else 0) * 0.10
+        + max(founder_ops_score, 65 if auto_followup_queue else 0) * 0.07
+        + safety_score * 0.07
+    )
+
+    if automation_score >= 86 and safety_score >= 80:
+        decision = "AUTOMATED PILOT FLOW GO"
+        automation_level = "High"
+        next_best_action = "Use the guided customer route for controlled paid pilots, with founder approval before payment, delivery and production claims."
+    elif automation_score >= 70:
+        decision = "ASSISTED AUTOMATION GO"
+        automation_level = "Medium-high"
+        next_best_action = "Run missing proof steps first, then use the automation queue to guide the customer from intake to proposal and delivery."
+    elif automation_score >= 52:
+        decision = "PARTIAL AUTOMATION"
+        automation_level = "Medium"
+        next_best_action = "Do not sell it as fully self-service yet. Use founder-assisted pilots and fill the missing automation evidence."
+    else:
+        decision = "MANUAL PILOT ONLY"
+        automation_level = "Low"
+        next_best_action = "Keep the flow founder-assisted until dataset, privacy, reliability and delivery gates are run."
+
+    automation_queue = []
+    if rows == 0:
+        automation_queue.append({"priority": 1, "action": "Generate a pilot dataset or run Real Upload V56", "owner": "Customer / Founder", "auto_possible": True})
+    if not _v68_has_snapshot(snapshots.get("field_learning_v52")):
+        automation_queue.append({"priority": 2, "action": "Build Privacy-Safe Learning Plan V52", "owner": "System + customer consent", "auto_possible": True})
+    if not _v68_has_snapshot(snapshots.get("reliability_calibration_v67")):
+        automation_queue.append({"priority": 3, "action": "Run Reliability Calibration V67", "owner": "System", "auto_possible": True})
+    if not _v68_has_snapshot(snapshots.get("roi_value_v62")):
+        automation_queue.append({"priority": 4, "action": "Create ROI Value Proof V62", "owner": "System + founder", "auto_possible": True})
+    if not _v68_has_snapshot(snapshots.get("proposal_sow")):
+        automation_queue.append({"priority": 5, "action": "Generate Proposal / SOW V46", "owner": "System draft, founder approves", "auto_possible": True})
+    if not _v68_has_snapshot(snapshots.get("checkout_v57")):
+        automation_queue.append({"priority": 6, "action": "Run Checkout Readiness V57 before payment", "owner": "Founder", "auto_possible": True})
+    if not _v68_has_snapshot(snapshots.get("customer_delivery")):
+        automation_queue.append({"priority": 7, "action": "Prepare Delivery Portal bundle", "owner": "System draft, founder sends", "auto_possible": True})
+    if not _v68_has_snapshot(snapshots.get("founder_ops_v49")):
+        automation_queue.append({"priority": 8, "action": "Run Founder Ops V49 to prevent support overload", "owner": "Founder", "auto_possible": True})
+    if not automation_queue:
+        automation_queue.append({"priority": 1, "action": "Ready for a controlled customer demo or paid pilot review", "owner": "Founder", "auto_possible": False})
+
+    trigger_map = [
+        {"when": "Customer chooses use-case", "system_action": "Generate config, suggested sensors, labels and pilot route", "human_gate": "Review high-risk use-case"},
+        {"when": "Dataset exists", "system_action": "Run doctor/readiness, suggest weak-class fixes and bundle exports", "human_gate": "Approve customer-facing claims"},
+        {"when": "Customer uploads real data", "system_action": "Inspect files, extract safe features, flag privacy risks", "human_gate": "Consent and raw-data restrictions"},
+        {"when": "Readiness is sufficient", "system_action": "Draft report, ROI, proposal/SOW and delivery package", "human_gate": "Founder approval before quote or delivery"},
+        {"when": "Lead is qualified", "system_action": "Create pricing, checkout readiness, customer email and follow-up queue", "human_gate": "Payment/invoice approval"},
+        {"when": "Pilot delivered", "system_action": "Request feedback, case-study permission and update proof dashboard", "human_gate": "Customer permission before publishing"},
+    ]
+
+    manual_approval_steps = [
+        "Final quote/invoice before asking for payment",
+        "Proposal/SOW acceptance and customer expectations",
+        "Any production-readiness or safety-sensitive claim",
+        "Any use of customer real data beyond the private project",
+        "Delivery of paid bundles to the customer",
+        "Publishing case studies, testimonials or buyer data-room material",
+    ]
+    do_not_automate_yet = [
+        "Do not automatically charge customers without scope and privacy checks.",
+        "Do not automatically use raw customer data for global training.",
+        "Do not automatically claim production accuracy or certification.",
+        "Do not automatically send legal, invoice or public case-study material without founder review.",
+    ]
+    customer_simplification = [
+        "Show only one next step at a time in Customer Mode.",
+        "Hide advanced diagnostics behind expandable sections.",
+        "Use plain status badges: Pilot-ready, Needs data, Privacy-safe, Field validation required.",
+        "Offer one primary button per customer step: generate, review, download or request proposal.",
+    ]
+    founder_automation = [
+        "Use V49 Founder Ops to turn every lead/pilot into a do-now queue.",
+        "Use V61/V62/V63/V64 to turn delivery proof into traction, ROI and case-study assets.",
+        "Use V66 to keep improvement priorities focused on reliability, simplicity and evidence.",
+        "Use V68 to check whether the route is self-service, assisted, or founder-led before each pilot.",
+    ]
+
+    return {
+        "version": "V68",
+        "project_name": project_name,
+        "automation_goal": automation_goal,
+        "decision": decision,
+        "automation_level": automation_level,
+        "automation_score": automation_score,
+        "coverage_score": coverage_score,
+        "safety_score": safety_score,
+        "dataset_score": dataset_score,
+        "reliability_score": reliability_score,
+        "privacy_score": privacy_score,
+        "checkout_score": checkout_score,
+        "founder_ops_score": founder_ops_score,
+        "rows": rows,
+        "columns": cols,
+        "label_count": label_count,
+        "customer_self_service": bool(customer_self_service),
+        "auto_generate_bundles": bool(auto_generate_bundles),
+        "auto_followup_queue": bool(auto_followup_queue),
+        "require_human_approval": bool(require_human_approval),
+        "allow_payment_without_review": bool(allow_payment_without_review),
+        "allow_raw_data_global_learning": bool(allow_raw_data_global_learning),
+        "next_best_action": next_best_action,
+        "components": components,
+        "automation_queue": automation_queue,
+        "trigger_map": trigger_map,
+        "manual_approval_steps": manual_approval_steps,
+        "do_not_automate_yet": do_not_automate_yet,
+        "customer_simplification": customer_simplification,
+        "founder_automation": founder_automation,
+        "notes": notes,
+        "disclaimer": "V68 orchestrates automation planning and next-best-actions. Human review remains required for payment, legal/scope decisions, privacy consent, paid delivery and production-readiness claims.",
+    }
+
+
+def create_automation_orchestrator_v68_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Automation Orchestrator V68", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Automation Decision", 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Automation score: {snapshot.get('automation_score')}%")
+    safe_pdf_cell(pdf, f"Safety score: {snapshot.get('safety_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get("next_best_action", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Next Action Queue", 8, True)
+    for item in snapshot.get("automation_queue", []):
+        safe_pdf_multicell(pdf, f"- P{item.get('priority')}: {item.get('action')} ({item.get('owner')})")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Manual Approval Steps", 8, True)
+    for item in snapshot.get("manual_approval_steps", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Do Not Automate Yet", 8, True)
+    for item in snapshot.get("do_not_automate_yet", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("automation_orchestrator_v68.pdf", safe_pdf_output(pdf))
+        zf.writestr("automation_orchestrator_v68.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("automation_components_v68.csv", pd.DataFrame(snapshot.get("components", [])).to_csv(index=False))
+        zf.writestr("automation_queue_v68.csv", pd.DataFrame(snapshot.get("automation_queue", [])).to_csv(index=False))
+        zf.writestr("trigger_map_v68.csv", pd.DataFrame(snapshot.get("trigger_map", [])).to_csv(index=False))
+        zf.writestr("manual_approval_steps_v68.txt", "\n".join(snapshot.get("manual_approval_steps", [])))
+        zf.writestr("do_not_automate_yet_v68.txt", "\n".join(snapshot.get("do_not_automate_yet", [])))
+        zf.writestr("customer_simplification_v68.txt", "\n".join(snapshot.get("customer_simplification", [])))
+        zf.writestr("founder_automation_v68.txt", "\n".join(snapshot.get("founder_automation", [])))
+        zf.writestr("README.txt", "EdgeTwin Studio V68 Automation Orchestrator bundle. Automation is assisted by design; human approval remains required for payment, privacy, scope and production claims.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V69 — Zero-Touch Customer Value Concierge
+# ============================================================
+
+def _v69_bool_score(value, points):
+    return points if bool(value) else 0
+
+
+def build_zero_touch_customer_value_v69(
+    project_name,
+    dataset_df=None,
+    snapshots=None,
+    customer_goal="",
+    offer_level="Professional Pilot",
+    customer_complexity="Medium",
+    customer_data_status="No real data yet",
+    founder_time_budget_minutes=30,
+    allow_customer_self_service=True,
+    auto_prepare_outputs=True,
+    require_approval_for_paid_steps=True,
+    hide_advanced_details=True,
+    show_value_for_money=True,
+):
+    """Build a self-service/customer clarity route while keeping risk behind human gates."""
+    snapshots = snapshots or {}
+    dataset_rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+
+    has_dataset = dataset_rows > 0 or bool(snapshots.get("auto_pilot"))
+    has_real_upload = bool(snapshots.get("real_upload_v56")) or customer_data_status in ["Example files available", "Labelled real data available", "Field validated data available"]
+    has_privacy = bool(snapshots.get("field_learning_v52"))
+    has_reliability = bool(snapshots.get("reliability_calibration_v67"))
+    has_roi = bool(snapshots.get("roi_value_v62"))
+    has_pricing = bool(snapshots.get("pricing_offer"))
+    has_sow = bool(snapshots.get("proposal_sow"))
+    has_checkout = bool(snapshots.get("checkout_v57"))
+    has_delivery = bool(snapshots.get("customer_delivery"))
+    has_automation = bool(snapshots.get("automation_orchestrator_v68"))
+    has_ui = bool(snapshots.get("customer_ui_v51") or snapshots.get("customer_mode_v50"))
+
+    complexity_penalty = {
+        "Low": 0,
+        "Medium": 4,
+        "High": 12,
+        "Safety-critical / restricted": 25,
+    }.get(customer_complexity, 8)
+
+    customer_clarity_score = min(100, max(0,
+        35
+        + _v69_bool_score(has_ui, 18)
+        + _v69_bool_score(hide_advanced_details, 14)
+        + _v69_bool_score(show_value_for_money, 14)
+        + _v69_bool_score(bool(customer_goal.strip()), 9)
+        + _v69_bool_score(has_roi, 10)
+        - max(0, complexity_penalty // 3)
+    ))
+
+    reliability_evidence_score = min(100, max(0,
+        24
+        + _v69_bool_score(has_dataset, 18)
+        + _v69_bool_score(has_real_upload, 16)
+        + _v69_bool_score(has_privacy, 12)
+        + _v69_bool_score(has_reliability, 18)
+        + _v69_bool_score(bool(snapshots.get("hardware_reference_v59")), 8)
+        - complexity_penalty
+    ))
+
+    value_proof_score = min(100, max(0,
+        28
+        + _v69_bool_score(has_roi, 22)
+        + _v69_bool_score(has_pricing, 14)
+        + _v69_bool_score(has_sow, 12)
+        + _v69_bool_score(has_checkout, 10)
+        + _v69_bool_score(bool(snapshots.get("case_study_v63") or snapshots.get("traction_proof_v61")), 10)
+        + _v69_bool_score(show_value_for_money, 4)
+    ))
+
+    self_service_score = min(100, max(0,
+        26
+        + _v69_bool_score(allow_customer_self_service, 15)
+        + _v69_bool_score(auto_prepare_outputs, 14)
+        + _v69_bool_score(has_automation, 15)
+        + _v69_bool_score(has_ui, 12)
+        + _v69_bool_score(has_checkout, 8)
+        + _v69_bool_score(has_delivery, 6)
+        - (0 if founder_time_budget_minutes >= 30 else 8)
+        - (12 if customer_complexity in ["High", "Safety-critical / restricted"] else 0)
+    ))
+
+    delivery_safety_score = min(100, max(0,
+        40
+        + _v69_bool_score(require_approval_for_paid_steps, 18)
+        + _v69_bool_score(has_privacy, 14)
+        + _v69_bool_score(has_sow, 10)
+        + _v69_bool_score(has_checkout, 8)
+        + _v69_bool_score(has_delivery, 6)
+        - (20 if customer_complexity == "Safety-critical / restricted" else 0)
+    ))
+
+    founder_time_score = min(100, max(0,
+        50
+        + _v69_bool_score(has_automation, 18)
+        + _v69_bool_score(auto_prepare_outputs, 12)
+        + _v69_bool_score(has_ui, 8)
+        + _v69_bool_score(require_approval_for_paid_steps, 4)
+        - max(0, 30 - int(founder_time_budget_minutes))
+    ))
+
+    zero_touch_score = int(round(
+        customer_clarity_score * 0.20
+        + reliability_evidence_score * 0.18
+        + value_proof_score * 0.18
+        + self_service_score * 0.18
+        + delivery_safety_score * 0.16
+        + founder_time_score * 0.10
+    ))
+
+    if customer_complexity == "Safety-critical / restricted":
+        decision = "ASSISTED PILOT ONLY"
+        recommended_next_step = "Keep this founder-assisted. Do not offer fully self-service flow for safety-critical or restricted use-cases."
+    elif zero_touch_score >= 82 and delivery_safety_score >= 75 and reliability_evidence_score >= 65:
+        decision = "SELF-SERVICE PILOT GO"
+        recommended_next_step = "Let the customer follow the simple route, then require founder approval before payment, delivery and production-readiness claims."
+    elif zero_touch_score >= 62:
+        decision = "CONTROLLED ASSISTED GO"
+        recommended_next_step = "Use the zero-touch route for intake and explanation, but keep the actual paid pilot founder-assisted."
+    else:
+        decision = "NOT READY FOR ZERO-TOUCH"
+        recommended_next_step = "Collect missing dataset, reliability, privacy, value and delivery evidence before letting customers self-serve."
+
+    estimated_founder_minutes = max(10, int(founder_time_budget_minutes))
+    if decision == "SELF-SERVICE PILOT GO":
+        estimated_founder_minutes = min(estimated_founder_minutes, 20)
+    elif decision == "CONTROLLED ASSISTED GO":
+        estimated_founder_minutes = min(max(estimated_founder_minutes, 25), 60)
+    else:
+        estimated_founder_minutes = max(estimated_founder_minutes, 60)
+
+    customer_route = [
+        {"step": "1. Choose the problem", "customer_text": "Describe the machine, asset, sound, vibration or sensor problem in plain language."},
+        {"step": "2. Add data status", "customer_text": "Tell EdgeTwin whether real files exist, or start with a synthetic pilot dataset."},
+        {"step": "3. Generate pilot package", "customer_text": "Create dataset, feature audit, reliability calibration and hardware direction."},
+        {"step": "4. Review value and readiness", "customer_text": "See what is ready, what still needs real data or field validation, and what the pilot may safely claim."},
+        {"step": "5. Request proposal or paid pilot", "customer_text": "Only continue to quote/payment after scope, privacy and delivery checks are clear."},
+    ]
+
+    customer_badges = [
+        "Simple customer route",
+        "Pilot-ready package" if has_dataset else "Dataset needed",
+        "Reliability calibrated" if has_reliability else "Reliability check needed",
+        "Privacy-safe by default" if has_privacy else "Private by default",
+        "Value explained" if has_roi else "ROI proof optional",
+        "Field validation required",
+    ]
+
+    customer_value_items = [
+        "A guided path from sensor/use-case idea to pilot dataset and readiness package.",
+        "Dataset and feature-quality checks so weak inputs are visible before money is wasted.",
+        "Reliability calibration that separates pilot-readiness from production-readiness.",
+        "Privacy-safe handling of real customer data with opt-in learning modes.",
+        "Hardware/deployment direction and customer-facing reports/proposal drafts.",
+    ]
+
+    value_for_money_explanation = (
+        f"The {offer_level} is positioned as a risk-reduction package, not just a CSV download. "
+        "The customer pays for faster pilot setup, clearer data requirements, fewer wrong hardware decisions, safer claims, and a professional handoff package. "
+        "Production deployment still requires field validation."
+    )
+
+    hidden_engine_checks = [
+        {"check": "Dataset / Auto Pilot", "status": "ready" if has_dataset else "missing", "customer_visible": "summary only"},
+        {"check": "Real Upload V56", "status": "ready" if has_real_upload else "optional", "customer_visible": "upload guidance"},
+        {"check": "Privacy Learning V52", "status": "ready" if has_privacy else "private-only fallback", "customer_visible": "consent choice"},
+        {"check": "Reliability Calibration V67", "status": "ready" if has_reliability else "needed", "customer_visible": "readiness badge"},
+        {"check": "ROI Value V62", "status": "ready" if has_roi else "optional", "customer_visible": "value explanation"},
+        {"check": "Proposal / SOW", "status": "ready" if has_sow else "draft needed", "customer_visible": "only after qualification"},
+        {"check": "Checkout V57", "status": "ready" if has_checkout else "manual invoice", "customer_visible": "after founder approval"},
+        {"check": "Delivery Portal", "status": "ready" if has_delivery else "prepare before delivery", "customer_visible": "download/handoff"},
+    ]
+
+    founder_time_savers = [
+        "Use Customer Mode first; keep Founder Mode hidden unless a paid pilot is qualified.",
+        "Auto-generate drafts, then approve only pricing, scope, privacy and delivery.",
+        "Push customers to upload examples or choose a template before a call.",
+        "Use V68 next-action queue and V49 founder ops instead of manually tracking follow-ups.",
+        "Use V69 output as the customer-facing explanation so you do not rewrite the same story every time.",
+    ]
+
+    do_not_spend_time_on = [
+        "Custom model promises before data and acceptance criteria are known.",
+        "Free manual analysis of many files without a qualified pilot scope.",
+        "Explaining every technical tab to the customer; show the route and the result.",
+        "Production accuracy guarantees without field validation.",
+    ]
+
+    approval_gates = [
+        "Founder approval required before quote/payment is accepted.",
+        "Founder approval required before paid delivery bundle is released.",
+        "Explicit customer consent required before any privacy-safe learning beyond project-private use.",
+        "Scope/SOW required before custom labels, custom reports or enterprise claims.",
+        "Field validation required before production deployment claims.",
+    ]
+
+    blocked_promises = [
+        "Guaranteed production accuracy.",
+        "Certified safety/security compliance.",
+        "Raw customer data reused for global learning by default.",
+        "No human review needed for paid delivery or legal/privacy decisions.",
+        "A pilot result is the same as a production deployment result.",
+    ]
+
+    return {
+        "version": "V69",
+        "project_name": project_name,
+        "created_at": _now(),
+        "customer_goal": customer_goal,
+        "offer_level": offer_level,
+        "customer_complexity": customer_complexity,
+        "customer_data_status": customer_data_status,
+        "dataset_rows": dataset_rows,
+        "zero_touch_score": zero_touch_score,
+        "customer_clarity_score": int(customer_clarity_score),
+        "reliability_evidence_score": int(reliability_evidence_score),
+        "value_proof_score": int(value_proof_score),
+        "self_service_score": int(self_service_score),
+        "delivery_safety_score": int(delivery_safety_score),
+        "founder_time_score": int(founder_time_score),
+        "estimated_founder_minutes": int(estimated_founder_minutes),
+        "decision": decision,
+        "recommended_next_step": recommended_next_step,
+        "customer_route": customer_route,
+        "customer_badges": customer_badges,
+        "customer_value_items": customer_value_items,
+        "value_for_money_explanation": value_for_money_explanation,
+        "hidden_engine_checks": hidden_engine_checks,
+        "founder_time_savers": founder_time_savers,
+        "do_not_spend_time_on": do_not_spend_time_on,
+        "approval_gates": approval_gates,
+        "blocked_promises": blocked_promises,
+        "disclaimer": "V69 is a customer clarity and founder-time reduction layer. It does not replace legal/privacy review, paid delivery approval or field validation.",
+    }
+
+
+def create_zero_touch_customer_value_v69_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("zero_touch_customer_value_v69.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_route_v69.csv", pd.DataFrame(snapshot.get("customer_route", [])).to_csv(index=False))
+        zf.writestr("hidden_engine_checks_v69.csv", pd.DataFrame(snapshot.get("hidden_engine_checks", [])).to_csv(index=False))
+        zf.writestr("founder_time_savers_v69.txt", "\n".join(snapshot.get("founder_time_savers", [])))
+        zf.writestr("approval_gates_v69.txt", "\n".join(snapshot.get("approval_gates", [])))
+        zf.writestr("blocked_promises_v69.txt", "\n".join(snapshot.get("blocked_promises", [])))
+        zf.writestr("customer_value_for_money_v69.txt", snapshot.get("value_for_money_explanation", ""))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V69 - Zero-Touch Customer Value", height=10)
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Project: {project_name}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Zero-touch score: {snapshot.get('zero_touch_score')}%")
+        safe_pdf_cell(pdf, f"Customer clarity: {snapshot.get('customer_clarity_score')}%")
+        safe_pdf_cell(pdf, f"Value proof: {snapshot.get('value_proof_score')}%")
+        safe_pdf_cell(pdf, f"Estimated founder time: {snapshot.get('estimated_founder_minutes')} minutes")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Recommended next step")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, snapshot.get("recommended_next_step", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Customer route")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("customer_route", []):
+            safe_pdf_cell(pdf, f"- {item.get('step')}: {item.get('customer_text')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Approval gates")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("approval_gates", []):
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Value for money")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, snapshot.get("value_for_money_explanation", ""))
+        zf.writestr("zero_touch_customer_value_v69.pdf", safe_pdf_output(pdf))
+
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V70 — Outcome Assurance & Customer Success Autopilot
+# ============================================================
+
+def _v70_bool_score(value, points):
+    return points if bool(value) else 0
+
+
+def build_outcome_assurance_v70(
+    project_name,
+    dataset_df=None,
+    snapshots=None,
+    delivery_stage="Ready for delivery",
+    package_type="Professional Pilot Bundle",
+    customer_success_goal="Customer understands the pilot output, what is included, what is not included, and the next validation step.",
+    support_level="Self-service with founder approval gates",
+    require_acceptance=True,
+    auto_prepare_followup=True,
+    max_founder_minutes=20,
+):
+    """Build a customer-facing outcome assurance plan.
+
+    V70 turns EdgeTwin outputs into a clear delivery and success path: what the
+    customer receives, what proves value, what still needs field validation, and
+    what should be handled by automation instead of founder time.
+    """
+    snapshots = snapshots or {}
+    dataset_rows = 0
+    if isinstance(dataset_df, pd.DataFrame):
+        dataset_rows = int(len(dataset_df))
+
+    has_dataset = dataset_rows > 0 or bool(snapshots.get("auto_pilot") or snapshots.get("fusion_doctor"))
+    has_real_upload = bool(snapshots.get("real_upload_v56"))
+    has_privacy = bool(snapshots.get("field_learning_v52"))
+    has_reliability = bool(snapshots.get("reliability_calibration_v67"))
+    has_zero_touch = bool(snapshots.get("zero_touch_v69"))
+    has_automation = bool(snapshots.get("automation_orchestrator_v68"))
+    has_roi = bool(snapshots.get("roi_value_v62"))
+    has_checkout = bool(snapshots.get("checkout_v57") or snapshots.get("quote_to_cash"))
+    has_delivery = bool(snapshots.get("customer_delivery"))
+    has_case_study = bool(snapshots.get("case_study_v63"))
+    has_hardware_reference = bool(snapshots.get("hardware_reference_v59"))
+    has_sow = bool(snapshots.get("proposal_sow"))
+
+    stage_bonus = {
+        "Before payment": -8,
+        "After payment": 4,
+        "Ready for delivery": 10,
+        "Post-delivery follow-up": 12,
+    }.get(delivery_stage, 0)
+
+    package_bonus = {
+        "Starter Pilot Bundle": 0,
+        "Professional Pilot Bundle": 6,
+        "Real-Data Pilot Bundle": 10,
+        "Enterprise / Custom Pilot": 12,
+    }.get(package_type, 4)
+
+    delivery_clarity_score = min(100, max(0,
+        36
+        + _v70_bool_score(bool(customer_success_goal.strip()), 14)
+        + _v70_bool_score(require_acceptance, 14)
+        + _v70_bool_score(has_sow, 10)
+        + _v70_bool_score(has_delivery, 10)
+        + stage_bonus
+    ))
+
+    outcome_evidence_score = min(100, max(0,
+        24
+        + _v70_bool_score(has_dataset, 15)
+        + _v70_bool_score(has_reliability, 18)
+        + _v70_bool_score(has_real_upload, 12)
+        + _v70_bool_score(has_privacy, 10)
+        + _v70_bool_score(has_hardware_reference, 10)
+        + _v70_bool_score(has_roi, 8)
+        + package_bonus
+    ))
+
+    support_deflection_score = min(100, max(0,
+        30
+        + _v70_bool_score(has_zero_touch, 18)
+        + _v70_bool_score(has_automation, 18)
+        + _v70_bool_score(auto_prepare_followup, 14)
+        + _v70_bool_score(support_level != "Founder manual support", 10)
+        - (10 if max_founder_minutes < 10 else 0)
+    ))
+
+    customer_success_score = min(100, max(0,
+        32
+        + _v70_bool_score(has_roi, 14)
+        + _v70_bool_score(has_reliability, 14)
+        + _v70_bool_score(has_delivery, 10)
+        + _v70_bool_score(has_case_study, 8)
+        + _v70_bool_score(require_acceptance, 10)
+        + _v70_bool_score(bool(customer_success_goal.strip()), 8)
+    ))
+
+    founder_time_score = min(100, max(0,
+        42
+        + _v70_bool_score(has_automation, 18)
+        + _v70_bool_score(has_zero_touch, 16)
+        + _v70_bool_score(auto_prepare_followup, 14)
+        + _v70_bool_score(max_founder_minutes <= 20, 10)
+        - (15 if support_level == "Founder manual support" else 0)
+    ))
+
+    outcome_assurance_score = int(round(
+        delivery_clarity_score * 0.22
+        + outcome_evidence_score * 0.24
+        + support_deflection_score * 0.18
+        + customer_success_score * 0.22
+        + founder_time_score * 0.14
+    ))
+
+    if outcome_assurance_score >= 86 and delivery_clarity_score >= 78 and outcome_evidence_score >= 72:
+        decision = "OUTCOME DELIVERY GO"
+        recommended_next_step = "Deliver the pilot package with the customer-facing success summary, acceptance checklist and automated follow-up sequence."
+    elif outcome_assurance_score >= 68:
+        decision = "ASSISTED SUCCESS GO"
+        recommended_next_step = "Deliver with founder review and ask only the missing acceptance, privacy or evidence questions. Keep the customer route simple."
+    else:
+        decision = "HOLD DELIVERY"
+        recommended_next_step = "Do not deliver as a paid outcome yet. Fix the missing dataset, reliability, scope, privacy or handoff evidence first."
+
+    what_customer_receives = [
+        "Pilot dataset or real-data feature intake summary." if has_dataset or has_real_upload else "Clear request for the minimum dataset or real samples needed.",
+        "Dataset quality and readiness explanation in customer-safe language.",
+        "Reliability calibration summary with honest pilot-only limitations." if has_reliability else "Reliability calibration must be generated before strong readiness claims.",
+        "Privacy-safe handling plan and consent status." if has_privacy else "Project-private data handling by default until privacy plan is built.",
+        "Hardware/deployment direction and next validation path." if has_hardware_reference else "Hardware reference proof is optional but recommended for stronger trust.",
+        "Proposal/SOW, checkout or delivery outputs when the paid pilot is qualified." if has_sow or has_checkout or has_delivery else "Commercial handoff should be completed before paid delivery.",
+    ]
+
+    acceptance_criteria = [
+        "Customer confirms the use-case and labels/classes are described correctly.",
+        "Customer confirms whether uploaded data may remain project-private or feature-learning opt-in is allowed.",
+        "Customer understands this is a pilot-readiness package, not a production accuracy guarantee.",
+        "Customer confirms the next validation step: more real data, hardware proof or field test.",
+        "Customer accepts the delivered files/reports as the agreed pilot scope.",
+    ]
+    if package_type in ["Real-Data Pilot Bundle", "Enterprise / Custom Pilot"]:
+        acceptance_criteria.append("Customer confirms data ownership, consent basis and deletion/export expectations for real uploaded files.")
+
+    customer_next_steps = [
+        "Review the readiness score and the specific gaps EdgeTwin found.",
+        "Upload additional real examples if the report says more field data is needed.",
+        "Approve or reject the proposal/SOW before custom work starts.",
+        "Use the hardware/deployment direction as a test plan, not as a certified production design.",
+        "Book a short review call only if the pilot output shows CONDITIONAL GO or paid delivery needs founder approval.",
+    ]
+
+    support_faq = [
+        {"question": "Is this production-ready?", "answer": "No. It is a pilot-readiness package. Field validation is required before production use."},
+        {"question": "What am I paying for?", "answer": "A faster route from sensor idea or raw files to dataset, readiness checks, reliability gaps, hardware direction and a professional handoff package."},
+        {"question": "Can EdgeTwin use our data globally?", "answer": "Not by default. Customer data stays project-private unless explicit privacy-safe learning permission is given."},
+        {"question": "Do we need real data?", "answer": "Synthetic data can start the pilot, but real sample data improves confidence and calibration."},
+        {"question": "Can you guarantee accuracy?", "answer": "No. EdgeTwin can estimate readiness and expose risks, but production accuracy requires validation on the target hardware and environment."},
+    ]
+
+    automated_followup_sequence = [
+        {"day": 0, "message": "Send delivery summary, downloads and acceptance checklist."},
+        {"day": 2, "message": "Ask whether the customer understands the readiness result and missing data gaps."},
+        {"day": 7, "message": "Request one concrete next action: upload more data, approve SOW, or schedule hardware reference test."},
+        {"day": 14, "message": "Ask for feedback, testimonial permission or anonymised case-study approval if appropriate."},
+    ] if auto_prepare_followup else []
+
+    quality_gates = [
+        {"gate": "Scope understood", "status": "ready" if has_sow or require_acceptance else "needs confirmation"},
+        {"gate": "Dataset/readiness evidence", "status": "ready" if has_dataset and has_reliability else "needs evidence"},
+        {"gate": "Privacy-safe data handling", "status": "ready" if has_privacy else "private-only fallback"},
+        {"gate": "Commercial/payment handoff", "status": "ready" if has_checkout else "manual approval"},
+        {"gate": "Delivery package", "status": "ready" if has_delivery else "prepare bundle"},
+        {"gate": "Founder time protection", "status": "ready" if support_deflection_score >= 70 else "too manual"},
+    ]
+
+    founder_do_not_touch = [
+        "Do not manually explain every technical tab; send the V70 customer success summary instead.",
+        "Do not do custom model work before SOW, payment and data scope are clear.",
+        "Do not accept raw-data reuse unless the privacy mode and consent are explicit.",
+        "Do not promise production accuracy or compliance certification from a pilot result.",
+        "Do not hold long support calls when the FAQ, acceptance criteria and next-step checklist answer the question.",
+    ]
+
+    blocked_promises = [
+        "Guaranteed detection accuracy in production.",
+        "No field validation required.",
+        "Certified safety, security or compliance approval.",
+        "Unlimited support included in a fixed pilot bundle.",
+        "Customer raw data reused globally without explicit permission.",
+    ]
+
+    safe_customer_claims = [
+        "EdgeTwin provides a pilot-readiness package for sensor/Edge AI projects.",
+        "The system highlights data gaps, reliability risks and recommended next validation steps.",
+        "Customer data is project-private by default, with optional privacy-safe feature learning.",
+        "Real uploads and hardware reference testing can improve confidence before production work.",
+    ]
+
+    return {
+        "version": "V70",
+        "project_name": project_name,
+        "created_at": _now(),
+        "delivery_stage": delivery_stage,
+        "package_type": package_type,
+        "customer_success_goal": customer_success_goal,
+        "support_level": support_level,
+        "dataset_rows": dataset_rows,
+        "outcome_assurance_score": outcome_assurance_score,
+        "delivery_clarity_score": int(delivery_clarity_score),
+        "outcome_evidence_score": int(outcome_evidence_score),
+        "support_deflection_score": int(support_deflection_score),
+        "customer_success_score": int(customer_success_score),
+        "founder_time_score": int(founder_time_score),
+        "estimated_founder_minutes": int(max_founder_minutes),
+        "decision": decision,
+        "recommended_next_step": recommended_next_step,
+        "what_customer_receives": what_customer_receives,
+        "acceptance_criteria": acceptance_criteria,
+        "customer_next_steps": customer_next_steps,
+        "support_faq": support_faq,
+        "automated_followup_sequence": automated_followup_sequence,
+        "quality_gates": quality_gates,
+        "founder_do_not_touch": founder_do_not_touch,
+        "blocked_promises": blocked_promises,
+        "safe_customer_claims": safe_customer_claims,
+        "disclaimer": "V70 improves delivery clarity and customer success automation. It does not replace legal, privacy, safety, compliance or field-validation review.",
+    }
+
+
+def create_outcome_assurance_v70_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("outcome_assurance_v70.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("what_customer_receives_v70.txt", "\n".join(snapshot.get("what_customer_receives", [])))
+        zf.writestr("acceptance_criteria_v70.txt", "\n".join(snapshot.get("acceptance_criteria", [])))
+        zf.writestr("customer_next_steps_v70.txt", "\n".join(snapshot.get("customer_next_steps", [])))
+        zf.writestr("quality_gates_v70.csv", pd.DataFrame(snapshot.get("quality_gates", [])).to_csv(index=False))
+        zf.writestr("support_faq_v70.csv", pd.DataFrame(snapshot.get("support_faq", [])).to_csv(index=False))
+        zf.writestr("followup_sequence_v70.csv", pd.DataFrame(snapshot.get("automated_followup_sequence", [])).to_csv(index=False))
+        zf.writestr("founder_do_not_touch_v70.txt", "\n".join(snapshot.get("founder_do_not_touch", [])))
+        zf.writestr("blocked_promises_v70.txt", "\n".join(snapshot.get("blocked_promises", [])))
+        zf.writestr("safe_customer_claims_v70.txt", "\n".join(snapshot.get("safe_customer_claims", [])))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V70 - Outcome Assurance", height=10)
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Project: {project_name}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Outcome assurance score: {snapshot.get('outcome_assurance_score')}%")
+        safe_pdf_cell(pdf, f"Delivery clarity: {snapshot.get('delivery_clarity_score')}%")
+        safe_pdf_cell(pdf, f"Outcome evidence: {snapshot.get('outcome_evidence_score')}%")
+        safe_pdf_cell(pdf, f"Support deflection: {snapshot.get('support_deflection_score')}%")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Recommended next step")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, snapshot.get("recommended_next_step", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "What the customer receives")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("what_customer_receives", []):
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Acceptance criteria")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("acceptance_criteria", []):
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Blocked promises")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("blocked_promises", []):
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("outcome_assurance_v70.pdf", safe_pdf_output(pdf))
+
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V71 — Customer Support Autopilot / Self-Service Deflection Center
+# ============================================================
+
+def _v71_truthy_snapshot(snapshots, key):
+    if not isinstance(snapshots, dict):
+        return False
+    val = snapshots.get(key)
+    if val is None:
+        return False
+    if isinstance(val, dict):
+        return len(val) > 0
+    if isinstance(val, (list, tuple, set)):
+        return len(val) > 0
+    return bool(val)
+
+
+def build_customer_support_autopilot_v71(
+    project_name,
+    dataset_df=None,
+    snapshots=None,
+    customer_stage="After delivery / handoff",
+    issue_category="General: what do I get?",
+    customer_question="What should I do next and what exactly did I receive?",
+    customer_confidence=7,
+    urgency="Normal",
+    self_service_enabled=True,
+    max_founder_minutes=10,
+    customer_has_downloaded=False,
+    customer_has_uploaded_data=False,
+):
+    """Build a privacy-safe self-service support plan that protects founder time.
+
+    V71 is intentionally not a chatbot that invents answers. It produces controlled,
+    reusable answers, FAQ items, escalation gates and founder approval boundaries.
+    """
+    snapshots = snapshots or {}
+    df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    confidence = int(max(0, min(10, customer_confidence or 0)))
+    founder_minutes = int(max(0, min(240, max_founder_minutes or 0)))
+
+    evidence_items = {
+        "Outcome assurance available": _v71_truthy_snapshot(snapshots, "outcome_assurance_v70"),
+        "Zero-touch route available": _v71_truthy_snapshot(snapshots, "zero_touch_v69"),
+        "Automation plan available": _v71_truthy_snapshot(snapshots, "automation_orchestrator_v68"),
+        "Real upload intake available": _v71_truthy_snapshot(snapshots, "real_upload_v56") or bool(customer_has_uploaded_data),
+        "Privacy learning plan available": _v71_truthy_snapshot(snapshots, "field_learning_v52"),
+        "Proposal/SOW available": _v71_truthy_snapshot(snapshots, "proposal_sow"),
+        "Checkout readiness available": _v71_truthy_snapshot(snapshots, "checkout_v57"),
+        "Delivery portal available": _v71_truthy_snapshot(snapshots, "customer_delivery"),
+        "Dataset present": isinstance(df, pd.DataFrame) and len(df) > 0,
+    }
+    evidence_score = int(round(sum(1 for v in evidence_items.values() if v) / max(1, len(evidence_items)) * 100))
+
+    stage_score_map = {
+        "Before pilot generation": 58,
+        "After pilot generation": 72,
+        "After readiness review": 78,
+        "After proposal / quote": 82,
+        "After payment / checkout readiness": 84,
+        "After delivery / handoff": 88,
+    }
+    stage_score = stage_score_map.get(customer_stage, 72)
+
+    category_risk_map = {
+        "General: what do I get?": 15,
+        "Next step confusion": 25,
+        "Upload/data question": 35,
+        "Report/readiness question": 30,
+        "Pricing/checkout question": 42,
+        "Privacy/data-use question": 50,
+        "Technical bug or missing output": 68,
+        "Production accuracy/safety question": 78,
+    }
+    category_risk = category_risk_map.get(issue_category, 35)
+    urgency_penalty = {"Low": 0, "Normal": 8, "High": 18, "Urgent / customer blocked": 30}.get(urgency, 8)
+
+    self_service_score = int(round(
+        0.33 * evidence_score +
+        0.22 * stage_score +
+        0.18 * (confidence * 10) +
+        0.17 * (100 if self_service_enabled else 40) +
+        0.10 * (100 if customer_has_downloaded else 70)
+    ))
+    self_service_score = int(max(0, min(100, self_service_score)))
+
+    founder_time_score = 100 if founder_minutes <= 10 else 82 if founder_minutes <= 20 else 62 if founder_minutes <= 45 else 38
+    support_deflection_score = int(round(0.72 * self_service_score + 0.28 * founder_time_score))
+    support_deflection_score = int(max(0, min(100, support_deflection_score)))
+
+    escalation_risk_score = int(max(0, min(100, round(category_risk + urgency_penalty + (100 - evidence_score) * 0.22 - confidence * 2))))
+    customer_clarity_score = int(max(0, min(100, round(0.45 * self_service_score + 0.35 * stage_score + 0.20 * (confidence * 10)))))
+
+    if support_deflection_score >= 85 and escalation_risk_score <= 35:
+        decision = "SELF-SERVICE RESOLVED"
+        support_stage = "Customer can proceed without founder time"
+        recommended_next_step = "Show the controlled answer, provide the relevant bundle/report link and ask the customer to confirm the next step inside the app."
+    elif support_deflection_score >= 68 and escalation_risk_score <= 60:
+        decision = "FOUNDER APPROVAL ONLY"
+        support_stage = "Mostly self-service, small approval gate"
+        recommended_next_step = "Use the prepared answer and only ask the founder to approve scope, payment, privacy or delivery exceptions."
+    else:
+        decision = "ESCALATE CAREFULLY"
+        support_stage = "Human review required"
+        recommended_next_step = "Do not let the app improvise. Escalate with a short evidence summary and keep claims pilot-only."
+
+    value_for_money_explanation = [
+        "The customer pays for a structured Edge AI pilot package, not just a CSV file.",
+        "Included value: use-case framing, dataset/readiness package, privacy-safe data handling, report/handoff assets and clear next steps.",
+        "The system keeps advanced diagnostics behind the scenes so the customer sees a simple route while the engine still performs deeper checks.",
+        "Production deployment, certified safety claims and guaranteed accuracy are outside the pilot scope unless separately validated and contracted.",
+    ]
+
+    customer_safe_answer = (
+        f"For project '{project_name}', EdgeTwin has prepared a controlled support response for the stage '{customer_stage}'. "
+        f"Your question is categorized as '{issue_category}'. The safe next step is: {recommended_next_step} "
+        "This answer is based on the current pilot evidence and does not claim production accuracy or certification."
+    )
+
+    if "Privacy" in issue_category:
+        customer_safe_answer += " By default, your data remains project-private unless you explicitly choose a learning mode that allows feature-level learning."
+    if "Production" in issue_category:
+        customer_safe_answer += " Production use requires field validation and a separate production-readiness review."
+    if "Technical bug" in issue_category:
+        customer_safe_answer += " Please attach the error message, action taken and expected output so the issue can be reproduced safely."
+
+    faq_articles = [
+        {
+            "question": "What am I paying for?",
+            "answer": "A pilot-ready Edge AI package: dataset/readiness output, report, hardware direction, privacy handling and clear handoff/next steps.",
+            "escalate_if": "Customer asks for custom production guarantees or new scope outside the package.",
+        },
+        {
+            "question": "Can I use this directly in production?",
+            "answer": "No. EdgeTwin outputs pilot-readiness evidence. Field validation is required before production deployment.",
+            "escalate_if": "Customer asks for safety-critical or certified deployment approval.",
+        },
+        {
+            "question": "What happens to uploaded customer data?",
+            "answer": "Default mode is private project use. Feature learning only happens with explicit permission and minimization.",
+            "escalate_if": "Customer requests legal/privacy changes or raw-data reuse permission.",
+        },
+        {
+            "question": "Why do I need real data?",
+            "answer": "Synthetic data accelerates pilot setup; real samples improve matching, calibration and confidence.",
+            "escalate_if": "Customer cannot provide labels, samples or context needed for a reliable pilot.",
+        },
+        {
+            "question": "What is the next step after delivery?",
+            "answer": "Review the report, confirm acceptance criteria, collect small real samples if needed and decide whether to continue to a paid validation or deployment plan.",
+            "escalate_if": "Customer requests extra support or new deliverables not in the SOW.",
+        },
+    ]
+
+    next_steps = [
+        "Show the customer the simplest relevant answer first; keep advanced diagnostics hidden unless requested.",
+        "Point to the exact bundle/report/output that answers the question.",
+        "Ask one confirmation question instead of opening a broad support thread.",
+        "Escalate only when the request changes scope, privacy terms, payment/delivery status or production claims.",
+    ]
+    if not customer_has_uploaded_data and issue_category in ["Upload/data question", "Report/readiness question"]:
+        next_steps.append("Ask for one small labelled CSV/WAV sample rather than a large unstructured upload.")
+    if not customer_has_downloaded and customer_stage in ["After delivery / handoff", "After payment / checkout readiness"]:
+        next_steps.append("Ask the customer to download and review the delivery bundle before requesting manual support.")
+
+    required_inputs = []
+    if issue_category == "Technical bug or missing output":
+        required_inputs.extend(["Screenshot or exact error text", "Which button/page caused the issue", "Expected output", "Whether the dataset was uploaded or generated"])
+    if issue_category == "Upload/data question":
+        required_inputs.extend(["File type", "Label/class meaning", "Sensor type", "Whether raw data may remain private only"])
+    if issue_category == "Pricing/checkout question":
+        required_inputs.extend(["Selected package", "Billing details", "SOW/scope acceptance", "Delivery expectation"])
+    if issue_category == "Privacy/data-use question":
+        required_inputs.extend(["Preferred data mode", "Retention preference", "Whether feature-level learning is allowed", "Deletion/export request details"])
+    if not required_inputs:
+        required_inputs = ["Customer goal", "Current project stage", "Which output they are trying to understand", "Whether they want proposal, upload, or delivery next"]
+
+    auto_reply_sequence = [
+        {"step": 1, "timing": "Immediate", "message": "Here is the relevant answer and the exact next step for your current project stage."},
+        {"step": 2, "timing": "After customer confirmation", "message": "Please confirm whether this resolves the question or whether you need a scope/privacy/payment review."},
+        {"step": 3, "timing": "If unresolved", "message": "We will escalate only the specific blocker, with the current project evidence attached."},
+    ]
+
+    escalation_conditions = [
+        "Customer requests production accuracy, certified safety or guaranteed ROI claims.",
+        "Customer asks to reuse raw data, change privacy terms or delete/export project data.",
+        "Customer reports a reproducible technical error or missing paid deliverable.",
+        "Customer asks for deliverables outside the accepted proposal/SOW.",
+        "Payment, invoice, refund or legal terms are disputed.",
+    ]
+
+    founder_do_not_touch = [
+        "Do not manually rewrite standard FAQ answers; use the controlled answer templates.",
+        "Do not accept new scope inside support chat; route it to proposal/SOW or checkout readiness.",
+        "Do not inspect raw customer files manually unless the customer explicitly requested and permitted it.",
+        "Do not promise production performance, certification or guaranteed detection accuracy.",
+    ]
+
+    blocked_actions = [
+        "No automated production-readiness approval.",
+        "No automatic refund/legal decision.",
+        "No global learning from raw customer data without explicit permission.",
+        "No manual custom engineering work without scope and payment gate.",
+    ]
+
+    support_queue = []
+    if decision == "SELF-SERVICE RESOLVED":
+        support_queue.append({"priority": "Low", "owner": "System", "task": "Send controlled answer and wait for customer confirmation."})
+    elif decision == "FOUNDER APPROVAL ONLY":
+        support_queue.append({"priority": "Medium", "owner": "Founder approval", "task": "Approve prepared response only if scope/privacy/payment is unchanged."})
+    else:
+        support_queue.append({"priority": "High", "owner": "Founder review", "task": "Review the blocker summary before sending any promise or workaround."})
+    for item in required_inputs[:4]:
+        support_queue.append({"priority": "Input", "owner": "Customer", "task": f"Provide: {item}"})
+
+    support_metrics = [
+        {"metric": "Support deflection score", "value": support_deflection_score, "unit": "%"},
+        {"metric": "Customer clarity score", "value": customer_clarity_score, "unit": "%"},
+        {"metric": "Escalation risk score", "value": escalation_risk_score, "unit": "%"},
+        {"metric": "Evidence score", "value": evidence_score, "unit": "%"},
+        {"metric": "Founder minutes cap", "value": founder_minutes, "unit": "minutes"},
+    ]
+
+    safe_claims = [
+        "EdgeTwin provides controlled self-service support for pilot-readiness workflows.",
+        "The support answer is based on current project evidence and accepted scope.",
+        "Founder escalation is reserved for scope, privacy, payment, legal, delivery or production-risk issues.",
+        "Customer-facing answers remain pilot-safe and avoid unsupported production guarantees.",
+    ]
+    claims_to_avoid = [
+        "Do not say support is fully autonomous for legal, payment, privacy or production decisions.",
+        "Do not guarantee customer outcomes, uptime, certification or model accuracy through a support answer.",
+        "Do not let support answers override the proposal/SOW, checkout status or privacy settings.",
+        "Do not treat FAQ clicks as proof of successful delivery or customer satisfaction.",
+    ]
+
+    return {
+        "version": "V71",
+        "project_name": project_name,
+        "created_at": _now(),
+        "customer_stage": customer_stage,
+        "issue_category": issue_category,
+        "customer_question": customer_question,
+        "support_stage": support_stage,
+        "decision": decision,
+        "support_deflection_score": support_deflection_score,
+        "self_service_score": self_service_score,
+        "customer_clarity_score": customer_clarity_score,
+        "escalation_risk_score": escalation_risk_score,
+        "evidence_score": evidence_score,
+        "founder_time_score": founder_time_score,
+        "estimated_founder_minutes": founder_minutes if decision != "SELF-SERVICE RESOLVED" else min(founder_minutes, 3),
+        "recommended_next_step": recommended_next_step,
+        "customer_safe_answer": customer_safe_answer,
+        "value_for_money_explanation": value_for_money_explanation,
+        "next_steps": next_steps,
+        "required_inputs": required_inputs,
+        "faq_articles": faq_articles,
+        "auto_reply_sequence": auto_reply_sequence,
+        "escalation_conditions": escalation_conditions,
+        "founder_do_not_touch": founder_do_not_touch,
+        "blocked_actions": blocked_actions,
+        "support_queue": support_queue,
+        "support_metrics": support_metrics,
+        "evidence_items": [{"item": k, "present": v} for k, v in evidence_items.items()],
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "raw_inputs": {
+            "self_service_enabled": bool(self_service_enabled),
+            "customer_has_downloaded": bool(customer_has_downloaded),
+            "customer_has_uploaded_data": bool(customer_has_uploaded_data),
+            "customer_confidence": confidence,
+            "urgency": urgency,
+            "dataset_rows": int(len(df)) if isinstance(df, pd.DataFrame) else 0,
+        },
+        "disclaimer": "V71 provides controlled support guidance for pilot workflows. It is not legal, privacy, financial, safety or production-performance advice.",
+    }
+
+
+def create_customer_support_autopilot_v71_bundle(project_name, snapshot):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 17)
+    pdf.cell(0, 10, txt="EdgeTwin Customer Support Autopilot V71", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Support Decision", 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Support deflection: {snapshot.get('support_deflection_score')}%")
+    safe_pdf_cell(pdf, f"Customer clarity: {snapshot.get('customer_clarity_score')}%")
+    safe_pdf_cell(pdf, f"Escalation risk: {snapshot.get('escalation_risk_score')}%")
+    safe_pdf_multicell(pdf, snapshot.get("recommended_next_step", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Customer Safe Answer", 8, True)
+    safe_pdf_multicell(pdf, snapshot.get("customer_safe_answer", ""))
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Value For Money Explanation", 8, True)
+    for item in snapshot.get("value_for_money_explanation", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Escalation Conditions", 8, True)
+    for item in snapshot.get("escalation_conditions", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Founder Do Not Touch", 8, True)
+    for item in snapshot.get("founder_do_not_touch", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("customer_support_autopilot_v71.pdf", safe_pdf_output(pdf))
+        zf.writestr("customer_support_autopilot_v71.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("faq_articles_v71.csv", pd.DataFrame(snapshot.get("faq_articles", [])).to_csv(index=False))
+        zf.writestr("support_queue_v71.csv", pd.DataFrame(snapshot.get("support_queue", [])).to_csv(index=False))
+        zf.writestr("support_metrics_v71.csv", pd.DataFrame(snapshot.get("support_metrics", [])).to_csv(index=False))
+        zf.writestr("required_inputs_v71.csv", pd.DataFrame({"required_input": snapshot.get("required_inputs", [])}).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V71 Customer Support Autopilot bundle. Controlled self-service support guidance only; not legal, privacy, financial, safety or production-performance advice.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V72 — Customer Status Portal / Project State & Next-Step Tracker
+# ============================================================
+
+def _v72_bool_score(value, points):
+    return points if bool(value) else 0
+
+
+def build_customer_status_portal_v72(
+    project_name,
+    dataset_df=None,
+    snapshots=None,
+    project_stage="Delivery / handoff",
+    customer_plan="Professional Pilot Bundle",
+    customer_question="Where are we now, what is ready, and what should I do next?",
+    payment_status="Quote ready",
+    privacy_status="Private only",
+    next_milestone="Review pilot readiness and confirm the next validation step.",
+    customer_inputs_complete=False,
+    delivery_bundle_ready=False,
+    founder_review_required=True,
+    support_self_service_ready=False,
+):
+    """Build one clear customer project status screen.
+
+    V72 reduces support load by turning many internal EdgeTwin modules into a
+    single customer-safe project state, with next actions, blockers and approval
+    gates. It does not replace legal/privacy/payment/production review.
+    """
+    snapshots = snapshots or {}
+    dataset_rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+
+    has_dataset = dataset_rows > 0 or bool(snapshots.get("zero_touch_v69") or snapshots.get("reliability_calibration_v67"))
+    has_reliability = bool(snapshots.get("reliability_calibration_v67"))
+    has_real_upload = bool(snapshots.get("real_upload_v56"))
+    has_privacy = bool(snapshots.get("field_learning_v52")) or privacy_status in ["Private only", "Feature learning opt-in"]
+    has_roi = bool(snapshots.get("roi_value_v62"))
+    has_sow = bool(snapshots.get("proposal_sow"))
+    has_checkout = bool(snapshots.get("checkout_v57")) or payment_status in ["Payment/invoice ready", "Paid / approved"]
+    has_delivery = bool(snapshots.get("customer_delivery")) or bool(delivery_bundle_ready)
+    has_outcome = bool(snapshots.get("outcome_assurance_v70"))
+    has_support = bool(snapshots.get("customer_support_v71")) or bool(support_self_service_ready)
+    has_automation = bool(snapshots.get("automation_orchestrator_v68"))
+
+    stage_weight = {
+        "Intake": 4,
+        "Pilot generation": 8,
+        "Readiness review": 12,
+        "Proposal / SOW": 14,
+        "Checkout / payment readiness": 16,
+        "Delivery / handoff": 18,
+        "Post-delivery follow-up": 20,
+    }.get(project_stage, 8)
+
+    status_clarity_score = min(100, max(0,
+        28
+        + _v72_bool_score(bool(customer_question.strip()), 10)
+        + _v72_bool_score(bool(next_milestone.strip()), 12)
+        + _v72_bool_score(has_outcome, 12)
+        + _v72_bool_score(has_support, 12)
+        + _v72_bool_score(has_sow or project_stage in ["Intake", "Pilot generation", "Readiness review"], 8)
+        + stage_weight
+    ))
+
+    evidence_visibility_score = min(100, max(0,
+        20
+        + _v72_bool_score(has_dataset, 16)
+        + _v72_bool_score(has_reliability, 18)
+        + _v72_bool_score(has_privacy, 12)
+        + _v72_bool_score(has_real_upload, 10)
+        + _v72_bool_score(has_roi, 8)
+        + _v72_bool_score(has_delivery, 10)
+        + _v72_bool_score(customer_plan in ["Professional Pilot Bundle", "Real-Data Pilot Bundle", "Enterprise / Custom Pilot"], 6)
+    ))
+
+    blocker_score = min(100, max(0,
+        74
+        + _v72_bool_score(customer_inputs_complete, 10)
+        + _v72_bool_score(has_checkout or payment_status in ["Not requested", "Quote ready"], 6)
+        + _v72_bool_score(has_privacy, 6)
+        + _v72_bool_score(has_delivery or project_stage not in ["Delivery / handoff", "Post-delivery follow-up"], 8)
+        - (16 if privacy_status == "Missing privacy decision" else 0)
+        - (14 if payment_status == "Manual review needed" else 0)
+        - (10 if founder_review_required and project_stage in ["Checkout / payment readiness", "Delivery / handoff"] else 0)
+    ))
+
+    self_service_score = min(100, max(0,
+        35
+        + _v72_bool_score(has_support, 18)
+        + _v72_bool_score(has_automation, 14)
+        + _v72_bool_score(has_outcome, 12)
+        + _v72_bool_score(bool(next_milestone.strip()), 10)
+        + _v72_bool_score(not founder_review_required, 8)
+    ))
+
+    customer_confidence_score = int(round(
+        status_clarity_score * 0.32
+        + evidence_visibility_score * 0.28
+        + blocker_score * 0.22
+        + self_service_score * 0.18
+    ))
+
+    if customer_confidence_score >= 86 and blocker_score >= 78 and not founder_review_required:
+        decision = "CUSTOMER STATUS CLEAR"
+        recommended_next_step = "Show the status portal to the customer and let them complete the next self-service step. Keep legal, payment and production claims gated."
+        founder_time_risk = "Low"
+    elif customer_confidence_score >= 72 and blocker_score >= 62:
+        decision = "STATUS READY WITH REVIEW"
+        recommended_next_step = "Share the customer status screen, but keep founder approval before payment, delivery release or production-readiness language."
+        founder_time_risk = "Medium"
+    elif not customer_inputs_complete or privacy_status == "Missing privacy decision":
+        decision = "CUSTOMER INPUT NEEDED"
+        recommended_next_step = "Ask only for the missing customer inputs or privacy choice. Do not start custom manual work yet."
+        founder_time_risk = "Medium"
+    else:
+        decision = "FOUNDER REVIEW REQUIRED"
+        recommended_next_step = "Do not expose this as a final status yet. Fix blockers around data, delivery, privacy, payment or reliability evidence."
+        founder_time_risk = "High"
+
+    status_cards = [
+        {"area": "Pilot package", "status": "Ready" if has_dataset else "Needs data", "customer_text": "Dataset/readiness package exists." if has_dataset else "A pilot dataset or real upload is needed before strong output."},
+        {"area": "Reliability", "status": "Calibrated" if has_reliability else "Needs calibration", "customer_text": "Readiness has been checked." if has_reliability else "Reliability calibration should be generated before paid handoff."},
+        {"area": "Privacy", "status": privacy_status, "customer_text": "Data is private by default; broader learning requires explicit consent."},
+        {"area": "Commercial", "status": payment_status, "customer_text": "Payment/quote status is separated from delivery quality."},
+        {"area": "Delivery", "status": "Ready" if has_delivery else "Not ready" if project_stage in ["Delivery / handoff", "Post-delivery follow-up"] else "Upcoming", "customer_text": "Delivery bundle is ready." if has_delivery else "Delivery output is prepared only after scope and quality gates."},
+        {"area": "Support", "status": "Self-service available" if has_support else "Basic guidance", "customer_text": "Common questions are answered through controlled support guidance." if has_support else "Support autopilot can be generated to reduce back-and-forth."},
+    ]
+
+    timeline = [
+        {"step": "1", "name": "Intake", "state": "Done" if project_stage not in ["Intake"] else "Current"},
+        {"step": "2", "name": "Pilot generation", "state": "Done" if has_dataset else ("Current" if project_stage == "Pilot generation" else "Pending")},
+        {"step": "3", "name": "Readiness review", "state": "Done" if has_reliability else ("Current" if project_stage == "Readiness review" else "Pending")},
+        {"step": "4", "name": "Proposal / SOW", "state": "Done" if has_sow else ("Current" if project_stage == "Proposal / SOW" else "Optional/Pending")},
+        {"step": "5", "name": "Checkout / payment readiness", "state": "Done" if has_checkout else ("Current" if project_stage == "Checkout / payment readiness" else "Pending")},
+        {"step": "6", "name": "Delivery / handoff", "state": "Done" if has_delivery else ("Current" if project_stage == "Delivery / handoff" else "Pending")},
+        {"step": "7", "name": "Post-delivery follow-up", "state": "Current" if project_stage == "Post-delivery follow-up" else "Pending"},
+    ]
+
+    blockers = []
+    if not has_dataset:
+        blockers.append("Pilot dataset or real upload evidence is missing.")
+    if not has_reliability:
+        blockers.append("Reliability calibration has not been generated yet.")
+    if privacy_status == "Missing privacy decision":
+        blockers.append("Customer must choose private-only or opt-in data learning mode.")
+    if project_stage in ["Checkout / payment readiness", "Delivery / handoff"] and payment_status in ["Manual review needed", "Waiting for customer approval"]:
+        blockers.append("Commercial/payment approval is not complete.")
+    if project_stage in ["Delivery / handoff", "Post-delivery follow-up"] and not has_delivery:
+        blockers.append("Delivery bundle/handoff output is not ready.")
+    if not blockers:
+        blockers.append("No major blocker detected. Keep pilot-only and field-validation disclaimers visible.")
+
+    required_customer_inputs = []
+    if not customer_inputs_complete:
+        required_customer_inputs.append("Confirm use-case, labels/classes, available sensors and data status.")
+    if privacy_status == "Missing privacy decision":
+        required_customer_inputs.append("Choose a data mode: private only or feature-learning opt-in.")
+    if not has_real_upload:
+        required_customer_inputs.append("Optional: upload real WAV/CSV samples to improve matching and readiness evidence.")
+    if payment_status in ["Waiting for customer approval", "Payment/invoice ready"]:
+        required_customer_inputs.append("Confirm quote/SOW or invoice details before paid work starts.")
+    if not required_customer_inputs:
+        required_customer_inputs.append("No extra input required right now. Review the next milestone and acceptance criteria.")
+
+    customer_next_actions = [
+        next_milestone or "Review the current status and confirm the next validation step.",
+        "Read the readiness result as pilot guidance, not a production guarantee.",
+        "Use self-service FAQ/support first; escalate only if scope, payment, privacy or production-safety decisions are involved.",
+    ]
+    if not has_reliability:
+        customer_next_actions.insert(0, "Generate or request reliability calibration before relying on the pilot result.")
+    if not has_dataset:
+        customer_next_actions.insert(0, "Generate a pilot dataset or upload real files.")
+
+    founder_actions = []
+    if founder_review_required:
+        founder_actions.append("Approve the next commercial/delivery step before releasing paid output or payment link.")
+    if not has_support:
+        founder_actions.append("Generate Support Autopilot V71 to reduce repeated customer questions.")
+    if not has_outcome:
+        founder_actions.append("Generate Outcome Assurance V70 so delivery expectations are clear.")
+    if not has_reliability:
+        founder_actions.append("Generate Reliability Calibration V67 before strong readiness language.")
+    if not founder_actions:
+        founder_actions.append("No manual action needed except final approval gates. Keep the route self-service.")
+
+    do_not_handle_manually = [
+        "Do not answer repeated basic questions manually; point to the status portal and support autopilot.",
+        "Do not start custom analysis before customer inputs, scope and privacy status are clear.",
+        "Do not release paid delivery outputs before acceptance/payment gates are clear.",
+        "Do not make production accuracy, legal, certification or safety guarantees.",
+    ]
+
+    value_delivered = [
+        "A single project status screen instead of scattered tool outputs.",
+        "Clear next action for the customer and clear approval gates for the founder.",
+        "Transparent separation between pilot readiness, delivery, payment and production validation.",
+        "Customer understands what they paid for without needing a long support explanation.",
+    ]
+
+    status_badges = [
+        decision,
+        "Pilot-only",
+        "Field validation required",
+        "Private by default" if privacy_status == "Private only" else privacy_status,
+        "Founder approval gate" if founder_review_required else "Self-service next step",
+    ]
+
+    customer_visible_summary = (
+        f"Current stage: {project_stage}. Package: {customer_plan}. Next milestone: {next_milestone}. "
+        f"This status explains what is ready, what is blocked and what happens next. "
+        "EdgeTwin keeps pilot-readiness separate from production deployment; field validation is required before production claims."
+    )
+
+    safe_claims = [
+        "This page summarizes the current pilot status and the next required action.",
+        "The customer receives a pilot-readiness package with dataset/readiness guidance where available.",
+        "Privacy is private by default unless explicit opt-in is selected.",
+        "Production deployment still requires field validation and customer-specific acceptance tests.",
+    ]
+
+    blocked_promises = [
+        "Guaranteed production accuracy or zero false alarms.",
+        "Certified safety/security/legal compliance.",
+        "Raw customer data used for global learning by default.",
+        "Fully automated paid delivery without founder approval gates.",
+    ]
+
+    return {
+        "version": "V72",
+        "project_name": project_name,
+        "created_at": _now(),
+        "project_stage": project_stage,
+        "customer_plan": customer_plan,
+        "customer_question": customer_question,
+        "payment_status": payment_status,
+        "privacy_status": privacy_status,
+        "next_milestone": next_milestone,
+        "dataset_rows": dataset_rows,
+        "status_clarity_score": int(status_clarity_score),
+        "evidence_visibility_score": int(evidence_visibility_score),
+        "blocker_score": int(blocker_score),
+        "self_service_score": int(self_service_score),
+        "customer_confidence_score": int(customer_confidence_score),
+        "founder_time_risk": founder_time_risk,
+        "decision": decision,
+        "recommended_next_step": recommended_next_step,
+        "customer_visible_summary": customer_visible_summary,
+        "status_badges": status_badges,
+        "status_cards": status_cards,
+        "timeline": timeline,
+        "blockers": blockers,
+        "required_customer_inputs": required_customer_inputs,
+        "customer_next_actions": customer_next_actions,
+        "founder_actions": founder_actions,
+        "do_not_handle_manually": do_not_handle_manually,
+        "value_delivered": value_delivered,
+        "safe_claims": safe_claims,
+        "blocked_promises": blocked_promises,
+        "disclaimer": "V72 is a customer status and support-reduction tool. It is not legal, privacy, payment, certification, safety or production-performance advice.",
+    }
+
+
+def create_customer_status_portal_v72_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("customer_status_portal_v72.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("status_cards_v72.csv", pd.DataFrame(snapshot.get("status_cards", [])).to_csv(index=False))
+        zf.writestr("timeline_v72.csv", pd.DataFrame(snapshot.get("timeline", [])).to_csv(index=False))
+        zf.writestr("customer_next_actions_v72.txt", "\n".join(snapshot.get("customer_next_actions", [])))
+        zf.writestr("founder_actions_v72.txt", "\n".join(snapshot.get("founder_actions", [])))
+        zf.writestr("blockers_v72.txt", "\n".join(snapshot.get("blockers", [])))
+        zf.writestr("blocked_promises_v72.txt", "\n".join(snapshot.get("blocked_promises", [])))
+        zf.writestr("README.txt", "EdgeTwin Studio V72 Customer Status Portal bundle. Customer-safe status summary only; field validation required before production use.\n")
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Customer Status Portal V72", height=10)
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Project: {project_name}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Status clarity: {snapshot.get('status_clarity_score')}%")
+        safe_pdf_cell(pdf, f"Customer confidence: {snapshot.get('customer_confidence_score')}%")
+        safe_pdf_cell(pdf, f"Founder time risk: {snapshot.get('founder_time_risk')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Customer-safe summary")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, snapshot.get("customer_visible_summary", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Next actions")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("customer_next_actions", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Blockers")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("blockers", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("customer_status_portal_v72.pdf", safe_pdf_output(pdf))
+
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V73 — Unified Customer Journey / One-Page Value Cockpit
+# ============================================================
+
+def _v73_bool_score(value, points):
+    return points if bool(value) else 0
+
+
+def _v73_snapshot_present(snapshots, key):
+    val = (snapshots or {}).get(key)
+    return isinstance(val, dict) and bool(val)
+
+
+def build_unified_customer_journey_v73(
+    project_name,
+    dataset_df=None,
+    snapshots=None,
+    use_case="Predictive maintenance / acoustic-vibration pilot",
+    customer_stage="Readiness review",
+    customer_data_status="Synthetic pilot only",
+    commercial_status="Qualified lead",
+    privacy_status="Private only",
+    founder_touch_target_minutes=15,
+):
+    """Build one customer-facing cockpit from the deeper EdgeTwin workflow.
+
+    V73 is a simplification layer: it turns the many internal modules into a
+    calm route for the customer while preserving reliability, privacy, payment,
+    delivery and founder-approval gates.
+    """
+    snapshots = snapshots or {}
+    dataset_rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+
+    has_dataset = dataset_rows > 0 or customer_data_status in ["Synthetic pilot only", "Some real WAV/CSV samples", "Real data uploaded and inspected", "Field/hardware evidence available"]
+    has_real_data = customer_data_status in ["Some real WAV/CSV samples", "Real data uploaded and inspected", "Field/hardware evidence available"] or _v73_snapshot_present(snapshots, "real_upload_v56")
+    has_field_evidence = customer_data_status == "Field/hardware evidence available"
+    has_reliability = _v73_snapshot_present(snapshots, "reliability_calibration_v67")
+    has_privacy = privacy_status != "Missing privacy decision" and (_v73_snapshot_present(snapshots, "field_learning_v52") or privacy_status in ["Private only", "Feature learning allowed"])
+    has_zero_touch = _v73_snapshot_present(snapshots, "zero_touch_v69")
+    has_outcome = _v73_snapshot_present(snapshots, "outcome_assurance_v70")
+    has_support = _v73_snapshot_present(snapshots, "customer_support_v71")
+    has_status = _v73_snapshot_present(snapshots, "customer_status_v72")
+    has_roi = _v73_snapshot_present(snapshots, "roi_value_v62")
+    has_proposal = _v73_snapshot_present(snapshots, "proposal_sow")
+    has_checkout = _v73_snapshot_present(snapshots, "checkout_v57") or commercial_status in ["Quote/SOW ready", "Payment pending", "Paid / approved"]
+    has_delivery = _v73_snapshot_present(snapshots, "delivery") or customer_stage in ["Paid pilot / delivery", "Post-delivery follow-up"]
+
+    stage_points = {
+        "Just exploring": 6,
+        "Pilot dataset needed": 10,
+        "Readiness review": 14,
+        "Proposal requested": 16,
+        "Paid pilot / delivery": 18,
+        "Post-delivery follow-up": 20,
+    }.get(customer_stage, 10)
+
+    journey_clarity_score = min(100, max(0,
+        30 + stage_points
+        + _v73_bool_score(has_zero_touch, 12)
+        + _v73_bool_score(has_status, 14)
+        + _v73_bool_score(has_outcome, 12)
+        + _v73_bool_score(has_support, 10)
+        + _v73_bool_score(bool(use_case.strip()), 8)
+    ))
+
+    value_clarity_score = min(100, max(0,
+        28
+        + _v73_bool_score(has_roi, 16)
+        + _v73_bool_score(has_dataset, 14)
+        + _v73_bool_score(has_reliability, 14)
+        + _v73_bool_score(has_proposal or commercial_status in ["Proposal requested", "Quote/SOW ready"], 10)
+        + _v73_bool_score(has_outcome, 10)
+        + _v73_bool_score(commercial_status not in ["Free demo"], 8)
+    ))
+
+    trust_gate_score = min(100, max(0,
+        26
+        + _v73_bool_score(has_privacy, 16)
+        + _v73_bool_score(has_reliability, 16)
+        + _v73_bool_score(has_real_data, 10)
+        + _v73_bool_score(has_support, 8)
+        + _v73_bool_score(has_checkout or commercial_status in ["Free demo", "Qualified lead", "Proposal requested"], 8)
+        + _v73_bool_score(has_field_evidence, 10)
+        - (20 if privacy_status == "Missing privacy decision" else 0)
+        - (10 if privacy_status == "Raw data permission requested" else 0)
+    ))
+
+    founder_time_shield_score = min(100, max(0,
+        35
+        + _v73_bool_score(has_zero_touch, 14)
+        + _v73_bool_score(has_status, 12)
+        + _v73_bool_score(has_support, 14)
+        + _v73_bool_score(has_outcome, 10)
+        + _v73_bool_score(founder_touch_target_minutes <= 15, 8)
+        + _v73_bool_score(commercial_status not in ["Free demo"], 7)
+    ))
+
+    overall_score = int(round(
+        journey_clarity_score * 0.30
+        + value_clarity_score * 0.25
+        + trust_gate_score * 0.25
+        + founder_time_shield_score * 0.20
+    ))
+
+    hard_blockers = []
+    if not has_dataset:
+        hard_blockers.append("No pilot dataset or upload evidence exists yet.")
+    if privacy_status == "Missing privacy decision":
+        hard_blockers.append("Privacy mode is not chosen.")
+    if customer_stage in ["Readiness review", "Proposal requested", "Paid pilot / delivery", "Post-delivery follow-up"] and not has_reliability:
+        hard_blockers.append("Reliability calibration is missing before strong readiness language.")
+    if customer_stage in ["Paid pilot / delivery", "Post-delivery follow-up"] and commercial_status not in ["Paid / approved", "Payment pending", "Quote/SOW ready"]:
+        hard_blockers.append("Commercial approval/payment status is not clear for delivery.")
+
+    if overall_score >= 88 and not hard_blockers and founder_touch_target_minutes <= 15:
+        decision = "ZERO-TOUCH CUSTOMER GO"
+        founder_time_risk = "Low"
+        recommended_next_step = "Let the customer continue through the self-service cockpit. Keep founder approval only for payment, delivery release, privacy exceptions and production claims."
+    elif overall_score >= 74 and len(hard_blockers) <= 1:
+        decision = "ASSISTED CUSTOMER GO"
+        founder_time_risk = "Medium"
+        recommended_next_step = "Show the unified cockpit, but require one founder review before proposal/payment/delivery or stronger readiness claims."
+    elif hard_blockers:
+        decision = "CUSTOMER INPUT NEEDED"
+        founder_time_risk = "Medium"
+        recommended_next_step = "Ask only for the missing inputs listed below. Do not start custom manual work until these are resolved."
+    else:
+        decision = "FOUNDER REVIEW REQUIRED"
+        founder_time_risk = "High"
+        recommended_next_step = "Do not present this as self-service yet. Simplify the route and fix missing value, privacy, reliability or support gates."
+
+    journey_steps = [
+        {"step": "1", "name": "Define problem", "customer_view": "Choose use-case and sensors", "state": "Done" if use_case else "Needs input", "hidden_engine": "Use-case defaults and sensor templates"},
+        {"step": "2", "name": "Create pilot", "customer_view": "Generate/upload data", "state": "Done" if has_dataset else "Current", "hidden_engine": "Dataset generator + upload inspector"},
+        {"step": "3", "name": "Review trust", "customer_view": "Readiness + privacy status", "state": "Done" if has_reliability and has_privacy else "Needs review", "hidden_engine": "Reliability calibration + privacy learning gate"},
+        {"step": "4", "name": "Understand value", "customer_view": "What they get for the money", "state": "Done" if has_roi or commercial_status != "Free demo" else "Optional", "hidden_engine": "ROI/value proof + safe claims"},
+        {"step": "5", "name": "Handoff / proposal", "customer_view": "Download, request proposal or continue delivery", "state": "Ready" if has_outcome or has_proposal or has_checkout else "Pending", "hidden_engine": "Outcome assurance + SOW + checkout gates"},
+    ]
+
+    hidden_engine_checks = [
+        {"check": "Dataset availability", "status": "OK" if has_dataset else "Missing", "customer_visible": "Pilot package status"},
+        {"check": "Real upload evidence", "status": "Available" if has_real_data else "Optional", "customer_visible": "Better matching if real samples are uploaded"},
+        {"check": "Reliability calibration", "status": "OK" if has_reliability else "Missing", "customer_visible": "Readiness confidence"},
+        {"check": "Privacy mode", "status": privacy_status, "customer_visible": "Private by default"},
+        {"check": "Value/ROI proof", "status": "OK" if has_roi else "Not generated", "customer_visible": "Why this is worth paying for"},
+        {"check": "Support autopilot", "status": "OK" if has_support else "Recommended", "customer_visible": "Self-service FAQ"},
+        {"check": "Commercial gate", "status": commercial_status, "customer_visible": "Proposal/payment readiness"},
+    ]
+
+    missing_inputs = []
+    if not use_case.strip():
+        missing_inputs.append("Choose the customer problem/use-case.")
+    if not has_dataset:
+        missing_inputs.append("Generate a pilot dataset or upload WAV/CSV samples.")
+    if not has_reliability:
+        missing_inputs.append("Run Reliability Calibration V67 before customer-facing readiness claims.")
+    if privacy_status == "Missing privacy decision":
+        missing_inputs.append("Choose Private only or explicit feature-learning opt-in.")
+    if commercial_status in ["Proposal requested", "Quote/SOW ready", "Payment pending"] and not has_proposal:
+        missing_inputs.append("Generate Proposal/SOW V46 before payment or delivery handoff.")
+    if not missing_inputs:
+        missing_inputs.append("No critical customer input missing. Continue through the recommended next step.")
+
+    if not has_dataset:
+        customer_next_actions = ["Generate the pilot package or upload WAV/CSV samples.", "Then review the readiness result before requesting a proposal."]
+    elif not has_reliability:
+        customer_next_actions = ["Run or request reliability calibration.", "Treat the current output as exploratory until readiness has been checked."]
+    elif privacy_status == "Missing privacy decision":
+        customer_next_actions = ["Choose a privacy mode before any real-data learning or delivery decision."]
+    elif commercial_status in ["Qualified lead", "Proposal requested"]:
+        customer_next_actions = ["Review the value summary and request a Proposal/SOW if the scope is correct.", "Upload optional real samples to improve matching."]
+    elif commercial_status in ["Quote/SOW ready", "Payment pending"]:
+        customer_next_actions = ["Confirm scope, invoice/payment details and delivery expectations.", "Do not treat the pilot as production validation yet."]
+    else:
+        customer_next_actions = ["Review the handoff package and acceptance criteria.", "Use support autopilot first; escalate only for scope/privacy/payment/production questions."]
+
+    value_for_money_points = [
+        "A pilot-ready dataset/readiness package instead of starting from a blank sensor idea.",
+        "Reliability and privacy gates that reduce risky overclaiming.",
+        "Hardware/export/delivery guidance bundled into one customer route.",
+        "Clear next steps, support answers and status visibility without endless manual back-and-forth.",
+    ]
+
+    customer_visible_status = [
+        f"Use-case: {use_case}",
+        f"Current stage: {customer_stage}",
+        f"Data status: {customer_data_status}",
+        f"Privacy mode: {privacy_status}",
+        f"Commercial status: {commercial_status}",
+        "Production deployment requires field validation and customer-specific acceptance tests.",
+    ]
+
+    founder_time_shield = [
+        "Do not manually explain the whole product; send the customer to the unified cockpit.",
+        "Only intervene for privacy exceptions, payment/delivery release, custom scope or production-safety language.",
+        "Use support/status/outcome pages before writing custom replies.",
+        f"Target founder time per customer: {founder_touch_target_minutes} minutes before a paid step."
+    ]
+
+    escalation_gates = [
+        "Real raw data permission or sensitive files require explicit review.",
+        "Payment links/invoices require accepted scope and delivery expectations.",
+        "Production claims, certifications, safety/security guarantees require separate field validation and expert review.",
+        "Custom dataset/model work outside the package requires a paid scope change.",
+    ]
+
+    safe_value_claims = [
+        "EdgeTwin creates a pilot-readiness package for sensor/Edge AI exploration.",
+        "Real uploaded samples can improve matching and evidence quality when privacy settings allow it.",
+        "The system separates pilot readiness from production deployment claims.",
+        "Customer value is shown through saved exploration time, clearer scope and reduced uncertainty."
+    ]
+
+    blocked_promises = [
+        "Guaranteed production accuracy or zero false alarms.",
+        "Fully autonomous deployment without field validation.",
+        "Legal, safety, certification or compliance approval.",
+        "Using raw customer data for global learning by default.",
+        "Unlimited custom support or custom scope included in a fixed pilot package.",
+    ]
+
+    status_badges = [
+        decision,
+        f"Overall {overall_score}%",
+        "Simple customer cockpit",
+        "Deep checks hidden",
+        "Private by default" if privacy_status == "Private only" else privacy_status,
+        "Founder shield: " + founder_time_risk,
+    ]
+
+    customer_one_page_summary = (
+        f"EdgeTwin is preparing a {customer_stage.lower()} route for: {use_case}. "
+        f"Data status is {customer_data_status.lower()}, privacy mode is {privacy_status.lower()}, and commercial status is {commercial_status.lower()}. "
+        f"Current decision: {decision}. The next step is: {recommended_next_step} "
+        "This is a pilot-readiness workflow; field validation is required before production use."
+    )
+
+    return {
+        "version": "V73",
+        "project_name": project_name,
+        "created_at": _now(),
+        "use_case": use_case,
+        "customer_stage": customer_stage,
+        "customer_data_status": customer_data_status,
+        "commercial_status": commercial_status,
+        "privacy_status": privacy_status,
+        "dataset_rows": dataset_rows,
+        "journey_clarity_score": int(journey_clarity_score),
+        "value_clarity_score": int(value_clarity_score),
+        "trust_gate_score": int(trust_gate_score),
+        "founder_time_shield_score": int(founder_time_shield_score),
+        "overall_score": int(overall_score),
+        "decision": decision,
+        "founder_time_risk": founder_time_risk,
+        "recommended_next_step": recommended_next_step,
+        "customer_one_page_summary": customer_one_page_summary,
+        "status_badges": status_badges,
+        "journey_steps": journey_steps,
+        "hidden_engine_checks": hidden_engine_checks,
+        "missing_inputs": missing_inputs,
+        "customer_next_actions": customer_next_actions,
+        "value_for_money_points": value_for_money_points,
+        "customer_visible_status": customer_visible_status,
+        "founder_time_shield": founder_time_shield,
+        "escalation_gates": escalation_gates,
+        "safe_value_claims": safe_value_claims,
+        "blocked_promises": blocked_promises,
+        "hard_blockers": hard_blockers,
+        "disclaimer": "V73 is a customer simplification and routing layer. It is not legal, payment, privacy, certification, safety or production-performance advice.",
+    }
+
+
+def create_unified_customer_journey_v73_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("unified_customer_journey_v73.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("journey_steps_v73.csv", pd.DataFrame(snapshot.get("journey_steps", [])).to_csv(index=False))
+        zf.writestr("hidden_engine_checks_v73.csv", pd.DataFrame(snapshot.get("hidden_engine_checks", [])).to_csv(index=False))
+        zf.writestr("customer_one_page_summary_v73.txt", snapshot.get("customer_one_page_summary", ""))
+        zf.writestr("customer_next_actions_v73.txt", "\n".join(snapshot.get("customer_next_actions", [])))
+        zf.writestr("value_for_money_points_v73.txt", "\n".join(snapshot.get("value_for_money_points", [])))
+        zf.writestr("founder_time_shield_v73.txt", "\n".join(snapshot.get("founder_time_shield", [])))
+        zf.writestr("blocked_promises_v73.txt", "\n".join(snapshot.get("blocked_promises", [])))
+        zf.writestr("README.txt", "EdgeTwin Studio V73 Unified Customer Journey bundle. Customer-facing simplification layer; field validation required before production use.\n")
+
+        email = f"""Subject: Your EdgeTwin pilot route and next step
+
+Hi,
+
+Your EdgeTwin project status is ready in one simple view.
+
+Current decision: {snapshot.get('decision')}
+Next step: {snapshot.get('recommended_next_step')}
+
+What this package gives you:
+{chr(10).join('- ' + x for x in snapshot.get('value_for_money_points', []))}
+
+Important: this is a pilot-readiness workflow. Field validation is required before production deployment or accuracy/safety claims.
+
+Best regards,
+EdgeTwin Studio
+"""
+        zf.writestr("customer_email_draft_v73.txt", email)
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Unified Customer Journey V73", height=10)
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Project: {project_name}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Overall score: {snapshot.get('overall_score')}%")
+        safe_pdf_cell(pdf, f"Founder time risk: {snapshot.get('founder_time_risk')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Customer summary")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, snapshot.get("customer_one_page_summary", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Next actions")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("customer_next_actions", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Value for money")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("value_for_money_points", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Blocked promises")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("blocked_promises", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("unified_customer_journey_v73.pdf", safe_pdf_output(pdf))
+
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V74 — End-to-End Quality Guardian / Self-Test & Failure Recovery
+# ============================================================
+
+def build_end_to_end_quality_guardian_v74(
+    project_name="EdgeTwin_Project",
+    dataset_df=None,
+    snapshots=None,
+    bundle_presence=None,
+    launch_target="Paid pilot launch",
+    automation_level="Zero-touch customer route",
+    test_depth="Launch-critical",
+    expected_pages=None,
+    workspace_mode="Customer Mode",
+):
+    snapshots = snapshots or {}
+    bundle_presence = bundle_presence or {}
+    expected_pages = expected_pages or []
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+
+    dataset_rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+    has_dataset = dataset_rows > 0
+    has_labels = bool(has_dataset and "Label" in dataset_df.columns)
+    label_count = int(dataset_df["Label"].nunique()) if has_labels else 0
+
+    required_snapshots = [
+        ("Customer Journey V73", "customer_journey_v73"),
+        ("Customer Status V72", "customer_status_v72"),
+        ("Support Autopilot V71", "customer_support_v71"),
+        ("Outcome Assurance V70", "outcome_assurance_v70"),
+        ("Zero-Touch Value V69", "zero_touch_v69"),
+        ("Automation V68", "automation_orchestrator_v68"),
+        ("Reliability Calibration V67", "reliability_calibration_v67"),
+        ("Privacy Learning V52", "field_learning_v52"),
+        ("Real Upload V56", "real_upload_v56"),
+        ("Checkout V57", "checkout_v57"),
+        ("Pricing Offer", "pricing_offer"),
+        ("Proposal/SOW", "proposal_sow"),
+    ]
+    optional_snapshots = [
+        ("Commercial Release V60", "commercial_release_v60"),
+        ("Launch Stabilizer V60.1", "launch_stabilization_v60_1"),
+        ("Cloud Architecture V58", "cloud_architecture_v58"),
+        ("Hardware Reference V59", "hardware_reference_v59"),
+        ("Delivery Portal", "customer_delivery"),
+        ("Improvement Flywheel V66", "continuous_improvement_v66"),
+    ]
+
+    required_present = sum(1 for _, key in required_snapshots if isinstance(snapshots.get(key), dict) and snapshots.get(key))
+    optional_present = sum(1 for _, key in optional_snapshots if isinstance(snapshots.get(key), dict) and snapshots.get(key))
+    required_score = int(round(100 * required_present / max(1, len(required_snapshots))))
+    optional_score = int(round(100 * optional_present / max(1, len(optional_snapshots))))
+
+    bundle_ready = sum(1 for v in bundle_presence.values() if bool(v))
+    bundle_score = int(round(100 * bundle_ready / max(1, len(bundle_presence)))) if bundle_presence else 45
+
+    page_coverage = 100 if len(expected_pages) >= 35 else (85 if len(expected_pages) >= 20 else 65)
+    if "quality_guardian_v74_tab" in expected_pages:
+        page_coverage = min(100, page_coverage + 3)
+
+    # Safety gates are intentionally stricter than plain feature presence.
+    privacy_present = isinstance(snapshots.get("field_learning_v52"), dict) and bool(snapshots.get("field_learning_v52"))
+    checkout_present = isinstance(snapshots.get("checkout_v57"), dict) and bool(snapshots.get("checkout_v57"))
+    proposal_present = isinstance(snapshots.get("proposal_sow"), dict) and bool(snapshots.get("proposal_sow"))
+    reliability_present = isinstance(snapshots.get("reliability_calibration_v67"), dict) and bool(snapshots.get("reliability_calibration_v67"))
+    outcome_present = isinstance(snapshots.get("outcome_assurance_v70"), dict) and bool(snapshots.get("outcome_assurance_v70"))
+    support_present = isinstance(snapshots.get("customer_support_v71"), dict) and bool(snapshots.get("customer_support_v71"))
+    zero_touch_present = isinstance(snapshots.get("zero_touch_v69"), dict) and bool(snapshots.get("zero_touch_v69"))
+
+    safety_gate_score = 35
+    safety_gate_score += 12 if privacy_present else 0
+    safety_gate_score += 10 if reliability_present else 0
+    safety_gate_score += 9 if checkout_present else 0
+    safety_gate_score += 8 if proposal_present else 0
+    safety_gate_score += 8 if outcome_present else 0
+    safety_gate_score += 6 if support_present else 0
+    safety_gate_score += 5 if zero_touch_present else 0
+    safety_gate_score = int(min(100, safety_gate_score))
+
+    dataset_score = 40
+    if has_dataset:
+        dataset_score += 25
+    if has_labels and label_count >= 2:
+        dataset_score += 20
+    if dataset_rows >= 250:
+        dataset_score += 10
+    if isinstance(snapshots.get("real_upload_v56"), dict) and snapshots.get("real_upload_v56"):
+        dataset_score += 5
+    dataset_score = int(min(100, dataset_score))
+
+    route_integrity_score = int(round(0.45 * required_score + 0.25 * page_coverage + 0.15 * optional_score + 0.15 * bundle_score))
+    recovery_score = int(round(0.35 * safety_gate_score + 0.25 * route_integrity_score + 0.20 * bundle_score + 0.20 * dataset_score))
+    quality_score = int(round(0.35 * route_integrity_score + 0.30 * safety_gate_score + 0.20 * dataset_score + 0.15 * recovery_score))
+
+    hard_blockers = []
+    if launch_target in ["Paid pilot launch", "Public SaaS preview", "Enterprise/on-prem evaluation"] and not privacy_present:
+        hard_blockers.append("Privacy Learning V52 has not been generated; keep real customer data private and do not allow learning claims yet.")
+    if launch_target in ["Paid pilot launch", "Public SaaS preview", "Enterprise/on-prem evaluation"] and not checkout_present:
+        hard_blockers.append("Checkout V57 is not generated; do not collect payment or unlock paid downloads yet.")
+    if launch_target in ["Paid pilot launch", "Enterprise/on-prem evaluation"] and not proposal_present:
+        hard_blockers.append("Proposal/SOW V46 is not generated; paid work needs explicit scope before delivery.")
+    if not reliability_present:
+        hard_blockers.append("Reliability Calibration V67 is missing; do not show strong readiness claims yet.")
+    if launch_target == "Public SaaS preview" and not isinstance(snapshots.get("cloud_architecture_v58"), dict):
+        hard_blockers.append("Cloud Architecture V58 is not generated; public SaaS should stay gated until storage/backend risks are clear.")
+    if not has_dataset and test_depth in ["Full customer journey", "Launch-critical"]:
+        hard_blockers.append("No dataset is loaded; generate a pilot dataset or upload customer files before delivery checks.")
+
+    if hard_blockers:
+        decision = "CONDITIONAL PASS" if quality_score >= 72 else "HOLD LAUNCH"
+    else:
+        decision = "SELF-TEST PASS" if quality_score >= 86 else ("CONDITIONAL PASS" if quality_score >= 68 else "HOLD LAUNCH")
+
+    quality_checks = []
+    for label, key in required_snapshots:
+        present = isinstance(snapshots.get(key), dict) and bool(snapshots.get(key))
+        quality_checks.append({
+            "area": label,
+            "status": "OK" if present else "Missing",
+            "severity": "high" if not present and key in ["field_learning_v52", "checkout_v57", "reliability_calibration_v67"] else ("medium" if not present else "info"),
+            "recovery": "Generate this module before customer-facing launch." if not present else "No action required.",
+        })
+    quality_checks.extend([
+        {"area": "Dataset", "status": "OK" if has_dataset else "Missing", "severity": "medium" if not has_dataset else "info", "recovery": "Generate a pilot dataset or upload WAV/CSV samples." if not has_dataset else "No action required."},
+        {"area": "Labels", "status": "OK" if label_count >= 2 else "Weak/missing", "severity": "medium" if label_count < 2 else "info", "recovery": "Use at least two meaningful classes for classifier-ready outputs." if label_count < 2 else "No action required."},
+        {"area": "Bundles", "status": "OK" if bundle_score >= 60 else "Incomplete", "severity": "medium" if bundle_score < 60 else "info", "recovery": "Regenerate customer bundles after running critical modules."},
+        {"area": "Navigation", "status": "OK" if page_coverage >= 90 else "Needs review", "severity": "low" if page_coverage >= 90 else "medium", "recovery": "Check that Customer Mode and Founder Mode pages are reachable."},
+    ])
+
+    must_fix_first = []
+    if hard_blockers:
+        must_fix_first.extend(hard_blockers)
+    if bundle_score < 55:
+        must_fix_first.append("Regenerate the main customer bundles so downloads are not stale or missing.")
+    if support_present is False and automation_level in ["Zero-touch customer route", "Public self-service"]:
+        must_fix_first.append("Generate Support Autopilot V71 before relying on self-service customers.")
+    if not must_fix_first:
+        must_fix_first.append("No launch-blocking issue found for a controlled paid pilot route. Keep founder approval for privacy/payment/delivery gates.")
+
+    do_not_expose_yet = []
+    if not privacy_present:
+        do_not_expose_yet.append("Any claim that customer data improves the global engine.")
+    if not reliability_present:
+        do_not_expose_yet.append("Any claim of calibrated readiness or production confidence.")
+    if not checkout_present:
+        do_not_expose_yet.append("Paid download unlocks or automatic checkout.")
+    if launch_target == "Public SaaS preview":
+        do_not_expose_yet.append("Unlimited public signup/self-service without external monitoring, backups, payment controls and terms review.")
+    if not do_not_expose_yet:
+        do_not_expose_yet.append("Production accuracy guarantees, certification claims and zero false-alarm promises remain blocked even after this pass.")
+
+    auto_recovery_actions = [
+        "If a required snapshot is missing, route the founder/customer to the exact module instead of showing a broken final status.",
+        "If dataset or labels are missing, send the customer to Create Pilot or Real Upload before delivery/download claims.",
+        "If privacy is missing, force Private only as the safe default and block field-learning language.",
+        "If payment scope is missing, block checkout and show Proposal/SOW first.",
+        "If support readiness is missing, show the support FAQ and keep founder escalation only for real exceptions.",
+    ]
+
+    founder_approval_gates = [
+        "Raw customer data permission or sensitive uploads.",
+        "Payment collection / paid download unlock.",
+        "Custom scope outside the selected pilot package.",
+        "Production, safety, security, certification or legal/compliance language.",
+        "Public SaaS launch beyond controlled beta access.",
+    ]
+
+    failure_recovery_playbook = [
+        "Run V74 before public demos and after every major version upload.",
+        "If V74 says HOLD LAUNCH, fix hard blockers before sharing with customers.",
+        "If V74 says CONDITIONAL PASS, allow controlled founder-reviewed demos only.",
+        "If V74 says SELF-TEST PASS, still keep field validation and legal/payment/security disclaimers in place.",
+        "After every customer pilot, feed feedback into V66 Improvement Flywheel and V61 Traction Proof.",
+    ]
+
+    safe_claims = [
+        "EdgeTwin provides a guided pilot-readiness workflow for sensor and Edge AI use-cases.",
+        "The system checks dataset quality, privacy mode, readiness evidence, delivery status and commercial gates before handoff.",
+        "Customer Mode hides complexity while founder approval remains available for risky steps.",
+        "Real uploaded samples can improve project evidence when handled under the selected privacy mode.",
+    ]
+    blocked_promises = [
+        "Guaranteed production accuracy or zero false alarms.",
+        "Certification, legal, safety or compliance approval.",
+        "Using raw customer data for global learning by default.",
+        "Fully autonomous public SaaS operation without monitoring, backups, terms, billing and security review.",
+        "Unlimited support or unlimited custom model work in a fixed pilot bundle.",
+    ]
+
+    recommended_next_step = (
+        "Safe for a controlled paid pilot route. Keep founder approval on privacy/payment/delivery gates."
+        if decision == "SELF-TEST PASS" else
+        "Fix the must-fix list, regenerate stale bundles, then rerun V74 before exposing this route externally."
+        if decision == "CONDITIONAL PASS" else
+        "Hold external launch. Complete the hard blockers first."
+    )
+
+    status_badges = [
+        decision,
+        f"Quality {quality_score}%",
+        f"Route {route_integrity_score}%",
+        f"Safety {safety_gate_score}%",
+        f"Dataset {dataset_score}%",
+        f"Bundles {bundle_score}%",
+        "Founder approval required",
+    ]
+
+    customer_safe_copy = (
+        "EdgeTwin checks your pilot route before delivery: data availability, readiness evidence, privacy mode, support status, payment/scope gates and next steps. "
+        "This protects the customer from unclear outputs and protects the founder from manual support overload. "
+        "It remains a pilot-readiness workflow; field validation is required before production deployment."
+    )
+
+    return {
+        "version": "V74",
+        "project_name": project_name,
+        "created_at": _now(),
+        "launch_target": launch_target,
+        "automation_level": automation_level,
+        "test_depth": test_depth,
+        "workspace_mode": workspace_mode,
+        "dataset_rows": dataset_rows,
+        "label_count": label_count,
+        "required_snapshot_score": int(required_score),
+        "optional_snapshot_score": int(optional_score),
+        "bundle_score": int(bundle_score),
+        "page_coverage_score": int(page_coverage),
+        "dataset_score": int(dataset_score),
+        "route_integrity_score": int(route_integrity_score),
+        "safety_gate_score": int(safety_gate_score),
+        "recovery_score": int(recovery_score),
+        "quality_score": int(quality_score),
+        "decision": decision,
+        "recommended_next_step": recommended_next_step,
+        "status_badges": status_badges,
+        "quality_checks": quality_checks,
+        "hard_blockers": hard_blockers,
+        "must_fix_first": must_fix_first,
+        "do_not_expose_yet": do_not_expose_yet,
+        "auto_recovery_actions": auto_recovery_actions,
+        "founder_approval_gates": founder_approval_gates,
+        "failure_recovery_playbook": failure_recovery_playbook,
+        "safe_claims": safe_claims,
+        "blocked_promises": blocked_promises,
+        "customer_safe_copy": customer_safe_copy,
+        "disclaimer": "V74 improves launch reliability and failure recovery, but does not replace field validation, external legal/security/payment review or production monitoring.",
+    }
+
+
+def create_quality_guardian_v74_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("quality_guardian_v74.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("quality_checks_v74.csv", pd.DataFrame(snapshot.get("quality_checks", [])).to_csv(index=False))
+        zf.writestr("must_fix_first_v74.txt", "\n".join(snapshot.get("must_fix_first", [])))
+        zf.writestr("do_not_expose_yet_v74.txt", "\n".join(snapshot.get("do_not_expose_yet", [])))
+        zf.writestr("auto_recovery_actions_v74.txt", "\n".join(snapshot.get("auto_recovery_actions", [])))
+        zf.writestr("founder_approval_gates_v74.txt", "\n".join(snapshot.get("founder_approval_gates", [])))
+        zf.writestr("failure_recovery_playbook_v74.txt", "\n".join(snapshot.get("failure_recovery_playbook", [])))
+        zf.writestr("customer_safe_copy_v74.txt", snapshot.get("customer_safe_copy", ""))
+        zf.writestr("blocked_promises_v74.txt", "\n".join(snapshot.get("blocked_promises", [])))
+        zf.writestr("README.txt", "EdgeTwin Studio V74 Quality Guardian bundle. Use before customer-facing launch or paid pilot delivery. Field validation required before production use.\n")
+
+        email = f"""Subject: EdgeTwin quality gate status
+
+Hi,
+
+The EdgeTwin quality guardian has checked this pilot route.
+
+Decision: {snapshot.get('decision')}
+Quality score: {snapshot.get('quality_score')}%
+Recommended next step: {snapshot.get('recommended_next_step')}
+
+Important: this is a pilot-readiness workflow. Production deployment requires field validation and customer-specific acceptance testing.
+
+Best regards,
+EdgeTwin Studio
+"""
+        zf.writestr("customer_quality_status_email_v74.txt", email)
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Quality Guardian V74", height=10)
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Project: {project_name}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Quality score: {snapshot.get('quality_score')}%")
+        safe_pdf_cell(pdf, f"Route integrity: {snapshot.get('route_integrity_score')}%")
+        safe_pdf_cell(pdf, f"Safety gates: {snapshot.get('safety_gate_score')}%")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Recommended next step")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, snapshot.get("recommended_next_step", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Must fix first")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("must_fix_first", [])[:10]:
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Founder approval gates")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("founder_approval_gates", [])[:10]:
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Blocked promises")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("blocked_promises", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("quality_guardian_v74.pdf", safe_pdf_output(pdf))
+
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V75 — Deliverable QA & Value Lock / Customer Output Assurance
+# ============================================================
+
+def build_deliverable_qa_value_lock_v75(
+    project_name="EdgeTwin_Project",
+    dataset_df=None,
+    snapshots=None,
+    bundle_presence=None,
+    package_type="Professional Pilot Bundle",
+    delivery_stage="Pre-delivery",
+    customer_visibility="Customer summary only",
+):
+    snapshots = snapshots or {}
+    bundle_presence = bundle_presence or {}
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+
+    dataset_rows = int(len(dataset_df))
+    has_dataset = dataset_rows > 0
+    has_labels = bool(has_dataset and "Label" in dataset_df.columns)
+    label_count = int(dataset_df["Label"].nunique()) if has_labels else 0
+    numeric_cols = [c for c in dataset_df.columns if c != "Label" and pd.api.types.is_numeric_dtype(dataset_df[c])] if has_dataset else []
+
+    critical = {
+        "Quality Guardian V74": "quality_guardian_v74",
+        "Customer Journey V73": "customer_journey_v73",
+        "Customer Status V72": "customer_status_v72",
+        "Outcome Assurance V70": "outcome_assurance_v70",
+        "Support Autopilot V71": "customer_support_v71",
+        "Reliability Calibration V67": "reliability_calibration_v67",
+        "Privacy Learning V52": "field_learning_v52",
+        "Pricing Offer": "pricing_offer",
+        "Proposal/SOW": "proposal_sow",
+    }
+    optional = {
+        "Real Upload V56": "real_upload_v56",
+        "Checkout V57": "checkout_v57",
+        "ROI Value V62": "roi_value_v62",
+        "Delivery Portal": "delivery",
+        "Zero-Touch Value V69": "zero_touch_v69",
+        "Automation V68": "automation_orchestrator_v68",
+    }
+    critical_present = sum(1 for key in critical.values() if isinstance(snapshots.get(key), dict) and bool(snapshots.get(key)))
+    optional_present = sum(1 for key in optional.values() if isinstance(snapshots.get(key), dict) and bool(snapshots.get(key)))
+    critical_score = int(round(100 * critical_present / max(1, len(critical))))
+    optional_score = int(round(100 * optional_present / max(1, len(optional))))
+
+    bundle_ready = sum(1 for ok in bundle_presence.values() if bool(ok))
+    bundle_score = int(round(100 * bundle_ready / max(1, len(bundle_presence)))) if bundle_presence else 45
+
+    dataset_quality = 35
+    if has_dataset:
+        dataset_quality += 22
+    if has_labels and label_count >= 2:
+        dataset_quality += 18
+    if len(numeric_cols) >= 4:
+        dataset_quality += 10
+    if dataset_rows >= 250:
+        dataset_quality += 8
+    if dataset_rows >= 1000:
+        dataset_quality += 4
+    dataset_quality = int(min(100, dataset_quality))
+
+    # Extract existing evidence scores when available, but stay robust with older snapshots.
+    reliability_score = _snapshot_score(snapshots.get("reliability_calibration_v67"), "calibration_score", "quality_score", "reliability_score", default=0) or 0
+    quality_guardian_score = _snapshot_score(snapshots.get("quality_guardian_v74"), "quality_score", default=0) or 0
+    journey_score = _snapshot_score(snapshots.get("customer_journey_v73"), "customer_clarity_score", "journey_score", "quality_score", default=0) or 0
+    outcome_score = _snapshot_score(snapshots.get("outcome_assurance_v70"), "outcome_score", "quality_score", "delivery_score", default=0) or 0
+    privacy_score = _snapshot_score(snapshots.get("field_learning_v52"), "privacy_score", "quality_score", default=0) or 0
+    value_score = _snapshot_score(snapshots.get("roi_value_v62"), "roi_score", "value_score", "quality_score", default=0) or 0
+
+    evidence_score = int(round(0.35 * max(reliability_score, dataset_quality) + 0.25 * quality_guardian_score + 0.20 * critical_score + 0.20 * bundle_score))
+    value_clarity_score = int(round(0.35 * max(value_score, journey_score) + 0.25 * outcome_score + 0.20 * critical_score + 0.20 * bundle_score))
+    safety_score = int(round(0.35 * max(privacy_score, 55) + 0.25 * quality_guardian_score + 0.20 * critical_score + 0.20 * optional_score))
+    delivery_quality_score = int(round(0.30 * dataset_quality + 0.25 * evidence_score + 0.20 * value_clarity_score + 0.15 * safety_score + 0.10 * bundle_score))
+
+    hard_blocks = []
+    if delivery_stage in ["Pre-payment", "Pre-delivery", "Post-delivery review"] and not isinstance(snapshots.get("proposal_sow"), dict):
+        hard_blocks.append("Proposal/SOW is missing; do not deliver paid work without explicit scope.")
+    if delivery_stage in ["Pre-payment", "Pre-delivery"] and not isinstance(snapshots.get("pricing_offer"), dict):
+        hard_blocks.append("Pricing Offer is missing; customer value and price are not aligned yet.")
+    if delivery_stage == "Pre-delivery" and not isinstance(snapshots.get("quality_guardian_v74"), dict):
+        hard_blocks.append("Quality Guardian V74 is missing; run the end-to-end self-test before delivery.")
+    if not isinstance(snapshots.get("field_learning_v52"), dict):
+        hard_blocks.append("Privacy Learning V52 is missing; default to private-only and avoid customer-data learning claims.")
+    if not isinstance(snapshots.get("reliability_calibration_v67"), dict):
+        hard_blocks.append("Reliability Calibration V67 is missing; avoid calibrated readiness claims.")
+    if not has_dataset and package_type != "Starter Pilot Bundle":
+        hard_blocks.append("No dataset is loaded; generate/upload data before Professional, Real-Data or Enterprise delivery.")
+    if label_count < 2 and package_type in ["Professional Pilot Bundle", "Real-Data Pilot Bundle", "Enterprise / Custom Pilot"]:
+        hard_blocks.append("Dataset has fewer than two labels/classes; classifier-ready delivery is not safe yet.")
+
+    if hard_blocks:
+        decision = "FOUNDER REVIEW" if delivery_quality_score >= 74 else "BLOCK DELIVERY"
+    else:
+        decision = "DELIVERY APPROVED" if delivery_quality_score >= 86 else ("FOUNDER REVIEW" if delivery_quality_score >= 68 else "BLOCK DELIVERY")
+
+    qa_checks = []
+    def _add(area, ok, severity, fix):
+        qa_checks.append({"area": area, "status": "OK" if ok else "Needs attention", "severity": "info" if ok else severity, "fix": "No action required." if ok else fix})
+    _add("Dataset present", has_dataset, "high", "Generate a pilot dataset or upload WAV/CSV samples.")
+    _add("Label coverage", label_count >= 2, "high", "Use at least two meaningful classes before classifier-ready delivery.")
+    _add("Numeric feature coverage", len(numeric_cols) >= 4, "medium", "Extract or generate enough usable signal features.")
+    _add("Reliability calibrated", isinstance(snapshots.get("reliability_calibration_v67"), dict), "high", "Run V67 before strong readiness claims.")
+    _add("Privacy plan present", isinstance(snapshots.get("field_learning_v52"), dict), "high", "Run V52 and keep Private only as the default.")
+    _add("Quality self-test present", isinstance(snapshots.get("quality_guardian_v74"), dict), "high", "Run V74 before paid delivery.")
+    _add("Customer status present", isinstance(snapshots.get("customer_status_v72"), dict), "medium", "Generate V72 so the customer sees clear status and next steps.")
+    _add("Support/self-service present", isinstance(snapshots.get("customer_support_v71"), dict), "medium", "Generate V71 to reduce manual support.")
+    _add("Proposal/SOW present", isinstance(snapshots.get("proposal_sow"), dict), "high", "Generate V46 before paid scope.")
+    _add("Bundles ready", bundle_score >= 55, "medium", "Regenerate stale/missing bundles before customer handoff.")
+
+    fix_before_delivery = hard_blocks[:] or ["No hard blocker found. Recheck after any new upload, scope change or price change."]
+    if bundle_score < 65:
+        fix_before_delivery.append("Regenerate the main customer bundles so delivery is not stale.")
+    if value_clarity_score < 75:
+        fix_before_delivery.append("Run ROI/Value V62 or Customer Journey V73 to make the value clearer for the customer.")
+    if safety_score < 75:
+        fix_before_delivery.append("Run privacy/reliability/quality gates before exposing strong claims or paid download unlocks.")
+
+    do_not_deliver_yet = []
+    if not has_dataset:
+        do_not_deliver_yet.append("Professional/real-data/enterprise dataset package without data.")
+    if label_count < 2:
+        do_not_deliver_yet.append("Classifier-ready claims with fewer than two classes.")
+    if not isinstance(snapshots.get("field_learning_v52"), dict):
+        do_not_deliver_yet.append("Any global learning or raw-data reuse language.")
+    if not isinstance(snapshots.get("proposal_sow"), dict):
+        do_not_deliver_yet.append("Paid delivery without a scope/SOW.")
+    if not do_not_deliver_yet:
+        do_not_deliver_yet.append("Production guarantees, certification claims and zero false alarm promises remain blocked.")
+
+    customer_receives = [
+        "A pilot-ready package matched to the selected use-case and sensor route.",
+        "Dataset/readiness evidence with clear limits and next steps.",
+        "Hardware/deployment direction where available.",
+        "Privacy-safe handling notes and customer-safe claims.",
+        "A clear handoff summary instead of a technical dump.",
+    ]
+    if package_type in ["Real-Data Pilot Bundle", "Enterprise / Custom Pilot"]:
+        customer_receives.append("Real-upload analysis where files/features are available and privacy mode allows it.")
+
+    acceptance_criteria = [
+        "Customer can understand what was generated, what it can be used for and what it cannot be used for.",
+        "Dataset has enough rows, labels and features for the selected pilot level or the gap is explicitly shown.",
+        "Privacy mode is selected and raw customer data is not reused by default.",
+        "Proposal/SOW, pricing and delivery status are aligned before payment or handoff.",
+        "Readiness remains framed as pilot readiness; field validation is required before production deployment.",
+    ]
+    founder_time_shield = [
+        "Do not manually explain missing inputs; route customer to status/support pages.",
+        "Do not accept custom scope without SOW update.",
+        "Do not unlock paid delivery before V75 returns approved or founder-reviewed status.",
+        "Use support FAQ and customer status portal before replying manually.",
+        "Use V66/V74 after any failed delivery attempt instead of patching blindly.",
+    ]
+    safe_claims = [
+        "EdgeTwin produces a pilot-readiness package with dataset, quality checks, privacy handling and delivery guidance.",
+        "The deliverable is checked before handoff so missing evidence, weak labels and unsafe claims are surfaced early.",
+        "Customer Mode keeps the output simple while deeper founder/reliability gates run behind the scenes.",
+    ]
+    blocked_promises = [
+        "Guaranteed production accuracy, zero false alarms or certified safety performance.",
+        "Unlimited support or unlimited custom data/model work inside a fixed pilot package.",
+        "Raw customer data used for global training by default.",
+        "Full public SaaS reliability without cloud monitoring, backups, billing controls and security review.",
+    ]
+    recommended_next_step = (
+        "Deliver the customer package with the V75 summary attached. Keep production and certification claims blocked."
+        if decision == "DELIVERY APPROVED" else
+        "Founder review required: fix the listed gaps or explicitly scope them as customer next steps before delivery."
+        if decision == "FOUNDER REVIEW" else
+        "Block delivery. Generate missing data/evidence/scope/privacy checks, then rerun V75."
+    )
+    status_badges = [
+        decision,
+        f"QA {delivery_quality_score}%",
+        f"Evidence {evidence_score}%",
+        f"Value clarity {value_clarity_score}%",
+        f"Safety {safety_score}%",
+        f"Bundles {bundle_score}%",
+        "Field validation required",
+    ]
+    customer_value_summary = (
+        f"This {package_type} is checked for data quality, evidence, privacy, value clarity, scope/payment readiness and support handoff. "
+        "The goal is a useful pilot package with clear limits, not an unsafe production guarantee."
+    )
+    return {
+        "version": "V75",
+        "project_name": project_name,
+        "created_at": _now(),
+        "package_type": package_type,
+        "delivery_stage": delivery_stage,
+        "customer_visibility": customer_visibility,
+        "dataset_rows": dataset_rows,
+        "label_count": label_count,
+        "numeric_feature_count": len(numeric_cols),
+        "critical_score": int(critical_score),
+        "optional_score": int(optional_score),
+        "bundle_score": int(bundle_score),
+        "dataset_quality_score": int(dataset_quality),
+        "evidence_score": int(evidence_score),
+        "value_clarity_score": int(value_clarity_score),
+        "safety_score": int(safety_score),
+        "delivery_quality_score": int(delivery_quality_score),
+        "decision": decision,
+        "recommended_next_step": recommended_next_step,
+        "status_badges": status_badges,
+        "customer_value_summary": customer_value_summary,
+        "qa_checks": qa_checks,
+        "fix_before_delivery": fix_before_delivery,
+        "do_not_deliver_yet": do_not_deliver_yet,
+        "customer_receives": customer_receives,
+        "acceptance_criteria": acceptance_criteria,
+        "founder_time_shield": founder_time_shield,
+        "safe_claims": safe_claims,
+        "blocked_promises": blocked_promises,
+    }
+
+
+def create_deliverable_qa_v75_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("deliverable_qa_v75.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V75 — Deliverable QA & Value Lock",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Delivery QA: {snapshot.get('delivery_quality_score')}%",
+            f"Evidence: {snapshot.get('evidence_score')}%",
+            f"Value clarity: {snapshot.get('value_clarity_score')}%",
+            "",
+            "## Recommended next step",
+            snapshot.get("recommended_next_step", ""),
+            "",
+            "## Fix before delivery",
+            *[f"- {x}" for x in snapshot.get("fix_before_delivery", [])],
+            "",
+            "## Customer receives",
+            *[f"- {x}" for x in snapshot.get("customer_receives", [])],
+            "",
+            "## Acceptance criteria",
+            *[f"- {x}" for x in snapshot.get("acceptance_criteria", [])],
+            "",
+            "## Blocked promises",
+            *[f"- {x}" for x in snapshot.get("blocked_promises", [])],
+        ]
+        zf.writestr("deliverable_qa_v75_summary.md", "\n".join(summary))
+        checks = pd.DataFrame(snapshot.get("qa_checks", []))
+        if len(checks) > 0:
+            zf.writestr("deliverable_qa_v75_checks.csv", checks.to_csv(index=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V75 - Deliverable QA & Value Lock")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Delivery QA: {snapshot.get('delivery_quality_score')}%")
+        safe_pdf_cell(pdf, f"Value clarity: {snapshot.get('value_clarity_score')}%")
+        safe_pdf_cell(pdf, f"Evidence: {snapshot.get('evidence_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_value_summary", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Fix before delivery")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("fix_before_delivery", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Acceptance criteria")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("acceptance_criteria", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("deliverable_qa_v75.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V76 — Product Consolidation & Flow Simplifier
+# ============================================================
+
+def build_product_consolidation_flow_simplifier_v76(
+    project_name="EdgeTwin_Project",
+    dataset_df=None,
+    snapshots=None,
+    bundle_presence=None,
+    customer_route_style="Guided 5-step route",
+    founder_visibility="Only blockers + next actions",
+    launch_target="Paid pilot launch",
+    complexity_tolerance="Low",
+    max_customer_steps=5,
+    hide_advanced_by_default=True,
+    keep_founder_tools=True,
+):
+    snapshots = snapshots or {}
+    bundle_presence = bundle_presence or {}
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+
+    dataset_rows = int(len(dataset_df))
+    has_dataset = dataset_rows > 0
+    has_labels = bool(has_dataset and "Label" in dataset_df.columns)
+    label_count = int(dataset_df["Label"].nunique()) if has_labels else 0
+    numeric_feature_count = int(len([c for c in dataset_df.columns if c != "Label" and pd.api.types.is_numeric_dtype(dataset_df[c])])) if has_dataset else 0
+
+    core_customer_modules = {
+        "Customer Journey V73": "customer_journey_v73",
+        "Zero-Touch Value V69": "zero_touch_v69",
+        "Real Upload V56": "real_upload_v56",
+        "Reliability Calibration V67": "reliability_calibration_v67",
+        "Privacy Learning V52": "field_learning_v52",
+        "Deliverable QA V75": "deliverable_qa_v75",
+        "Customer Status V72": "customer_status_v72",
+        "Support Autopilot V71": "customer_support_v71",
+        "Outcome Assurance V70": "outcome_assurance_v70",
+    }
+    founder_control_modules = {
+        "Quality Guardian V74": "quality_guardian_v74",
+        "Automation V68": "automation_orchestrator_v68",
+        "Improvement Flywheel V66": "continuous_improvement_v66",
+        "Pricing Offer": "pricing_offer",
+        "Proposal/SOW": "proposal_sow",
+        "Checkout V57": "checkout_v57",
+        "ROI Value V62": "roi_value_v62",
+        "Cloud Architecture V58": "cloud_architecture_v58",
+        "Hardware Reference V59": "hardware_reference_v59",
+        "Commercial Release V60": "commercial_release_v60",
+    }
+
+    customer_present = sum(1 for key in core_customer_modules.values() if isinstance(snapshots.get(key), dict) and bool(snapshots.get(key)))
+    founder_present = sum(1 for key in founder_control_modules.values() if isinstance(snapshots.get(key), dict) and bool(snapshots.get(key)))
+    customer_coverage_score = int(round(100 * customer_present / max(1, len(core_customer_modules))))
+    founder_coverage_score = int(round(100 * founder_present / max(1, len(founder_control_modules))))
+    bundle_score = int(round(100 * sum(1 for ok in bundle_presence.values() if bool(ok)) / max(1, len(bundle_presence)))) if bundle_presence else 45
+
+    data_readiness_score = 35
+    if has_dataset:
+        data_readiness_score += 20
+    if label_count >= 2:
+        data_readiness_score += 20
+    if numeric_feature_count >= 4:
+        data_readiness_score += 10
+    if dataset_rows >= 250:
+        data_readiness_score += 8
+    if dataset_rows >= 1000:
+        data_readiness_score += 5
+    data_readiness_score = int(min(100, data_readiness_score))
+
+    reliability_score = _snapshot_score(snapshots.get("reliability_calibration_v67"), "calibration_score", "quality_score", "reliability_score", default=0) or 0
+    qa_score = _snapshot_score(snapshots.get("deliverable_qa_v75"), "delivery_quality_score", "quality_score", default=0) or 0
+    guardian_score = _snapshot_score(snapshots.get("quality_guardian_v74"), "quality_score", "self_test_score", default=0) or 0
+    journey_score = _snapshot_score(snapshots.get("customer_journey_v73"), "journey_clarity_score", "customer_clarity_score", default=0) or 0
+    automation_score = _snapshot_score(snapshots.get("automation_orchestrator_v68"), "automation_score", "founder_automation_score", default=0) or 0
+
+    simplicity_base = {
+        "Very low": 92,
+        "Low": 86,
+        "Medium": 76,
+        "Technical buyer": 68,
+    }.get(complexity_tolerance, 82)
+    step_penalty = max(0, int(max_customer_steps) - 5) * 5
+    hide_bonus = 8 if hide_advanced_by_default else -10
+    route_bonus = 6 if customer_route_style in ["Guided 5-step route", "Single-page cockpit"] else 0
+    simplicity_score = int(max(30, min(100, simplicity_base + hide_bonus + route_bonus - step_penalty)))
+
+    engine_coverage_score = int(round(0.30 * customer_coverage_score + 0.25 * founder_coverage_score + 0.20 * max(reliability_score, data_readiness_score) + 0.15 * qa_score + 0.10 * bundle_score))
+    founder_automation_score = int(round(0.35 * max(automation_score, 55) + 0.25 * founder_coverage_score + 0.20 * guardian_score + 0.20 * qa_score))
+    consolidation_score = int(round(0.35 * simplicity_score + 0.30 * engine_coverage_score + 0.20 * founder_automation_score + 0.15 * max(journey_score, customer_coverage_score)))
+
+    chaos_points = 0
+    if not hide_advanced_by_default:
+        chaos_points += 25
+    if max_customer_steps > 5:
+        chaos_points += (max_customer_steps - 5) * 8
+    if customer_coverage_score < 55:
+        chaos_points += 15
+    if founder_coverage_score < 45:
+        chaos_points += 10
+    if keep_founder_tools is False:
+        chaos_points += 15
+    if launch_target in ["Public SaaS preview", "Enterprise/on-prem evaluation"] and founder_coverage_score < 70:
+        chaos_points += 15
+    chaos_points = int(min(100, chaos_points))
+    if chaos_points <= 20:
+        chaos_risk = "Low"
+    elif chaos_points <= 45:
+        chaos_risk = "Medium"
+    else:
+        chaos_risk = "High"
+
+    missing_customer = [name for name, key in core_customer_modules.items() if not (isinstance(snapshots.get(key), dict) and bool(snapshots.get(key)))]
+    missing_founder = [name for name, key in founder_control_modules.items() if not (isinstance(snapshots.get(key), dict) and bool(snapshots.get(key)))]
+
+    if chaos_risk == "Low" and consolidation_score >= 86:
+        decision = "CLEAR PRODUCT FLOW GO"
+    elif consolidation_score >= 72:
+        decision = "CONSOLIDATE THEN SELL"
+    else:
+        decision = "SIMPLIFY BEFORE LAUNCH"
+
+    customer_route = [
+        {"step": 1, "name": "Start project", "customer_sees": "Choose the problem and understand what EdgeTwin will deliver.", "hidden_engine": "Lead fit, zero-touch value and safe launch copy."},
+        {"step": 2, "name": "Upload or generate data", "customer_sees": "Upload WAV/CSV or generate a pilot dataset.", "hidden_engine": "Real upload inspection, feature extraction, privacy filtering and dataset doctor checks."},
+        {"step": 3, "name": "Review readiness", "customer_sees": "Readiness score, limits and recommended next step.", "hidden_engine": "Reliability calibration, privacy-safe learning, trust gates and normality checks."},
+        {"step": 4, "name": "Get proposal or bundle", "customer_sees": "Price, scope, deliverables and safe claims.", "hidden_engine": "Pricing, SOW, checkout readiness, ROI value and deliverable QA."},
+        {"step": 5, "name": "Track status and handoff", "customer_sees": "Project status, downloads, support and next actions.", "hidden_engine": "Customer status portal, support autopilot, outcome assurance and quality guardian."},
+    ][:max(3, min(int(max_customer_steps), 5))]
+
+    founder_cockpit_groups = [
+        {"group": "Quality & Trust", "purpose": "Protect reliability, privacy and delivery claims.", "modules": "V52, V67, V74, V75"},
+        {"group": "Commercial", "purpose": "Control price, scope, checkout and customer value.", "modules": "V46, V47, V57, V62"},
+        {"group": "Customer Success", "purpose": "Reduce support and keep customer status clear.", "modules": "V70, V71, V72, V73"},
+        {"group": "Founder Ops", "purpose": "Keep your workload low and automate next actions safely.", "modules": "V49, V66, V68, V69"},
+        {"group": "Strategic Proof", "purpose": "Build evidence for partners, investors or future buyers.", "modules": "V61, V63, V64, V65"},
+    ]
+
+    hide_from_customer = [
+        "Admin/Usage dashboards",
+        "Error observability details",
+        "Raw cloud migration internals",
+        "Buyer data-room/IP moat screens",
+        "Detailed founder ops and workload warnings",
+        "Internal quality failure recovery notes",
+        "Advanced signal sliders unless explicitly requested",
+    ]
+    do_not_remove_from_engine = [
+        "Reliability Calibration V67 and Quality Guardian V74",
+        "Privacy Learning V52 and Real Upload V56",
+        "Deliverable QA V75 before customer delivery",
+        "Pricing/SOW/Checkout gates before paid work",
+        "Founder approval gates for production, legal, privacy and custom scope claims",
+    ]
+    quality_gates = [
+        {"gate": "Data", "required": "Dataset/upload exists or gap is explicit", "status": "OK" if has_dataset else "Needs input"},
+        {"gate": "Labels", "required": "Two or more classes for classifier-style delivery", "status": "OK" if label_count >= 2 else "Needs input"},
+        {"gate": "Privacy", "required": "Private-only default or explicit opt-in", "status": "OK" if isinstance(snapshots.get("field_learning_v52"), dict) else "Run V52"},
+        {"gate": "Reliability", "required": "Calibration/evidence shown before readiness claims", "status": "OK" if isinstance(snapshots.get("reliability_calibration_v67"), dict) else "Run V67"},
+        {"gate": "Delivery", "required": "QA approval before handoff", "status": "OK" if isinstance(snapshots.get("deliverable_qa_v75"), dict) else "Run V75"},
+        {"gate": "Commercial", "required": "Scope, price and checkout readiness aligned", "status": "OK" if isinstance(snapshots.get("proposal_sow"), dict) and isinstance(snapshots.get("pricing_offer"), dict) else "Founder review"},
+    ]
+
+    consolidation_actions = []
+    if missing_customer:
+        consolidation_actions.append("Generate missing customer-route evidence first: " + ", ".join(missing_customer[:5]) + ("..." if len(missing_customer) > 5 else ""))
+    if missing_founder:
+        consolidation_actions.append("Keep founder-only gaps internal: " + ", ".join(missing_founder[:5]) + ("..." if len(missing_founder) > 5 else ""))
+    if chaos_risk != "Low":
+        consolidation_actions.append("Reduce customer-visible steps and hide advanced modules behind an Advanced details expander.")
+    if bundle_score < 60:
+        consolidation_actions.append("Regenerate the main customer bundles so the simplified route has real outputs.")
+    if not has_dataset:
+        consolidation_actions.append("Keep the customer route focused on generating/uploading data before promising a Professional delivery.")
+    if not consolidation_actions:
+        consolidation_actions.append("Use V76 as the default navigation plan: one customer route, founder cockpit behind the scenes.")
+
+    customer_visible_value = [
+        "A simple route from sensor/use-case idea to pilot-ready package.",
+        "Clear readiness, privacy and delivery limits before the customer pays or downloads.",
+        "One status/handoff experience instead of many technical modules.",
+        "The full EdgeTwin engine still checks data, reliability, privacy, scope and value behind the scenes.",
+    ]
+    founder_time_shield = [
+        "Do not manually guide customers through founder-only tabs; route them to the one-page customer journey/status pages.",
+        "Do not answer repeated delivery questions manually until Support Autopilot V71 and Customer Status V72 are generated.",
+        "Do not create custom scope outside the Proposal/SOW and Checkout gates.",
+        "Use Quality Guardian V74 and Deliverable QA V75 before touching delivery manually.",
+    ]
+    do_not_do_next = [
+        "Do not add another customer-facing module unless it replaces or simplifies two existing steps.",
+        "Do not expose buyer data-room, IP/moat, admin or cloud internals to normal customers.",
+        "Do not make the customer choose between dozens of tabs.",
+        "Do not weaken privacy/reliability gates for a cleaner-looking UI.",
+    ]
+    blocked_promises = [
+        "EdgeTwin is fully production-certified or guarantees model accuracy.",
+        "No founder review is ever needed for payments, raw data use, legal scope or safety-critical deployments.",
+        "Customer data is reused for global learning by default.",
+        "Public SaaS scalability is complete before PostgreSQL/object storage/monitoring/billing controls are implemented.",
+    ]
+    recommended_next_step = (
+        "Use the simplified customer route as the default and keep advanced modules founder-only. Run full tests after any navigation change."
+        if decision == "CLEAR PRODUCT FLOW GO" else
+        "Consolidate the visible route, regenerate missing bundles, and keep the founder cockpit available behind the scenes."
+        if decision == "CONSOLIDATE THEN SELL" else
+        "Simplify before launch: hide advanced modules, generate missing quality/privacy/commercial gates, then rerun V76."
+    )
+    customer_one_route_summary = (
+        "EdgeTwin should feel to the customer like one guided pilot journey: start the project, upload or generate data, review readiness, "
+        "request/download the deliverable, and track status. The many internal modules remain hidden as quality, privacy, commercial and founder-time gates."
+    )
+    status_badges = [
+        decision,
+        f"Consolidation {consolidation_score}%",
+        f"Simplicity {simplicity_score}%",
+        f"Engine {engine_coverage_score}%",
+        f"Chaos {chaos_risk}",
+        "Advanced hidden by default" if hide_advanced_by_default else "Advanced visible risk",
+        "Field validation required",
+    ]
+
+    return {
+        "version": "V76",
+        "project_name": project_name,
+        "created_at": _now(),
+        "launch_target": launch_target,
+        "customer_route_style": customer_route_style,
+        "founder_visibility": founder_visibility,
+        "complexity_tolerance": complexity_tolerance,
+        "max_customer_steps": int(max_customer_steps),
+        "hide_advanced_by_default": bool(hide_advanced_by_default),
+        "keep_founder_tools": bool(keep_founder_tools),
+        "dataset_rows": dataset_rows,
+        "label_count": label_count,
+        "numeric_feature_count": numeric_feature_count,
+        "simplicity_score": int(simplicity_score),
+        "engine_coverage_score": int(engine_coverage_score),
+        "founder_automation_score": int(founder_automation_score),
+        "consolidation_score": int(consolidation_score),
+        "customer_coverage_score": int(customer_coverage_score),
+        "founder_coverage_score": int(founder_coverage_score),
+        "bundle_score": int(bundle_score),
+        "data_readiness_score": int(data_readiness_score),
+        "chaos_risk": chaos_risk,
+        "decision": decision,
+        "recommended_next_step": recommended_next_step,
+        "status_badges": status_badges,
+        "customer_one_route_summary": customer_one_route_summary,
+        "customer_route": customer_route,
+        "founder_cockpit_groups": founder_cockpit_groups,
+        "hide_from_customer": hide_from_customer,
+        "do_not_remove_from_engine": do_not_remove_from_engine,
+        "quality_gates": quality_gates,
+        "missing_customer_modules": missing_customer,
+        "missing_founder_modules": missing_founder,
+        "consolidation_actions": consolidation_actions,
+        "customer_visible_value": customer_visible_value,
+        "founder_time_shield": founder_time_shield,
+        "do_not_do_next": do_not_do_next,
+        "blocked_promises": blocked_promises,
+    }
+
+
+def create_product_consolidation_v76_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("product_consolidation_v76.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V76 — Product Consolidation & Flow Simplifier",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Consolidation score: {snapshot.get('consolidation_score')}%",
+            f"Simplicity score: {snapshot.get('simplicity_score')}%",
+            f"Engine coverage: {snapshot.get('engine_coverage_score')}%",
+            f"Chaos risk: {snapshot.get('chaos_risk')}",
+            "",
+            "## Recommended next step",
+            snapshot.get("recommended_next_step", ""),
+            "",
+            "## Customer one-route summary",
+            snapshot.get("customer_one_route_summary", ""),
+            "",
+            "## Customer route",
+            *[f"- Step {x.get('step')}: {x.get('name')} — {x.get('customer_sees')}" for x in snapshot.get("customer_route", [])],
+            "",
+            "## Consolidation actions",
+            *[f"- {x}" for x in snapshot.get("consolidation_actions", [])],
+            "",
+            "## Do not do next",
+            *[f"- {x}" for x in snapshot.get("do_not_do_next", [])],
+            "",
+            "## Blocked promises",
+            *[f"- {x}" for x in snapshot.get("blocked_promises", [])],
+        ]
+        zf.writestr("product_consolidation_v76_summary.md", "\n".join(summary))
+        route_df = pd.DataFrame(snapshot.get("customer_route", []))
+        if len(route_df) > 0:
+            zf.writestr("customer_route_v76.csv", route_df.to_csv(index=False))
+        gates_df = pd.DataFrame(snapshot.get("quality_gates", []))
+        if len(gates_df) > 0:
+            zf.writestr("quality_gates_v76.csv", gates_df.to_csv(index=False))
+        cockpit_df = pd.DataFrame(snapshot.get("founder_cockpit_groups", []))
+        if len(cockpit_df) > 0:
+            zf.writestr("founder_cockpit_groups_v76.csv", cockpit_df.to_csv(index=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V76 - Product Consolidation")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Consolidation score: {snapshot.get('consolidation_score')}%")
+        safe_pdf_cell(pdf, f"Simplicity score: {snapshot.get('simplicity_score')}%")
+        safe_pdf_cell(pdf, f"Chaos risk: {snapshot.get('chaos_risk')}")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_one_route_summary", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Customer route")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("customer_route", [])[:6]:
+            safe_pdf_cell(pdf, f"- Step {item.get('step')}: {item.get('name')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Consolidation actions")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("consolidation_actions", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("product_consolidation_v76.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V77 — Smart Intake Router / Minimal Customer Input Engine
+# ============================================================
+
+def build_smart_intake_router_v77(
+    project_name,
+    dataset_df=None,
+    customer_problem="",
+    industry="Custom / unknown",
+    data_status="Unknown",
+    sensor_stack=None,
+    urgency="Explore idea",
+    desired_output="Pilot bundle",
+    budget_band="Unknown",
+    privacy_preference="Private only",
+    customer_self_service=True,
+    founder_time_limit="Near-zero touch",
+    snapshots=None,
+):
+    snapshots = snapshots or {}
+    sensor_stack = sensor_stack or []
+    df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    dataset_rows = int(len(df)) if isinstance(df, pd.DataFrame) else 0
+    label_count = int(df["Label"].nunique()) if isinstance(df, pd.DataFrame) and "Label" in df.columns and len(df) else 0
+    numeric_feature_count = int(len([c for c in df.columns if c != "Label" and pd.api.types.is_numeric_dtype(df[c])])) if isinstance(df, pd.DataFrame) else 0
+
+    problem_words = len(str(customer_problem or "").split())
+    input_points = 0
+    input_points += 18 if problem_words >= 8 else 8 if problem_words >= 3 else 0
+    input_points += 14 if industry != "Custom / unknown" else 6
+    input_points += 14 if data_status != "Unknown" else 5
+    input_points += 14 if sensor_stack and "Unknown" not in sensor_stack else 5
+    input_points += 10 if desired_output != "Quick feasibility" else 6
+    input_points += 10 if budget_band not in ["Unknown", "Low / testing"] else 3
+    input_points += 10 if privacy_preference in ["Private only", "Feature learning allowed"] else 5
+    input_clarity_score = int(max(20, min(100, input_points)))
+
+    data_score_map = {
+        "No data yet": 45,
+        "Some WAV/CSV samples": 68,
+        "Labelled real data": 86,
+        "Live node data": 92,
+        "Unknown": 35,
+    }
+    data_readiness_score = data_score_map.get(data_status, 45)
+    if dataset_rows > 0:
+        data_readiness_score = max(data_readiness_score, 70)
+    if label_count >= 2:
+        data_readiness_score = max(data_readiness_score, 82)
+
+    route_complexity = 0
+    if desired_output in ["Enterprise/on-prem evaluation", "Edge Impulse export"]:
+        route_complexity += 20
+    if privacy_preference == "Raw data permission needed later":
+        route_complexity += 18
+    if urgency in ["Active operational pain", "Enterprise evaluation"]:
+        route_complexity += 12
+    if budget_band in ["Unknown", "Low / testing"] and desired_output not in ["Quick feasibility"]:
+        route_complexity += 10
+    if not customer_self_service:
+        route_complexity += 15
+    route_complexity = int(min(100, route_complexity))
+
+    base_auto = 92 if customer_self_service else 72
+    if founder_time_limit == "Near-zero touch":
+        base_auto += 4
+    elif founder_time_limit == "Hands-on custom":
+        base_auto -= 18
+    automation_fit_score = int(max(25, min(100, base_auto + input_clarity_score * 0.15 + data_readiness_score * 0.10 - route_complexity * 0.35)))
+
+    reliability_score = _snapshot_score(snapshots.get("reliability_calibration_v67"), "calibration_score", "reliability_score", default=0) or 0
+    privacy_score = _snapshot_score(snapshots.get("field_learning_v52"), "privacy_score", default=0) or 0
+    qa_score = _snapshot_score(snapshots.get("deliverable_qa_v75"), "qa_score", "delivery_readiness_score", default=0) or 0
+    guardian_score = _snapshot_score(snapshots.get("quality_guardian_v74"), "self_test_score", "quality_score", default=0) or 0
+    consolidation_score = _snapshot_score(snapshots.get("product_consolidation_v76"), "consolidation_score", default=0) or 0
+    trust_guard_score = int(round(0.25 * max(reliability_score, 55) + 0.20 * max(privacy_score, 70) + 0.20 * max(qa_score, 55) + 0.20 * max(guardian_score, 55) + 0.15 * max(consolidation_score, 60)))
+
+    total_score = int(round(0.28 * input_clarity_score + 0.22 * data_readiness_score + 0.22 * automation_fit_score + 0.28 * trust_guard_score))
+    if route_complexity >= 45:
+        total_score -= 8
+    total_score = int(max(20, min(100, total_score)))
+
+    if automation_fit_score >= 82 and total_score >= 82 and route_complexity <= 30:
+        decision = "SELF-SERVICE PILOT ROUTE GO"
+        founder_touch_risk = "Low"
+    elif total_score >= 70:
+        decision = "CONDITIONAL ROUTE WITH FOUNDER APPROVAL"
+        founder_touch_risk = "Medium"
+    else:
+        decision = "DISCOVERY NEEDED BEFORE PILOT"
+        founder_touch_risk = "High"
+
+    if desired_output == "Quick feasibility":
+        recommended_package = "Starter Feasibility / low-touch pilot"
+    elif desired_output == "Real-data analysis" or data_status in ["Some WAV/CSV samples", "Labelled real data", "Live node data"]:
+        recommended_package = "Real-Data Pilot Bundle"
+    elif desired_output == "Enterprise/on-prem evaluation" or budget_band == "Enterprise budget":
+        recommended_package = "Enterprise / custom evaluation"
+    elif desired_output == "Paid pilot proposal" or budget_band == "Professional pilot":
+        recommended_package = "Professional Pilot Bundle"
+    else:
+        recommended_package = "Starter Pilot Bundle"
+
+    if "Vibration / IMU" in sensor_stack and "Audio / Acoustic" in sensor_stack:
+        suggested_template = "Predictive Maintenance + Acoustic Tamper hybrid"
+    elif "Vibration / IMU" in sensor_stack:
+        suggested_template = "Predictive Maintenance / machine health"
+    elif "Audio / Acoustic" in sensor_stack:
+        suggested_template = "Acoustic tamper / event detection"
+    elif "Radar" in sensor_stack or "GPS / Zone" in sensor_stack:
+        suggested_template = "Asset presence / zone monitoring"
+    else:
+        suggested_template = industry
+
+    auto_config = {
+        "recommended_package": recommended_package,
+        "suggested_template": suggested_template,
+        "data_route": "Upload real samples first" if data_status in ["Some WAV/CSV samples", "Labelled real data", "Live node data"] else "Generate synthetic pilot dataset first",
+        "privacy_mode": privacy_preference,
+        "customer_route": "5-step guided route",
+        "founder_mode": "approval only" if founder_touch_risk == "Low" else "review blockers before delivery",
+        "minimum_next_module": "Real Upload V56" if data_status != "No data yet" else "Use Case Wizard",
+        "delivery_gate": "Deliverable QA V75 must pass before handoff",
+    }
+
+    recommended_route = [
+        {"step": 1, "name": "Confirm problem", "customer_action": "Check the one-sentence use-case and sensor list.", "edge_action": "Auto-select template and package level."},
+        {"step": 2, "name": "Data path", "customer_action": auto_config["data_route"], "edge_action": "Inspect features, labels and privacy risk."},
+        {"step": 3, "name": "Readiness", "customer_action": "Review pilot readiness and limits.", "edge_action": "Run reliability, privacy and QA gates."},
+        {"step": 4, "name": "Commercial handoff", "customer_action": "Request proposal or download allowed bundle.", "edge_action": "Apply pricing, SOW, checkout and blocked claims."},
+        {"step": 5, "name": "Status", "customer_action": "Track what is ready and what is missing.", "edge_action": "Use support/status autopilot to avoid founder handwork."},
+    ]
+
+    missing_inputs = []
+    if problem_words < 8:
+        missing_inputs.append("Ask for a clearer one-sentence business problem, not a long technical essay.")
+    if not sensor_stack or "Unknown" in sensor_stack:
+        missing_inputs.append("Ask which sensor types are available or planned.")
+    if data_status in ["Unknown", "No data yet"] and desired_output in ["Real-data analysis", "Edge Impulse export", "Enterprise/on-prem evaluation"]:
+        missing_inputs.append("Ask for at least a few sample WAV/CSV files or downgrade to synthetic feasibility first.")
+    if budget_band == "Unknown" and desired_output in ["Paid pilot proposal", "Enterprise/on-prem evaluation"]:
+        missing_inputs.append("Ask for budget band before preparing a full SOW or enterprise path.")
+    if privacy_preference == "Raw data permission needed later":
+        missing_inputs.append("Get explicit written raw-data permission before any raw-data reuse or external review.")
+    if not missing_inputs:
+        missing_inputs.append("No major intake gaps. Keep the next step simple and route through the standard customer journey.")
+
+    customer_next_actions = [
+        "Confirm this is the right use-case and sensor context.",
+        "Upload WAV/CSV samples if available; otherwise generate a pilot dataset.",
+        "Review readiness and limitations before requesting proposal or delivery.",
+    ]
+    if decision.startswith("SELF-SERVICE"):
+        customer_next_actions.append("Continue through Customer Mode without founder intervention unless a gate blocks delivery.")
+    else:
+        customer_next_actions.append("Wait for founder approval only on scope/privacy/payment blockers, not on normal self-service steps.")
+
+    founder_approval_gates = [
+        "Raw data permission or customer data reuse outside the project.",
+        "Safety-critical, legal, compliance-heavy or production claims.",
+        "Enterprise/on-prem scope, custom integrations or unusual deployment promises.",
+        "Payment/delivery mismatch: no delivery before checkout/scope/privacy gates are satisfied.",
+    ]
+    if founder_touch_risk == "Low":
+        founder_approval_gates.append("Founder review can stay limited to final QA and paid pilot approval.")
+    else:
+        founder_approval_gates.append("Founder should review blockers before proposal, delivery or production-facing claims.")
+
+    hidden_engine_checks = [
+        {"check": "Data", "module": "Use Case Wizard / Real Upload V56", "customer_visible": "Data route is clear", "hidden_reason": "Do not expose raw complexity."},
+        {"check": "Privacy", "module": "Privacy Learning V52", "customer_visible": "Data use is private by default", "hidden_reason": "Protect GDPR/business-sensitive inputs."},
+        {"check": "Reliability", "module": "Reliability Calibration V67", "customer_visible": "Readiness has limits", "hidden_reason": "Avoid fake accuracy guarantees."},
+        {"check": "Delivery", "module": "Deliverable QA V75", "customer_visible": "Output is checked before delivery", "hidden_reason": "Block weak or unclear deliverables."},
+        {"check": "Support", "module": "Support Autopilot V71 / Status V72", "customer_visible": "Next step is obvious", "hidden_reason": "Reduce founder time."},
+    ]
+
+    recommended_internal_modules = [
+        auto_config["minimum_next_module"],
+        "Privacy Learning V52",
+        "Reliability Calibration V67",
+        "Deliverable QA V75",
+        "Customer Status V72",
+        "Checkout V57" if desired_output in ["Paid pilot proposal", "Enterprise/on-prem evaluation"] else "Pricing Offer / Proposal when ready",
+    ]
+
+    do_not_ask_yet = [
+        "Do not ask for detailed ML architecture before the use-case and data route are clear.",
+        "Do not ask the customer to choose from every internal EdgeTwin module.",
+        "Do not ask for raw data permissions unless feature-only learning is insufficient.",
+        "Do not ask for enterprise procurement details before the lead is qualified and budget is plausible.",
+    ]
+    blocked_promises = [
+        "Guaranteed production accuracy from synthetic data alone.",
+        "No field validation required.",
+        "Raw customer data will improve global models by default.",
+        "Fully autonomous paid delivery without privacy, payment, scope and QA gates.",
+    ]
+    customer_facing_answer = (
+        f"Based on your use-case, EdgeTwin recommends the {recommended_package}. "
+        f"The first route is: {auto_config['data_route'].lower()}, then review readiness and limits before proposal or delivery. "
+        "Field validation remains required before production deployment."
+    )
+    recommended_next_step = (
+        "Let the customer continue self-service through the five-step route; only require founder approval if privacy, payment, scope or production-safety gates trigger."
+        if decision.startswith("SELF-SERVICE") else
+        "Route the customer through the simplified flow, but keep founder approval before proposal/delivery because at least one intake or risk signal is incomplete."
+        if "CONDITIONAL" in decision else
+        "Do a short discovery step first: clarify problem, sensors, data status and budget before generating a paid pilot route."
+    )
+    status_badges = [
+        decision,
+        f"Score {total_score}%",
+        f"Intake {input_clarity_score}%",
+        f"Data {data_readiness_score}%",
+        f"Automation {automation_fit_score}%",
+        f"Founder touch {founder_touch_risk}",
+        "Private by default",
+    ]
+
+    return {
+        "version": "V77",
+        "project_name": project_name,
+        "created_at": _now(),
+        "customer_problem": customer_problem,
+        "industry": industry,
+        "data_status": data_status,
+        "sensor_stack": list(sensor_stack),
+        "urgency": urgency,
+        "desired_output": desired_output,
+        "budget_band": budget_band,
+        "privacy_preference": privacy_preference,
+        "customer_self_service": bool(customer_self_service),
+        "founder_time_limit": founder_time_limit,
+        "dataset_rows": dataset_rows,
+        "label_count": label_count,
+        "numeric_feature_count": numeric_feature_count,
+        "input_clarity_score": int(input_clarity_score),
+        "data_readiness_score": int(data_readiness_score),
+        "automation_fit_score": int(automation_fit_score),
+        "trust_guard_score": int(trust_guard_score),
+        "total_score": int(total_score),
+        "route_complexity": int(route_complexity),
+        "founder_touch_risk": founder_touch_risk,
+        "decision": decision,
+        "recommended_package": recommended_package,
+        "recommended_next_step": recommended_next_step,
+        "customer_facing_answer": customer_facing_answer,
+        "auto_config": auto_config,
+        "recommended_route": recommended_route,
+        "missing_inputs": missing_inputs,
+        "customer_next_actions": customer_next_actions,
+        "founder_approval_gates": founder_approval_gates,
+        "hidden_engine_checks": hidden_engine_checks,
+        "recommended_internal_modules": recommended_internal_modules,
+        "do_not_ask_yet": do_not_ask_yet,
+        "blocked_promises": blocked_promises,
+        "status_badges": status_badges,
+    }
+
+
+def create_smart_intake_v77_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("smart_intake_v77.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V77 — Smart Intake Router",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Total score: {snapshot.get('total_score')}%",
+            f"Intake clarity: {snapshot.get('input_clarity_score')}%",
+            f"Automation fit: {snapshot.get('automation_fit_score')}%",
+            f"Founder touch risk: {snapshot.get('founder_touch_risk')}",
+            f"Recommended package: {snapshot.get('recommended_package')}",
+            "",
+            "## Customer-facing answer",
+            snapshot.get("customer_facing_answer", ""),
+            "",
+            "## Recommended next step",
+            snapshot.get("recommended_next_step", ""),
+            "",
+            "## Recommended route",
+            *[f"- Step {x.get('step')}: {x.get('name')} — {x.get('customer_action')}" for x in snapshot.get("recommended_route", [])],
+            "",
+            "## Missing inputs",
+            *[f"- {x}" for x in snapshot.get("missing_inputs", [])],
+            "",
+            "## Founder approval gates",
+            *[f"- {x}" for x in snapshot.get("founder_approval_gates", [])],
+            "",
+            "## Blocked promises",
+            *[f"- {x}" for x in snapshot.get("blocked_promises", [])],
+        ]
+        zf.writestr("smart_intake_v77_summary.md", "\n".join(summary))
+        for name, rows in [
+            ("recommended_route_v77.csv", snapshot.get("recommended_route", [])),
+            ("hidden_engine_checks_v77.csv", snapshot.get("hidden_engine_checks", [])),
+        ]:
+            df = pd.DataFrame(rows)
+            if len(df) > 0:
+                zf.writestr(name, df.to_csv(index=False))
+        zf.writestr("auto_config_v77.json", json.dumps(_json_safe(snapshot.get("auto_config", {})), indent=2, ensure_ascii=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V77 - Smart Intake Router")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Total score: {snapshot.get('total_score')}%")
+        safe_pdf_cell(pdf, f"Recommended package: {snapshot.get('recommended_package')}")
+        safe_pdf_cell(pdf, f"Founder touch risk: {snapshot.get('founder_touch_risk')}")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_facing_answer", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Recommended route")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("recommended_route", [])[:6]:
+            safe_pdf_cell(pdf, f"- Step {item.get('step')}: {item.get('name')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Founder approval gates")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("founder_approval_gates", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("smart_intake_v77.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V78 — One-Click Pilot Assembler / Autonomous Fulfillment Preview
+# ============================================================
+
+def build_one_click_pilot_package_v78(
+    project_name,
+    dataset_df=None,
+    smart_intake_snapshot=None,
+    customer_problem="",
+    package_level="Auto from Smart Intake",
+    data_route="Auto from Smart Intake",
+    include_proposal=True,
+    include_checkout=True,
+    include_advanced_details=True,
+    allow_customer_download=True,
+    founder_review_required=True,
+    snapshots=None,
+):
+    snapshots = snapshots or {}
+    smart_intake_snapshot = smart_intake_snapshot or snapshots.get("smart_intake_v77") or {}
+    df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    dataset_rows = int(len(df))
+    label_count = int(df["Label"].nunique()) if "Label" in df.columns and len(df) else 0
+    numeric_feature_count = int(len([c for c in df.columns if c != "Label" and pd.api.types.is_numeric_dtype(df[c])])) if len(df.columns) else 0
+
+    auto_package = smart_intake_snapshot.get("recommended_package") or "Professional Pilot Bundle"
+    package = auto_package if package_level == "Auto from Smart Intake" else package_level
+    auto_data_route = smart_intake_snapshot.get("auto_config", {}).get("data_route") or "Generate synthetic pilot dataset first"
+    chosen_data_route = auto_data_route if data_route == "Auto from Smart Intake" else data_route
+
+    intake_score = _snapshot_score(smart_intake_snapshot, "total_score", "automation_fit_score", default=0) or 0
+    consolidation_score = _snapshot_score(snapshots.get("product_consolidation_v76"), "consolidation_score", default=0) or 0
+    qa_score = _snapshot_score(snapshots.get("deliverable_qa_v75"), "qa_score", "delivery_readiness_score", default=0) or 0
+    guardian_score = _snapshot_score(snapshots.get("quality_guardian_v74"), "self_test_score", "quality_score", default=0) or 0
+    reliability_score = _snapshot_score(snapshots.get("reliability_calibration_v67"), "calibration_score", "reliability_score", default=0) or 0
+    privacy_score = _snapshot_score(snapshots.get("field_learning_v52"), "privacy_score", default=0) or 0
+    upload_score = _snapshot_score(snapshots.get("real_upload_v56"), "upload_readiness_score", "readiness_score", default=0) or 0
+    roi_score = _snapshot_score(snapshots.get("roi_value_v62"), "roi_score", "value_score", default=0) or 0
+    checkout_score = _snapshot_score(snapshots.get("checkout_v57"), "checkout_readiness_score", "readiness_score", default=0) or 0
+
+    data_quality_score = 45
+    if dataset_rows >= 100:
+        data_quality_score += 18
+    if dataset_rows >= 500:
+        data_quality_score += 10
+    if label_count >= 2:
+        data_quality_score += 18
+    if numeric_feature_count >= 4:
+        data_quality_score += 9
+    if upload_score:
+        data_quality_score = max(data_quality_score, int(0.55 * data_quality_score + 0.45 * upload_score))
+    data_quality_score = int(max(20, min(100, data_quality_score)))
+
+    customer_clarity_score = 72
+    if smart_intake_snapshot:
+        customer_clarity_score += 10
+    if customer_problem and len(str(customer_problem).split()) >= 8:
+        customer_clarity_score += 8
+    if include_advanced_details:
+        customer_clarity_score += 5
+    if package in ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Pilot Bundle"]:
+        customer_clarity_score += 5
+    customer_clarity_score = int(min(100, customer_clarity_score))
+
+    automation_score = int(round(
+        0.18 * max(intake_score, 60) +
+        0.16 * max(consolidation_score, 60) +
+        0.17 * max(guardian_score, 60) +
+        0.17 * max(qa_score, 55) +
+        0.16 * max(privacy_score, 70) +
+        0.16 * max(customer_clarity_score, 65)
+    ))
+    if founder_review_required:
+        automation_score = min(100, automation_score + 3)
+
+    package_readiness_score = int(round(
+        0.19 * max(data_quality_score, 50) +
+        0.18 * max(reliability_score, 55) +
+        0.17 * max(privacy_score, 70) +
+        0.16 * max(qa_score, 55) +
+        0.14 * max(guardian_score, 60) +
+        0.10 * max(customer_clarity_score, 65) +
+        0.06 * max(roi_score, 50)
+    ))
+    if include_checkout and checkout_score:
+        package_readiness_score = int(round(0.86 * package_readiness_score + 0.14 * checkout_score))
+    package_readiness_score = int(max(20, min(100, package_readiness_score)))
+
+    high_risk = False
+    if package == "Enterprise / custom evaluation" and not founder_review_required:
+        high_risk = True
+    if chosen_data_route in ["Use uploaded real data features", "Hybrid synthetic + real samples"] and privacy_score < 70:
+        high_risk = True
+    if "Raw" in str(smart_intake_snapshot.get("privacy_preference", "")):
+        high_risk = True
+
+    if package_readiness_score >= 88 and automation_score >= 82 and allow_customer_download and not high_risk:
+        decision = "CUSTOMER PACKAGE READY"
+        founder_time_risk = "Low"
+    elif package_readiness_score >= 72 and allow_customer_download:
+        decision = "CONDITIONAL PACKAGE WITH APPROVAL"
+        founder_time_risk = "Medium"
+    else:
+        decision = "HOLD PACKAGE UNTIL GATES PASS"
+        founder_time_risk = "High"
+
+    package_contents = [
+        {"deliverable": "Pilot dataset or feature dataset", "customer_value": "Gives the customer a concrete starting point instead of vague sensor ideas.", "status": "Ready" if dataset_rows > 0 else "Generate or upload data first"},
+        {"deliverable": "Readiness and reliability summary", "customer_value": "Explains what is promising and what still needs field validation.", "status": "Ready" if reliability_score >= 60 else "Needs calibration check"},
+        {"deliverable": "Privacy-safe data-use plan", "customer_value": "Shows how customer data is handled without default global reuse.", "status": "Ready" if privacy_score >= 70 else "Needs privacy plan"},
+        {"deliverable": "Hardware/deployment direction", "customer_value": "Helps the customer see a realistic path to an edge node or pilot.", "status": "Included"},
+        {"deliverable": "Proposal/SOW summary", "customer_value": "Clarifies scope, exclusions and next step.", "status": "Included" if include_proposal else "Excluded by user"},
+        {"deliverable": "Checkout/invoice readiness summary", "customer_value": "Prevents payment before scope, privacy and delivery are clear.", "status": "Included" if include_checkout else "Excluded by user"},
+        {"deliverable": "Customer status and support guidance", "customer_value": "Reduces follow-up questions and founder support time.", "status": "Included"},
+    ]
+
+    delivery_gates = [
+        {"gate": "Data", "status": "Pass" if data_quality_score >= 65 else "Needs work", "reason": f"Dataset rows={dataset_rows}, labels={label_count}, numeric features={numeric_feature_count}."},
+        {"gate": "Reliability", "status": "Pass" if reliability_score >= 65 else "Conditional", "reason": "Pilot-ready estimates must not be sold as production guarantees."},
+        {"gate": "Privacy", "status": "Pass" if privacy_score >= 70 else "Needs approval", "reason": "Customer data remains private by default; opt-in required for learning."},
+        {"gate": "QA", "status": "Pass" if qa_score >= 65 or not qa_score else "Conditional", "reason": "Deliverable QA should pass before customer handoff."},
+        {"gate": "Payment/scope", "status": "Pass" if not include_checkout or checkout_score >= 70 or not checkout_score else "Needs checkout", "reason": "No paid delivery before scope/payment readiness."},
+        {"gate": "Founder approval", "status": "Pass" if founder_review_required else "Conditional", "reason": "Founder approval remains required for paid or high-risk delivery."},
+    ]
+
+    missing_before_delivery = []
+    if dataset_rows == 0:
+        missing_before_delivery.append("Generate a pilot dataset or upload real WAV/CSV features before customer delivery.")
+    if label_count < 2:
+        missing_before_delivery.append("Add at least two meaningful labels/classes for trustworthy classification-style pilots.")
+    if reliability_score < 65:
+        missing_before_delivery.append("Run Reliability Calibration V67 or mark the output as feasibility-only.")
+    if privacy_score < 70:
+        missing_before_delivery.append("Run Privacy Learning V52 and keep customer data private by default.")
+    if include_checkout and checkout_score and checkout_score < 70:
+        missing_before_delivery.append("Resolve checkout/invoice readiness before paid delivery.")
+    if high_risk:
+        missing_before_delivery.append("High-risk privacy/enterprise/custom signals require founder approval before download or sale.")
+    if not missing_before_delivery:
+        missing_before_delivery.append("No major blocker detected. Keep field-validation disclaimer visible.")
+
+    value_points = [
+        "A concrete pilot package instead of weeks of manual dataset planning.",
+        "Honest readiness gates: customer sees limits before wasting money on deployment.",
+        "Privacy-safe data handling by default, with opt-in learning only when allowed.",
+        "Clear next step: generate data, upload real samples, request proposal or wait for approval.",
+        "Founder support stays low because status, QA and support guidance are included in the package.",
+    ]
+
+    safe_automation_allowed = [
+        "Assemble customer summary, package manifest and allowed downloads.",
+        "Generate safe dataset/readiness/privacy/QA explanations from existing snapshots.",
+        "Suggest next step and required inputs without promising production accuracy.",
+        "Create proposal and checkout readiness summaries when gates are clear.",
+    ]
+    blocked_automation = [
+        "Do not auto-deliver paid production claims without field validation.",
+        "Do not reuse raw customer data for global learning without explicit permission.",
+        "Do not bypass founder approval for enterprise, compliance-heavy or raw-data cases.",
+        "Do not unlock paid delivery when privacy, payment, scope or QA gates are incomplete.",
+    ]
+    founder_time_shield = [
+        "Customer gets one package status instead of asking which module to use.",
+        "EdgeTwin explains missing inputs automatically before founder intervention.",
+        "Technical details stay in Advanced, not in the main customer path.",
+        "Founder only reviews high-risk gates, not every normal lead or upload.",
+    ]
+    founder_approval_only_when = [
+        "Raw data permission, sensitive customer data, enterprise/on-prem scope or legal/compliance claims appear.",
+        "Paid delivery is requested but scope, checkout, privacy or QA has not passed.",
+        "The customer asks for production accuracy guarantees or safety-critical deployment.",
+    ]
+
+    internal_modules_used = [
+        "Smart Intake V77", "Product Consolidation V76", "Deliverable QA V75", "Quality Guardian V74",
+        "Reliability Calibration V67", "Privacy Learning V52", "Real Upload V56", "Checkout V57", "Customer Status V72"
+    ]
+    package_manifest = {
+        "package": package,
+        "data_route": chosen_data_route,
+        "dataset_rows": dataset_rows,
+        "label_count": label_count,
+        "numeric_feature_count": numeric_feature_count,
+        "include_proposal": bool(include_proposal),
+        "include_checkout": bool(include_checkout),
+        "customer_download_allowed": bool(allow_customer_download and decision != "HOLD PACKAGE UNTIL GATES PASS"),
+        "advanced_details_hidden": bool(include_advanced_details),
+        "field_validation_required": True,
+    }
+
+    customer_message = (
+        f"EdgeTwin assembled a {package} for your project. The package gives you a pilot dataset/readiness route, "
+        f"privacy-safe data handling, reliability limits, next actions and delivery checks. "
+        "This is pilot-ready guidance, not a production accuracy guarantee; field validation is required before production use."
+    )
+    recommended_next_step = (
+        "Allow the customer to download/request the package after final founder approval only for paid delivery. Keep the field-validation disclaimer visible."
+        if decision == "CUSTOMER PACKAGE READY" else
+        "Show the customer the package summary, but require founder approval or missing-input fixes before paid delivery."
+        if "CONDITIONAL" in decision else
+        "Hold customer delivery. First resolve data, privacy, reliability, payment or QA blockers."
+    )
+    status_badges = [
+        decision,
+        f"Package {package_readiness_score}%",
+        f"Automation {automation_score}%",
+        f"Data {data_quality_score}%",
+        f"Clarity {customer_clarity_score}%",
+        f"Founder time {founder_time_risk}",
+        "Field validation required",
+    ]
+
+    return {
+        "version": "V78",
+        "project_name": project_name,
+        "created_at": _now(),
+        "customer_problem": customer_problem,
+        "package": package,
+        "data_route": chosen_data_route,
+        "dataset_rows": dataset_rows,
+        "label_count": label_count,
+        "numeric_feature_count": numeric_feature_count,
+        "data_quality_score": int(data_quality_score),
+        "customer_clarity_score": int(customer_clarity_score),
+        "automation_score": int(automation_score),
+        "package_readiness_score": int(package_readiness_score),
+        "decision": decision,
+        "founder_time_risk": founder_time_risk,
+        "customer_message": customer_message,
+        "recommended_next_step": recommended_next_step,
+        "package_contents": package_contents,
+        "delivery_gates": delivery_gates,
+        "missing_before_delivery": missing_before_delivery,
+        "value_points": value_points,
+        "safe_automation_allowed": safe_automation_allowed,
+        "blocked_automation": blocked_automation,
+        "founder_time_shield": founder_time_shield,
+        "founder_approval_only_when": founder_approval_only_when,
+        "internal_modules_used": internal_modules_used,
+        "package_manifest": package_manifest,
+        "status_badges": status_badges,
+    }
+
+
+def create_one_click_pilot_v78_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("one_click_pilot_v78.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V78 — One-Click Pilot Assembler",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Package: {snapshot.get('package')}",
+            f"Package readiness: {snapshot.get('package_readiness_score')}%",
+            f"Automation score: {snapshot.get('automation_score')}%",
+            f"Founder time risk: {snapshot.get('founder_time_risk')}",
+            "",
+            "## Customer message",
+            snapshot.get("customer_message", ""),
+            "",
+            "## Recommended next step",
+            snapshot.get("recommended_next_step", ""),
+            "",
+            "## Value points",
+            *[f"- {x}" for x in snapshot.get("value_points", [])],
+            "",
+            "## Missing before delivery",
+            *[f"- {x}" for x in snapshot.get("missing_before_delivery", [])],
+            "",
+            "## Blocked automation",
+            *[f"- {x}" for x in snapshot.get("blocked_automation", [])],
+        ]
+        zf.writestr("one_click_pilot_v78_summary.md", "\n".join(summary))
+        for name, rows in [
+            ("package_contents_v78.csv", snapshot.get("package_contents", [])),
+            ("delivery_gates_v78.csv", snapshot.get("delivery_gates", [])),
+        ]:
+            df = pd.DataFrame(rows)
+            if len(df) > 0:
+                zf.writestr(name, df.to_csv(index=False))
+        zf.writestr("package_manifest_v78.json", json.dumps(_json_safe(snapshot.get("package_manifest", {})), indent=2, ensure_ascii=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V78 - One-Click Pilot Assembler")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Package: {snapshot.get('package')}")
+        safe_pdf_cell(pdf, f"Readiness: {snapshot.get('package_readiness_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_message", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Package contents")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("package_contents", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item.get('deliverable')}: {item.get('status')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Missing before delivery")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("missing_before_delivery", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("one_click_pilot_v78.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V79 — Pilot Factory Control Tower / Lifecycle State Machine
+# ============================================================
+
+def _v79_score_from_snapshot(snapshot, keys=("score", "readiness_score", "package_readiness_score", "quality_score", "factory_readiness_score"), default=0):
+    if not isinstance(snapshot, dict):
+        return default
+    for key in keys:
+        val = snapshot.get(key)
+        if isinstance(val, (int, float)):
+            return int(max(0, min(100, val)))
+    return default
+
+
+def build_pilot_factory_v79(
+    project_name,
+    dataset_df=None,
+    snapshots=None,
+    current_stage="New lead",
+    desired_outcome="Pilot bundle",
+    automation_level="Assisted automation",
+    customer_data_status="Synthetic only",
+    paid_delivery_requested=False,
+    allow_customer_self_service=True,
+    strict_quality_mode=True,
+    risk_inputs=None,
+):
+    snapshots = snapshots or {}
+    risk_inputs = risk_inputs or []
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    rows = int(len(dataset_df))
+    label_count = int(dataset_df["Label"].nunique()) if "Label" in dataset_df.columns and rows else 0
+    numeric_features = int(len([c for c in dataset_df.columns if c != "Label" and pd.api.types.is_numeric_dtype(dataset_df[c])])) if rows else 0
+
+    module_scores = {
+        "intake": _v79_score_from_snapshot(snapshots.get("smart_intake_v77"), ("route_confidence_score", "intake_score", "score"), 55),
+        "one_click_package": _v79_score_from_snapshot(snapshots.get("one_click_pilot_v78"), ("package_readiness_score", "score"), 60),
+        "quality_guardian": _v79_score_from_snapshot(snapshots.get("quality_guardian_v74"), ("quality_score", "self_test_score", "score"), 60),
+        "deliverable_qa": _v79_score_from_snapshot(snapshots.get("deliverable_qa_v75"), ("delivery_quality_score", "qa_score", "score"), 60),
+        "reliability": _v79_score_from_snapshot(snapshots.get("reliability_calibration_v67"), ("calibration_score", "reliability_score", "score"), 60),
+        "privacy": _v79_score_from_snapshot(snapshots.get("privacy_learning_v52"), ("privacy_score", "score"), 75),
+        "checkout": _v79_score_from_snapshot(snapshots.get("checkout_v57"), ("checkout_readiness_score", "score"), 45 if paid_delivery_requested else 70),
+        "support_status": max(
+            _v79_score_from_snapshot(snapshots.get("customer_status_v72"), ("status_clarity_score", "score"), 60),
+            _v79_score_from_snapshot(snapshots.get("customer_support_v71"), ("support_score", "score"), 60),
+        ),
+    }
+
+    data_score = 0
+    if rows >= 500 and label_count >= 2 and numeric_features >= 4:
+        data_score = 90
+    elif rows >= 150 and label_count >= 2:
+        data_score = 75
+    elif rows > 0:
+        data_score = 55
+    elif customer_data_status in ["Real data uploaded", "Mixed synthetic + real"]:
+        data_score = 65
+    elif customer_data_status == "Synthetic only":
+        data_score = 55
+    else:
+        data_score = 35
+
+    stage_order = [
+        "New lead",
+        "Intake routed",
+        "Data uploaded/generated",
+        "Readiness reviewed",
+        "Proposal requested",
+        "Checkout/invoice ready",
+        "Delivery QA ready",
+        "Delivered / follow-up",
+    ]
+    current_idx = stage_order.index(current_stage) if current_stage in stage_order else 0
+    stage_completion = int((current_idx + 1) / len(stage_order) * 100)
+
+    risk_penalty = 0
+    severe_risks = {"Safety-critical use-case", "Raw audio/location/customer identifiers", "Customer asks for guaranteed production accuracy", "Payment/scope not confirmed"}
+    for risk in risk_inputs:
+        risk_penalty += 12 if risk in severe_risks else 7
+    if customer_data_status == "Sensitive/raw data case":
+        risk_penalty += 12
+    if paid_delivery_requested and module_scores["checkout"] < 70:
+        risk_penalty += 12
+
+    foundation_score = int(round((data_score + module_scores["reliability"] + module_scores["privacy"] + module_scores["quality_guardian"] + module_scores["deliverable_qa"]) / 5))
+    orchestration_score = int(round((module_scores["intake"] + module_scores["one_click_package"] + module_scores["support_status"] + stage_completion) / 4))
+    risk_control_score = int(max(0, min(100, 92 - risk_penalty + (8 if strict_quality_mode else 0))))
+    autonomy_score = int(max(0, min(100, orchestration_score + (8 if allow_customer_self_service else -8) - min(28, risk_penalty))))
+    factory_readiness_score = int(max(0, min(100, round((foundation_score * 0.45) + (orchestration_score * 0.25) + (risk_control_score * 0.20) + (module_scores["checkout"] * 0.10)))))
+
+    blocked_until_fixed = []
+    if data_score < 60:
+        blocked_until_fixed.append("Add or generate a usable dataset before presenting this as a strong pilot package.")
+    if module_scores["privacy"] < 70 or customer_data_status == "Sensitive/raw data case":
+        blocked_until_fixed.append("Resolve privacy/consent mode before global learning, delivery or partner sharing.")
+    if paid_delivery_requested and module_scores["checkout"] < 70:
+        blocked_until_fixed.append("Do not unlock paid delivery until checkout, invoice details, scope and payment terms are clear.")
+    if module_scores["reliability"] < 65:
+        blocked_until_fixed.append("Keep the output as early pilot guidance until reliability calibration improves.")
+    if any(r in risk_inputs for r in ["Safety-critical use-case", "Customer asks for guaranteed production accuracy"]):
+        blocked_until_fixed.append("Founder approval required: do not allow production/safety-critical accuracy promises.")
+
+    if factory_readiness_score >= 86 and not blocked_until_fixed and allow_customer_self_service:
+        decision = "AUTONOMOUS PILOT FLOW GO"
+    elif factory_readiness_score >= 72 and risk_control_score >= 65:
+        decision = "ASSISTED PILOT FLOW GO"
+    else:
+        decision = "HOLD FOR FOUNDER REVIEW"
+
+    lifecycle = []
+    for i, stage in enumerate(stage_order):
+        if i < current_idx:
+            status = "Done"
+        elif i == current_idx:
+            status = "Current"
+        else:
+            status = "Next"
+        lifecycle.append({
+            "stage": stage,
+            "status": status,
+            "customer_visible": "Yes" if stage in ["New lead", "Data uploaded/generated", "Readiness reviewed", "Proposal requested", "Delivered / follow-up"] else "Summary only",
+            "gate": "Founder approval" if stage in ["Checkout/invoice ready", "Delivery QA ready"] and paid_delivery_requested else "Automated check",
+        })
+
+    automation_queue = [
+        {"priority": 1, "task": "Show customer one clear project status and next step.", "owner": "EdgeTwin", "approval": "No"},
+        {"priority": 2, "task": "Assemble pilot package from intake, data, reliability, privacy and delivery gates.", "owner": "EdgeTwin", "approval": "No"},
+        {"priority": 3, "task": "Block unsafe claims and keep field-validation disclaimer visible.", "owner": "EdgeTwin", "approval": "No"},
+        {"priority": 4, "task": "Request only missing customer inputs instead of asking founder to explain everything.", "owner": "EdgeTwin", "approval": "No"},
+        {"priority": 5, "task": "Approve paid delivery only after checkout, scope, privacy and QA gates pass.", "owner": "Founder", "approval": "Yes"},
+    ]
+    if blocked_until_fixed:
+        automation_queue.insert(0, {"priority": 0, "task": "Hold delivery and show customer missing-input summary.", "owner": "EdgeTwin", "approval": "No"})
+
+    founder_approval_gates = [
+        "Paid delivery, refunds, custom enterprise scope or on-prem discussions.",
+        "Raw data permission, sensitive audio/location/customer identifiers or privacy exceptions.",
+        "Safety-critical use-cases, production deployment claims or guaranteed accuracy requests.",
+        "Any case where Quality Guardian, Deliverable QA or Reliability Calibration is below threshold.",
+    ]
+
+    module_connection_map = {k: {"present": isinstance(v, dict), "score": module_scores.get(k.replace("privacy_learning_v52", "privacy"), None)} for k, v in snapshots.items()}
+    module_connection_map.update({"dataset_rows": rows, "label_count": label_count, "numeric_features": numeric_features})
+
+    if decision == "AUTONOMOUS PILOT FLOW GO":
+        customer_status_message = "Your pilot route is ready. EdgeTwin can guide the next step automatically while keeping production validation limits clear."
+        next_best_action = "Let the customer continue through the one-click pilot package, then request proposal/checkout only when needed."
+    elif decision == "ASSISTED PILOT FLOW GO":
+        customer_status_message = "Your pilot route is mostly ready. A few gates may need founder approval before paid delivery."
+        next_best_action = "Show the customer the summary and missing inputs; founder only reviews the flagged gates."
+    else:
+        customer_status_message = "The project needs review before customer delivery. EdgeTwin will keep the customer informed without exposing internal complexity."
+        next_best_action = "Fix blockers first: data, privacy, reliability, payment/scope or QA. Do not unlock paid delivery yet."
+
+    status_badges = [
+        decision,
+        f"Factory {factory_readiness_score}%",
+        f"Autonomy {autonomy_score}%",
+        f"Risk control {risk_control_score}%",
+        f"Data {data_score}%",
+        "Field validation required",
+    ]
+
+    return {
+        "version": "V79",
+        "project_name": project_name,
+        "created_at": _now(),
+        "current_stage": current_stage,
+        "desired_outcome": desired_outcome,
+        "automation_level": automation_level,
+        "customer_data_status": customer_data_status,
+        "paid_delivery_requested": bool(paid_delivery_requested),
+        "allow_customer_self_service": bool(allow_customer_self_service),
+        "strict_quality_mode": bool(strict_quality_mode),
+        "risk_inputs": risk_inputs,
+        "dataset_rows": rows,
+        "label_count": label_count,
+        "numeric_feature_count": numeric_features,
+        "module_scores": module_scores,
+        "data_score": int(data_score),
+        "stage_completion_score": int(stage_completion),
+        "foundation_score": int(foundation_score),
+        "orchestration_score": int(orchestration_score),
+        "risk_control_score": int(risk_control_score),
+        "autonomy_score": int(autonomy_score),
+        "factory_readiness_score": int(factory_readiness_score),
+        "decision": decision,
+        "customer_status_message": customer_status_message,
+        "next_best_action": next_best_action,
+        "blocked_until_fixed": blocked_until_fixed,
+        "lifecycle": lifecycle,
+        "automation_queue": automation_queue,
+        "founder_approval_gates": founder_approval_gates,
+        "module_connection_map": module_connection_map,
+        "status_badges": status_badges,
+        "safe_claims": [
+            "Pilot-ready package guidance with reliability and privacy gates.",
+            "Designed to reduce manual discovery, support and delivery work.",
+            "Field validation is required before production deployment.",
+        ],
+        "claims_to_avoid": [
+            "Do not claim guaranteed production accuracy.",
+            "Do not claim raw customer data will be reused without explicit consent.",
+            "Do not claim the system is fully autonomous for legal, payment or safety-critical decisions.",
+        ],
+    }
+
+
+def create_pilot_factory_v79_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("pilot_factory_v79.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V79 — Pilot Factory Control Tower",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Factory readiness: {snapshot.get('factory_readiness_score')}%",
+            f"Autonomy: {snapshot.get('autonomy_score')}%",
+            f"Risk control: {snapshot.get('risk_control_score')}%",
+            "",
+            "## Customer status",
+            snapshot.get("customer_status_message", ""),
+            "",
+            "## Next best action",
+            snapshot.get("next_best_action", ""),
+            "",
+            "## Blocked until fixed",
+            *[f"- {x}" for x in snapshot.get("blocked_until_fixed", [])],
+            "",
+            "## Founder approval gates",
+            *[f"- {x}" for x in snapshot.get("founder_approval_gates", [])],
+        ]
+        zf.writestr("pilot_factory_v79_summary.md", "\n".join(summary))
+        for name, rows in [
+            ("lifecycle_v79.csv", snapshot.get("lifecycle", [])),
+            ("automation_queue_v79.csv", snapshot.get("automation_queue", [])),
+        ]:
+            df = pd.DataFrame(rows)
+            if len(df) > 0:
+                zf.writestr(name, df.to_csv(index=False))
+        zf.writestr("module_connection_map_v79.json", json.dumps(_json_safe(snapshot.get("module_connection_map", {})), indent=2, ensure_ascii=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V79 - Pilot Factory Control Tower")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Factory readiness: {snapshot.get('factory_readiness_score')}%")
+        safe_pdf_cell(pdf, f"Autonomy: {snapshot.get('autonomy_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_status_message", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Next best action")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_multicell(pdf, snapshot.get("next_best_action", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Blocked until fixed")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("blocked_until_fixed", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("pilot_factory_v79.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V80 — Trust Ledger & Decision Traceability
+# ============================================================
+
+def _v80_score_from_snapshot(snapshot, keys):
+    if not isinstance(snapshot, dict):
+        return 0
+    for key in keys:
+        val = snapshot.get(key)
+        if isinstance(val, (int, float)):
+            return max(0, min(100, int(round(float(val)))))
+    decision = str(snapshot.get("decision", "")).upper()
+    if "GO" in decision and "NO" not in decision:
+        return 80
+    if "PASS" in decision or "READY" in decision or "APPROVED" in decision:
+        return 80
+    if "CONDITIONAL" in decision or "BUILD" in decision:
+        return 60
+    if "HOLD" in decision or "NO-GO" in decision or "BLOCK" in decision:
+        return 35
+    return 50
+
+
+def build_trust_ledger_v80(context):
+    context = context or {}
+    project_name = context.get("project_name", "EdgeTwin Project")
+    dataset_df = context.get("dataset_df") if isinstance(context.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+    strict = bool(context.get("strict_traceability", True))
+    visibility = context.get("visibility", "Customer-safe")
+    release_context = context.get("release_context", "Customer handoff")
+
+    snapshots = {
+        "Dataset / features": context.get("fusion_doctor"),
+        "Privacy learning V52": context.get("field_learning_v52"),
+        "Real upload V56": context.get("real_upload_v56"),
+        "Reliability calibration V67": context.get("reliability_calibration_v67"),
+        "Zero-touch value V69": context.get("zero_touch_v69"),
+        "Customer status V72": context.get("customer_status_v72"),
+        "Customer journey V73": context.get("customer_journey_v73"),
+        "Quality Guardian V74": context.get("quality_guardian_v74"),
+        "Deliverable QA V75": context.get("deliverable_qa_v75"),
+        "Product consolidation V76": context.get("product_consolidation_v76"),
+        "Smart intake V77": context.get("smart_intake_v77"),
+        "One-click pilot V78": context.get("one_click_pilot_v78"),
+        "Pilot Factory V79": context.get("pilot_factory_v79"),
+        "Pricing offer": context.get("pricing_offer"),
+        "Proposal / SOW": context.get("proposal_sow"),
+        "Checkout V57": context.get("checkout_v57"),
+        "Commercial release V60": context.get("commercial_release_v60"),
+    }
+
+    evidence_ledger = []
+    available_scores = []
+    for name, snap in snapshots.items():
+        available = isinstance(snap, dict) and len(snap) > 0
+        score = _v80_score_from_snapshot(
+            snap,
+            [
+                "trust_ledger_score", "factory_readiness_score", "package_readiness_score",
+                "delivery_qa_score", "quality_score", "reliability_score", "calibration_score",
+                "customer_confidence_score", "status_clarity_score", "privacy_score",
+                "readiness_score", "checkout_readiness_score", "value_score", "score",
+                "overall_score",
+            ],
+        ) if available else 0
+        if available:
+            available_scores.append(score)
+        evidence_ledger.append({
+            "area": name,
+            "available": "yes" if available else "no",
+            "score_signal": score if available else "missing",
+            "trace_note": "Available in current project state" if available else "Not generated yet",
+        })
+
+    dataset_rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+    dataset_cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+    dataset_score = 85 if dataset_rows >= 200 and dataset_cols >= 3 else 65 if dataset_rows > 0 else 35
+
+    generated_count = sum(1 for row in evidence_ledger if row["available"] == "yes")
+    traceability_score = min(100, 35 + generated_count * 5 + (10 if dataset_rows > 0 else 0) + (10 if strict else 0))
+    reliability_signal = int(round(sum(available_scores) / len(available_scores))) if available_scores else 45
+    customer_clarity_score = min(100, 55 + (8 if context.get("include_customer_view", True) else 0) + generated_count * 3)
+    risk_control_score = min(100, 50 + (10 if context.get("include_founder_view", True) else 0) + (10 if strict else 0) + generated_count * 2)
+    trust_ledger_score = int(round((traceability_score * 0.30) + (reliability_signal * 0.25) + (customer_clarity_score * 0.25) + (risk_control_score * 0.20)))
+
+    gate_status = [
+        {"gate": "Dataset present", "status": "pass" if dataset_rows > 0 else "missing", "note": f"{dataset_rows} rows / {dataset_cols} columns"},
+        {"gate": "Privacy plan", "status": "pass" if isinstance(context.get("field_learning_v52"), dict) else "missing", "note": "Private-first data learning plan required"},
+        {"gate": "Reliability evidence", "status": "pass" if isinstance(context.get("reliability_calibration_v67"), dict) else "missing", "note": "Calibration should be generated before strong readiness claims"},
+        {"gate": "Quality self-test", "status": "pass" if isinstance(context.get("quality_guardian_v74"), dict) else "missing", "note": "End-to-end quality guardian should pass before delivery"},
+        {"gate": "Deliverable QA", "status": "pass" if isinstance(context.get("deliverable_qa_v75"), dict) else "missing", "note": "Checks output clarity, value, scope and safe claims"},
+        {"gate": "Lifecycle control", "status": "pass" if isinstance(context.get("pilot_factory_v79"), dict) else "missing", "note": "Keeps intake, data, proposal, checkout and delivery aligned"},
+        {"gate": "Payment/scope readiness", "status": "pass" if isinstance(context.get("checkout_v57"), dict) or isinstance(context.get("proposal_sow"), dict) else "missing", "note": "Needed before paid delivery"},
+    ]
+
+    missing_gates = [g for g in gate_status if g["status"] != "pass"]
+    founder_approval_required = []
+    if missing_gates:
+        founder_approval_required.append("Review missing gates before external delivery: " + ", ".join([g["gate"] for g in missing_gates[:4]]))
+    if release_context in ["Paid pilot delivery", "Partner/buyer evidence"] and trust_ledger_score < 85:
+        founder_approval_required.append("Do not use this as final paid/partner evidence until the ledger score is stronger.")
+    if dataset_rows == 0:
+        founder_approval_required.append("No dataset loaded; ledger can explain process, but not evidence quality for a real dataset.")
+
+    customer_shareable = [
+        "Pilot package scope and output summary",
+        "Dataset/readiness status at a high level",
+        "Privacy mode and retention/deletion policy summary",
+        "Field validation requirement",
+        "Next step and missing customer inputs",
+    ]
+    if visibility != "Customer-safe":
+        customer_shareable.append("Founder/internal gate map only after review; do not expose trade-secret internals by default")
+
+    status_badges = [
+        "Traceable pilot evidence",
+        "Customer-safe explanation",
+        "Field validation required",
+    ]
+    if trust_ledger_score >= 85:
+        decision = "TRUST LEDGER GO"
+        status_badges.append("Handoff-ready")
+        next_best_action = "Share the customer-safe ledger with the pilot bundle or proposal, then keep internal gates in Founder Mode."
+    elif trust_ledger_score >= 65:
+        decision = "CONDITIONAL TRUST GO"
+        status_badges.append("Needs proof completion")
+        next_best_action = "Generate the missing gates, especially reliability calibration, quality guardian and deliverable QA before paid delivery."
+    else:
+        decision = "HOLD CUSTOMER DELIVERY"
+        status_badges.append("Founder review needed")
+        next_best_action = "Do not deliver externally yet. Load/generate data and run the privacy, reliability and QA gates first."
+
+    customer_safe_summary = (
+        f"EdgeTwin created a traceable pilot ledger for {project_name}. "
+        f"It records the current data status, reliability evidence, privacy gate, quality checks and delivery controls. "
+        "This supports a pilot-ready handoff, not a guarantee of production performance. Field validation remains required before production use."
+    )
+
+    return {
+        "version": "V80",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "release_context": release_context,
+        "visibility": visibility,
+        "decision": decision,
+        "trust_ledger_score": trust_ledger_score,
+        "traceability_score": traceability_score,
+        "customer_clarity_score": customer_clarity_score,
+        "risk_control_score": risk_control_score,
+        "reliability_signal": reliability_signal,
+        "dataset_score": dataset_score,
+        "dataset_rows": dataset_rows,
+        "dataset_cols": dataset_cols,
+        "generated_evidence_count": generated_count,
+        "status_badges": status_badges,
+        "customer_safe_summary": customer_safe_summary,
+        "next_best_action": next_best_action,
+        "evidence_ledger": evidence_ledger,
+        "gate_status": gate_status,
+        "missing_gates": missing_gates,
+        "founder_approval_required": founder_approval_required,
+        "customer_shareable": customer_shareable,
+        "safe_claims": [
+            "Pilot-ready dataset and readiness package with traceable quality gates.",
+            "Privacy-first handling of customer data with explicit learning modes.",
+            "Field validation is required before production deployment.",
+        ],
+        "claims_to_avoid": [
+            "Do not claim guaranteed production accuracy.",
+            "Do not claim certification, legal approval or safety-critical readiness.",
+            "Do not claim raw customer data is reused globally without explicit permission.",
+            "Do not expose founder/internal trade-secret logic in customer-safe exports.",
+        ],
+    }
+
+
+def create_trust_ledger_v80_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("trust_ledger_v80.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V80 — Trust Ledger & Decision Traceability",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Trust ledger score: {snapshot.get('trust_ledger_score')}%",
+            f"Traceability score: {snapshot.get('traceability_score')}%",
+            f"Customer clarity score: {snapshot.get('customer_clarity_score')}%",
+            "",
+            "## Customer-safe summary",
+            snapshot.get("customer_safe_summary", ""),
+            "",
+            "## Next best action",
+            snapshot.get("next_best_action", ""),
+            "",
+            "## Missing gates",
+            *[f"- {g.get('gate')}: {g.get('note')}" for g in snapshot.get("missing_gates", [])],
+            "",
+            "## Claims to avoid",
+            *[f"- {x}" for x in snapshot.get("claims_to_avoid", [])],
+        ]
+        zf.writestr("trust_ledger_v80_summary.md", "\n".join(summary))
+        for name, rows in [
+            ("evidence_ledger_v80.csv", snapshot.get("evidence_ledger", [])),
+            ("gate_status_v80.csv", snapshot.get("gate_status", [])),
+        ]:
+            df = pd.DataFrame(rows)
+            if len(df) > 0:
+                zf.writestr(name, df.to_csv(index=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V80 - Trust Ledger")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Trust ledger: {snapshot.get('trust_ledger_score')}%")
+        safe_pdf_cell(pdf, f"Traceability: {snapshot.get('traceability_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_safe_summary", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Next best action")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_multicell(pdf, snapshot.get("next_best_action", ""))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Claims to avoid")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("claims_to_avoid", [])[:7]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("trust_ledger_v80.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
