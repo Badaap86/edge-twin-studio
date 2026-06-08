@@ -14,7 +14,7 @@ import core
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V57", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio V80.1", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -142,6 +142,54 @@ def init_state():
         "real_upload_v56_features_df": pd.DataFrame(),
         "checkout_v57_snapshot": None,
         "checkout_v57_bundle": None,
+        "cloud_architecture_v58_snapshot": None,
+        "cloud_architecture_v58_bundle": None,
+        "hardware_reference_v59_snapshot": None,
+        "hardware_reference_v59_bundle": None,
+        "commercial_release_v60_snapshot": None,
+        "commercial_release_v60_bundle": None,
+        "launch_stabilization_v60_1_snapshot": None,
+        "launch_stabilization_v60_1_bundle": None,
+        "traction_proof_v61_snapshot": None,
+        "traction_proof_v61_bundle": None,
+        "roi_value_v62_snapshot": None,
+        "roi_value_v62_bundle": None,
+        "case_study_v63_snapshot": None,
+        "case_study_v63_bundle": None,
+        "buyer_dataroom_v64_snapshot": None,
+        "buyer_dataroom_v64_bundle": None,
+        "ip_moat_v65_snapshot": None,
+        "ip_moat_v65_bundle": None,
+        "continuous_improvement_v66_snapshot": None,
+        "continuous_improvement_v66_bundle": None,
+        "reliability_calibration_v67_snapshot": None,
+        "reliability_calibration_v67_bundle": None,
+        "automation_orchestrator_v68_snapshot": None,
+        "automation_orchestrator_v68_bundle": None,
+        "zero_touch_v69_snapshot": None,
+        "zero_touch_v69_bundle": None,
+        "outcome_assurance_v70_snapshot": None,
+        "outcome_assurance_v70_bundle": None,
+        "customer_support_v71_snapshot": None,
+        "customer_support_v71_bundle": None,
+        "customer_status_v72_snapshot": None,
+        "customer_status_v72_bundle": None,
+        "customer_journey_v73_snapshot": None,
+        "customer_journey_v73_bundle": None,
+        "quality_guardian_v74_snapshot": None,
+        "quality_guardian_v74_bundle": None,
+        "deliverable_qa_v75_snapshot": None,
+        "deliverable_qa_v75_bundle": None,
+        "product_consolidation_v76_snapshot": None,
+        "product_consolidation_v76_bundle": None,
+        "smart_intake_v77_snapshot": None,
+        "smart_intake_v77_bundle": None,
+        "one_click_pilot_v78_snapshot": None,
+        "one_click_pilot_v78_bundle": None,
+        "pilot_factory_v79_snapshot": None,
+        "pilot_factory_v79_bundle": None,
+        "trust_ledger_v80_snapshot": None,
+        "trust_ledger_v80_bundle": None,
         "workspace_mode_v50": "Customer Mode",
         "field_evidence_v2_snapshot": None,
         "field_evidence_v2_bundle": None,
@@ -160,6 +208,33 @@ def init_state():
 
 
 init_state()
+
+PERSISTED_EXTRA_SESSION_KEYS = [
+    "admin_usage_snapshot",
+    "api_automation_snapshot",
+    "beta_launch_snapshot",
+    "checkout_v57_snapshot",
+    "cloud_architecture_v58_snapshot",
+    "commercial_license_certificate",
+    "commercial_release_v60_snapshot",
+    "edge_impulse_classifier_snapshot",
+    "edge_impulse_snapshot",
+    "first_customer_beta_v55_snapshot",
+    "golden_demo_result",
+    "hardening_snapshot",
+    "hardware_reference_v59_snapshot",
+    "launch_assets_v54_snapshot",
+    "launch_experience_v53_snapshot",
+    "normality_result",
+    "onboarding_snapshot",
+    "operational_control_snapshot",
+    "pack_marketplace_snapshot",
+    "professional_report_snapshot",
+    "real_upload_v56_snapshot",
+    "scalability_snapshot",
+    "security_hardening_v41_snapshot",
+    "security_v41_snapshot",
+]
 
 
 # ============================================================
@@ -242,6 +317,27 @@ def reset_generated_bundles():
     st.session_state.product_readiness_v40_bundle = None
     st.session_state.security_hardening_v41_bundle = None
     st.session_state.first_customer_beta_v55_bundle = None
+    st.session_state.launch_stabilization_v60_1_bundle = None
+    st.session_state.traction_proof_v61_bundle = None
+    st.session_state.roi_value_v62_bundle = None
+    st.session_state.case_study_v63_bundle = None
+    st.session_state.buyer_dataroom_v64_bundle = None
+    st.session_state.ip_moat_v65_bundle = None
+    st.session_state.continuous_improvement_v66_bundle = None
+    st.session_state.reliability_calibration_v67_bundle = None
+    st.session_state.automation_orchestrator_v68_bundle = None
+    st.session_state.zero_touch_v69_bundle = None
+    st.session_state.outcome_assurance_v70_bundle = None
+    st.session_state.customer_support_v71_bundle = None
+    st.session_state.customer_status_v72_bundle = None
+    st.session_state.customer_journey_v73_bundle = None
+    st.session_state.quality_guardian_v74_bundle = None
+    st.session_state.deliverable_qa_v75_bundle = None
+    st.session_state.product_consolidation_v76_bundle = None
+    st.session_state.smart_intake_v77_bundle = None
+    st.session_state.one_click_pilot_v78_bundle = None
+    st.session_state.pilot_factory_v79_bundle = None
+    st.session_state.trust_ledger_v80_bundle = None
 
 
 def run_demo(demo_name):
@@ -422,7 +518,32 @@ if st.sidebar.button("Save project", use_container_width=True, key="sidebar_save
         "product_readiness_v40_snapshot": st.session_state.product_readiness_v40_snapshot,
         "customer_delivery_snapshot": st.session_state.customer_delivery_snapshot,
         "customer_success_snapshot": st.session_state.customer_success_snapshot,
+        "launch_stabilization_v60_1_snapshot": st.session_state.launch_stabilization_v60_1_snapshot,
+        "traction_proof_v61_snapshot": st.session_state.traction_proof_v61_snapshot,
+        "roi_value_v62_snapshot": st.session_state.roi_value_v62_snapshot,
+        "case_study_v63_snapshot": st.session_state.case_study_v63_snapshot,
+        "buyer_dataroom_v64_snapshot": st.session_state.buyer_dataroom_v64_snapshot,
+        "ip_moat_v65_snapshot": st.session_state.ip_moat_v65_snapshot,
+        "continuous_improvement_v66_snapshot": st.session_state.continuous_improvement_v66_snapshot,
+        "reliability_calibration_v67_snapshot": st.session_state.reliability_calibration_v67_snapshot,
+        "automation_orchestrator_v68_snapshot": st.session_state.automation_orchestrator_v68_snapshot,
+        "zero_touch_v69_snapshot": st.session_state.zero_touch_v69_snapshot,
+        "outcome_assurance_v70_snapshot": st.session_state.outcome_assurance_v70_snapshot,
+        "customer_support_v71_snapshot": st.session_state.customer_support_v71_snapshot,
+        "customer_status_v72_snapshot": st.session_state.customer_status_v72_snapshot,
+        "customer_journey_v73_snapshot": st.session_state.customer_journey_v73_snapshot,
+        "quality_guardian_v74_snapshot": st.session_state.quality_guardian_v74_snapshot,
+        "deliverable_qa_v75_snapshot": st.session_state.deliverable_qa_v75_snapshot,
+        "product_consolidation_v76_snapshot": st.session_state.product_consolidation_v76_snapshot,
+        "smart_intake_v77_snapshot": st.session_state.smart_intake_v77_snapshot,
+        "one_click_pilot_v78_snapshot": st.session_state.one_click_pilot_v78_snapshot,
+        "pilot_factory_v79_snapshot": st.session_state.pilot_factory_v79_snapshot,
+        "trust_ledger_v80_snapshot": st.session_state.trust_ledger_v80_snapshot,
     }
+
+    for key in PERSISTED_EXTRA_SESSION_KEYS:
+        if key in st.session_state:
+            settings[key] = st.session_state.get(key)
 
     core.save_project(
         st.session_state.project_id,
@@ -488,6 +609,31 @@ if len(projects) > 0:
             st.session_state.customer_assurance_snapshot = settings.get("customer_assurance_snapshot")
             st.session_state.workspace_lifecycle_snapshot = settings.get("workspace_lifecycle_snapshot")
             st.session_state.product_readiness_v40_snapshot = settings.get("product_readiness_v40_snapshot")
+            st.session_state.launch_stabilization_v60_1_snapshot = settings.get("launch_stabilization_v60_1_snapshot")
+            st.session_state.traction_proof_v61_snapshot = settings.get("traction_proof_v61_snapshot")
+            st.session_state.roi_value_v62_snapshot = settings.get("roi_value_v62_snapshot")
+            st.session_state.case_study_v63_snapshot = settings.get("case_study_v63_snapshot")
+            st.session_state.buyer_dataroom_v64_snapshot = settings.get("buyer_dataroom_v64_snapshot")
+            st.session_state.ip_moat_v65_snapshot = settings.get("ip_moat_v65_snapshot")
+            st.session_state.continuous_improvement_v66_snapshot = settings.get("continuous_improvement_v66_snapshot")
+            st.session_state.reliability_calibration_v67_snapshot = settings.get("reliability_calibration_v67_snapshot")
+            st.session_state.automation_orchestrator_v68_snapshot = settings.get("automation_orchestrator_v68_snapshot")
+            st.session_state.zero_touch_v69_snapshot = settings.get("zero_touch_v69_snapshot")
+            st.session_state.outcome_assurance_v70_snapshot = settings.get("outcome_assurance_v70_snapshot")
+            st.session_state.customer_support_v71_snapshot = settings.get("customer_support_v71_snapshot")
+            st.session_state.customer_status_v72_snapshot = settings.get("customer_status_v72_snapshot")
+            st.session_state.customer_journey_v73_snapshot = settings.get("customer_journey_v73_snapshot")
+            st.session_state.quality_guardian_v74_snapshot = settings.get("quality_guardian_v74_snapshot")
+            st.session_state.deliverable_qa_v75_snapshot = settings.get("deliverable_qa_v75_snapshot")
+            st.session_state.product_consolidation_v76_snapshot = settings.get("product_consolidation_v76_snapshot")
+            st.session_state.smart_intake_v77_snapshot = settings.get("smart_intake_v77_snapshot")
+            st.session_state.one_click_pilot_v78_snapshot = settings.get("one_click_pilot_v78_snapshot")
+            st.session_state.pilot_factory_v79_snapshot = settings.get("pilot_factory_v79_snapshot")
+            st.session_state.trust_ledger_v80_snapshot = settings.get("trust_ledger_v80_snapshot")
+            for key in PERSISTED_EXTRA_SESSION_KEYS:
+                if key in settings:
+                    st.session_state[key] = settings.get(key, st.session_state.get(key))
+
             st.session_state.sr = int(settings.get("sr", st.session_state.sr))
             st.session_state.fusion_df = pd.DataFrame()
             st.session_state.auto_pilot_result = None
@@ -567,10 +713,10 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER / ORGANIZED NAVIGATION V45.2
 # ============================================================
 
-st.title("EdgeTwin Studio V57")
+st.title("EdgeTwin Studio V80")
 st.caption(
-    "Public Launch Assets: customer route, safe sales copy, offer ladder, outreach assets and privacy-first learning. "
-    "V57 keeps the full engine behind the scenes and adds checkout/payment-readiness gating for paid pilot delivery without processing payments directly."
+    "Commercial Release Candidate: simple customer mode, full founder control, privacy-safe learning, real upload intake, checkout readiness, cloud migration planning and hardware reference proof. "
+    "V80 adds Trust Ledger and Decision Traceability: one evidence receipt explaining what data, gates, risks, approvals and claims support each customer deliverable."
 )
 
 st.markdown("""
@@ -611,24 +757,40 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-FOUNDER_NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_upload_v56_tab', 'real_bridge_tab', 'field_learning_v52_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
-CUSTOMER_NAV_GROUPS = {'1. Start': ['customer_home_v50_tab', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab'], '2. Create pilot': ['wizard_tab', 'real_upload_v56_tab'], '3. Review readiness': ['customer_review_v50_tab', 'field_learning_v52_tab'], '4. Download / handoff': ['reports_tab', 'delivery_tab'], '5. Request proposal': ['lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab']}
+FOUNDER_NAV_GROUPS = {'1. Start & Guided Flow': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'smart_intake_v77_tab', 'home', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'reliability_calibration_v67_tab', 'real_upload_v56_tab', 'real_bridge_tab', 'field_learning_v52_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'hardware_reference_v59_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'deliverable_qa_v75_tab', 'customer_journey_v73_tab', 'customer_status_v72_tab', 'outcome_assurance_v70_tab', 'customer_support_v71_tab', 'ip_moat_v65_tab', 'buyer_dataroom_v64_tab', 'case_study_v63_tab', 'roi_value_v62_tab', 'traction_proof_v61_tab', 'founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'smart_intake_v77_tab', 'product_consolidation_v76_tab', 'deliverable_qa_v75_tab', 'quality_guardian_v74_tab', 'customer_journey_v73_tab', 'zero_touch_v69_tab', 'customer_status_v72_tab', 'customer_support_v71_tab', 'outcome_assurance_v70_tab', 'automation_orchestrator_v68_tab', 'continuous_improvement_v66_tab', 'launch_stabilization_v60_1_tab', 'commercial_release_v60_tab', 'product_readiness_tab', 'cloud_architecture_v58_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
+CUSTOMER_NAV_GROUPS = {'1. Start': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'smart_intake_v77_tab', 'product_consolidation_v76_tab', 'customer_journey_v73_tab', 'zero_touch_v69_tab', 'customer_home_v50_tab', 'automation_orchestrator_v68_tab', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab'], '2. Create pilot': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'wizard_tab', 'real_upload_v56_tab'], '3. Review readiness': ['customer_review_v50_tab', 'reliability_calibration_v67_tab', 'field_learning_v52_tab'], '4. Download / handoff': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'deliverable_qa_v75_tab', 'customer_status_v72_tab', 'outcome_assurance_v70_tab', 'customer_support_v71_tab', 'reports_tab', 'delivery_tab'], '5. Request proposal': ['roi_value_v62_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab']}
 NAV_GROUPS = CUSTOMER_NAV_GROUPS if st.session_state.workspace_mode_v50 == 'Customer Mode' else FOUNDER_NAV_GROUPS
-NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning V52', 'launch_experience_v53_tab': '🚀 Launch Experience V53', 'launch_assets_v54_tab': '🌐 Launch Assets V54', 'first_customer_beta_v55_tab': '🧪 First Customer Beta V55', 'real_upload_v56_tab': '📥 Real Upload V56', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'checkout_v57_tab': '🛒 Checkout V57', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
+NAV_LABELS = {'pilot_factory_v79_tab': '🏭 Pilot Factory V79', 'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning V52', 'launch_experience_v53_tab': '🚀 Launch Experience V53', 'launch_assets_v54_tab': '🌐 Launch Assets V54', 'first_customer_beta_v55_tab': '🧪 First Customer Beta V55', 'real_upload_v56_tab': '📥 Real Upload V56', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'checkout_v57_tab': '🛒 Checkout V57', 'cloud_architecture_v58_tab': '☁️ Cloud Architecture V58', 'hardware_reference_v59_tab': '🧪 Hardware Reference V59', 'traction_proof_v61_tab': '📈 Traction Proof V61', 'roi_value_v62_tab': '💰 ROI Value V62', 'reliability_calibration_v67_tab': '🎚️ Reliability Calibration V67', 'zero_touch_v69_tab': '🧭 Zero-Touch Value V69', 'outcome_assurance_v70_tab': '✅ Outcome Assurance V70', 'customer_support_v71_tab': '🧑‍💻 Support Autopilot V71', 'customer_journey_v73_tab': '🧭 Customer Journey V73', 'one_click_pilot_v78_tab': '⚡ One-Click Pilot V78', 'smart_intake_v77_tab': '🧠 Smart Intake V77', 'product_consolidation_v76_tab': '🧩 Product Consolidation V76', 'deliverable_qa_v75_tab': '📦 Deliverable QA V75', 'quality_guardian_v74_tab': '🛡️ Quality Guardian V74', 'customer_status_v72_tab': '📍 Customer Status V72', 'automation_orchestrator_v68_tab': '🤖 Automation V68', 'continuous_improvement_v66_tab': '♻️ Improvement Flywheel V66', 'ip_moat_v65_tab': '🧬 IP & Moat V65', 'buyer_dataroom_v64_tab': '🗂️ Buyer Data Room V64', 'case_study_v63_tab': '🧾 Case Study V63', 'launch_stabilization_v60_1_tab': '🧊 Launch Stabilizer V60.1', 'commercial_release_v60_tab': '🚦 Commercial Release V60', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
 NAV_LABELS.update({'customer_home_v50_tab': '✨ Customer Start', 'customer_review_v50_tab': '✅ Readiness & Next Step'})
 NAV_HINTS = {
     "1. Start & Guided Flow": "For demos, guided onboarding, golden demo proof and project lifecycle overview.",
     "2. Build Pilot": "Generate datasets, choose sensors/use-cases, create packs and optimize weak datasets.",
-    "3. Validate & Trust": "Check reliability, real-data bridge, normal/abnormal baseline, field evidence and readiness gates.",
+    "3. Validate & Trust": "Calibrate reliability, check real-data bridge, normal/abnormal baseline, field evidence and readiness gates.",
     "4. Deploy & Export": "Prepare hardware/deployment plans, reports, Edge Impulse exports and API automation.",
-    "5. Sell & Deliver": "Manage founder workload, qualify leads, create pricing offers, paid pilot checks, licenses, customer delivery and follow-up.",
-    "6. Operator & Admin": "Control product health, governance, storage, errors, admin usage, hardening and hardware catalog.",
-    "1. Start": "A calm customer-facing front door with three simple cards, launch-ready copy and no engineering overload.",
+    "5. Sell & Deliver": "Build the ROI/value case, track proof, protect the moat, show one customer status, manage founder workload, qualify leads, create pricing offers, paid pilot checks, licenses, delivery and follow-up.",
+    "6. Operator & Admin": "Control deliverable QA, quality guardian self-tests, zero-touch customer value, continuous improvement, launch stability, product health, cloud architecture, governance, storage, errors, admin usage, hardening and hardware catalog.",
+    "1. Start": "A calm customer-facing front door with three simple cards, a zero-touch value route, launch-ready copy and no engineering overload.",
     "2. Create pilot": "Generate the pilot package while the advanced engine stays hidden behind the route.",
-    "3. Review readiness": "Show customer-safe status badges, readiness, privacy-safe learning options, gaps and the honest next step.",
-    "4. Download / handoff": "Give the customer only the relevant reports, bundles and handoff outputs.",
-    "5. Request proposal": "Qualify the request, build pricing and create a proposal/SOW when the lead is ready."
+    "3. Review readiness": "Show customer-safe status badges, calibrated readiness, privacy-safe learning options, gaps and the honest next step.",
+    "4. Download / handoff": "Give the customer one clear project status, deliverable QA, relevant reports, bundles, handoff outputs and self-service support answers.",
+    "5. Request proposal": "Show the value case, qualify the request, build pricing and create a proposal/SOW when the lead is ready."
 }
+
+
+# V80 navigation: keep the trust ledger visible in the simplified customer route and founder cockpit.
+def _v80_add_nav(group_name, page_key, position=0):
+    try:
+        pages = NAV_GROUPS.get(group_name)
+        if isinstance(pages, list) and page_key not in pages:
+            pages.insert(position, page_key)
+    except Exception:
+        pass
+
+NAV_LABELS["trust_ledger_v80_tab"] = "📒 Trust Ledger V80"
+_v80_add_nav("1. Start", "trust_ledger_v80_tab", 0)
+_v80_add_nav("4. Download / handoff", "trust_ledger_v80_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "trust_ledger_v80_tab", 0)
+_v80_add_nav("6. Operator & Admin", "trust_ledger_v80_tab", 0)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Workspace navigation")
@@ -7997,11 +8159,3616 @@ def render_checkout_v57_tab():
 
     st.caption("V57 prepares payment/download gating. It does not replace tax/legal review and does not process payments inside this local app.")
 
+
+
+# ============================================================
+# V58 — Cloud Production Architecture & Migration Planner
+# ============================================================
+
+def render_cloud_architecture_v58_tab():
+    st.header("Cloud Production Architecture & Migration Planner V58")
+    st.write(
+        "Plan the safe move from local/private beta to paid pilots, public SaaS or enterprise/on-prem. "
+        "This does not force heavy cloud infrastructure too early; it tells you when SQLite/local storage is enough and when PostgreSQL/object storage/FastAPI become necessary."
+    )
+
+    dataset_rows = len(st.session_state.dataset) if isinstance(st.session_state.dataset, pd.DataFrame) else 0
+
+    c1, c2 = st.columns([1.2, 1])
+    with c1:
+        target_stage = st.selectbox("Target stage", core.get_cloud_stage_options_v58(), index=1, key="v58_target_stage")
+        expected_monthly_users = st.number_input("Expected monthly users", 1, 10000, 10, 5, key="v58_expected_users")
+        expected_monthly_projects = st.number_input("Expected monthly projects", 1, 50000, 25, 10, key="v58_expected_projects")
+        expected_max_dataset_rows = st.number_input("Expected max dataset rows per project", 100, 1000000, max(25000, int(dataset_rows or 0)), 1000, key="v58_expected_rows")
+        data_sensitivity = st.selectbox(
+            "Data sensitivity",
+            [
+                "Customer sensor data, no personal audio expected",
+                "Audio uploads may contain personal/environmental content",
+                "Industrial proprietary machine data",
+                "Location/GPS or site-security sensitive data",
+                "Enterprise confidential / regulated review needed",
+            ],
+            index=0,
+            key="v58_data_sensitivity",
+        )
+    with c2:
+        current_frontend = st.selectbox("Current frontend", ["Streamlit app", "Streamlit Cloud app", "Custom web frontend"], index=0, key="v58_frontend")
+        current_backend = st.selectbox("Current backend", ["Streamlit monolith / core.py", "FastAPI private beta", "FastAPI + workers", "Enterprise/on-prem services"], index=0, key="v58_backend")
+        current_database = st.selectbox("Current database", ["SQLite metadata", "PostgreSQL/Supabase/Neon", "Enterprise DB", "Not configured"], index=0, key="v58_database")
+        current_storage = st.selectbox("Current storage", ["Local file storage", "S3/R2/MinIO object storage", "Enterprise object storage", "Not configured"], index=0, key="v58_storage")
+        payment_mode = st.selectbox("Payment mode", ["Manual invoice first", "Stripe checkout planned", "Stripe/live checkout", "Enterprise procurement"], index=0, key="v58_payment")
+        wants_public_signup = st.checkbox("Public signup planned", value=False, key="v58_public_signup")
+        needs_real_uploads = st.checkbox("Real customer uploads needed", value=True, key="v58_real_uploads")
+        needs_api = st.checkbox("Public/partner API needed", value=False, key="v58_needs_api")
+        needs_stripe = st.checkbox("Stripe / paid checkout needed soon", value=False, key="v58_needs_stripe")
+
+    if st.button("Build Cloud Production Plan V58", type="primary", use_container_width=True, key="v58_build_architecture"):
+        snapshot = core.build_cloud_production_architecture_v58(
+            project_name=st.session_state.project_name,
+            target_stage=target_stage,
+            expected_monthly_users=expected_monthly_users,
+            expected_monthly_projects=expected_monthly_projects,
+            expected_max_dataset_rows=expected_max_dataset_rows,
+            data_sensitivity=data_sensitivity,
+            current_frontend=current_frontend,
+            current_backend=current_backend,
+            current_database=current_database,
+            current_storage=current_storage,
+            payment_mode=payment_mode,
+            wants_public_signup=wants_public_signup,
+            needs_real_uploads=needs_real_uploads,
+            needs_api=needs_api,
+            needs_stripe=needs_stripe,
+            selected_plan=st.session_state.selected_plan,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.session_state.cloud_architecture_v58_snapshot = snapshot
+        st.session_state.cloud_architecture_v58_bundle = core.create_cloud_production_architecture_v58_bundle(
+            st.session_state.project_name,
+            snapshot,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        if snapshot.get("decision") == "GO":
+            st.success("Architecture is acceptable for the selected stage.")
+        elif snapshot.get("decision") == "CONDITIONAL GO":
+            st.warning("Architecture is usable with controlled limits and a migration plan.")
+        else:
+            st.error("Architecture is not ready for the selected target stage.")
+
+    if st.session_state.cloud_architecture_v58_snapshot:
+        snap = st.session_state.cloud_architecture_v58_snapshot
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Architecture score", f"{snap.get('architecture_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "Unknown"))
+        m3.metric("Target", snap.get("target_stage", "Unknown"))
+        m4.metric("Rows/project", f"{snap.get('expected_max_dataset_rows', 0):,}")
+
+        st.subheader("Readiness")
+        st.write(snap.get("readiness", ""))
+        st.info(snap.get("profile_priority", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Blockers")
+            for item in snap.get("blockers", []) or ["No hard blockers recorded for selected stage."]:
+                st.error(item) if snap.get("blockers") else st.success(item)
+            st.markdown("#### Immediate next actions")
+            for item in snap.get("immediate_next_actions", []):
+                st.write(f"- {item}")
+        with c2:
+            st.markdown("#### Warnings")
+            for item in snap.get("warnings", []) or ["No warnings recorded."]:
+                st.warning(item) if snap.get("warnings") else st.success(item)
+
+        st.subheader("Recommended architecture layers")
+        st.dataframe(pd.DataFrame(snap.get("architecture_layers", [])), use_container_width=True)
+
+        st.subheader("Migration phases")
+        st.dataframe(pd.DataFrame(snap.get("migration_phases", [])), use_container_width=True)
+
+        with st.expander("Safe claims / claims to avoid", expanded=False):
+            st.markdown("**Safe claims**")
+            for item in snap.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.markdown("**Avoid**")
+            for item in snap.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+
+        if st.session_state.cloud_architecture_v58_bundle:
+            st.download_button(
+                "Download Cloud Architecture Bundle V58",
+                st.session_state.cloud_architecture_v58_bundle,
+                file_name=f"{st.session_state.project_name}_cloud_architecture_v58.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v58_download_cloud_architecture_bundle",
+            )
+
+    st.caption("V58 is an architecture and migration planner. It does not replace security/legal review, but it prevents moving to public SaaS too early with local-only infrastructure.")
+
+
+# ============================================================
+# V59 — Hardware Reference Demo / Edge Node Proof Kit
+# ============================================================
+
+def render_hardware_reference_v59_tab():
+    st.header("Hardware Reference Demo / Edge Node Proof Kit V59")
+    st.write(
+        "Use this when you want a minimal, controlled hardware proof without turning your life into months of manual field testing. "
+        "It plans the EdgeTwin → Edge Impulse/export → edge node → controlled demo loop."
+    )
+
+    profiles = core.get_hardware_reference_profiles_v59()
+    demo_type = st.selectbox("Reference demo type", profiles, key="v59_demo_type")
+    default_profile = core.HARDWARE_REFERENCE_PROFILES_V59.get(demo_type, {})
+
+    c1, c2 = st.columns(2)
+    with c1:
+        board = st.selectbox(
+            "Reference board",
+            ["Auto", "ESP32-S3", "RAK4631 / nRF52840", "STM32U5", "STM32H7", "Raspberry Pi Zero 2 W", "Generic Linux Gateway"],
+            key="v59_board",
+        )
+        sensors = st.multiselect(
+            "Sensor stack",
+            core.get_sensor_options(),
+            default=default_profile.get("default_sensors", ["Audio", "Vibration"]),
+            key="v59_sensors",
+        )
+        expected_demo_days = st.number_input(
+            "Expected controlled demo days",
+            min_value=1,
+            max_value=30,
+            value=int(default_profile.get("minimum_demo_days", 2)),
+            step=1,
+            key="v59_demo_days",
+        )
+    with c2:
+        target_environment = st.text_input(
+            "Target environment",
+            value=default_profile.get("target_environment", "controlled bench / field reference area"),
+            key="v59_target_environment",
+        )
+        edge_route = st.selectbox(
+            "Edge route",
+            ["Auto", "Edge Impulse anomaly/K-means", "Edge Impulse classifier", "TinyML export", "LoRa event scoring + gateway", "Hybrid anomaly + classifier"],
+            key="v59_edge_route",
+        )
+        has_real_uploads = st.checkbox("Real uploads available", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v59_has_real_uploads")
+        has_ei_export = st.checkbox("Edge Impulse export prepared", value=bool(st.session_state.get("edge_impulse_bundle") or st.session_state.get("edge_impulse_classifier_bundle")), key="v59_has_ei_export")
+        has_deployment_plan = st.checkbox("Deployment plan prepared", value=bool(st.session_state.get("deployment_plan") or st.session_state.get("edge_deployment_starter_snapshot")), key="v59_has_deployment")
+        has_privacy_plan = st.checkbox("Privacy-safe learning plan prepared", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v59_has_privacy_plan")
+
+    if st.button("Build Hardware Reference Demo Plan V59", type="primary", use_container_width=True, key="v59_build_reference_demo"):
+        snap = core.build_hardware_reference_demo_v59(
+            project_name=st.session_state.project_name,
+            demo_type=demo_type,
+            board=board,
+            sensors=sensors,
+            target_environment=target_environment,
+            expected_demo_days=expected_demo_days,
+            edge_impulse_route=edge_route,
+            has_real_uploads=has_real_uploads,
+            has_edge_impulse_export=has_ei_export,
+            has_deployment_plan=has_deployment_plan,
+            has_privacy_learning_plan=has_privacy_plan,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.session_state.hardware_reference_v59_snapshot = snap
+        st.session_state.hardware_reference_v59_bundle = core.create_hardware_reference_demo_v59_bundle(
+            st.session_state.project_name,
+            snap,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        if snap.get("decision") == "GO":
+            st.success("Hardware reference demo plan is GO.")
+        elif snap.get("decision") == "CONDITIONAL GO":
+            st.warning("Hardware reference demo plan is CONDITIONAL GO.")
+        else:
+            st.error("Hardware reference demo plan is NO-GO.")
+
+    snap = st.session_state.get("hardware_reference_v59_snapshot")
+    if snap:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Reference score", f"{snap.get('hardware_reference_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "Unknown"))
+        m3.metric("Board", snap.get("board", "Unknown"))
+        m4.metric("Dataset rows", snap.get("dataset_rows", 0))
+
+        st.info(snap.get("readiness", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Next actions")
+            for item in snap.get("next_actions", []):
+                st.write(f"- {item}")
+            st.subheader("Blockers / warnings")
+            for item in snap.get("blockers", []):
+                st.error(item)
+            for item in snap.get("warnings", []):
+                st.warning(item)
+        with c2:
+            st.subheader("Controlled demo steps")
+            st.dataframe(pd.DataFrame(snap.get("demo_steps", [])), use_container_width=True)
+
+        with st.expander("BOM, data collection plan and safe claims", expanded=False):
+            st.write("**Reference BOM**")
+            st.dataframe(pd.DataFrame(snap.get("bom", [])), use_container_width=True)
+            st.write("**Data collection plan**")
+            st.dataframe(pd.DataFrame(snap.get("data_collection_plan", [])), use_container_width=True)
+            st.write("**Safe claims**")
+            for item in snap.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.write("**Claims to avoid**")
+            for item in snap.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+
+        if st.session_state.hardware_reference_v59_bundle:
+            st.download_button(
+                "Download Hardware Reference Demo Bundle V59",
+                st.session_state.hardware_reference_v59_bundle,
+                file_name=f"{st.session_state.project_name}_hardware_reference_v59.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v59_download_hardware_reference_bundle",
+            )
+
+    st.caption("V59 is intentionally a minimal reference proof layer: enough to prove the pipeline, not enough to claim production certification.")
+
+
+
+
+# ============================================================
+# V61 — Traction & Proof Dashboard / Buyer Evidence System
+# ============================================================
+
+def render_traction_proof_v61_tab():
+    st.header("Traction & Proof Dashboard V61")
+    st.write(
+        "Track the evidence that makes EdgeTwin valuable: real leads, demos, proposals, paid pilots, real-data uploads, "
+        "customer feedback and buyer-readiness signals. This is not a valuation tool; it is a proof discipline."
+    )
+
+    with st.expander("Why this matters", expanded=True):
+        st.markdown(
+            """
+            Features alone do not create strategic value. Proof does. V61 helps you move from *great product* to
+            *credible business evidence*: who is interested, who pays, what data arrives, what value is proven,
+            and what still needs to be collected before bigger launch or partner conversations.
+            """
+        )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        period_name = st.text_input("Evidence period", value="Current beta period", key="v61_period_name")
+        launch_goal = st.selectbox(
+            "Current goal",
+            ["First paid pilots", "Private beta", "Paid pilot launch", "Public SaaS preview", "Strategic partner / buyer readiness"],
+            index=0,
+            key="v61_launch_goal",
+        )
+        leads_total = st.number_input("Total targeted leads", min_value=0, value=0, step=1, key="v61_leads_total")
+        qualified_leads = st.number_input("Qualified leads", min_value=0, value=0, step=1, key="v61_qualified_leads")
+        demo_calls = st.number_input("Demo / discovery calls", min_value=0, value=0, step=1, key="v61_demo_calls")
+        beta_test_runs = st.number_input("Beta test runs", min_value=0, value=0, step=1, key="v61_beta_runs")
+        proposals_sent = st.number_input("Proposals / SOWs sent", min_value=0, value=0, step=1, key="v61_proposals_sent")
+        paid_pilots_sold = st.number_input("Paid pilots sold", min_value=0, value=0, step=1, key="v61_paid_pilots")
+    with c2:
+        pilots_delivered = st.number_input("Pilots delivered", min_value=0, value=0, step=1, key="v61_pilots_delivered")
+        real_data_uploads = st.number_input("Real-data uploads", min_value=0, value=int(1 if isinstance(st.session_state.get("real_upload_v56_features_df"), pd.DataFrame) and len(st.session_state.get("real_upload_v56_features_df")) > 0 else 0), step=1, key="v61_real_uploads")
+        privacy_opt_ins = st.number_input("Privacy-safe feature learning opt-ins", min_value=0, value=0, step=1, key="v61_privacy_optins")
+        generated_datasets = st.number_input("Generated datasets / bundles", min_value=0, value=int(1 if isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0 else 0), step=1, key="v61_generated_datasets")
+        customer_feedback_score = st.slider("Average customer feedback score", 0.0, 5.0, 0.0, 0.1, key="v61_feedback_score")
+        pipeline_value_eur = st.number_input("Pipeline value estimate (€)", min_value=0.0, value=0.0, step=100.0, key="v61_pipeline_value")
+        collected_revenue_eur = st.number_input("Collected revenue (€)", min_value=0.0, value=0.0, step=100.0, key="v61_collected_revenue")
+        avg_hours_saved_per_pilot = st.number_input("Estimated hours saved per pilot", min_value=0.0, value=0.0, step=1.0, key="v61_hours_saved")
+
+    a1, a2, a3 = st.columns(3)
+    with a1:
+        reference_customer_available = st.checkbox("Reference customer / anonymized case possible", value=False, key="v61_reference_customer")
+    with a2:
+        repeatable_niche_found = st.checkbox("Repeatable wedge niche found", value=False, key="v61_repeatable_niche")
+    with a3:
+        partner_or_buyer_inquiries = st.number_input("Partner/buyer inquiries", min_value=0, value=0, step=1, key="v61_partner_inquiries")
+
+    evidence_notes = st.text_area(
+        "Evidence notes",
+        value="",
+        height=90,
+        key="v61_evidence_notes",
+        help="Add honest notes: who reacted, what confused them, what they would pay for, and what proof is still missing.",
+    )
+
+    if st.button("Build Traction & Proof Dashboard V61", type="primary", use_container_width=True, key="v61_build_traction_proof"):
+        snapshot = core.build_traction_proof_dashboard_v61(
+            project_name=st.session_state.project_name,
+            period_name=period_name,
+            launch_goal=launch_goal,
+            leads_total=leads_total,
+            qualified_leads=qualified_leads,
+            demo_calls=demo_calls,
+            beta_test_runs=beta_test_runs,
+            proposals_sent=proposals_sent,
+            paid_pilots_sold=paid_pilots_sold,
+            pilots_delivered=pilots_delivered,
+            real_data_uploads=real_data_uploads,
+            privacy_opt_ins=privacy_opt_ins,
+            generated_datasets=generated_datasets,
+            customer_feedback_score=customer_feedback_score,
+            pipeline_value_eur=pipeline_value_eur,
+            collected_revenue_eur=collected_revenue_eur,
+            avg_hours_saved_per_pilot=avg_hours_saved_per_pilot,
+            reference_customer_available=reference_customer_available,
+            repeatable_niche_found=repeatable_niche_found,
+            partner_or_buyer_inquiries=partner_or_buyer_inquiries,
+            evidence_notes=evidence_notes,
+            evidence_snapshots={
+                "customer_mode_v50": st.session_state.get("customer_mode_v50_snapshot"),
+                "customer_ui_v51": st.session_state.get("customer_ui_v51_snapshot"),
+                "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+                "launch_experience_v53": st.session_state.get("launch_experience_v53_snapshot"),
+                "launch_assets_v54": st.session_state.get("launch_assets_v54_snapshot"),
+                "first_customer_beta_v55": st.session_state.get("first_customer_beta_v55_snapshot"),
+                "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+                "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+                "cloud_architecture_v58": st.session_state.get("cloud_architecture_v58_snapshot"),
+                "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+                "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+                "launch_stabilization_v60_1": st.session_state.get("launch_stabilization_v60_1_snapshot"),
+            },
+        )
+        st.session_state.traction_proof_v61_snapshot = snapshot
+        st.session_state.traction_proof_v61_bundle = core.create_traction_proof_v61_bundle(st.session_state.project_name, snapshot)
+
+        if snapshot.get("decision") == "PROOF BUILDING GO":
+            st.success("V61 says you have early commercial proof. Now repeat the niche and document results.")
+        elif snapshot.get("decision") == "KEEP SELLING CONTROLLED PILOTS":
+            st.warning("V61 sees first revenue signal. Keep selling controlled pilots and collect proof.")
+        else:
+            st.info("V61 says the next job is evidence: customer calls, proposals, uploads and paid pilot proof.")
+
+    snapshot = st.session_state.get("traction_proof_v61_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Traction score", f"{snapshot.get('traction_score', 0)}%")
+        m2.metric("Buyer readiness", f"{snapshot.get('buyer_readiness_score', 0)}%")
+        m3.metric("Revenue signal", f"{snapshot.get('revenue_signal_score', 0)}%")
+        m4.metric("Stage", snapshot.get("proof_stage", "Unknown"))
+
+        st.info(snapshot.get("recommended_next_step", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Must collect next")
+            for item in snapshot.get("must_collect_next", []) or ["No immediate proof gaps recorded."]:
+                st.write(f"- {item}")
+            st.subheader("Next 30 days")
+            for item in snapshot.get("next_30_days", []):
+                st.write(f"- {item}")
+        with c2:
+            st.subheader("Proof metrics")
+            st.dataframe(pd.DataFrame(snapshot.get("proof_metrics", [])), use_container_width=True)
+
+        st.subheader("Conversion funnel")
+        funnel_df = pd.DataFrame(snapshot.get("conversion_funnel", []))
+        st.dataframe(funnel_df, use_container_width=True)
+        if len(funnel_df) > 0 and "rate_percent" in funnel_df.columns:
+            fig = px.bar(funnel_df, x="step", y="rate_percent", title="Evidence funnel conversion rates")
+            st.plotly_chart(fig, use_container_width=True)
+
+        with st.expander("Evidence assets / buyer data room", expanded=False):
+            st.dataframe(pd.DataFrame(snapshot.get("evidence_assets", [])), use_container_width=True)
+            st.markdown("**Buyer/partner data room checklist**")
+            for item in snapshot.get("buyer_data_room", []):
+                st.write(f"- {item}")
+
+        with st.expander("Safe claims / claims to avoid", expanded=False):
+            st.markdown("**Safe claims**")
+            for item in snapshot.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.markdown("**Claims to avoid**")
+            for item in snapshot.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+
+        if st.session_state.get("traction_proof_v61_bundle"):
+            st.download_button(
+                "Download Traction & Proof Bundle V61",
+                st.session_state.traction_proof_v61_bundle,
+                file_name=f"{st.session_state.project_name}_traction_proof_v61.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v61_download_traction_proof_bundle",
+            )
+
+    st.caption("V61 is for evidence discipline. It does not guarantee valuation, investment, acquisition or production accuracy.")
+
+# ============================================================
+# V60.1 — Launch Stabilization & Strategic Moat Gate
+# ============================================================
+
+def render_launch_stabilization_v60_1_tab():
+    st.header("Launch Stabilization & Strategic Moat Gate V60.1")
+    st.write(
+        "This gate freezes the product into a safer public-beta / paid-pilot shape and checks whether EdgeTwin is building strategic value, not just features. "
+        "It is not a valuation promise or acquisition guarantee; it is a practical readiness and moat checklist."
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        release_target = st.selectbox(
+            "Stabilization target",
+            ["Private beta", "Paid pilot launch", "Public demo preview", "Strategic partner / buyer demo"],
+            index=1,
+            key="v60_1_release_target",
+        )
+        full_test_passed = st.checkbox("Latest full test/check-up passed", value=False, key="v60_1_full_test_passed")
+        no_critical_errors = st.checkbox("No known critical Streamlit/backend errors", value=True, key="v60_1_no_critical_errors")
+        customer_mode_clean = st.checkbox("Customer Mode is clean and simple", value=True, key="v60_1_customer_mode_clean")
+        founder_controls_hidden = st.checkbox("Founder/admin controls are hidden from customers", value=True, key="v60_1_founder_hidden")
+        safe_claims_locked = st.checkbox("Safe claims/disclaimers are locked", value=True, key="v60_1_safe_claims_locked")
+    with c2:
+        privacy_terms_ready = st.checkbox("Privacy/consent wording is ready", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v60_1_privacy_ready")
+        payment_lock_safe = st.checkbox("Payment/download locks are safe", value=bool(st.session_state.get("checkout_v57_snapshot")), key="v60_1_payment_lock")
+        storage_backup_plan = st.checkbox("Storage/back-up plan documented", value=True, key="v60_1_storage_backup")
+        cloud_migration_plan = st.checkbox("Cloud migration plan documented", value=bool(st.session_state.get("cloud_architecture_v58_snapshot")), key="v60_1_cloud_plan")
+        hardware_reference_evidence = st.checkbox("Hardware reference proof path exists", value=bool(st.session_state.get("hardware_reference_v59_snapshot")), key="v60_1_hardware_reference")
+        legal_review_started = st.checkbox("Legal/terms review started", value=False, key="v60_1_legal_started")
+
+    with st.expander("Strategic moat / buyer-value assumptions", expanded=False):
+        moat_notes = st.text_area(
+            "What makes EdgeTwin hard to copy?",
+            value="Integrated sensor-pilot workflow, trust gates, privacy-safe field learning, paid-pilot delivery system, hardware reference proof and founder operations layer.",
+            height=110,
+            key="v60_1_moat_notes",
+        )
+        buyer_target = st.selectbox(
+            "Possible strategic buyer category",
+            ["Edge AI platform", "Industrial IoT company", "Sensor hardware vendor", "Predictive maintenance vendor", "Security/remote monitoring company", "Consultancy/SI", "Not targeting buyers yet"],
+            index=0,
+            key="v60_1_buyer_target",
+        )
+
+    if st.button("Build Launch Stabilization Plan V60.1", type="primary", use_container_width=True, key="v60_1_build_launch_stabilization"):
+        snapshot = core.build_launch_stabilization_and_moat_v60_1(
+            project_name=st.session_state.project_name,
+            release_target=release_target,
+            full_test_passed=full_test_passed,
+            no_critical_errors=no_critical_errors,
+            customer_mode_clean=customer_mode_clean,
+            founder_controls_hidden=founder_controls_hidden,
+            safe_claims_locked=safe_claims_locked,
+            privacy_terms_ready=privacy_terms_ready,
+            payment_lock_safe=payment_lock_safe,
+            storage_backup_plan=storage_backup_plan,
+            cloud_migration_plan=cloud_migration_plan,
+            hardware_reference_evidence=hardware_reference_evidence,
+            legal_review_started=legal_review_started,
+            buyer_target=buyer_target,
+            moat_notes=moat_notes,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            evidence_snapshots={
+                "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+                "customer_mode_v50": st.session_state.get("customer_mode_v50_snapshot"),
+                "customer_ui_v51": st.session_state.get("customer_ui_v51_snapshot"),
+                "privacy_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+                "launch_experience_v53": st.session_state.get("launch_experience_v53_snapshot"),
+                "launch_assets_v54": st.session_state.get("launch_assets_v54_snapshot"),
+                "first_customer_beta_v55": st.session_state.get("first_customer_beta_v55_snapshot"),
+                "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+                "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+                "cloud_architecture_v58": st.session_state.get("cloud_architecture_v58_snapshot"),
+                "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+                "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+                "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+                "founder_ops_v49": st.session_state.get("founder_ops_v49_snapshot"),
+                "delivery": st.session_state.get("customer_delivery_snapshot"),
+            },
+        )
+        st.session_state.launch_stabilization_v60_1_snapshot = snapshot
+        st.session_state.launch_stabilization_v60_1_bundle = core.create_launch_stabilization_v60_1_bundle(
+            st.session_state.project_name,
+            snapshot,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        if snapshot.get("decision") == "STABLE BETA GO":
+            st.success("V60.1 says this build is stable enough for controlled beta / paid-pilot conversations.")
+        elif snapshot.get("decision") == "CONTROLLED LAUNCH":
+            st.warning("V60.1 says controlled launch only: fix the listed items before wider exposure.")
+        else:
+            st.error("V60.1 says stabilize first before presenting this as launch-ready.")
+
+    snapshot = st.session_state.get("launch_stabilization_v60_1_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Stability", f"{snapshot.get('stability_score', 0)}%")
+        m2.metric("Moat", f"{snapshot.get('moat_score', 0)}%")
+        m3.metric("Buyer signal", f"{snapshot.get('buyer_signal_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        st.info(snapshot.get("recommended_next_step", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Must-fix before wider launch")
+            for item in snapshot.get("must_fix", []) or ["No launch-blocking items recorded."]:
+                st.error(item) if snapshot.get("must_fix") else st.success(item)
+            st.subheader("Stabilization sprint")
+            for item in snapshot.get("stabilization_sprint", []):
+                st.write(f"- {item}")
+        with c2:
+            st.subheader("Strategic moat evidence")
+            st.dataframe(pd.DataFrame(snapshot.get("moat_evidence", [])), use_container_width=True)
+
+        with st.expander("Buyer / partner data-room checklist", expanded=False):
+            for item in snapshot.get("data_room_checklist", []):
+                st.write(f"- {item}")
+
+        with st.expander("Safe positioning / claims to avoid", expanded=False):
+            st.markdown("**Safe external positioning**")
+            for item in snapshot.get("safe_positioning", []):
+                st.write(f"- {item}")
+            st.markdown("**Claims to avoid**")
+            for item in snapshot.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+
+        if st.session_state.launch_stabilization_v60_1_bundle:
+            st.download_button(
+                "Download Launch Stabilization Bundle V60.1",
+                st.session_state.launch_stabilization_v60_1_bundle,
+                file_name=f"{st.session_state.project_name}_launch_stabilization_v60_1.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v60_1_download_launch_stabilization_bundle",
+            )
+
+    st.caption("V60.1 is about stability, defensibility and strategic value. It does not guarantee acquisition interest, valuation or legal readiness.")
+
+# ============================================================
+# V60 — Commercial Release Candidate / Final Launch Gate
+# ============================================================
+
+def render_commercial_release_v60_tab():
+    st.header("Commercial Release Candidate / Final Launch Gate V60")
+    st.write(
+        "This is the final commercial gate before showing EdgeTwin as a launch-ready paid-pilot product. "
+        "It combines product readiness, security, delivery, pricing, checkout, privacy-safe learning, real upload intake, cloud architecture and hardware reference proof."
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        release_target = st.selectbox(
+            "Release target",
+            ["Private beta", "Paid pilot launch", "Public SaaS preview", "Enterprise/on-prem evaluation"],
+            index=1,
+            key="v60_release_target",
+        )
+        customer_mode_ready = st.checkbox("Customer Mode is clear and tested", value=True, key="v60_customer_mode_ready")
+        founder_mode_ready = st.checkbox("Founder Mode/operator controls are ready", value=True, key="v60_founder_mode_ready")
+        pricing_ready = st.checkbox("Pricing/offer/SOW/checkout flow is ready", value=bool(st.session_state.get("pricing_offer_snapshot") or st.session_state.get("checkout_v57_snapshot")), key="v60_pricing_ready")
+        delivery_ready = st.checkbox("Customer delivery bundle/process is ready", value=bool(st.session_state.get("delivery_snapshot") or st.session_state.get("paid_pilot_v45_snapshot")), key="v60_delivery_ready")
+    with c2:
+        real_data_ready = st.checkbox("Real upload / privacy-safe learning path is ready", value=bool(st.session_state.get("real_upload_v56_snapshot") or st.session_state.get("field_learning_v52_snapshot")), key="v60_real_data_ready")
+        hardware_reference_ready = st.checkbox("Hardware reference proof path is ready", value=bool(st.session_state.get("hardware_reference_v59_snapshot")), key="v60_hardware_ready")
+        cloud_plan_ready = st.checkbox("Cloud migration plan is documented", value=bool(st.session_state.get("cloud_architecture_v58_snapshot")), key="v60_cloud_ready")
+        legal_review_done = st.checkbox("Legal/terms review done", value=False, key="v60_legal_done")
+        payment_provider_connected = st.checkbox("Real payment provider connected", value=False, key="v60_payment_connected")
+
+    if st.button("Build Commercial Release Candidate V60", type="primary", use_container_width=True, key="v60_build_release_candidate"):
+        snapshot = core.build_commercial_release_candidate_v60(
+            project_name=st.session_state.project_name,
+            release_target=release_target,
+            customer_mode_ready=customer_mode_ready,
+            founder_mode_ready=founder_mode_ready,
+            pricing_ready=pricing_ready,
+            delivery_ready=delivery_ready,
+            real_data_ready=real_data_ready,
+            hardware_reference_ready=hardware_reference_ready,
+            cloud_plan_ready=cloud_plan_ready,
+            legal_review_done=legal_review_done,
+            payment_provider_connected=payment_provider_connected,
+            selected_plan=st.session_state.get("selected_plan", "Founder Test Mode"),
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            evidence_snapshots={
+                "product_readiness": st.session_state.get("product_readiness_snapshot"),
+                "security_v41": st.session_state.get("security_v41_snapshot"),
+                "customer_assurance": st.session_state.get("governance_snapshot"),
+                "guided_success": st.session_state.get("onboarding_snapshot") or st.session_state.get("guided_success_snapshot"),
+                "launch_experience_v53": st.session_state.get("launch_experience_v53_snapshot"),
+                "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+                "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+                "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+                "delivery": st.session_state.get("delivery_snapshot"),
+                "paid_pilot_v45": st.session_state.get("paid_pilot_v45_snapshot"),
+                "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+                "privacy_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+                "cloud_architecture_v58": st.session_state.get("cloud_architecture_v58_snapshot"),
+                "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+                "founder_ops_v49": st.session_state.get("founder_ops_v49_snapshot"),
+                "observability": st.session_state.get("observability_snapshot"),
+            },
+        )
+        st.session_state.commercial_release_v60_snapshot = snapshot
+        st.session_state.commercial_release_v60_bundle = core.create_commercial_release_candidate_v60_bundle(
+            st.session_state.project_name,
+            snapshot,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        if snapshot.get("decision") == "GO":
+            st.success("Commercial Release Candidate is GO for the selected target.")
+        elif snapshot.get("decision") == "CONDITIONAL GO":
+            st.warning("Commercial Release Candidate is CONDITIONAL GO. Fix the listed blockers before broader launch.")
+        else:
+            st.error("Commercial Release Candidate is NO-GO. Keep this internal until blockers are fixed.")
+
+    snapshot = st.session_state.get("commercial_release_v60_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Release score", f"{snapshot.get('commercial_release_score', 0)}%")
+        m2.metric("Decision", snapshot.get("decision", "Unknown"))
+        m3.metric("Release target", snapshot.get("release_target", "Unknown"))
+        m4.metric("Launch stage", snapshot.get("launch_stage", "Unknown"))
+
+        st.info(snapshot.get("recommended_next_step", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Must-fix before launch")
+            for item in snapshot.get("must_fix", []) or ["No launch-blocking issues recorded."]:
+                st.error(item) if snapshot.get("must_fix") else st.success(item)
+            st.subheader("Recommended actions")
+            for item in snapshot.get("recommended_actions", []):
+                st.write(f"- {item}")
+        with c2:
+            st.subheader("Release evidence")
+            st.dataframe(pd.DataFrame(snapshot.get("evidence_matrix", [])), use_container_width=True)
+
+        with st.expander("Safe launch claims / claims to avoid", expanded=False):
+            st.markdown("**Safe claims**")
+            for item in snapshot.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.markdown("**Claims to avoid**")
+            for item in snapshot.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+
+        if st.session_state.commercial_release_v60_bundle:
+            st.download_button(
+                "Download Commercial Release Candidate Bundle V60",
+                st.session_state.commercial_release_v60_bundle,
+                file_name=f"{st.session_state.project_name}_commercial_release_candidate_v60.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v60_download_commercial_release_candidate_bundle",
+            )
+
+    st.caption("V60 is a commercial release gate, not a legal certification. Use it to decide demo, paid pilot, public preview or keep-internal status.")
+
+
+# ============================================================
+# V62 — ROI & Value Proof Center / Customer Business Case
+# ============================================================
+
+def render_roi_value_v62_tab():
+    st.header("ROI & Value Proof Center V62")
+    st.write(
+        "Turn the technical pilot output into a customer business case: time saved, cost avoided, risk reduced, "
+        "payback logic and safe value claims. This helps justify pilot pricing without overpromising production accuracy."
+    )
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        customer_segment = st.selectbox(
+            "Customer segment",
+            ["Industrial maintenance", "Security / anti-tamper", "Remote assets / forestry", "IoT consultant", "OEM / hardware company", "Custom"],
+            key="v62_customer_segment",
+        )
+        use_case = st.text_input(
+            "Use-case / pain point",
+            value="Reduce time and uncertainty when starting an Edge AI sensor pilot",
+            key="v62_use_case",
+        )
+        pilot_package = st.selectbox(
+            "Offer/package",
+            ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Pilot", "Enterprise / Custom Pilot"],
+            index=1,
+            key="v62_pilot_package",
+        )
+        expected_pilot_price = st.number_input("Pilot price / quote EUR", min_value=0.0, max_value=100000.0, value=1500.0, step=100.0, key="v62_pilot_price")
+        hardware_budget = st.number_input("Estimated hardware / test budget EUR", min_value=0.0, max_value=100000.0, value=350.0, step=50.0, key="v62_hardware_budget")
+
+    with c2:
+        hours_without = st.number_input("Estimated hours without EdgeTwin", min_value=0.0, max_value=2000.0, value=80.0, step=5.0, key="v62_hours_without")
+        hours_with = st.number_input("Estimated hours with EdgeTwin", min_value=0.0, max_value=2000.0, value=24.0, step=5.0, key="v62_hours_with")
+        hourly_cost = st.number_input("Blended hourly cost EUR", min_value=0.0, max_value=1000.0, value=75.0, step=5.0, key="v62_hourly_cost")
+        current_delay_weeks = st.number_input("Estimated pilot delay avoided / weeks", min_value=0.0, max_value=52.0, value=3.0, step=0.5, key="v62_delay_weeks")
+        risk_reduction_score = st.slider("Risk/uncertainty reduction estimate", 0, 100, 70, key="v62_risk_reduction")
+        real_data_available = st.checkbox("Customer has real data or can upload sample files", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v62_real_data_available")
+        privacy_learning_allowed = st.checkbox("Privacy-safe feature learning is allowed", value=False, key="v62_privacy_learning_allowed")
+
+    with st.expander("Evidence snapshots used by V62", expanded=False):
+        evidence_snapshots = {
+            "traction_proof_v61": st.session_state.get("traction_proof_v61_snapshot"),
+            "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+            "privacy_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+            "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+            "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+            "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+            "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+        }
+        st.json({k: bool(v) for k, v in evidence_snapshots.items()})
+
+    evidence_notes = st.text_area(
+        "Optional evidence notes",
+        value="Use this case as a controlled paid-pilot value estimate, not a production guarantee.",
+        height=90,
+        key="v62_evidence_notes",
+    )
+
+    if st.button("Build ROI & Value Case V62", type="primary", use_container_width=True, key="v62_build_roi_value_case"):
+        snapshot = core.build_roi_value_case_v62(
+            project_name=st.session_state.project_name,
+            customer_segment=customer_segment,
+            use_case=use_case,
+            pilot_package=pilot_package,
+            estimated_hours_without_edgetwin=hours_without,
+            estimated_hours_with_edgetwin=hours_with,
+            blended_hourly_cost_eur=hourly_cost,
+            expected_pilot_price_eur=expected_pilot_price,
+            hardware_budget_eur=hardware_budget,
+            current_delay_weeks=current_delay_weeks,
+            risk_reduction_score=risk_reduction_score,
+            real_data_available=real_data_available,
+            privacy_learning_allowed=privacy_learning_allowed,
+            evidence_snapshots=evidence_snapshots,
+            evidence_notes=evidence_notes,
+        )
+        st.session_state.roi_value_v62_snapshot = snapshot
+        st.session_state.roi_value_v62_bundle = core.create_roi_value_v62_bundle(st.session_state.project_name, snapshot)
+        if snapshot.get("decision") == "GO":
+            st.success("V62 says the business case is strong enough for a paid-pilot offer.")
+        elif snapshot.get("decision") == "CONDITIONAL GO":
+            st.warning("V62 says the value case is usable, but you need more evidence or tighter assumptions.")
+        else:
+            st.error("V62 says the value case is weak. Do not sell this as premium yet.")
+
+    snapshot = st.session_state.get("roi_value_v62_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Value score", f"{snapshot.get('value_proof_score', 0)}%")
+        m2.metric("Decision", snapshot.get("decision", "Unknown"))
+        m3.metric("Time saved", f"{snapshot.get('time_saved_hours', 0)} h")
+        m4.metric("ROI estimate", f"{snapshot.get('roi_percent', 0)}%")
+
+        st.info(snapshot.get("recommended_next_step", ""))
+        st.subheader("Customer business case")
+        st.write(snapshot.get("customer_business_case", ""))
+
+        a, b = st.columns(2)
+        with a:
+            st.subheader("Economic summary")
+            st.dataframe(pd.DataFrame(snapshot.get("economic_summary", [])), use_container_width=True)
+            st.subheader("Proof needed next")
+            for item in snapshot.get("proof_needed_next", []) or ["No major proof gaps recorded."]:
+                st.write(f"- {item}")
+        with b:
+            st.subheader("Customer questions")
+            for item in snapshot.get("customer_questions", []):
+                st.write(f"- {item}")
+            st.subheader("Value narrative")
+            for item in snapshot.get("value_narrative", []):
+                st.write(f"- {item}")
+
+        with st.expander("Safe claims / claims to avoid", expanded=False):
+            st.markdown("**Safe value claims**")
+            for item in snapshot.get("safe_value_claims", []):
+                st.write(f"- {item}")
+            st.markdown("**Claims to avoid**")
+            for item in snapshot.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+
+        if st.session_state.get("roi_value_v62_bundle"):
+            st.download_button(
+                "Download ROI & Value Proof Bundle V62",
+                st.session_state.roi_value_v62_bundle,
+                file_name=f"{st.session_state.project_name}_roi_value_proof_v62.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v62_download_roi_value_bundle",
+            )
+
+    st.caption("V62 provides a business-case estimate for pilot sales. It is not financial, legal, investment or production-performance advice.")
+
+
+# ============================================================
+# V63 — Case Study & Customer Proof Pack / Buyer Evidence Story
+# ============================================================
+
+def render_case_study_v63_tab():
+    st.header("Case Study & Customer Proof Pack V63")
+    st.write(
+        "Turn pilot outcomes, ROI assumptions and customer feedback into safe proof assets: an anonymised case study, "
+        "testimonial request, buyer evidence summary and follow-up story. This helps EdgeTwin prove value without overclaiming."
+    )
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        customer_segment = st.text_input("Customer segment", value="Industrial maintenance / operations team", key="v63_customer_segment")
+        use_case = st.text_area(
+            "Use-case story",
+            value="The customer wants to reduce uncertainty and time before starting an Edge AI sensor pilot.",
+            height=90,
+            key="v63_use_case_story",
+        )
+        problem_before = st.text_area(
+            "Before EdgeTwin: customer pain",
+            value="Manual sensor-data preparation, unclear labels, uncertain hardware direction and no clear pilot-readiness report.",
+            height=90,
+            key="v63_problem_before",
+        )
+        outcome_summary = st.text_area(
+            "Outcome summary",
+            value="EdgeTwin generated a pilot package with dataset, reliability checks, hardware direction, report and commercial handoff.",
+            height=90,
+            key="v63_outcome_summary",
+        )
+    with c2:
+        pilot_stage = st.selectbox(
+            "Pilot stage",
+            ["Demo completed", "Proposal sent", "Paid pilot accepted", "Pilot delivered", "Reference approved"],
+            index=1,
+            key="v63_pilot_stage",
+        )
+        publish_mode = st.selectbox(
+            "Publishing mode",
+            ["Internal only", "Anonymous public case study", "Named public case study with written approval"],
+            index=1,
+            key="v63_publish_mode",
+        )
+        customer_rating = st.slider("Customer feedback rating", 0, 10, 7, key="v63_customer_rating")
+        real_data_used = st.checkbox("Real customer data was used", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v63_real_data_used")
+        written_permission = st.checkbox("Written permission for external use", value=False, key="v63_written_permission")
+        anonymise_customer = st.checkbox("Anonymise customer/company details", value=True, key="v63_anonymise_customer")
+        include_roi = st.checkbox("Include ROI/value proof", value=bool(st.session_state.get("roi_value_v62_snapshot")), key="v63_include_roi")
+
+    with st.expander("Evidence snapshots used by V63", expanded=False):
+        evidence = {
+            "ROI Value V62": bool(st.session_state.get("roi_value_v62_snapshot")),
+            "Traction Proof V61": bool(st.session_state.get("traction_proof_v61_snapshot")),
+            "Real Upload V56": bool(st.session_state.get("real_upload_v56_snapshot")),
+            "Privacy Learning V52": bool(st.session_state.get("field_learning_v52_snapshot")),
+            "Proposal / SOW": bool(st.session_state.get("proposal_sow_snapshot")),
+            "Checkout V57": bool(st.session_state.get("checkout_v57_snapshot")),
+            "Delivery Portal": bool(st.session_state.get("customer_delivery_snapshot")),
+            "Hardware Reference V59": bool(st.session_state.get("hardware_reference_v59_snapshot")),
+        }
+        st.dataframe(pd.DataFrame([{"Evidence": k, "Available": v} for k, v in evidence.items()]), use_container_width=True)
+
+    if st.button("Build Case Study Proof Pack V63", type="primary", use_container_width=True, key="v63_build_case_study"):
+        snapshot = core.build_case_study_proof_pack_v63(
+            project_name=st.session_state.project_name,
+            customer_segment=customer_segment,
+            use_case=use_case,
+            problem_before=problem_before,
+            outcome_summary=outcome_summary,
+            pilot_stage=pilot_stage,
+            publish_mode=publish_mode,
+            customer_rating=customer_rating,
+            real_data_used=real_data_used,
+            written_permission=written_permission,
+            anonymise_customer=anonymise_customer,
+            include_roi=include_roi,
+            evidence_snapshots={
+                "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+                "traction_proof_v61": st.session_state.get("traction_proof_v61_snapshot"),
+                "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+                "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+                "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+                "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+                "delivery_portal": st.session_state.get("customer_delivery_snapshot"),
+                "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+            },
+        )
+        st.session_state.case_study_v63_snapshot = snapshot
+        st.session_state.case_study_v63_bundle = core.create_case_study_v63_bundle(st.session_state.project_name, snapshot)
+
+    snapshot = st.session_state.get("case_study_v63_snapshot")
+    if snapshot:
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Proof score", f"{snapshot.get('proof_score', 0)}%")
+        c2.metric("Publish readiness", f"{snapshot.get('publish_readiness_score', 0)}%")
+        c3.metric("Buyer evidence", f"{snapshot.get('buyer_evidence_score', 0)}%")
+        c4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        decision = snapshot.get("decision")
+        if decision == "PUBLIC READY":
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif decision == "INTERNAL READY":
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.error(snapshot.get("recommended_next_step", ""))
+
+        st.subheader("Customer-safe case study draft")
+        st.write(snapshot.get("public_case_study_draft", ""))
+
+        st.subheader("Buyer evidence summary")
+        st.write(snapshot.get("buyer_evidence_summary", ""))
+
+        t1, t2 = st.tabs(["Proof assets", "Safe claims & blocked claims"])
+        with t1:
+            st.dataframe(pd.DataFrame(snapshot.get("proof_assets", [])), use_container_width=True)
+            st.markdown("#### Testimonial request email")
+            st.code(snapshot.get("testimonial_request_email", ""))
+            st.markdown("#### LinkedIn / outreach proof snippet")
+            st.code(snapshot.get("short_social_proof", ""))
+        with t2:
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown("#### Safe claims")
+                for item in snapshot.get("safe_claims", []):
+                    st.success(item)
+            with col_b:
+                st.markdown("#### Claims to avoid")
+                for item in snapshot.get("claims_to_avoid", []):
+                    st.warning(item)
+
+        if st.session_state.get("case_study_v63_bundle"):
+            st.download_button(
+                "Download Case Study Proof Pack V63",
+                st.session_state.case_study_v63_bundle,
+                file_name=f"{st.session_state.project_name}_case_study_proof_v63.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v63_download_case_study_bundle",
+            )
+
+    st.caption("V63 creates proof assets for sales, reference calls and future buyer/partner evidence. It does not claim guaranteed outcomes, public rights or acquisition value.")
+
+
+
+
+# ============================================================
+# V64 BUYER DATA ROOM / STRATEGIC PARTNER READINESS
+# ============================================================
+
+def render_buyer_dataroom_v64_tab():
+    st.header("Buyer Data Room V64")
+    st.write(
+        "Turn EdgeTwin proof into a structured partner/buyer evidence room. "
+        "This does not promise a buyout; it shows what proof is ready, what is missing, and what should stay confidential."
+    )
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        strategic_goal = st.selectbox(
+            "Strategic goal",
+            [
+                "Prepare for strategic partnership",
+                "Prepare for reseller/OEM conversation",
+                "Prepare for investor/data-room review",
+                "Prepare for future acquisition interest",
+                "Internal maturity check only",
+            ],
+            index=0,
+            key="v64_strategic_goal",
+        )
+        target_buyer_type = st.selectbox(
+            "Likely interested party",
+            [
+                "Industrial IoT / edge AI platform",
+                "Predictive maintenance vendor",
+                "Sensor hardware / OEM company",
+                "Cloud/AI developer platform",
+                "Security/remote monitoring company",
+                "Consultancy / systems integrator",
+                "Unknown / not defined yet",
+            ],
+            index=0,
+            key="v64_target_buyer_type",
+        )
+        moat_summary = st.text_area(
+            "Why EdgeTwin could be strategically valuable",
+            value="EdgeTwin automates the sensor-pilot chain: use-case intake, synthetic/real data checks, reliability gates, hardware direction, reports, proposal, checkout readiness, delivery and learning feedback.",
+            height=115,
+            key="v64_moat_summary",
+        )
+    with c2:
+        has_paid_pilots = st.checkbox("At least one paid pilot exists", value=bool(st.session_state.get("paid_pilot_v45_snapshot")), key="v64_has_paid_pilots")
+        has_real_uploads = st.checkbox("Real customer data uploads exist", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v64_has_real_uploads")
+        has_case_study = st.checkbox("At least one case study/proof pack exists", value=bool(st.session_state.get("case_study_v63_snapshot")), key="v64_has_case_study")
+        has_revenue_signal = st.checkbox("Revenue/pipeline evidence exists", value=bool(st.session_state.get("traction_proof_v61_snapshot") or st.session_state.get("roi_value_v62_snapshot")), key="v64_has_revenue_signal")
+        has_privacy_controls = st.checkbox("Privacy-safe learning controls documented", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v64_has_privacy_controls")
+        has_cloud_plan = st.checkbox("Cloud/production migration plan documented", value=bool(st.session_state.get("cloud_architecture_v58_snapshot")), key="v64_has_cloud_plan")
+        has_hardware_reference = st.checkbox("Hardware reference proof plan exists", value=bool(st.session_state.get("hardware_reference_v59_snapshot")), key="v64_has_hardware_reference")
+        codebase_documented = st.checkbox("Core product modules and limits are documented", value=True, key="v64_codebase_documented")
+
+    with st.expander("Evidence already available in this workspace", expanded=False):
+        evidence = {
+            "Traction Proof V61": bool(st.session_state.get("traction_proof_v61_snapshot")),
+            "ROI Value V62": bool(st.session_state.get("roi_value_v62_snapshot")),
+            "Case Study V63": bool(st.session_state.get("case_study_v63_snapshot")),
+            "Privacy Learning V52": bool(st.session_state.get("field_learning_v52_snapshot")),
+            "Real Upload V56": bool(st.session_state.get("real_upload_v56_snapshot")),
+            "Checkout V57": bool(st.session_state.get("checkout_v57_snapshot")),
+            "Cloud Architecture V58": bool(st.session_state.get("cloud_architecture_v58_snapshot")),
+            "Hardware Reference V59": bool(st.session_state.get("hardware_reference_v59_snapshot")),
+            "Commercial Release V60": bool(st.session_state.get("commercial_release_v60_snapshot")),
+            "Launch Stabilizer V60.1": bool(st.session_state.get("launch_stabilization_v60_1_snapshot")),
+        }
+        st.dataframe(pd.DataFrame([{"Evidence": k, "Available": v} for k, v in evidence.items()]), use_container_width=True)
+
+    if st.button("Build Buyer Data Room V64", type="primary", use_container_width=True, key="v64_build_buyer_dataroom"):
+        snapshot = core.build_buyer_dataroom_v64(
+            project_name=st.session_state.project_name,
+            strategic_goal=strategic_goal,
+            target_buyer_type=target_buyer_type,
+            moat_summary=moat_summary,
+            flags={
+                "has_paid_pilots": has_paid_pilots,
+                "has_real_uploads": has_real_uploads,
+                "has_case_study": has_case_study,
+                "has_revenue_signal": has_revenue_signal,
+                "has_privacy_controls": has_privacy_controls,
+                "has_cloud_plan": has_cloud_plan,
+                "has_hardware_reference": has_hardware_reference,
+                "codebase_documented": codebase_documented,
+            },
+            evidence_snapshots={
+                "traction_proof_v61": st.session_state.get("traction_proof_v61_snapshot"),
+                "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+                "case_study_v63": st.session_state.get("case_study_v63_snapshot"),
+                "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+                "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+                "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+                "cloud_architecture_v58": st.session_state.get("cloud_architecture_v58_snapshot"),
+                "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+                "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+                "launch_stabilization_v60_1": st.session_state.get("launch_stabilization_v60_1_snapshot"),
+            },
+        )
+        st.session_state.buyer_dataroom_v64_snapshot = snapshot
+        st.session_state.buyer_dataroom_v64_bundle = core.create_buyer_dataroom_v64_bundle(st.session_state.project_name, snapshot)
+
+    snapshot = st.session_state.get("buyer_dataroom_v64_snapshot")
+    if snapshot:
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Data-room readiness", f"{snapshot.get('data_room_readiness_score', 0)}%")
+        c2.metric("Strategic value signal", f"{snapshot.get('strategic_value_score', 0)}%")
+        c3.metric("Proof completeness", f"{snapshot.get('proof_completeness_score', 0)}%")
+        c4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        decision = snapshot.get("decision")
+        if decision == "PARTNER READY":
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif decision == "BUILD MORE PROOF":
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.info(snapshot.get("recommended_next_step", ""))
+
+        t1, t2, t3 = st.tabs(["Data room", "Moat & proof", "Sensitive items"])
+        with t1:
+            st.subheader("Suggested data-room folders")
+            st.dataframe(pd.DataFrame(snapshot.get("data_room_folders", [])), use_container_width=True)
+            st.subheader("30-day proof plan")
+            for item in snapshot.get("next_30_day_plan", []):
+                st.info(item)
+        with t2:
+            st.subheader("Strategic narrative")
+            st.write(snapshot.get("strategic_narrative", ""))
+            st.subheader("Buyer/partner questions to be ready for")
+            for item in snapshot.get("buyer_questions", []):
+                st.write(f"- {item}")
+            st.subheader("Moat checklist")
+            st.dataframe(pd.DataFrame(snapshot.get("moat_checklist", [])), use_container_width=True)
+        with t3:
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown("#### Shareable with care")
+                for item in snapshot.get("shareable_with_care", []):
+                    st.success(item)
+            with col_b:
+                st.markdown("#### Do not share publicly")
+                for item in snapshot.get("do_not_share_publicly", []):
+                    st.warning(item)
+
+        st.subheader("Claims to avoid")
+        for item in snapshot.get("claims_to_avoid", []):
+            st.warning(item)
+
+        if st.session_state.get("buyer_dataroom_v64_bundle"):
+            st.download_button(
+                "Download Buyer Data Room V64",
+                st.session_state.buyer_dataroom_v64_bundle,
+                file_name=f"{st.session_state.project_name}_buyer_dataroom_v64.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v64_download_buyer_dataroom_bundle",
+            )
+
+    st.caption("V64 helps structure strategic evidence. It is not legal, tax, investment, valuation or acquisition advice, and it does not guarantee buyer interest.")
+
+
+
+
+# ============================================================
+# V65 — IP & Moat Registry / Defensibility Center
+# ============================================================
+
+def render_ip_moat_v65_tab():
+    st.header("IP & Moat Registry / Defensibility Center V65")
+    st.write(
+        "This internal founder page helps organize what makes EdgeTwin strategically defensible: product workflow, engine logic, privacy-safe learning, proof loops, data rights, tests, and transfer readiness. "
+        "It is not legal/IP/patent advice, but it helps avoid chaos before partner, investor or buyer conversations."
+    )
+
+    c1, c2 = st.columns([1.25, 1])
+    with c1:
+        product_summary = st.text_area(
+            "Strategic product summary",
+            value="EdgeTwin Studio turns sensor/edge-AI ideas into pilot-ready packages: dataset generation, real-upload intake, reliability/trust checks, privacy-safe learning, hardware guidance, proposal/checkout/delivery workflows and proof tracking.",
+            height=120,
+            key="v65_product_summary",
+        )
+        unique_assets_text = st.text_area(
+            "Unique assets / moat notes",
+            value="End-to-end Edge AI pilot workflow\nPrivacy-safe field learning\nDataset Doctor + reliability gates\nReal upload intake\nProposal-to-delivery automation\nBuyer proof and data-room workflow",
+            height=140,
+            key="v65_unique_assets",
+        )
+    with c2:
+        st.markdown("#### Protection / transfer checks")
+        owns_code = st.checkbox("Codebase ownership is tracked", value=True, key="v65_owns_code")
+        architecture_documented = st.checkbox("Architecture is documented enough to explain", value=True, key="v65_architecture_documented")
+        open_source_reviewed = st.checkbox("Open-source/dependency review started", value=False, key="v65_open_source_reviewed")
+        secrets_removed = st.checkbox("Secrets/customer identifiers removed from shareable artifacts", value=True, key="v65_secrets_removed")
+        data_rights_policy = st.checkbox("Data rights / retention policy documented", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v65_data_rights_policy")
+        customer_consent_workflow = st.checkbox("Customer consent workflow exists", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v65_customer_consent_workflow")
+        transfer_docs = st.checkbox("Operator/transfer docs started", value=False, key="v65_transfer_docs")
+        reproducible_tests = st.checkbox("Smoke/comprehensive tests are reproducible", value=True, key="v65_reproducible_tests")
+
+    e1, e2, e3 = st.columns(3)
+    with e1:
+        privacy_safe_learning = st.checkbox("Privacy-safe learning present", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v65_privacy_safe_learning")
+        real_upload_flow = st.checkbox("Real upload flow present", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v65_real_upload_flow")
+        traction_evidence = st.checkbox("Traction proof evidence present", value=bool(st.session_state.get("traction_proof_v61_snapshot")), key="v65_traction_evidence")
+    with e2:
+        roi_proof = st.checkbox("ROI/value proof present", value=bool(st.session_state.get("roi_value_v62_snapshot")), key="v65_roi_proof")
+        case_study_proof = st.checkbox("Case study proof present", value=bool(st.session_state.get("case_study_v63_snapshot")), key="v65_case_study_proof")
+        buyer_dataroom = st.checkbox("Buyer data-room structure present", value=bool(st.session_state.get("buyer_dataroom_v64_snapshot")), key="v65_buyer_dataroom")
+    with e3:
+        hardware_reference = st.checkbox("Hardware reference proof/plan present", value=bool(st.session_state.get("hardware_reference_v59_snapshot")), key="v65_hardware_reference")
+        cloud_plan = st.checkbox("Cloud migration plan present", value=bool(st.session_state.get("cloud_architecture_v58_snapshot")), key="v65_cloud_plan")
+        brand_assets = st.checkbox("Brand/product naming is consistent", value=True, key="v65_brand_assets")
+
+    flags = {
+        "owns_code": owns_code,
+        "architecture_documented": architecture_documented,
+        "open_source_reviewed": open_source_reviewed,
+        "secrets_removed": secrets_removed,
+        "data_rights_policy": data_rights_policy,
+        "customer_consent_workflow": customer_consent_workflow,
+        "transfer_docs": transfer_docs,
+        "reproducible_tests": reproducible_tests,
+        "privacy_safe_learning": privacy_safe_learning,
+        "real_upload_flow": real_upload_flow,
+        "traction_evidence": traction_evidence,
+        "roi_proof": roi_proof,
+        "case_study_proof": case_study_proof,
+        "buyer_dataroom": buyer_dataroom,
+        "hardware_reference": hardware_reference,
+        "cloud_plan": cloud_plan,
+        "brand_assets": brand_assets,
+        "storage_documented": True,
+        "founder_ops": bool(st.session_state.get("founder_ops_v49_snapshot")),
+        "commercial_packages": bool(st.session_state.get("pricing_offer_snapshot")) or bool(st.session_state.get("proposal_sow_snapshot")),
+        "safe_claims": True,
+        "known_limits": True,
+        "operator_handoff": transfer_docs,
+    }
+
+    evidence_snapshots = {
+        "Privacy Learning V52": bool(st.session_state.get("field_learning_v52_snapshot")),
+        "Real Upload V56": bool(st.session_state.get("real_upload_v56_snapshot")),
+        "Cloud Architecture V58": bool(st.session_state.get("cloud_architecture_v58_snapshot")),
+        "Hardware Reference V59": bool(st.session_state.get("hardware_reference_v59_snapshot")),
+        "Traction V61": bool(st.session_state.get("traction_proof_v61_snapshot")),
+        "ROI V62": bool(st.session_state.get("roi_value_v62_snapshot")),
+        "Case Study V63": bool(st.session_state.get("case_study_v63_snapshot")),
+        "Buyer Data Room V64": bool(st.session_state.get("buyer_dataroom_v64_snapshot")),
+    }
+
+    if st.button("Build IP & Moat Registry V65", type="primary", use_container_width=True, key="v65_build_ip_moat"):
+        snapshot = core.build_ip_moat_registry_v65(
+            st.session_state.project_name,
+            product_summary,
+            unique_assets_text,
+            flags=flags,
+            evidence_snapshots=evidence_snapshots,
+        )
+        st.session_state.ip_moat_v65_snapshot = snapshot
+        st.session_state.ip_moat_v65_bundle = core.create_ip_moat_registry_v65_bundle(st.session_state.project_name, snapshot)
+        if snapshot.get("decision") == "STRATEGIC ASSET READY":
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif snapshot.get("decision") == "PROTECT AND PROVE":
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.info(snapshot.get("recommended_next_step", ""))
+
+    snapshot = st.session_state.get("ip_moat_v65_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Strategic asset", f"{snapshot.get('strategic_asset_score', 0)}%")
+        m2.metric("IP clarity", f"{snapshot.get('ip_clarity_score', 0)}%")
+        m3.metric("Defensibility", f"{snapshot.get('defensibility_score', 0)}%")
+        m4.metric("Transfer readiness", f"{snapshot.get('transfer_readiness_score', 0)}%")
+
+        decision = snapshot.get("decision", "")
+        if decision == "STRATEGIC ASSET READY":
+            st.success(decision)
+        elif decision == "PROTECT AND PROVE":
+            st.warning(decision)
+        else:
+            st.info(decision)
+
+        tabs = st.tabs(["Asset register", "Ownership & risks", "Moat narrative", "Do not share"])
+        with tabs[0]:
+            st.subheader("Strategic asset register")
+            st.dataframe(pd.DataFrame(snapshot.get("asset_register", [])), use_container_width=True)
+            st.subheader("Trade-secret candidates")
+            for item in snapshot.get("trade_secret_candidates", []):
+                st.info(item)
+        with tabs[1]:
+            st.subheader("Ownership checklist")
+            st.dataframe(pd.DataFrame(snapshot.get("ownership_checklist", [])), use_container_width=True)
+            st.subheader("Must-fix before serious external sharing")
+            for item in snapshot.get("must_fix", []):
+                st.warning(item)
+            st.subheader("Open-source review notes")
+            for item in snapshot.get("open_source_review_notes", []):
+                st.write(f"- {item}")
+        with tabs[2]:
+            st.subheader("Safe external positioning")
+            for item in snapshot.get("safe_external_positioning", []):
+                st.success(item)
+            st.subheader("Next 30-day plan")
+            for item in snapshot.get("next_30_day_plan", []):
+                st.info(item)
+        with tabs[3]:
+            st.subheader("Do not share publicly")
+            for item in snapshot.get("do_not_share_publicly", []):
+                st.error(item)
+            st.subheader("Claims to avoid")
+            for item in snapshot.get("claims_to_avoid", []):
+                st.warning(item)
+
+        if st.session_state.get("ip_moat_v65_bundle"):
+            st.download_button(
+                "Download IP & Moat Registry V65",
+                st.session_state.ip_moat_v65_bundle,
+                file_name=f"{st.session_state.project_name}_ip_moat_v65.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v65_download_ip_moat_bundle",
+            )
+
+    st.caption("V65 is an internal strategic organizer only. It is not legal, patent, IP, valuation, investment or acquisition advice.")
+
+
+
+# ============================================================
+# V66 — Continuous Improvement & Quality Flywheel
+# ============================================================
+
+def render_continuous_improvement_v66_tab():
+    st.header("Continuous Improvement & Quality Flywheel V66")
+    st.write(
+        "V66 is the internal system for making EdgeTwin better without creating feature chaos. "
+        "It turns bugs, customer friction, proof gaps, founder workload and reliability signals into a focused improvement backlog."
+    )
+
+    c1, c2 = st.columns([1.1, 1])
+    with c1:
+        release_target = st.selectbox(
+            "Improvement target",
+            ["Private beta", "Paid pilot launch", "Public SaaS preview", "Strategic partner readiness"],
+            index=1,
+            key="v66_release_target",
+        )
+        customer_notes = st.text_area(
+            "Customer friction / feedback notes",
+            value="Customers need a simpler route, clear next step, safe claims and confidence that real data stays private.",
+            height=110,
+            key="v66_customer_notes",
+        )
+        founder_constraints = st.text_area(
+            "Founder constraints",
+            value="Too much to do, limited time, avoid unpaid custom work, keep the engine strong but the customer UI simple.",
+            height=90,
+            key="v66_founder_constraints",
+        )
+
+    with c2:
+        test_pass_rate = st.slider("Test pass rate", 0, 100, 92, key="v66_test_pass_rate")
+        open_bugs = st.number_input("Open visible bugs", min_value=0, max_value=50, value=2, step=1, key="v66_open_bugs")
+        customer_friction = st.slider("Customer friction", 0, 100, 32, help="Lower is better.", key="v66_customer_friction")
+        support_load_hours = st.number_input("Founder support load hours/week", min_value=0.0, max_value=80.0, value=6.0, step=1.0, key="v66_support_load")
+
+    m1, m2, m3 = st.columns(3)
+    ui_clarity = m1.slider("Customer UI clarity", 0, 100, 82, key="v66_ui_clarity")
+    engine_confidence = m2.slider("Engine confidence", 0, 100, 84, key="v66_engine_confidence")
+    cloud_readiness = m3.slider("Cloud readiness", 0, 100, 62, key="v66_cloud_readiness")
+    m4, m5, m6 = st.columns(3)
+    field_evidence_strength = m4.slider("Field evidence strength", 0, 100, 52, key="v66_field_evidence")
+    proof_strength = m5.slider("Traction/proof strength", 0, 100, 58, key="v66_proof_strength")
+    privacy_confidence = m6.slider("Privacy confidence", 0, 100, 94, key="v66_privacy_confidence")
+
+    with st.expander("Foundation checks", expanded=True):
+        f1, f2, f3 = st.columns(3)
+        recent_full_test = f1.checkbox("Recent full test done", value=True, key="v66_recent_full_test")
+        no_critical_errors = f1.checkbox("No critical errors", value=True, key="v66_no_critical_errors")
+        customer_mode_live = f1.checkbox("Customer Mode live", value=True, key="v66_customer_mode_live")
+        real_upload_flow = f2.checkbox("Real upload flow live", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v66_real_upload_flow")
+        privacy_safe_learning = f2.checkbox("Privacy-safe learning live", value=True, key="v66_privacy_safe_learning")
+        payment_lock_ready = f2.checkbox("Payment/download gates ready", value=bool(st.session_state.get("checkout_v57_snapshot")), key="v66_payment_lock_ready")
+        launch_gate_exists = f3.checkbox("Commercial launch gate exists", value=True, key="v66_launch_gate_exists")
+        hardware_reference_planned = f3.checkbox("Hardware reference planned", value=True, key="v66_hardware_reference")
+        terms_review_started = f3.checkbox("Terms/privacy review started", value=False, key="v66_terms_review")
+
+    evidence_snapshots = {
+        "V50 Customer Mode": bool(st.session_state.get("customer_mode_v50_snapshot")),
+        "V51 Customer UI": bool(st.session_state.get("customer_ui_v51_snapshot")),
+        "V52 Privacy Learning": bool(st.session_state.get("field_learning_v52_snapshot")),
+        "V56 Real Upload": bool(st.session_state.get("real_upload_v56_snapshot")),
+        "V57 Checkout": bool(st.session_state.get("checkout_v57_snapshot")),
+        "V59 Hardware Reference": bool(st.session_state.get("hardware_reference_v59_snapshot")),
+        "V60 Commercial Release": bool(st.session_state.get("commercial_release_v60_snapshot")),
+        "V61 Traction Proof": bool(st.session_state.get("traction_proof_v61_snapshot")),
+        "V62 ROI Value": bool(st.session_state.get("roi_value_v62_snapshot")),
+        "V63 Case Study": bool(st.session_state.get("case_study_v63_snapshot")),
+        "V64 Buyer Data Room": bool(st.session_state.get("buyer_dataroom_v64_snapshot")),
+        "V65 IP & Moat": bool(st.session_state.get("ip_moat_v65_snapshot")),
+    }
+
+    quality_inputs = {
+        "test_pass_rate": test_pass_rate,
+        "open_bugs": open_bugs,
+        "customer_friction": customer_friction,
+        "ui_clarity": ui_clarity,
+        "engine_confidence": engine_confidence,
+        "cloud_readiness": cloud_readiness,
+        "support_load_hours": support_load_hours,
+        "field_evidence_strength": field_evidence_strength,
+        "proof_strength": proof_strength,
+        "privacy_confidence": privacy_confidence,
+        "foundation_flags": {
+            "recent_full_test": recent_full_test,
+            "no_critical_errors": no_critical_errors,
+            "customer_mode_live": customer_mode_live,
+            "real_upload_flow": real_upload_flow,
+            "privacy_safe_learning": privacy_safe_learning,
+            "payment_lock_ready": payment_lock_ready,
+            "launch_gate_exists": launch_gate_exists,
+            "hardware_reference_planned": hardware_reference_planned,
+            "terms_review_started": terms_review_started,
+        },
+    }
+
+    if st.button("Build Continuous Improvement Plan V66", type="primary", use_container_width=True, key="v66_build_improvement_plan"):
+        snapshot = core.build_continuous_improvement_flywheel_v66(
+            project_name=st.session_state.project_name,
+            release_target=release_target,
+            quality_inputs=quality_inputs,
+            evidence_snapshots=evidence_snapshots,
+            customer_notes=customer_notes,
+            founder_constraints=founder_constraints,
+        )
+        st.session_state.continuous_improvement_v66_snapshot = snapshot
+        st.session_state.continuous_improvement_v66_bundle = core.create_continuous_improvement_v66_bundle(st.session_state.project_name, snapshot)
+        st.success("Continuous improvement plan generated.")
+
+    snapshot = st.session_state.get("continuous_improvement_v66_snapshot")
+    if snapshot:
+        decision = snapshot.get("decision", "")
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Ultimate product score", f"{snapshot.get('ultimate_product_score', 0)}%")
+        k2.metric("Quality", f"{snapshot.get('quality_score', 0)}%")
+        k3.metric("Foundation", f"{snapshot.get('foundation_score', 0)}%")
+        k4.metric("Evidence", f"{snapshot.get('evidence_coverage', 0)}%")
+
+        if "PUBLIC" in decision:
+            st.success(decision)
+        elif "CONTROLLED" in decision or "HARDEN" in decision:
+            st.warning(decision)
+        else:
+            st.info(decision)
+        st.write(snapshot.get("recommended_next_step", ""))
+
+        tabs = st.tabs(["Backlog", "Customer simplicity", "Engine reliability", "Founder focus", "30-day sprint"])
+        with tabs[0]:
+            st.subheader("Prioritized improvement backlog")
+            st.dataframe(pd.DataFrame(snapshot.get("improvement_backlog", [])), use_container_width=True)
+            if snapshot.get("blockers"):
+                st.subheader("Blockers")
+                for item in snapshot.get("blockers", []):
+                    st.warning(item)
+        with tabs[1]:
+            st.subheader("Customer simplification plan")
+            for item in snapshot.get("customer_simplification_plan", []):
+                st.success(item)
+        with tabs[2]:
+            st.subheader("Engine reliability plan")
+            for item in snapshot.get("engine_reliability_plan", []):
+                st.info(item)
+        with tabs[3]:
+            st.subheader("Founder automation plan")
+            for item in snapshot.get("founder_automation_plan", []):
+                st.write(f"- {item}")
+            st.subheader("Do not do next")
+            for item in snapshot.get("dont_do_next", []):
+                st.error(item)
+        with tabs[4]:
+            st.subheader("30-day sprint")
+            for item in snapshot.get("thirty_day_sprint", []):
+                st.info(item)
+            st.subheader("Success metrics")
+            st.dataframe(pd.DataFrame(snapshot.get("success_metrics", [])), use_container_width=True)
+
+        if st.session_state.get("continuous_improvement_v66_bundle"):
+            st.download_button(
+                "Download Continuous Improvement Bundle V66",
+                st.session_state.continuous_improvement_v66_bundle,
+                file_name=f"{st.session_state.project_name}_continuous_improvement_v66.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v66_download_improvement_bundle",
+            )
+
+    st.caption("V66 is an internal improvement and quality planning tool. It is not legal, valuation, certification, investment or acquisition advice.")
+
+
+
+
+# ============================================================
+# V67 — Reliability Calibration & Benchmarking Center
+# ============================================================
+
+def render_reliability_calibration_v67_tab():
+    st.header("Reliability Calibration & Benchmarking V67")
+    st.write(
+        "V67 turns synthetic datasets, real uploads, privacy-safe learning and field evidence into a clearer reliability decision. "
+        "It keeps customer-facing confidence honest: pilot-ready is not production-certified."
+    )
+
+    c1, c2 = st.columns([1.1, 1])
+    with c1:
+        calibration_target = st.selectbox(
+            "Calibration target",
+            ["Paid pilot", "Customer demo", "Hardware reference", "Public beta", "Enterprise/on-prem evaluation"],
+            index=0,
+            key="v67_calibration_target",
+        )
+        use_case_risk = st.selectbox(
+            "Use-case risk level",
+            ["Low", "Medium", "High", "Safety-critical / restricted"],
+            index=1,
+            key="v67_use_case_risk",
+        )
+        benchmark_notes = st.text_area(
+            "Calibration notes / customer context",
+            value="Use synthetic data for a fast start, real upload features for matching, and field validation before production claims.",
+            height=105,
+            key="v67_benchmark_notes",
+        )
+    with c2:
+        real_sample_count = st.number_input("Real labelled samples available", min_value=0, max_value=100000, value=0, step=10, key="v67_real_samples")
+        target_confidence = st.slider("Target confidence for pilot", 50, 99, 85, key="v67_target_confidence")
+        false_alarm_tolerance = st.selectbox("False alarm tolerance", ["Low", "Medium", "High"], index=1, key="v67_false_alarm_tolerance")
+        missing_cost = st.selectbox("Cost of missed detection", ["Low", "Medium", "High", "Severe"], index=1, key="v67_missing_cost")
+
+    with st.expander("Evidence source status", expanded=True):
+        e1, e2, e3 = st.columns(3)
+        dataset_generated = e1.checkbox(
+            "Pilot dataset generated",
+            value=isinstance(st.session_state.get("dataset"), pd.DataFrame) and len(st.session_state.get("dataset")) > 0,
+            key="v67_dataset_generated",
+        )
+        real_upload_done = e1.checkbox("Real upload inspected", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v67_real_upload_done")
+        privacy_plan_done = e1.checkbox("Privacy plan exists", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v67_privacy_plan_done")
+        synthetic_to_real_done = e2.checkbox("Synthetic-to-real bridge checked", value=bool(st.session_state.get("real_bridge_result")), key="v67_bridge_done")
+        normality_checked = e2.checkbox("Normal/abnormal baseline checked", value=bool(st.session_state.get("normality_snapshot")), key="v67_normality_done")
+        field_evidence_done = e2.checkbox("Field evidence or hardware reference", value=bool(st.session_state.get("field_evidence_v2_snapshot") or st.session_state.get("hardware_reference_v59_snapshot")), key="v67_field_evidence_done")
+        trusted_claims = e3.checkbox("Safe claims/disclaimers active", value=True, key="v67_safe_claims")
+        customer_acceptance_defined = e3.checkbox("Customer acceptance criteria defined", value=bool(st.session_state.get("proposal_sow_snapshot") or st.session_state.get("paid_pilot_v45_snapshot")), key="v67_acceptance_defined")
+        full_test_recent = e3.checkbox("Recent full/smoke test passed", value=True, key="v67_full_test_recent")
+
+    evidence_flags = {
+        "dataset_generated": dataset_generated,
+        "real_upload_done": real_upload_done,
+        "privacy_plan_done": privacy_plan_done,
+        "synthetic_to_real_done": synthetic_to_real_done,
+        "normality_checked": normality_checked,
+        "field_evidence_done": field_evidence_done,
+        "trusted_claims": trusted_claims,
+        "customer_acceptance_defined": customer_acceptance_defined,
+        "full_test_recent": full_test_recent,
+    }
+
+    dataset_df = st.session_state.get("dataset") if isinstance(st.session_state.get("dataset"), pd.DataFrame) else pd.DataFrame()
+    related_snapshots = {
+        "fusion_doctor": st.session_state.get("fusion_doctor") or {},
+        "trust_gate": st.session_state.get("trust_gate") or {},
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot") or {},
+        "privacy_learning_v52": st.session_state.get("field_learning_v52_snapshot") or {},
+        "field_evidence_v2": st.session_state.get("field_evidence_v2_snapshot") or {},
+        "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot") or {},
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot") or {},
+        "paid_pilot": st.session_state.get("paid_pilot_v45_snapshot") or {},
+    }
+
+    if st.button("Build Reliability Calibration Plan V67", type="primary", use_container_width=True, key="v67_build_calibration"):
+        snapshot = core.build_reliability_calibration_v67(
+            project_name=st.session_state.project_name,
+            dataset_df=dataset_df,
+            calibration_target=calibration_target,
+            use_case_risk=use_case_risk,
+            real_sample_count=int(real_sample_count),
+            target_confidence=int(target_confidence),
+            false_alarm_tolerance=false_alarm_tolerance,
+            missing_cost=missing_cost,
+            evidence_flags=evidence_flags,
+            related_snapshots=related_snapshots,
+            notes=benchmark_notes,
+        )
+        st.session_state.reliability_calibration_v67_snapshot = snapshot
+        st.session_state.reliability_calibration_v67_bundle = core.create_reliability_calibration_v67_bundle(st.session_state.project_name, snapshot)
+        st.success("Reliability calibration plan generated.")
+
+    snapshot = st.session_state.get("reliability_calibration_v67_snapshot")
+    if snapshot:
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Calibration score", f"{snapshot.get('calibration_score', 0)}%")
+        k2.metric("Evidence grade", snapshot.get("evidence_grade", "Unknown"))
+        k3.metric("Data quality", f"{snapshot.get('data_quality_score', 0)}%")
+        k4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        decision = snapshot.get("decision", "")
+        if "GO" in decision and "NO" not in decision:
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif "NEEDS" in decision or "CONTROLLED" in decision:
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.error(snapshot.get("recommended_next_step", ""))
+
+        tabs = st.tabs(["Benchmark", "Calibration plan", "Gaps", "Safe claims"])
+        with tabs[0]:
+            st.subheader("Reliability benchmark matrix")
+            st.dataframe(pd.DataFrame(snapshot.get("benchmark_matrix", [])), use_container_width=True)
+            st.subheader("Evidence components")
+            st.dataframe(pd.DataFrame(snapshot.get("score_components", [])), use_container_width=True)
+        with tabs[1]:
+            st.subheader("Calibration actions")
+            for item in snapshot.get("calibration_actions", []):
+                st.info(item)
+            st.subheader("Acceptance criteria")
+            for item in snapshot.get("acceptance_criteria", []):
+                st.write(f"- {item}")
+        with tabs[2]:
+            st.subheader("Proof gaps")
+            for item in snapshot.get("proof_gaps", []):
+                st.warning(item)
+            st.subheader("Blocked claims until validated")
+            for item in snapshot.get("blocked_claims", []):
+                st.error(item)
+        with tabs[3]:
+            st.subheader("Safe customer-facing claims")
+            for item in snapshot.get("safe_claims", []):
+                st.success(item)
+            st.subheader("Claims to avoid")
+            for item in snapshot.get("claims_to_avoid", []):
+                st.warning(item)
+
+        if st.session_state.get("reliability_calibration_v67_bundle"):
+            st.download_button(
+                "Download Reliability Calibration Bundle V67",
+                st.session_state.reliability_calibration_v67_bundle,
+                file_name=f"{st.session_state.project_name}_reliability_calibration_v67.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v67_download_calibration_bundle",
+            )
+
+    st.caption("V67 improves reliability evidence and benchmarking. It is not a certification, legal opinion or guarantee of production accuracy.")
+
+
+
+def render_automation_orchestrator_v68_tab():
+    st.header("Automation Orchestrator V68")
+    st.write(
+        "This checks how much of the EdgeTwin customer journey is already automatic, what still needs founder approval, "
+        "and which next action should run before a paid pilot or customer handoff."
+    )
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        automation_goal = st.selectbox(
+            "Automation goal",
+            ["Controlled paid pilot", "Customer self-service demo", "Founder-assisted delivery", "Public SaaS preview", "Enterprise/on-prem evaluation"],
+            key="v68_automation_goal",
+        )
+        notes = st.text_area(
+            "Founder notes / constraints",
+            value="Keep customer flow simple, automate checks and bundles, keep payment/privacy/final claims under founder approval.",
+            height=90,
+            key="v68_notes",
+        )
+    with c2:
+        customer_self_service = st.checkbox("Allow customer self-service route", value=True, key="v68_customer_self_service")
+        auto_generate_bundles = st.checkbox("Auto-generate draft bundles after checks", value=True, key="v68_auto_generate_bundles")
+        auto_followup_queue = st.checkbox("Create automatic follow-up task queue", value=True, key="v68_auto_followup_queue")
+        require_human_approval = st.checkbox("Require founder approval for payment/delivery/claims", value=True, key="v68_require_human_approval")
+        allow_payment_without_review = st.checkbox("Allow payment without founder review", value=False, key="v68_allow_payment_without_review")
+        allow_raw_data_global_learning = st.checkbox("Allow raw customer data for global learning", value=False, key="v68_allow_raw_data_global_learning")
+
+    snapshots = {
+        "auto_pilot": st.session_state.get("auto_pilot_result"),
+        "customer_mode_v50": st.session_state.get("customer_mode_v50_snapshot"),
+        "customer_ui_v51": st.session_state.get("customer_ui_v51_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "quote_to_cash": st.session_state.get("quote_to_cash_snapshot"),
+        "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
+        "founder_ops_v49": st.session_state.get("founder_ops_v49_snapshot"),
+        "customer_success": st.session_state.get("customer_success_snapshot"),
+        "traction_proof_v61": st.session_state.get("traction_proof_v61_snapshot"),
+        "case_study_v63": st.session_state.get("case_study_v63_snapshot"),
+        "buyer_dataroom_v64": st.session_state.get("buyer_dataroom_v64_snapshot"),
+        "ip_moat_v65": st.session_state.get("ip_moat_v65_snapshot"),
+    }
+
+    if st.button("Build Automation Orchestrator Plan V68", type="primary", use_container_width=True, key="v68_build_automation_plan"):
+        snapshot = core.build_automation_orchestrator_v68(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            automation_goal=automation_goal,
+            customer_self_service=customer_self_service,
+            auto_generate_bundles=auto_generate_bundles,
+            auto_followup_queue=auto_followup_queue,
+            require_human_approval=require_human_approval,
+            allow_payment_without_review=allow_payment_without_review,
+            allow_raw_data_global_learning=allow_raw_data_global_learning,
+            notes=notes,
+        )
+        st.session_state.automation_orchestrator_v68_snapshot = snapshot
+        st.session_state.automation_orchestrator_v68_bundle = core.create_automation_orchestrator_v68_bundle(st.session_state.project_name, snapshot)
+        st.success("Automation plan generated. Review the next-action queue and manual approval gates below.")
+
+    snapshot = st.session_state.get("automation_orchestrator_v68_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Automation", f"{snapshot.get('automation_score')}%")
+        m2.metric("Coverage", f"{snapshot.get('coverage_score')}%")
+        m3.metric("Safety", f"{snapshot.get('safety_score')}%")
+        m4.metric("Decision", snapshot.get("decision"))
+
+        decision = str(snapshot.get("decision", ""))
+        if "GO" in decision and "NO" not in decision:
+            st.success(snapshot.get("next_best_action", ""))
+        elif "PARTIAL" in decision:
+            st.warning(snapshot.get("next_best_action", ""))
+        else:
+            st.error(snapshot.get("next_best_action", ""))
+
+        tabs = st.tabs(["Next-action queue", "Automation map", "Human gates", "Customer simplicity"])
+        with tabs[0]:
+            st.subheader("Automatic next-action queue")
+            st.dataframe(pd.DataFrame(snapshot.get("automation_queue", [])), use_container_width=True)
+            st.caption("This is the practical do-next order. It reduces your manual thinking, but does not bypass founder approval for risky actions.")
+        with tabs[1]:
+            st.subheader("Connected automation components")
+            st.dataframe(pd.DataFrame(snapshot.get("components", [])), use_container_width=True)
+            st.subheader("Trigger map")
+            st.dataframe(pd.DataFrame(snapshot.get("trigger_map", [])), use_container_width=True)
+        with tabs[2]:
+            st.subheader("Manual approval steps that should stay manual")
+            for item in snapshot.get("manual_approval_steps", []):
+                st.warning(item)
+            st.subheader("Do not automate yet")
+            for item in snapshot.get("do_not_automate_yet", []):
+                st.error(item)
+        with tabs[3]:
+            st.subheader("Customer simplification rules")
+            for item in snapshot.get("customer_simplification", []):
+                st.success(item)
+            st.subheader("Founder automation rules")
+            for item in snapshot.get("founder_automation", []):
+                st.info(item)
+
+        if st.session_state.get("automation_orchestrator_v68_bundle"):
+            st.download_button(
+                "Download Automation Orchestrator Bundle V68",
+                st.session_state.automation_orchestrator_v68_bundle,
+                file_name=f"{st.session_state.project_name}_automation_orchestrator_v68.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v68_download_automation_bundle",
+            )
+
+    st.caption("V68 is assisted automation by design. Payment, privacy consent, paid delivery, legal/scope decisions and production-readiness claims still require human approval.")
+
+
+# ============================================================
+# V69 — Zero-Touch Customer Value Concierge
+# ============================================================
+
+def render_zero_touch_v69_tab():
+    st.header("Zero-Touch Customer Value Concierge V69")
+    st.write(
+        "V69 is designed for your time problem and the customer's clarity problem: it turns the full EdgeTwin engine into one simple, guided route. "
+        "The customer sees what they get, why it is worth paying for, what is ready, what is not ready, and what happens next."
+    )
+
+    c1, c2 = st.columns([1.1, 1])
+    with c1:
+        customer_goal = st.text_area(
+            "Customer goal / problem",
+            value="We want to know whether our sensor use-case is suitable for an Edge AI pilot, what data is needed, and what a realistic next step is.",
+            height=95,
+            key="v69_customer_goal",
+        )
+        offer_level = st.selectbox(
+            "Offer level to guide toward",
+            ["Starter Pilot", "Professional Pilot", "Real-Data Pilot", "Enterprise / Custom Pilot"],
+            index=1,
+            key="v69_offer_level",
+        )
+        customer_complexity = st.selectbox(
+            "Customer complexity",
+            ["Low", "Medium", "High", "Safety-critical / restricted"],
+            index=1,
+            key="v69_customer_complexity",
+        )
+        customer_data_status = st.selectbox(
+            "Customer data status",
+            ["No real data yet", "Example files available", "Labelled real data available", "Field validated data available"],
+            index=1 if st.session_state.get("real_upload_v56_snapshot") else 0,
+            key="v69_customer_data_status",
+        )
+    with c2:
+        founder_time_budget = st.slider("Founder time budget per lead", 0, 240, 30, step=5, key="v69_founder_time_budget")
+        allow_customer_self_service = st.checkbox("Allow customer self-service route", value=True, key="v69_allow_self_service")
+        auto_prepare_outputs = st.checkbox("Auto-prepare draft outputs", value=True, key="v69_auto_prepare_outputs")
+        require_approval_for_paid_steps = st.checkbox("Require founder approval before payment/delivery", value=True, key="v69_founder_approval")
+        hide_advanced_details = st.checkbox("Hide advanced engine details from customer", value=True, key="v69_hide_advanced")
+        show_value_for_money = st.checkbox("Show clear value-for-money explanation", value=True, key="v69_show_value")
+
+    snapshots = {
+        "customer_mode_v50": st.session_state.get("customer_mode_v50_snapshot"),
+        "customer_ui_v51": st.session_state.get("customer_ui_v51_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "launch_experience_v53": st.session_state.get("launch_experience_v53_snapshot"),
+        "first_customer_beta_v55": st.session_state.get("first_customer_beta_v55_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+        "traction_proof_v61": st.session_state.get("traction_proof_v61_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+        "case_study_v63": st.session_state.get("case_study_v63_snapshot"),
+        "buyer_dataroom_v64": st.session_state.get("buyer_dataroom_v64_snapshot"),
+        "ip_moat_v65": st.session_state.get("ip_moat_v65_snapshot"),
+        "continuous_improvement_v66": st.session_state.get("continuous_improvement_v66_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "auto_pilot": st.session_state.get("auto_pilot_result"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
+    }
+
+    if st.button("Build Zero-Touch Value Route V69", type="primary", use_container_width=True, key="v69_build_zero_touch"):
+        snapshot = core.build_zero_touch_customer_value_v69(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            customer_goal=customer_goal,
+            offer_level=offer_level,
+            customer_complexity=customer_complexity,
+            customer_data_status=customer_data_status,
+            founder_time_budget_minutes=founder_time_budget,
+            allow_customer_self_service=allow_customer_self_service,
+            auto_prepare_outputs=auto_prepare_outputs,
+            require_approval_for_paid_steps=require_approval_for_paid_steps,
+            hide_advanced_details=hide_advanced_details,
+            show_value_for_money=show_value_for_money,
+        )
+        st.session_state.zero_touch_v69_snapshot = snapshot
+        st.session_state.zero_touch_v69_bundle = core.create_zero_touch_customer_value_v69_bundle(st.session_state.project_name, snapshot)
+        st.success("Zero-touch customer value route generated.")
+
+    snapshot = st.session_state.get("zero_touch_v69_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Zero-touch", f"{snapshot.get('zero_touch_score')}%")
+        m2.metric("Customer clarity", f"{snapshot.get('customer_clarity_score')}%")
+        m3.metric("Value proof", f"{snapshot.get('value_proof_score')}%")
+        m4.metric("Decision", snapshot.get("decision"))
+
+        decision = str(snapshot.get("decision", ""))
+        if "SELF-SERVICE" in decision:
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif "ASSISTED" in decision or "CONTROLLED" in decision:
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.error(snapshot.get("recommended_next_step", ""))
+
+        tabs = st.tabs(["Customer route", "Value for money", "Founder time shield", "Hidden engine", "Approval gates"])
+        with tabs[0]:
+            st.subheader("Simple customer route")
+            for item in snapshot.get("customer_route", []):
+                st.markdown(f"- **{item.get('step')}** — {item.get('customer_text')}")
+            st.subheader("Customer-facing status badges")
+            for badge in snapshot.get("customer_badges", []):
+                st.markdown(f'<span class="v51-badge">{badge}</span>', unsafe_allow_html=True)
+        with tabs[1]:
+            st.subheader("What the customer gets")
+            for item in snapshot.get("customer_value_items", []):
+                st.success(item)
+            st.subheader("Value-for-money explanation")
+            st.write(snapshot.get("value_for_money_explanation", ""))
+        with tabs[2]:
+            st.subheader("Founder time shield")
+            st.metric("Estimated founder time", f"{snapshot.get('estimated_founder_minutes')} min")
+            for item in snapshot.get("founder_time_savers", []):
+                st.info(item)
+            st.subheader("Do not spend time on")
+            for item in snapshot.get("do_not_spend_time_on", []):
+                st.warning(item)
+        with tabs[3]:
+            st.subheader("Hidden engine checks")
+            st.dataframe(pd.DataFrame(snapshot.get("hidden_engine_checks", [])), use_container_width=True)
+            st.caption("These are kept behind the scenes so the customer gets clarity, not engineering overload.")
+        with tabs[4]:
+            st.subheader("Approval gates")
+            for item in snapshot.get("approval_gates", []):
+                st.error(item)
+            st.subheader("Blocked promises")
+            for item in snapshot.get("blocked_promises", []):
+                st.warning(item)
+
+        if st.session_state.get("zero_touch_v69_bundle"):
+            st.download_button(
+                "Download Zero-Touch Value Bundle V69",
+                st.session_state.zero_touch_v69_bundle,
+                file_name=f"{st.session_state.project_name}_zero_touch_value_v69.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v69_download_zero_touch_bundle",
+            )
+
+    st.caption("V69 reduces founder workload and customer confusion. It does not remove human review for paid delivery, privacy consent, legal/scope decisions or production-readiness claims.")
+
+
+
+# ============================================================
+# V70 — Outcome Assurance & Customer Success Autopilot
+# ============================================================
+
+def render_outcome_assurance_v70_tab():
+    st.header("Outcome Assurance & Customer Success Autopilot V70")
+    st.write(
+        "V70 makes the customer delivery simple and clear: what they receive, why it matters, what is still not production-ready, "
+        "and what follow-up can be automated so the founder does not become the support desk."
+    )
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        delivery_stage = st.selectbox(
+            "Delivery stage",
+            ["Before payment", "After payment", "Ready for delivery", "Post-delivery follow-up"],
+            index=2,
+            key="v70_delivery_stage",
+        )
+        package_type = st.selectbox(
+            "Package type",
+            ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Pilot Bundle", "Enterprise / Custom Pilot"],
+            index=1,
+            key="v70_package_type",
+        )
+        customer_success_goal = st.text_area(
+            "Customer success goal",
+            value="Customer understands the pilot output, what is included, what is not included, and the next validation step.",
+            height=95,
+            key="v70_customer_success_goal",
+        )
+    with c2:
+        support_level = st.selectbox(
+            "Support model",
+            ["Self-service with founder approval gates", "Light assisted support", "Founder manual support"],
+            index=0,
+            key="v70_support_level",
+        )
+        max_founder_minutes = st.slider("Max founder minutes per delivery", 5, 120, 20, 5, key="v70_founder_minutes")
+        require_acceptance = st.checkbox("Require customer acceptance checklist", value=True, key="v70_require_acceptance")
+        auto_prepare_followup = st.checkbox("Prepare automated follow-up sequence", value=True, key="v70_auto_followup")
+
+    snapshots = {
+        "auto_pilot": st.session_state.get("auto_pilot_result"),
+        "fusion_doctor": st.session_state.get("fusion_doctor"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "quote_to_cash": st.session_state.get("quote_to_cash_snapshot"),
+        "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
+        "case_study_v63": st.session_state.get("case_study_v63_snapshot"),
+        "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+    }
+
+    if st.button("Build Outcome Assurance Plan V70", type="primary", use_container_width=True, key="v70_build_outcome_assurance"):
+        snapshot = core.build_outcome_assurance_v70(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            delivery_stage=delivery_stage,
+            package_type=package_type,
+            customer_success_goal=customer_success_goal,
+            support_level=support_level,
+            require_acceptance=require_acceptance,
+            auto_prepare_followup=auto_prepare_followup,
+            max_founder_minutes=max_founder_minutes,
+        )
+        st.session_state.outcome_assurance_v70_snapshot = snapshot
+        st.session_state.outcome_assurance_v70_bundle = core.create_outcome_assurance_v70_bundle(st.session_state.project_name, snapshot)
+        st.success("Outcome Assurance V70 generated.")
+
+    snapshot = st.session_state.get("outcome_assurance_v70_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Outcome assurance", f"{snapshot.get('outcome_assurance_score', 0)}%")
+        m2.metric("Delivery clarity", f"{snapshot.get('delivery_clarity_score', 0)}%")
+        m3.metric("Evidence", f"{snapshot.get('outcome_evidence_score', 0)}%")
+        m4.metric("Founder time", f"{snapshot.get('estimated_founder_minutes', 0)} min")
+
+        decision = snapshot.get("decision", "")
+        if "GO" in decision and "HOLD" not in decision:
+            st.success(f"Decision: {decision}")
+        else:
+            st.warning(f"Decision: {decision}")
+        st.info(snapshot.get("recommended_next_step", ""))
+
+        tabs = st.tabs(["Customer receives", "Acceptance", "FAQ", "Quality gates", "Founder shield"])
+        with tabs[0]:
+            st.subheader("What the customer receives")
+            for item in snapshot.get("what_customer_receives", []):
+                st.write(f"- {item}")
+            st.subheader("Safe customer claims")
+            for item in snapshot.get("safe_customer_claims", []):
+                st.success(item)
+        with tabs[1]:
+            st.subheader("Acceptance criteria")
+            for item in snapshot.get("acceptance_criteria", []):
+                st.write(f"- {item}")
+            st.subheader("Customer next steps")
+            for item in snapshot.get("customer_next_steps", []):
+                st.write(f"- {item}")
+        with tabs[2]:
+            st.subheader("Support FAQ")
+            st.dataframe(pd.DataFrame(snapshot.get("support_faq", [])), use_container_width=True)
+            if snapshot.get("automated_followup_sequence"):
+                st.subheader("Automated follow-up sequence")
+                st.dataframe(pd.DataFrame(snapshot.get("automated_followup_sequence", [])), use_container_width=True)
+        with tabs[3]:
+            st.subheader("Quality gates")
+            st.dataframe(pd.DataFrame(snapshot.get("quality_gates", [])), use_container_width=True)
+        with tabs[4]:
+            st.subheader("Founder time shield")
+            for item in snapshot.get("founder_do_not_touch", []):
+                st.warning(item)
+            st.subheader("Blocked promises")
+            for item in snapshot.get("blocked_promises", []):
+                st.error(item)
+
+        if st.session_state.get("outcome_assurance_v70_bundle"):
+            st.download_button(
+                "Download Outcome Assurance Bundle V70",
+                st.session_state.outcome_assurance_v70_bundle,
+                file_name=f"{st.session_state.project_name}_outcome_assurance_v70.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v70_download_outcome_assurance_bundle",
+            )
+
+    st.caption("V70 keeps the customer experience simple while protecting delivery quality, founder time, privacy boundaries and honest pilot-only claims.")
+
+
+
+# ============================================================
+# V71 — Customer Support Autopilot / Self-Service Deflection Center
+# ============================================================
+
+def render_customer_support_v71_tab():
+    st.header("Customer Support Autopilot V71")
+    st.write(
+        "Turns common customer questions into controlled self-service answers, clear next steps and safe escalation gates. "
+        "Goal: customers understand what they paid for, while founder time stays protected."
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        customer_stage = st.selectbox(
+            "Customer stage",
+            [
+                "Before pilot generation",
+                "After pilot generation",
+                "After readiness review",
+                "After proposal / quote",
+                "After payment / checkout readiness",
+                "After delivery / handoff",
+            ],
+            index=5,
+            key="v71_customer_stage",
+        )
+        issue_category = st.selectbox(
+            "Question / support category",
+            [
+                "General: what do I get?",
+                "Next step confusion",
+                "Upload/data question",
+                "Report/readiness question",
+                "Pricing/checkout question",
+                "Privacy/data-use question",
+                "Technical bug or missing output",
+                "Production accuracy/safety question",
+            ],
+            index=0,
+            key="v71_issue_category",
+        )
+        customer_question = st.text_area(
+            "Customer question",
+            value="What did I receive, what should I do next, and what is included in the pilot package?",
+            height=110,
+            key="v71_customer_question",
+        )
+    with c2:
+        urgency = st.selectbox("Urgency", ["Low", "Normal", "High", "Urgent / customer blocked"], index=1, key="v71_urgency")
+        customer_confidence = st.slider("Customer confidence / understanding", 0, 10, 7, 1, key="v71_customer_confidence")
+        self_service_enabled = st.checkbox("Allow self-service answer first", value=True, key="v71_self_service_enabled")
+        customer_has_downloaded = st.checkbox("Customer has downloaded/reviewed bundle", value=False, key="v71_customer_has_downloaded")
+        customer_has_uploaded_data = st.checkbox("Customer has uploaded real data", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v71_customer_has_uploaded")
+        max_founder_minutes = st.slider("Max founder minutes allowed", 0, 120, 10, 5, key="v71_max_founder_minutes")
+
+    snapshots = {
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
+    }
+
+    if st.button("Build Support Autopilot Plan V71", type="primary", use_container_width=True, key="v71_build_support_autopilot"):
+        snapshot = core.build_customer_support_autopilot_v71(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            customer_stage=customer_stage,
+            issue_category=issue_category,
+            customer_question=customer_question,
+            customer_confidence=customer_confidence,
+            urgency=urgency,
+            self_service_enabled=self_service_enabled,
+            max_founder_minutes=max_founder_minutes,
+            customer_has_downloaded=customer_has_downloaded,
+            customer_has_uploaded_data=customer_has_uploaded_data,
+        )
+        st.session_state.customer_support_v71_snapshot = snapshot
+        st.session_state.customer_support_v71_bundle = core.create_customer_support_autopilot_v71_bundle(st.session_state.project_name, snapshot)
+        st.success("Customer Support Autopilot V71 generated.")
+
+    snapshot = st.session_state.get("customer_support_v71_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Support deflection", f"{snapshot.get('support_deflection_score', 0)}%")
+        m2.metric("Customer clarity", f"{snapshot.get('customer_clarity_score', 0)}%")
+        m3.metric("Escalation risk", f"{snapshot.get('escalation_risk_score', 0)}%")
+        m4.metric("Founder time", f"{snapshot.get('estimated_founder_minutes', 0)} min")
+
+        decision = snapshot.get("decision", "")
+        if "RESOLVED" in decision:
+            st.success(f"Decision: {decision}")
+        elif "APPROVAL" in decision:
+            st.warning(f"Decision: {decision}")
+        else:
+            st.error(f"Decision: {decision}")
+
+        st.info(snapshot.get("recommended_next_step", ""))
+        st.markdown("#### Controlled customer answer")
+        st.write(snapshot.get("customer_safe_answer", ""))
+
+        tabs = st.tabs(["Value answer", "FAQ", "Support queue", "Escalation gates", "Founder shield"])
+        with tabs[0]:
+            st.subheader("Why this is worth paying for")
+            for item in snapshot.get("value_for_money_explanation", []):
+                st.write(f"- {item}")
+            st.subheader("Customer next steps")
+            for item in snapshot.get("next_steps", []):
+                st.write(f"- {item}")
+            st.subheader("Required inputs")
+            for item in snapshot.get("required_inputs", []):
+                st.write(f"- {item}")
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("faq_articles", [])), use_container_width=True)
+            st.subheader("Auto-reply sequence")
+            st.dataframe(pd.DataFrame(snapshot.get("auto_reply_sequence", [])), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("support_queue", [])), use_container_width=True)
+            st.subheader("Support metrics")
+            st.dataframe(pd.DataFrame(snapshot.get("support_metrics", [])), use_container_width=True)
+        with tabs[3]:
+            for item in snapshot.get("escalation_conditions", []):
+                st.warning(item)
+            st.subheader("Blocked actions")
+            for item in snapshot.get("blocked_actions", []):
+                st.error(item)
+        with tabs[4]:
+            st.subheader("Founder do-not-touch list")
+            for item in snapshot.get("founder_do_not_touch", []):
+                st.warning(item)
+            st.subheader("Safe claims")
+            for item in snapshot.get("safe_claims", []):
+                st.success(item)
+            st.subheader("Claims to avoid")
+            for item in snapshot.get("claims_to_avoid", []):
+                st.error(item)
+
+        if st.session_state.get("customer_support_v71_bundle"):
+            st.download_button(
+                "Download Customer Support Autopilot Bundle V71",
+                st.session_state.customer_support_v71_bundle,
+                file_name=f"{st.session_state.project_name}_customer_support_v71.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v71_download_customer_support_bundle",
+            )
+
+    st.caption("V71 reduces founder support workload with controlled answers, customer-safe FAQs and escalation gates. It does not automate legal, privacy, payment or production-safety decisions.")
+
+
+
+# ============================================================
+# V72 — Customer Status Portal / Project State & Next-Step Tracker
+# ============================================================
+
+def render_customer_status_v72_tab():
+    st.header("Customer Status Portal V72")
+    st.write(
+        "V72 gives the customer one calm status screen: what is ready, what is blocked, what they need to do next, "
+        "what EdgeTwin is preparing, and when founder approval is required. This reduces repeated support questions."
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        project_stage = st.selectbox(
+            "Project stage",
+            [
+                "Intake",
+                "Pilot generation",
+                "Readiness review",
+                "Proposal / SOW",
+                "Checkout / payment readiness",
+                "Delivery / handoff",
+                "Post-delivery follow-up",
+            ],
+            index=5,
+            key="v72_project_stage",
+        )
+        customer_plan = st.selectbox(
+            "Customer package",
+            ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Pilot Bundle", "Enterprise / Custom Pilot"],
+            index=1,
+            key="v72_customer_plan",
+        )
+        customer_question = st.text_area(
+            "Main customer status question",
+            value="Where are we now, what is ready, what do I need to do next, and what did I pay for?",
+            height=105,
+            key="v72_customer_question",
+        )
+    with c2:
+        payment_status = st.selectbox(
+            "Payment / commercial status",
+            ["Not requested", "Quote ready", "Waiting for customer approval", "Payment/invoice ready", "Paid / approved", "Manual review needed"],
+            index=1,
+            key="v72_payment_status",
+        )
+        privacy_status = st.selectbox(
+            "Privacy/data status",
+            ["Private only", "Feature learning opt-in", "Raw data permission requested", "Missing privacy decision"],
+            index=0,
+            key="v72_privacy_status",
+        )
+        next_milestone = st.text_input(
+            "Next visible milestone",
+            value="Review pilot readiness and confirm the next validation step.",
+            key="v72_next_milestone",
+        )
+        customer_inputs_complete = st.checkbox("Customer inputs complete", value=False, key="v72_customer_inputs_complete")
+        delivery_bundle_ready = st.checkbox("Delivery bundle ready", value=bool(st.session_state.get("customer_delivery_bundle") or st.session_state.get("outcome_assurance_v70_bundle")), key="v72_delivery_bundle_ready")
+        founder_review_required = st.checkbox("Founder approval required before next step", value=True, key="v72_founder_review_required")
+        support_self_service_ready = st.checkbox("Self-service support answers ready", value=bool(st.session_state.get("customer_support_v71_snapshot")), key="v72_support_ready")
+
+    snapshots = {
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+    }
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.get("dataset"), pd.DataFrame) else pd.DataFrame()
+
+    if st.button("Build Customer Status Portal V72", type="primary", use_container_width=True, key="v72_build_customer_status"):
+        snapshot = core.build_customer_status_portal_v72(
+            project_name=st.session_state.project_name,
+            dataset_df=dataset_df,
+            snapshots=snapshots,
+            project_stage=project_stage,
+            customer_plan=customer_plan,
+            customer_question=customer_question,
+            payment_status=payment_status,
+            privacy_status=privacy_status,
+            next_milestone=next_milestone,
+            customer_inputs_complete=customer_inputs_complete,
+            delivery_bundle_ready=delivery_bundle_ready,
+            founder_review_required=founder_review_required,
+            support_self_service_ready=support_self_service_ready,
+        )
+        st.session_state.customer_status_v72_snapshot = snapshot
+        st.session_state.customer_status_v72_bundle = core.create_customer_status_portal_v72_bundle(st.session_state.project_name, snapshot)
+        st.success("Customer Status Portal V72 generated.")
+
+    snapshot = st.session_state.get("customer_status_v72_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Status clarity", f"{snapshot.get('status_clarity_score', 0)}%")
+        m2.metric("Customer confidence", f"{snapshot.get('customer_confidence_score', 0)}%")
+        m3.metric("Founder time risk", snapshot.get("founder_time_risk", "Unknown"))
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        decision = snapshot.get("decision", "")
+        if "READY" in decision or "CLEAR" in decision:
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif "INPUT" in decision or "REVIEW" in decision:
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.error(snapshot.get("recommended_next_step", ""))
+
+        st.markdown("#### Customer-safe status summary")
+        st.info(snapshot.get("customer_visible_summary", ""))
+        for badge in snapshot.get("status_badges", []):
+            st.markdown(f'<span class="v51-badge">{badge}</span>', unsafe_allow_html=True)
+
+        tabs = st.tabs(["One-screen status", "Timeline", "Blockers", "Customer actions", "Founder shield"])
+        with tabs[0]:
+            st.dataframe(pd.DataFrame(snapshot.get("status_cards", [])), use_container_width=True)
+            st.subheader("Value delivered")
+            for item in snapshot.get("value_delivered", []):
+                st.write(f"- {item}")
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("timeline", [])), use_container_width=True)
+        with tabs[2]:
+            for item in snapshot.get("blockers", []):
+                st.warning(item)
+            st.subheader("Blocked promises")
+            for item in snapshot.get("blocked_promises", []):
+                st.error(item)
+        with tabs[3]:
+            st.subheader("Customer next actions")
+            for item in snapshot.get("customer_next_actions", []):
+                st.write(f"- {item}")
+            st.subheader("Required inputs")
+            for item in snapshot.get("required_customer_inputs", []):
+                st.write(f"- {item}")
+        with tabs[4]:
+            st.subheader("Founder actions")
+            for item in snapshot.get("founder_actions", []):
+                st.info(item)
+            st.subheader("Do not handle manually")
+            for item in snapshot.get("do_not_handle_manually", []):
+                st.warning(item)
+            st.subheader("Safe claims")
+            for item in snapshot.get("safe_claims", []):
+                st.success(item)
+
+        if st.session_state.get("customer_status_v72_bundle"):
+            st.download_button(
+                "Download Customer Status Portal Bundle V72",
+                st.session_state.customer_status_v72_bundle,
+                file_name=f"{st.session_state.project_name}_customer_status_v72.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v72_download_customer_status_bundle",
+            )
+
+    st.caption("V72 is a customer-facing status portal. It keeps the project simple and transparent without promising production performance, legal compliance or fully automated paid delivery.")
+
+# ============================================================
+# V73 — Unified Customer Journey / One-Page Value Cockpit
+# ============================================================
+
+def render_customer_journey_v73_tab():
+    st.header("Unified Customer Journey V73")
+    st.write(
+        "V73 turns EdgeTwin into one calm customer cockpit: value, status, readiness, missing inputs, next step and escalation gates. "
+        "The customer sees a simple path, while the deeper OMEGA-X engine checks stay behind the scenes."
+    )
+
+    snapshots = {
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "delivery": st.session_state.get("customer_delivery_snapshot"),
+    }
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        use_case = st.text_input("Customer use-case", value="Predictive maintenance / acoustic-vibration pilot", key="v73_use_case")
+        customer_stage = st.selectbox(
+            "Customer stage",
+            ["Just exploring", "Pilot dataset needed", "Readiness review", "Proposal requested", "Paid pilot / delivery", "Post-delivery follow-up"],
+            index=2,
+            key="v73_customer_stage",
+        )
+    with c2:
+        customer_data_status = st.selectbox(
+            "Customer data status",
+            ["No data yet", "Synthetic pilot only", "Some real WAV/CSV samples", "Real data uploaded and inspected", "Field/hardware evidence available"],
+            index=1,
+            key="v73_customer_data_status",
+        )
+        commercial_status = st.selectbox(
+            "Commercial status",
+            ["Free demo", "Qualified lead", "Proposal requested", "Quote/SOW ready", "Payment pending", "Paid / approved"],
+            index=1,
+            key="v73_commercial_status",
+        )
+    with c3:
+        privacy_status = st.selectbox(
+            "Privacy mode",
+            ["Private only", "Feature learning allowed", "Raw data permission requested", "Missing privacy decision"],
+            index=0,
+            key="v73_privacy_status",
+        )
+        founder_touch_target = st.slider("Founder time target per customer (minutes)", 0, 120, 15, 5, key="v73_founder_touch_target")
+
+    st.markdown("---")
+    if st.button("Build Unified Customer Journey V73", type="primary", use_container_width=True, key="v73_build_customer_journey"):
+        snapshot = core.build_unified_customer_journey_v73(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            use_case=use_case,
+            customer_stage=customer_stage,
+            customer_data_status=customer_data_status,
+            commercial_status=commercial_status,
+            privacy_status=privacy_status,
+            founder_touch_target_minutes=int(founder_touch_target),
+        )
+        st.session_state.customer_journey_v73_snapshot = snapshot
+        st.session_state.customer_journey_v73_bundle = core.create_unified_customer_journey_v73_bundle(st.session_state.project_name, snapshot)
+        st.success("Unified Customer Journey V73 generated.")
+
+    snapshot = st.session_state.get("customer_journey_v73_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Journey clarity", f"{snapshot.get('journey_clarity_score', 0)}%")
+        m2.metric("Value clarity", f"{snapshot.get('value_clarity_score', 0)}%")
+        m3.metric("Trust gate", f"{snapshot.get('trust_gate_score', 0)}%")
+        m4.metric("Founder time risk", snapshot.get("founder_time_risk", "Unknown"))
+
+        if snapshot.get("decision") == "ZERO-TOUCH CUSTOMER GO":
+            st.success(snapshot.get("recommended_next_step"))
+        elif snapshot.get("decision") in ["ASSISTED CUSTOMER GO", "CUSTOMER INPUT NEEDED"]:
+            st.warning(snapshot.get("recommended_next_step"))
+        else:
+            st.error(snapshot.get("recommended_next_step"))
+
+        st.markdown("### Customer-visible cockpit")
+        st.info(snapshot.get("customer_one_page_summary", ""))
+
+        badges = snapshot.get("status_badges", [])
+        if badges:
+            st.markdown(" ".join([f'<span class="v51-badge">{b}</span>' for b in badges]), unsafe_allow_html=True)
+
+        tabs = st.tabs(["Journey", "Value", "Next actions", "Hidden engine checks", "Founder shield"])
+        with tabs[0]:
+            journey_df = pd.DataFrame(snapshot.get("journey_steps", []))
+            if len(journey_df) > 0:
+                st.dataframe(journey_df, use_container_width=True)
+            st.subheader("Customer stage summary")
+            for item in snapshot.get("customer_visible_status", []):
+                st.write(f"- {item}")
+        with tabs[1]:
+            st.subheader("What the customer pays for")
+            for item in snapshot.get("value_for_money_points", []):
+                st.success(item)
+            st.subheader("Safe value claims")
+            for item in snapshot.get("safe_value_claims", []):
+                st.info(item)
+        with tabs[2]:
+            st.subheader("Customer next actions")
+            for item in snapshot.get("customer_next_actions", []):
+                st.write(f"- {item}")
+            st.subheader("Missing inputs")
+            for item in snapshot.get("missing_inputs", []):
+                st.warning(item)
+        with tabs[3]:
+            st.subheader("Engine checks running behind the simple route")
+            checks_df = pd.DataFrame(snapshot.get("hidden_engine_checks", []))
+            if len(checks_df) > 0:
+                st.dataframe(checks_df, use_container_width=True)
+            st.caption("Customers do not need to understand every internal module. They need the result, the evidence level and the next step.")
+        with tabs[4]:
+            st.subheader("Founder time shield")
+            for item in snapshot.get("founder_time_shield", []):
+                st.info(item)
+            st.subheader("Escalation gates")
+            for item in snapshot.get("escalation_gates", []):
+                st.warning(item)
+            st.subheader("Blocked promises")
+            for item in snapshot.get("blocked_promises", []):
+                st.error(item)
+
+        if st.session_state.get("customer_journey_v73_bundle"):
+            st.download_button(
+                "Download Unified Customer Journey Bundle V73",
+                st.session_state.customer_journey_v73_bundle,
+                file_name=f"{st.session_state.project_name}_customer_journey_v73.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v73_download_customer_journey_bundle",
+            )
+
+    st.caption("V73 is a customer simplicity layer. It does not remove the deeper engine; it hides complexity and keeps founder approval gates for payment, privacy, production claims and delivery release.")
+
+
+# ============================================================
+# V74 — End-to-End Quality Guardian / Self-Test & Failure Recovery
+# ============================================================
+
+def render_quality_guardian_v74_tab():
+    st.header("End-to-End Quality Guardian V74")
+    st.write(
+        "V74 is the reliability layer for the whole product: it checks the critical customer/founder route, "
+        "looks for missing evidence/gates, and creates a safe recovery plan before a customer sees a broken or overpromised flow."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        launch_target = st.selectbox(
+            "Launch target",
+            ["Private beta", "Paid pilot launch", "Public SaaS preview", "Enterprise/on-prem evaluation"],
+            index=1,
+            key="v74_launch_target",
+        )
+    with c2:
+        automation_level = st.selectbox(
+            "Automation level",
+            ["Assisted automation", "Zero-touch customer route", "Founder-reviewed delivery", "Public self-service"],
+            index=1,
+            key="v74_automation_level",
+        )
+    with c3:
+        test_depth = st.selectbox(
+            "Self-test depth",
+            ["Core gates", "Full customer journey", "Commercial + delivery", "Launch-critical"],
+            index=3,
+            key="v74_test_depth",
+        )
+
+    st.caption("V74 does not promise production accuracy. It protects the pilot route, payment/delivery gates, privacy defaults and support/founder-time boundaries.")
+
+    snapshots = {
+        "customer_journey_v73": st.session_state.get("customer_journey_v73_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "continuous_improvement_v66": st.session_state.get("continuous_improvement_v66_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+        "launch_stabilization_v60_1": st.session_state.get("launch_stabilization_v60_1_snapshot"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
+        "cloud_architecture_v58": st.session_state.get("cloud_architecture_v58_snapshot"),
+        "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+    }
+    bundle_presence = {
+        "auto_pilot_bundle": st.session_state.get("auto_pilot_bundle") is not None,
+        "fusion_bundle": st.session_state.get("fusion_bundle") is not None,
+        "enterprise_bundle": st.session_state.get("enterprise_bundle") is not None,
+        "customer_journey_v73_bundle": st.session_state.get("customer_journey_v73_bundle") is not None,
+        "customer_status_v72_bundle": st.session_state.get("customer_status_v72_bundle") is not None,
+        "outcome_assurance_v70_bundle": st.session_state.get("outcome_assurance_v70_bundle") is not None,
+        "customer_support_v71_bundle": st.session_state.get("customer_support_v71_bundle") is not None,
+        "checkout_v57_bundle": st.session_state.get("checkout_v57_bundle") is not None,
+        "proposal_sow_bundle": st.session_state.get("proposal_sow_bundle") is not None,
+        "pricing_offer_bundle": st.session_state.get("pricing_offer_bundle") is not None,
+    }
+    expected_pages = list(_PAGE_RENDERERS.keys()) if "_PAGE_RENDERERS" in globals() else []
+
+    if st.button("Run End-to-End Quality Guardian V74", type="primary", use_container_width=True, key="v74_run_quality_guardian"):
+        snapshot = core.build_end_to_end_quality_guardian_v74(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            bundle_presence=bundle_presence,
+            launch_target=launch_target,
+            automation_level=automation_level,
+            test_depth=test_depth,
+            expected_pages=expected_pages,
+            workspace_mode=st.session_state.workspace_mode_v50,
+        )
+        st.session_state.quality_guardian_v74_snapshot = snapshot
+        st.session_state.quality_guardian_v74_bundle = core.create_quality_guardian_v74_bundle(st.session_state.project_name, snapshot)
+        st.success("Quality Guardian V74 self-test generated.")
+
+    snapshot = st.session_state.get("quality_guardian_v74_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Quality score", f"{snapshot.get('quality_score', 0)}%")
+        m2.metric("Route integrity", f"{snapshot.get('route_integrity_score', 0)}%")
+        m3.metric("Safety gates", f"{snapshot.get('safety_gate_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        if snapshot.get("decision") == "SELF-TEST PASS":
+            st.success(snapshot.get("recommended_next_step", "Continue."))
+        elif snapshot.get("decision") == "CONDITIONAL PASS":
+            st.warning(snapshot.get("recommended_next_step", "Fix the listed items before a broader launch."))
+        else:
+            st.error(snapshot.get("recommended_next_step", "Do not expose this route externally yet."))
+
+        st.markdown("#### System status badges")
+        st.markdown(" ".join([f'<span class="v51-badge">{badge}</span>' for badge in snapshot.get("status_badges", [])]), unsafe_allow_html=True)
+
+        checks_df = pd.DataFrame(snapshot.get("quality_checks", []))
+        if len(checks_df) > 0:
+            st.subheader("Quality checks")
+            st.dataframe(checks_df, use_container_width=True)
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.subheader("Must fix first")
+            for item in snapshot.get("must_fix_first", []):
+                st.warning(item)
+            st.subheader("Auto-recovery actions")
+            for item in snapshot.get("auto_recovery_actions", []):
+                st.write(f"- {item}")
+        with col_b:
+            st.subheader("Do not expose yet")
+            for item in snapshot.get("do_not_expose_yet", []):
+                st.error(item)
+            st.subheader("Founder approval gates")
+            for item in snapshot.get("founder_approval_gates", []):
+                st.write(f"- {item}")
+
+        with st.expander("Customer-safe launch copy", expanded=False):
+            st.write(snapshot.get("customer_safe_copy", ""))
+            st.markdown("**Safe claims**")
+            for item in snapshot.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.markdown("**Blocked promises**")
+            for item in snapshot.get("blocked_promises", []):
+                st.write(f"- {item}")
+
+        with st.expander("Failure recovery playbook", expanded=False):
+            for step in snapshot.get("failure_recovery_playbook", []):
+                st.write(f"- {step}")
+
+        if st.session_state.get("quality_guardian_v74_bundle"):
+            st.download_button(
+                "Download Quality Guardian Bundle V74",
+                st.session_state.quality_guardian_v74_bundle,
+                file_name=f"{st.session_state.project_name}_quality_guardian_v74.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v74_download_quality_guardian_bundle",
+            )
+    else:
+        st.info("Run the Quality Guardian. Use it before broad demos, paid pilot delivery or any public launch attempt.")
+
+    st.caption("V74 is a self-test and recovery planning layer. It improves reliability, but it is not a substitute for production monitoring, external security/legal review, field validation or cloud hardening.")
+
+
+
+# ============================================================
+# V75 — Deliverable QA & Value Lock / Customer Output Assurance
+# ============================================================
+
+def render_deliverable_qa_v75_tab():
+    st.header("Deliverable QA & Value Lock V75")
+    st.write(
+        "V75 is the last quality gate before a customer receives a bundle, report or paid handoff. "
+        "It checks if the output is clear, useful, safe, privacy-aware and worth the money — and blocks weak delivery when evidence is missing."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        package_type = st.selectbox(
+            "Package type",
+            ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Pilot Bundle", "Enterprise / Custom Pilot"],
+            index=1,
+            key="v75_package_type",
+        )
+    with c2:
+        delivery_stage = st.selectbox(
+            "Delivery stage",
+            ["Pre-demo", "Pre-proposal", "Pre-payment", "Pre-delivery", "Post-delivery review"],
+            index=3,
+            key="v75_delivery_stage",
+        )
+    with c3:
+        customer_visibility = st.selectbox(
+            "Customer visibility",
+            ["Customer summary only", "Customer + founder details", "Founder review only"],
+            index=0,
+            key="v75_customer_visibility",
+        )
+
+    snapshots = {
+        "quality_guardian_v74": st.session_state.get("quality_guardian_v74_snapshot"),
+        "customer_journey_v73": st.session_state.get("customer_journey_v73_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "delivery": st.session_state.get("customer_delivery_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+    }
+    bundle_presence = {
+        "auto_pilot_bundle": st.session_state.get("auto_pilot_bundle") is not None,
+        "fusion_bundle": st.session_state.get("fusion_bundle") is not None,
+        "enterprise_bundle": st.session_state.get("enterprise_bundle") is not None,
+        "professional_report_bundle": st.session_state.get("professional_report_bundle") is not None,
+        "proposal_sow_bundle": st.session_state.get("proposal_sow_bundle") is not None,
+        "checkout_v57_bundle": st.session_state.get("checkout_v57_bundle") is not None,
+        "customer_status_v72_bundle": st.session_state.get("customer_status_v72_bundle") is not None,
+        "outcome_assurance_v70_bundle": st.session_state.get("outcome_assurance_v70_bundle") is not None,
+        "quality_guardian_v74_bundle": st.session_state.get("quality_guardian_v74_bundle") is not None,
+    }
+
+    if st.button("Run Deliverable QA & Value Lock V75", type="primary", use_container_width=True, key="v75_run_deliverable_qa"):
+        snapshot = core.build_deliverable_qa_value_lock_v75(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            bundle_presence=bundle_presence,
+            package_type=package_type,
+            delivery_stage=delivery_stage,
+            customer_visibility=customer_visibility,
+        )
+        st.session_state.deliverable_qa_v75_snapshot = snapshot
+        st.session_state.deliverable_qa_v75_bundle = core.create_deliverable_qa_v75_bundle(st.session_state.project_name, snapshot)
+        st.success("Deliverable QA V75 generated.")
+
+    snapshot = st.session_state.get("deliverable_qa_v75_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Delivery QA", f"{snapshot.get('delivery_quality_score', 0)}%")
+        m2.metric("Value clarity", f"{snapshot.get('value_clarity_score', 0)}%")
+        m3.metric("Evidence", f"{snapshot.get('evidence_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        if snapshot.get("decision") == "DELIVERY APPROVED":
+            st.success(snapshot.get("recommended_next_step", "Delivery can proceed."))
+        elif snapshot.get("decision") == "FOUNDER REVIEW":
+            st.warning(snapshot.get("recommended_next_step", "Founder review is needed."))
+        else:
+            st.error(snapshot.get("recommended_next_step", "Block delivery until gaps are fixed."))
+
+        st.markdown("#### Customer-safe value summary")
+        st.markdown(" ".join([f'<span class="v51-badge">{badge}</span>' for badge in snapshot.get("status_badges", [])]), unsafe_allow_html=True)
+        st.write(snapshot.get("customer_value_summary", ""))
+
+        checks_df = pd.DataFrame(snapshot.get("qa_checks", []))
+        if len(checks_df) > 0:
+            st.subheader("QA checks")
+            st.dataframe(checks_df, use_container_width=True)
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.subheader("Fix before delivery")
+            for item in snapshot.get("fix_before_delivery", []):
+                st.warning(item)
+            st.subheader("Customer gets")
+            for item in snapshot.get("customer_receives", []):
+                st.write(f"- {item}")
+        with col_b:
+            st.subheader("Do not deliver yet")
+            for item in snapshot.get("do_not_deliver_yet", []):
+                st.error(item)
+            st.subheader("Founder time shield")
+            for item in snapshot.get("founder_time_shield", []):
+                st.write(f"- {item}")
+
+        with st.expander("Acceptance criteria", expanded=False):
+            for item in snapshot.get("acceptance_criteria", []):
+                st.write(f"- {item}")
+        with st.expander("Safe claims and blocked promises", expanded=False):
+            st.markdown("**Safe claims**")
+            for item in snapshot.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.markdown("**Blocked promises**")
+            for item in snapshot.get("blocked_promises", []):
+                st.write(f"- {item}")
+
+        if st.session_state.get("deliverable_qa_v75_bundle"):
+            st.download_button(
+                "Download Deliverable QA Bundle V75",
+                st.session_state.deliverable_qa_v75_bundle,
+                file_name=f"{st.session_state.project_name}_deliverable_qa_v75.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v75_download_deliverable_qa_bundle",
+            )
+    else:
+        st.info("Run V75 before you deliver a paid pilot package. It protects the customer from unclear outputs and protects you from manual support/rework.")
+
+    st.caption("V75 approves pilot deliverables only when value, evidence, privacy, payment/scope and customer clarity are good enough. It still does not replace field validation or legal/security review.")
+
 # ============================================================
 # ORGANIZED PAGE DISPATCHER V45.2
 # ============================================================
 
+
+# ============================================================
+# V76 — Product Consolidation & Flow Simplifier
+# ============================================================
+
+def render_product_consolidation_v76_tab():
+    st.header("Product Consolidation & Flow Simplifier V76")
+    st.write(
+        "V76 makes EdgeTwin feel like one calm product instead of many separate tools. "
+        "The engine stays powerful, but customers see a clear route and founder-only modules stay behind the cockpit."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_route_style = st.selectbox(
+            "Customer route style",
+            ["Guided 5-step route", "Single-page cockpit", "Assisted upload-first route", "Proposal-first route"],
+            index=0,
+            key="v76_customer_route_style",
+        )
+        launch_target = st.selectbox(
+            "Launch target",
+            ["Private beta", "Paid pilot launch", "Public SaaS preview", "Enterprise/on-prem evaluation"],
+            index=1,
+            key="v76_launch_target",
+        )
+    with c2:
+        founder_visibility = st.selectbox(
+            "Founder visibility",
+            ["Full founder cockpit", "Only blockers + next actions", "Commercial cockpit first", "Reliability cockpit first"],
+            index=1,
+            key="v76_founder_visibility",
+        )
+        max_customer_steps = st.slider("Maximum customer-visible steps", 3, 8, 5, 1, key="v76_max_customer_steps")
+    with c3:
+        complexity_tolerance = st.selectbox(
+            "Customer complexity tolerance",
+            ["Very low", "Low", "Medium", "Technical buyer"],
+            index=1,
+            key="v76_complexity_tolerance",
+        )
+        hide_advanced_by_default = st.checkbox("Hide advanced modules by default", value=True, key="v76_hide_advanced")
+        keep_founder_tools = st.checkbox("Keep founder tools available", value=True, key="v76_keep_founder_tools")
+
+    snapshots = {
+        "customer_journey_v73": st.session_state.get("customer_journey_v73_snapshot"),
+        "deliverable_qa_v75": st.session_state.get("deliverable_qa_v75_snapshot"),
+        "quality_guardian_v74": st.session_state.get("quality_guardian_v74_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "continuous_improvement_v66": st.session_state.get("continuous_improvement_v66_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+        "cloud_architecture_v58": st.session_state.get("cloud_architecture_v58_snapshot"),
+        "hardware_reference_v59": st.session_state.get("hardware_reference_v59_snapshot"),
+        "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+        "product_readiness_v40": st.session_state.get("product_readiness_v40_snapshot"),
+    }
+    bundle_presence = {
+        "auto_pilot_bundle": st.session_state.get("auto_pilot_bundle") is not None,
+        "fusion_bundle": st.session_state.get("fusion_bundle") is not None,
+        "enterprise_bundle": st.session_state.get("enterprise_bundle") is not None,
+        "customer_journey_v73_bundle": st.session_state.get("customer_journey_v73_bundle") is not None,
+        "customer_status_v72_bundle": st.session_state.get("customer_status_v72_bundle") is not None,
+        "outcome_assurance_v70_bundle": st.session_state.get("outcome_assurance_v70_bundle") is not None,
+        "customer_support_v71_bundle": st.session_state.get("customer_support_v71_bundle") is not None,
+        "deliverable_qa_v75_bundle": st.session_state.get("deliverable_qa_v75_bundle") is not None,
+        "quality_guardian_v74_bundle": st.session_state.get("quality_guardian_v74_bundle") is not None,
+        "pricing_offer_bundle": st.session_state.get("pricing_offer_bundle") is not None,
+        "proposal_sow_bundle": st.session_state.get("proposal_sow_bundle") is not None,
+    }
+
+    st.caption("V76 consolidates the experience; it does not weaken the engine or remove founder controls.")
+
+    if st.button("Build Product Consolidation Plan V76", type="primary", use_container_width=True, key="v76_build_consolidation_plan"):
+        snapshot = core.build_product_consolidation_flow_simplifier_v76(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            bundle_presence=bundle_presence,
+            customer_route_style=customer_route_style,
+            founder_visibility=founder_visibility,
+            launch_target=launch_target,
+            complexity_tolerance=complexity_tolerance,
+            max_customer_steps=int(max_customer_steps),
+            hide_advanced_by_default=bool(hide_advanced_by_default),
+            keep_founder_tools=bool(keep_founder_tools),
+        )
+        st.session_state.product_consolidation_v76_snapshot = snapshot
+        st.session_state.product_consolidation_v76_bundle = core.create_product_consolidation_v76_bundle(st.session_state.project_name, snapshot)
+        st.success("Product Consolidation Plan V76 generated.")
+
+    snapshot = st.session_state.get("product_consolidation_v76_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Simplicity", f"{snapshot.get('simplicity_score', 0)}%")
+        m2.metric("Engine coverage", f"{snapshot.get('engine_coverage_score', 0)}%")
+        m3.metric("Founder automation", f"{snapshot.get('founder_automation_score', 0)}%")
+        m4.metric("Chaos risk", snapshot.get("chaos_risk", "Unknown"))
+
+        decision = snapshot.get("decision", "")
+        if "CLEAR" in decision or "GO" in decision:
+            st.success(snapshot.get("recommended_next_step"))
+        elif "CONSOLIDATE" in decision or "FOUNDER" in decision:
+            st.warning(snapshot.get("recommended_next_step"))
+        else:
+            st.error(snapshot.get("recommended_next_step"))
+
+        badges = snapshot.get("status_badges", [])
+        if badges:
+            st.markdown(" ".join([f'<span class="v51-badge">{b}</span>' for b in badges]), unsafe_allow_html=True)
+
+        st.markdown("### Customer one-route summary")
+        st.info(snapshot.get("customer_one_route_summary", ""))
+
+        tabs = st.tabs(["Customer route", "Founder cockpit", "Hide from customer", "Quality gates", "Backlog"])
+        with tabs[0]:
+            route_df = pd.DataFrame(snapshot.get("customer_route", []))
+            if len(route_df) > 0:
+                st.dataframe(route_df, use_container_width=True)
+            st.subheader("Customer-visible promises")
+            for item in snapshot.get("customer_visible_value", []):
+                st.success(item)
+        with tabs[1]:
+            cockpit_df = pd.DataFrame(snapshot.get("founder_cockpit_groups", []))
+            if len(cockpit_df) > 0:
+                st.dataframe(cockpit_df, use_container_width=True)
+            st.subheader("Founder time shield")
+            for item in snapshot.get("founder_time_shield", []):
+                st.info(item)
+        with tabs[2]:
+            st.subheader("Modules hidden from customer by default")
+            for item in snapshot.get("hide_from_customer", []):
+                st.write(f"- {item}")
+            st.subheader("Do not remove from engine")
+            for item in snapshot.get("do_not_remove_from_engine", []):
+                st.warning(item)
+        with tabs[3]:
+            gates_df = pd.DataFrame(snapshot.get("quality_gates", []))
+            if len(gates_df) > 0:
+                st.dataframe(gates_df, use_container_width=True)
+            st.subheader("Blocked promises")
+            for item in snapshot.get("blocked_promises", []):
+                st.error(item)
+        with tabs[4]:
+            st.subheader("Consolidation actions")
+            for item in snapshot.get("consolidation_actions", []):
+                st.write(f"- {item}")
+            st.subheader("Do not do next")
+            for item in snapshot.get("do_not_do_next", []):
+                st.warning(item)
+
+        if st.session_state.get("product_consolidation_v76_bundle"):
+            st.download_button(
+                "Download Product Consolidation Bundle V76",
+                st.session_state.product_consolidation_v76_bundle,
+                file_name=f"{st.session_state.project_name}_product_consolidation_v76.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v76_download_product_consolidation_bundle",
+            )
+
+    st.caption("V76 is the anti-chaos layer: one customer route, full founder cockpit, and all deeper reliability/privacy/commercial gates still protected behind the scenes.")
+
+
+# ============================================================
+# V77 — Smart Intake Router / Minimal Customer Input Engine
+# ============================================================
+
+def render_smart_intake_v77_tab():
+    st.header("Smart Intake Router V77")
+    st.write(
+        "V77 reduces customer friction: the customer gives a small amount of information, "
+        "and EdgeTwin recommends the safest route, required data, package level and founder approval gates."
+    )
+
+    st.markdown(
+        '<div class="v51-hero"><b>Goal:</b> fewer customer questions, more automatic routing, no weaker reliability gates.</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_problem = st.text_area(
+            "Customer problem in one sentence",
+            value="We want to know if our sensor/use-case is suitable for an Edge AI pilot.",
+            height=90,
+            key="v77_customer_problem",
+        )
+        industry = st.selectbox(
+            "Industry / context",
+            ["Predictive maintenance", "Construction / asset security", "Remote forestry / outdoor", "Manufacturing", "Energy / utilities", "Custom / unknown"],
+            index=0,
+            key="v77_industry",
+        )
+        urgency = st.selectbox(
+            "Urgency",
+            ["Explore idea", "Pilot this month", "Active operational pain", "Enterprise evaluation"],
+            index=1,
+            key="v77_urgency",
+        )
+    with c2:
+        data_status = st.selectbox(
+            "Data status",
+            ["No data yet", "Some WAV/CSV samples", "Labelled real data", "Live node data", "Unknown"],
+            index=1,
+            key="v77_data_status",
+        )
+        sensor_stack = st.multiselect(
+            "Known sensors",
+            ["Vibration / IMU", "Audio / Acoustic", "Temperature", "Gas / Environment", "Radar", "GPS / Zone", "LoRa / Gateway", "Unknown"],
+            default=["Vibration / IMU", "Audio / Acoustic"],
+            key="v77_sensor_stack",
+        )
+        privacy_preference = st.selectbox(
+            "Privacy preference",
+            ["Private only", "Feature learning allowed", "Raw data permission needed later"],
+            index=0,
+            key="v77_privacy_preference",
+        )
+    with c3:
+        desired_output = st.selectbox(
+            "Desired output",
+            ["Quick feasibility", "Pilot bundle", "Real-data analysis", "Edge Impulse export", "Paid pilot proposal", "Enterprise/on-prem evaluation"],
+            index=1,
+            key="v77_desired_output",
+        )
+        budget_band = st.selectbox(
+            "Budget signal",
+            ["Unknown", "Low / testing", "Starter pilot", "Professional pilot", "Enterprise budget"],
+            index=2,
+            key="v77_budget_band",
+        )
+        customer_self_service = st.checkbox("Customer should self-serve as much as possible", value=True, key="v77_customer_self_service")
+        founder_time_limit = st.selectbox("Founder time target", ["Near-zero touch", "Under 30 minutes", "Under 2 hours", "Hands-on custom"], index=0, key="v77_founder_time_limit")
+
+    snapshots = {
+        "product_consolidation_v76": st.session_state.get("product_consolidation_v76_snapshot"),
+        "deliverable_qa_v75": st.session_state.get("deliverable_qa_v75_snapshot"),
+        "quality_guardian_v74": st.session_state.get("quality_guardian_v74_snapshot"),
+        "customer_journey_v73": st.session_state.get("customer_journey_v73_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+    }
+
+    if st.button("Build Smart Intake Route V77", type="primary", use_container_width=True, key="v77_build_smart_intake"):
+        snapshot = core.build_smart_intake_router_v77(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            customer_problem=customer_problem,
+            industry=industry,
+            data_status=data_status,
+            sensor_stack=sensor_stack,
+            urgency=urgency,
+            desired_output=desired_output,
+            budget_band=budget_band,
+            privacy_preference=privacy_preference,
+            customer_self_service=bool(customer_self_service),
+            founder_time_limit=founder_time_limit,
+            snapshots=snapshots,
+        )
+        st.session_state.smart_intake_v77_snapshot = snapshot
+        st.session_state.smart_intake_v77_bundle = core.create_smart_intake_v77_bundle(st.session_state.project_name, snapshot)
+        st.success("Smart Intake Route V77 generated.")
+
+    snapshot = st.session_state.get("smart_intake_v77_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Intake clarity", f"{snapshot.get('intake_clarity_score', 0)}%")
+        m2.metric("Automation fit", f"{snapshot.get('automation_fit_score', 0)}%")
+        m3.metric("Founder touch risk", snapshot.get("founder_touch_risk", "Unknown"))
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        decision = snapshot.get("decision", "")
+        if "SELF-SERVICE" in decision or "GO" in decision:
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif "FOUNDER" in decision or "CONDITIONAL" in decision:
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.error(snapshot.get("recommended_next_step", ""))
+
+        badges = snapshot.get("status_badges", [])
+        if badges:
+            st.markdown(" ".join([f'<span class="v51-badge">{b}</span>' for b in badges]), unsafe_allow_html=True)
+
+        st.markdown("### Customer-facing answer")
+        st.info(snapshot.get("customer_facing_answer", ""))
+
+        tabs = st.tabs(["Recommended route", "Auto config", "Missing inputs", "Approval gates", "Hidden engine"])
+        with tabs[0]:
+            route_df = pd.DataFrame(snapshot.get("recommended_route", []))
+            if len(route_df) > 0:
+                st.dataframe(route_df, use_container_width=True)
+            st.subheader("Customer next actions")
+            for item in snapshot.get("customer_next_actions", []):
+                st.success(item)
+        with tabs[1]:
+            st.json(snapshot.get("auto_config", {}))
+            st.subheader("Recommended package")
+            st.write(snapshot.get("recommended_package", ""))
+        with tabs[2]:
+            for item in snapshot.get("missing_inputs", []):
+                st.warning(item)
+            st.subheader("Do not ask customer yet")
+            for item in snapshot.get("do_not_ask_yet", []):
+                st.info(item)
+        with tabs[3]:
+            for item in snapshot.get("founder_approval_gates", []):
+                st.warning(item)
+            st.subheader("Blocked promises")
+            for item in snapshot.get("blocked_promises", []):
+                st.error(item)
+        with tabs[4]:
+            hidden_df = pd.DataFrame(snapshot.get("hidden_engine_checks", []))
+            if len(hidden_df) > 0:
+                st.dataframe(hidden_df, use_container_width=True)
+            st.subheader("Recommended internal modules")
+            for item in snapshot.get("recommended_internal_modules", []):
+                st.write(f"- {item}")
+
+        if st.session_state.get("smart_intake_v77_bundle"):
+            st.download_button(
+                "Download Smart Intake Bundle V77",
+                st.session_state.smart_intake_v77_bundle,
+                file_name=f"{st.session_state.project_name}_smart_intake_v77.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v77_download_smart_intake_bundle",
+            )
+
+    st.caption("V77 asks less from the customer while keeping reliability, privacy, payment and delivery gates active behind the scenes.")
+
+
+# ============================================================
+# V78 — One-Click Pilot Assembler / Autonomous Fulfillment Preview
+# ============================================================
+
+def render_one_click_pilot_v78_tab():
+    st.header("One-Click Pilot Assembler V78")
+    st.write(
+        "V78 turns the simplified intake route into one customer-ready pilot package. "
+        "The customer sees one clear outcome; EdgeTwin quietly checks data, privacy, reliability, value, proposal and delivery gates."
+    )
+
+    st.markdown("""
+    <div class="v51-hero">
+      <h3>One clear package, deep checks underneath</h3>
+      <p>The goal is near-zero founder time: EdgeTwin assembles what can be delivered, blocks unsafe promises, and shows the customer exactly what they get for their money.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    smart = st.session_state.get("smart_intake_v77_snapshot") or {}
+    if smart:
+        st.success(f"Using Smart Intake V77 route: {smart.get('recommended_package', 'recommended package')} — {smart.get('decision', 'route available')}")
+    else:
+        st.info("Tip: run Smart Intake V77 first for the strongest auto-route. V78 can still create a safe package from the current project state.")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        package_level = st.selectbox(
+            "Package level",
+            ["Auto from Smart Intake", "Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Pilot Bundle", "Enterprise / custom evaluation"],
+            index=0,
+            key="v78_package_level",
+        )
+        customer_problem = st.text_area(
+            "Customer problem summary",
+            value=smart.get("customer_problem", "Detect abnormal vibration/acoustic patterns and create a pilot-ready Edge AI package."),
+            height=95,
+            key="v78_customer_problem",
+        )
+    with c2:
+        data_route = st.selectbox(
+            "Data route",
+            ["Auto from Smart Intake", "Generate synthetic pilot dataset", "Use uploaded real data features", "Hybrid synthetic + real samples", "Discovery needed first"],
+            index=0,
+            key="v78_data_route",
+        )
+        allow_customer_download = st.checkbox("Allow customer-ready bundle if QA passes", value=True, key="v78_allow_customer_download")
+        include_advanced_details = st.checkbox("Put technical details under Advanced only", value=True, key="v78_advanced_details")
+    with c3:
+        include_proposal = st.checkbox("Include proposal/SOW summary", value=True, key="v78_include_proposal")
+        include_checkout = st.checkbox("Include checkout/invoice readiness summary", value=True, key="v78_include_checkout")
+        founder_review_required = st.checkbox("Founder approval before paid delivery", value=True, key="v78_founder_review_required")
+
+    snapshots = {
+        "smart_intake_v77": st.session_state.get("smart_intake_v77_snapshot"),
+        "product_consolidation_v76": st.session_state.get("product_consolidation_v76_snapshot"),
+        "deliverable_qa_v75": st.session_state.get("deliverable_qa_v75_snapshot"),
+        "quality_guardian_v74": st.session_state.get("quality_guardian_v74_snapshot"),
+        "customer_journey_v73": st.session_state.get("customer_journey_v73_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "roi_value_v62": st.session_state.get("roi_value_v62_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+    }
+
+    if st.button("Assemble One-Click Pilot Package V78", type="primary", use_container_width=True, key="v78_assemble_one_click_package"):
+        snapshot = core.build_one_click_pilot_package_v78(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            smart_intake_snapshot=smart,
+            customer_problem=customer_problem,
+            package_level=package_level,
+            data_route=data_route,
+            include_proposal=bool(include_proposal),
+            include_checkout=bool(include_checkout),
+            include_advanced_details=bool(include_advanced_details),
+            allow_customer_download=bool(allow_customer_download),
+            founder_review_required=bool(founder_review_required),
+            snapshots=snapshots,
+        )
+        st.session_state.one_click_pilot_v78_snapshot = snapshot
+        st.session_state.one_click_pilot_v78_bundle = core.create_one_click_pilot_v78_bundle(st.session_state.project_name, snapshot)
+        st.success("One-Click Pilot Package V78 assembled.")
+
+    snapshot = st.session_state.get("one_click_pilot_v78_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Package readiness", f"{snapshot.get('package_readiness_score', 0)}%")
+        m2.metric("Customer clarity", f"{snapshot.get('customer_clarity_score', 0)}%")
+        m3.metric("Founder time", snapshot.get("founder_time_risk", "Unknown"))
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        decision = snapshot.get("decision", "")
+        if "READY" in decision or "GO" in decision:
+            st.success(snapshot.get("recommended_next_step", ""))
+        elif "CONDITIONAL" in decision:
+            st.warning(snapshot.get("recommended_next_step", ""))
+        else:
+            st.error(snapshot.get("recommended_next_step", ""))
+
+        badges = snapshot.get("status_badges", [])
+        if badges:
+            st.markdown(" ".join([f'<span class="v51-badge">{b}</span>' for b in badges]), unsafe_allow_html=True)
+
+        st.markdown("### Customer-ready message")
+        st.info(snapshot.get("customer_message", ""))
+
+        col_a, col_b = st.columns([1.2, 1])
+        with col_a:
+            st.subheader("Package contents")
+            contents_df = pd.DataFrame(snapshot.get("package_contents", []))
+            if len(contents_df) > 0:
+                st.dataframe(contents_df, use_container_width=True)
+        with col_b:
+            st.subheader("What the customer pays for")
+            for item in snapshot.get("value_points", []):
+                st.success(item)
+
+        tabs = st.tabs(["Delivery gates", "Blocked automation", "Founder shield", "Advanced manifest"])
+        with tabs[0]:
+            gates_df = pd.DataFrame(snapshot.get("delivery_gates", []))
+            if len(gates_df) > 0:
+                st.dataframe(gates_df, use_container_width=True)
+            st.subheader("Missing before delivery")
+            for item in snapshot.get("missing_before_delivery", []):
+                st.warning(item)
+        with tabs[1]:
+            for item in snapshot.get("blocked_automation", []):
+                st.error(item)
+            st.subheader("Safe automation allowed")
+            for item in snapshot.get("safe_automation_allowed", []):
+                st.info(item)
+        with tabs[2]:
+            for item in snapshot.get("founder_time_shield", []):
+                st.success(item)
+            st.subheader("Founder approval only when")
+            for item in snapshot.get("founder_approval_only_when", []):
+                st.warning(item)
+        with tabs[3]:
+            st.json(snapshot.get("package_manifest", {}))
+            st.subheader("Internal modules used")
+            for item in snapshot.get("internal_modules_used", []):
+                st.write(f"- {item}")
+
+        if st.session_state.get("one_click_pilot_v78_bundle"):
+            st.download_button(
+                "Download One-Click Pilot Bundle V78",
+                st.session_state.one_click_pilot_v78_bundle,
+                file_name=f"{st.session_state.project_name}_one_click_pilot_v78.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v78_download_one_click_pilot_bundle",
+            )
+
+    st.caption("V78 keeps the customer experience simple while preserving the deep EdgeTwin quality, privacy, reliability and delivery gates behind the scenes.")
+
+
+
+# ============================================================
+# V79 — Pilot Factory Control Tower / Lifecycle State Machine
+# ============================================================
+
+def render_pilot_factory_v79_tab():
+    st.header("Pilot Factory Control Tower V79")
+    st.write(
+        "V79 keeps the whole EdgeTwin journey aligned as one lifecycle: intake, data, readiness, privacy, proposal, checkout, delivery and support. "
+        "The customer sees one simple status and next step; Founder Mode keeps the approval gates visible."
+    )
+
+    existing_one_click = st.session_state.get("one_click_pilot_v78_snapshot") or {}
+    existing_intake = st.session_state.get("smart_intake_v77_snapshot") or {}
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        current_stage = st.selectbox(
+            "Current lifecycle stage",
+            [
+                "New lead",
+                "Intake routed",
+                "Data uploaded/generated",
+                "Readiness reviewed",
+                "Proposal requested",
+                "Checkout/invoice ready",
+                "Delivery QA ready",
+                "Delivered / follow-up",
+            ],
+            index=1 if existing_intake else 0,
+            key="v79_current_stage",
+        )
+        desired_outcome = st.selectbox(
+            "Desired customer outcome",
+            ["Pilot bundle", "Real-data pilot", "Proposal/SOW", "Paid pilot delivery", "Hardware reference proof"],
+            index=0,
+            key="v79_desired_outcome",
+        )
+    with c2:
+        automation_level = st.selectbox(
+            "Automation level",
+            ["Assisted automation", "Self-service preview", "Founder approval required", "Hold until gates pass"],
+            index=0,
+            key="v79_automation_level",
+        )
+        customer_data_status = st.selectbox(
+            "Customer data status",
+            ["No data yet", "Synthetic only", "Real data uploaded", "Mixed synthetic + real", "Sensitive/raw data case"],
+            index=2 if st.session_state.get("real_upload_v56_snapshot") else 1,
+            key="v79_customer_data_status",
+        )
+    with c3:
+        paid_delivery_requested = st.checkbox("Paid delivery requested", value=bool(st.session_state.get("checkout_v57_snapshot")), key="v79_paid_delivery_requested")
+        allow_customer_self_service = st.checkbox("Allow customer self-service where safe", value=True, key="v79_allow_self_service")
+        strict_quality_mode = st.checkbox("Strict quality mode", value=True, key="v79_strict_quality_mode")
+
+    risk_inputs = st.multiselect(
+        "Risk flags",
+        [
+            "Safety-critical use-case",
+            "Raw audio/location/customer identifiers",
+            "Customer asks for guaranteed production accuracy",
+            "Payment/scope not confirmed",
+            "No real data yet",
+            "Enterprise/on-prem request",
+        ],
+        default=[] if existing_one_click else ["No real data yet"],
+        key="v79_risk_inputs",
+    )
+
+    snapshots = {
+        "smart_intake_v77": st.session_state.get("smart_intake_v77_snapshot"),
+        "one_click_pilot_v78": st.session_state.get("one_click_pilot_v78_snapshot"),
+        "deliverable_qa_v75": st.session_state.get("deliverable_qa_v75_snapshot"),
+        "quality_guardian_v74": st.session_state.get("quality_guardian_v74_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "privacy_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+    }
+
+    if st.button("Build Pilot Factory Control Plan V79", type="primary", use_container_width=True, key="v79_build_factory"):
+        snapshot = core.build_pilot_factory_v79(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            snapshots=snapshots,
+            current_stage=current_stage,
+            desired_outcome=desired_outcome,
+            automation_level=automation_level,
+            customer_data_status=customer_data_status,
+            paid_delivery_requested=paid_delivery_requested,
+            allow_customer_self_service=allow_customer_self_service,
+            strict_quality_mode=strict_quality_mode,
+            risk_inputs=risk_inputs,
+        )
+        st.session_state.pilot_factory_v79_snapshot = snapshot
+        st.session_state.pilot_factory_v79_bundle = core.create_pilot_factory_v79_bundle(st.session_state.project_name, snapshot)
+        st.success("Pilot Factory Control Plan V79 created.")
+
+    snapshot = st.session_state.get("pilot_factory_v79_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Factory readiness", f"{snapshot.get('factory_readiness_score', 0)}%")
+        m2.metric("Autonomy", f"{snapshot.get('autonomy_score', 0)}%")
+        m3.metric("Risk control", f"{snapshot.get('risk_control_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        badges = " ".join([f'<span class="v51-badge">{b}</span>' for b in snapshot.get("status_badges", [])])
+        st.markdown(badges, unsafe_allow_html=True)
+        st.markdown(f"### Customer status")
+        st.write(snapshot.get("customer_status_message", ""))
+        st.markdown(f"### Next best action")
+        st.info(snapshot.get("next_best_action", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Lifecycle state machine")
+            st.dataframe(pd.DataFrame(snapshot.get("lifecycle", [])), use_container_width=True)
+        with c2:
+            st.subheader("Automation queue")
+            st.dataframe(pd.DataFrame(snapshot.get("automation_queue", [])), use_container_width=True)
+
+        with st.expander("Founder approval gates", expanded=True):
+            for item in snapshot.get("founder_approval_gates", []):
+                st.write(f"- {item}")
+        with st.expander("Blocked until fixed", expanded=False):
+            blocked = snapshot.get("blocked_until_fixed", [])
+            if blocked:
+                for item in blocked:
+                    st.warning(item)
+            else:
+                st.success("No hard blockers detected for the selected automation level.")
+        with st.expander("Advanced — internal modules connected", expanded=False):
+            st.json(snapshot.get("module_connection_map", {}))
+
+        if st.session_state.get("pilot_factory_v79_bundle"):
+            st.download_button(
+                "Download Pilot Factory Bundle V79",
+                st.session_state.pilot_factory_v79_bundle,
+                file_name=f"{st.session_state.project_name}_pilot_factory_v79.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v79_download_factory_bundle",
+            )
+
+    st.caption("V79 does not remove the deep engine. It turns it into a controlled lifecycle so customers see clarity and you only approve high-risk gates.")
+
+
+# ============================================================
+# V80 — Trust Ledger & Decision Traceability
+# ============================================================
+
+def render_trust_ledger_v80_tab():
+    st.header("Trust Ledger & Decision Traceability V80")
+    st.write(
+        "V80 creates one customer-safe evidence receipt for the whole pilot: what data was used, "
+        "which gates passed, what is still blocked, what can be claimed safely and where founder approval is required."
+    )
+
+    with st.expander("Why this matters", expanded=True):
+        c1, c2, c3 = st.columns(3)
+        c1.markdown("""
+        <div class="v51-card"><b>For the customer</b><br><span class="v51-small">Clear proof of what they get, why it is trustworthy and what still needs validation.</span></div>
+        """, unsafe_allow_html=True)
+        c2.markdown("""
+        <div class="v51-card"><b>For you</b><br><span class="v51-small">Less explaining, fewer loose promises, more automatic handoff discipline.</span></div>
+        """, unsafe_allow_html=True)
+        c3.markdown("""
+        <div class="v51-card"><b>For strategic value</b><br><span class="v51-small">A traceable proof layer that makes the product more serious, transferable and defensible.</span></div>
+        """, unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        include_customer_view = st.checkbox("Include customer-safe summary", value=True, key="v80_include_customer_view")
+        include_founder_view = st.checkbox("Include founder/internal gates", value=True, key="v80_include_founder_view")
+    with c2:
+        strict_traceability = st.checkbox("Strict traceability mode", value=True, key="v80_strict_traceability")
+        require_field_validation_note = st.checkbox("Always include field-validation note", value=True, key="v80_require_field_note")
+    with c3:
+        release_context = st.selectbox(
+            "Ledger context",
+            ["Customer handoff", "Paid pilot delivery", "Founder review", "Partner/buyer evidence"],
+            index=0,
+            key="v80_release_context",
+        )
+        visibility = st.radio("Visibility", ["Customer-safe", "Founder internal", "Both"], index=0, key="v80_visibility", horizontal=False)
+
+    context = {
+        "project_name": st.session_state.project_name,
+        "dataset_df": st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        "fusion_doctor": st.session_state.get("fusion_doctor"),
+        "hardware_result": st.session_state.get("hardware_result"),
+        "auto_pilot_result": st.session_state.get("auto_pilot_result"),
+        "field_learning_v52": st.session_state.get("field_learning_v52_snapshot"),
+        "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "customer_journey_v73": st.session_state.get("customer_journey_v73_snapshot"),
+        "quality_guardian_v74": st.session_state.get("quality_guardian_v74_snapshot"),
+        "deliverable_qa_v75": st.session_state.get("deliverable_qa_v75_snapshot"),
+        "product_consolidation_v76": st.session_state.get("product_consolidation_v76_snapshot"),
+        "smart_intake_v77": st.session_state.get("smart_intake_v77_snapshot"),
+        "one_click_pilot_v78": st.session_state.get("one_click_pilot_v78_snapshot"),
+        "pilot_factory_v79": st.session_state.get("pilot_factory_v79_snapshot"),
+        "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
+        "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
+        "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
+        "commercial_release_v60": st.session_state.get("commercial_release_v60_snapshot"),
+        "privacy_required": require_field_validation_note,
+        "strict_traceability": strict_traceability,
+        "include_customer_view": include_customer_view,
+        "include_founder_view": include_founder_view,
+        "release_context": release_context,
+        "visibility": visibility,
+    }
+
+    if st.button("Build Trust Ledger V80", type="primary", use_container_width=True, key="v80_build_trust_ledger"):
+        snapshot = core.build_trust_ledger_v80(context)
+        st.session_state.trust_ledger_v80_snapshot = snapshot
+        st.session_state.trust_ledger_v80_bundle = core.create_trust_ledger_v80_bundle(st.session_state.project_name, snapshot)
+        st.success("Trust Ledger V80 created.")
+
+    snapshot = st.session_state.get("trust_ledger_v80_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Trust ledger", f"{snapshot.get('trust_ledger_score', 0)}%")
+        m2.metric("Traceability", f"{snapshot.get('traceability_score', 0)}%")
+        m3.metric("Customer clarity", f"{snapshot.get('customer_clarity_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        badges = " ".join([f'<span class="v51-badge">{b}</span>' for b in snapshot.get("status_badges", [])])
+        st.markdown(badges, unsafe_allow_html=True)
+        st.markdown("### Customer-safe explanation")
+        st.write(snapshot.get("customer_safe_summary", ""))
+        st.markdown("### Next best action")
+        st.info(snapshot.get("next_best_action", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Evidence ledger")
+            st.dataframe(pd.DataFrame(snapshot.get("evidence_ledger", [])), use_container_width=True)
+        with c2:
+            st.subheader("Gate status")
+            st.dataframe(pd.DataFrame(snapshot.get("gate_status", [])), use_container_width=True)
+
+        with st.expander("What can be shared with the customer", expanded=True):
+            for item in snapshot.get("customer_shareable", []):
+                st.write(f"- {item}")
+        with st.expander("Founder approval required", expanded=False):
+            approvals = snapshot.get("founder_approval_required", [])
+            if approvals:
+                for item in approvals:
+                    st.warning(item)
+            else:
+                st.success("No extra founder approval required for the selected context.")
+        with st.expander("Claims to avoid", expanded=False):
+            for item in snapshot.get("claims_to_avoid", []):
+                st.error(item)
+        with st.expander("Advanced — raw ledger JSON", expanded=False):
+            st.json(snapshot)
+
+        if st.session_state.get("trust_ledger_v80_bundle"):
+            st.download_button(
+                "Download Trust Ledger Bundle V80",
+                st.session_state.trust_ledger_v80_bundle,
+                file_name=f"{st.session_state.project_name}_trust_ledger_v80.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v80_download_trust_ledger_bundle",
+            )
+
+    st.caption("V80 does not promise guaranteed accuracy. It makes the reasoning, gates, data status and allowed claims traceable before customer handoff or paid delivery.")
+
 _PAGE_RENDERERS = {
+    'trust_ledger_v80_tab': render_trust_ledger_v80_tab,
+    'pilot_factory_v79_tab': render_pilot_factory_v79_tab,
+    'one_click_pilot_v78_tab': render_one_click_pilot_v78_tab,
+    'smart_intake_v77_tab': render_smart_intake_v77_tab,
+    'product_consolidation_v76_tab': render_product_consolidation_v76_tab,
+    'deliverable_qa_v75_tab': render_deliverable_qa_v75_tab,
+    'quality_guardian_v74_tab': render_quality_guardian_v74_tab,
+    'customer_journey_v73_tab': render_customer_journey_v73_tab,
+    'customer_status_v72_tab': render_customer_status_v72_tab,
+    'customer_support_v71_tab': render_customer_support_v71_tab,
+    'outcome_assurance_v70_tab': render_outcome_assurance_v70_tab,
+    'zero_touch_v69_tab': render_zero_touch_v69_tab,
+    'automation_orchestrator_v68_tab': render_automation_orchestrator_v68_tab,
+    'reliability_calibration_v67_tab': render_reliability_calibration_v67_tab,
+    'continuous_improvement_v66_tab': render_continuous_improvement_v66_tab,
+    'ip_moat_v65_tab': render_ip_moat_v65_tab,
+    'buyer_dataroom_v64_tab': render_buyer_dataroom_v64_tab,
+    'case_study_v63_tab': render_case_study_v63_tab,
+    'roi_value_v62_tab': render_roi_value_v62_tab,
+    'traction_proof_v61_tab': render_traction_proof_v61_tab,
+    'launch_stabilization_v60_1_tab': render_launch_stabilization_v60_1_tab,
     'customer_home_v50_tab': render_customer_home_v50_tab,
     'customer_review_v50_tab': render_customer_review_v50_tab,
     'launch_experience_v53_tab': render_launch_experience_v53_tab,
@@ -8041,7 +11808,10 @@ _PAGE_RENDERERS = {
     'workspace_tab': render_workspace_tab,
     'admin_tab': render_admin_tab,
     'license_cert_tab': render_license_cert_tab,
+    'commercial_release_v60_tab': render_commercial_release_v60_tab,
     'product_readiness_tab': render_product_readiness_tab,
+    'cloud_architecture_v58_tab': render_cloud_architecture_v58_tab,
+    'hardware_reference_v59_tab': render_hardware_reference_v59_tab,
     'delivery_tab': render_delivery_tab,
     'customer_success_tab': render_customer_success_tab,
     'founder_ops_v49_tab': render_founder_ops_v49_tab,
