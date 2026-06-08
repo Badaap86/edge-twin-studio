@@ -494,61 +494,54 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER
 # ============================================================
 
-st.title("EdgeTwin Studio V45")
-st.caption("Self-Selling Demo • Use Case Wizard • Smart Optimizer • Synthetic-to-Real Bridge • Reliability Engine 2.0 • Trust Center • Deployment Planner • Reports 2.0 • Product Hardening • Beta Launch Readiness • SaaS-light Monetization Gate • API Automation • Industry Pack Marketplace • Normal vs Abnormal Baseline Engine • Edge Impulse Export • Edge Impulse Classifier Export • Release Success Gate • Golden Demo Suite • Closed Beta Launch Kit • Paid Export Gate • Real Field Validation • Edge Deployment Starter • Storage/Scalability • Operational Control Center • Error Observatory • Customer Assurance & Data Governance • Guided Success Onboarding • Customer Workspace & Lifecycle • Admin Dashboard & Usage Tracking • Commercial License Certificate • Field Evidence 2.0 • Full Product Readiness Gate • Security & Access Control Hardening • Customer Delivery Portal • Customer Success Feedback Loop • Pricing Validation & Offer Builder • Paid Pilot Launch Readiness")
 
-home, wizard_tab, fusion_tab, audit_tab, optimizer_tab, real_bridge_tab, trust_tab, deployment_tab, reports_tab, hardening_tab, beta_launch_tab, monetization_tab, api_tab, marketplace_tab, normality_tab, edge_impulse_tab, ei_classifier_tab, success_gate_tab, golden_demo_tab, closed_beta_tab, paid_export_tab, field_validation_tab, field_evidence_v2_tab, product_readiness_tab, security_v41_tab, edge_starter_tab, scalability_tab, operational_tab, observability_tab, governance_tab, onboarding_tab, workspace_tab, admin_tab, license_cert_tab, delivery_tab, customer_success_tab, pricing_offer_tab, paid_pilot_v45_tab, canvas_tab, packs_tab, hardware_tab = st.tabs(
-    [
-        "🏠 Self-Selling Demo",
-        "🧭 Use Case Wizard",
-        "🧬 Sensor Fusion Studio",
-        "🩺 Enterprise Audit",
-        "🧪 Smart Optimizer",
-        "🔗 Real Bridge",
-        "🛡️ Trust Center",
-        "🚀 Deployment Planner",
-        "📑 Reports 2.0",
-        "🧰 Product Hardening",
-        "🧲 Beta Launch",
-        "💳 Monetization Gate",
-        "🔌 API Automation",
-        "🛒 Pack Marketplace",
-        "⚖️ Normality Engine",
-        "📤 Edge Impulse Export",
-        "🎯 EI Classifier Export",
-        "✅ Success Gate",
-        "🏆 Golden Demo",
-        "🚪 Closed Beta",
-        "🔐 Paid Export",
-        "🌍 Field Validation",
-        "📡 Field Evidence 2.0",
-        "🏁 Product Ready V40",
-        "🔑 Security V41",
-        "🧩 Edge Starter",
-        "📚 Storage/Scale",
-        "🕹️ Control Center",
-        "🛰️ Error Observatory",
-        "🔒 Customer Assurance",
-        "🧭 Guided Success",
-        "🏢 Workspace",
-        "📊 Admin/Usage",
-        "📜 License Cert",
-        "📦 Delivery Portal",
-        "💬 Customer Success",
-        "💶 Pricing Offer",
-        "🤝 Paid Pilot V45",
-        "📈 Signal Canvas",
-        "📦 Industry Packs",
-        "🧱 Hardware Architect",
-    ]
+# ============================================================
+# HEADER / ORGANIZED NAVIGATION V45.2
+# ============================================================
+
+st.title("EdgeTwin Studio V45.2")
+st.caption(
+    "Organized workspace: Start → Build Pilot → Validate & Trust → Deploy & Export → Sell & Deliver → Operator/Admin. "
+    "This keeps the product understandable while preserving the full V45 capability set."
 )
 
+NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_bridge_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['pricing_offer_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
+NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'pricing_offer_tab': '💶 Pricing Offer', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
+NAV_HINTS = {
+    "1. Start & Guided Flow": "For demos, guided onboarding, golden demo proof and project lifecycle overview.",
+    "2. Build Pilot": "Generate datasets, choose sensors/use-cases, create packs and optimize weak datasets.",
+    "3. Validate & Trust": "Check reliability, real-data bridge, normal/abnormal baseline, field evidence and readiness gates.",
+    "4. Deploy & Export": "Prepare hardware/deployment plans, reports, Edge Impulse exports and API automation.",
+    "5. Sell & Deliver": "Create pricing offers, paid pilot checks, licenses, customer delivery and success follow-up.",
+    "6. Operator & Admin": "Control product health, governance, storage, errors, admin usage, hardening and hardware catalog."
+}
 
-# ============================================================
-# HOME / SELF SELLING DEMO
-# ============================================================
+st.sidebar.markdown("---")
+st.sidebar.subheader("Workspace navigation")
+nav_group = st.sidebar.radio(
+    "Section",
+    list(NAV_GROUPS.keys()),
+    index=0,
+    key="workspace_nav_group_v45_2",
+)
+nav_options = NAV_GROUPS.get(nav_group, [])
+nav_page_key = st.sidebar.selectbox(
+    "Open tool",
+    nav_options,
+    format_func=lambda k: NAV_LABELS.get(k, k),
+    key=f"workspace_nav_page_{nav_group}",
+)
 
-with home:
+st.markdown(f"### {NAV_LABELS.get(nav_page_key, nav_page_key)}")
+st.info(NAV_HINTS.get(nav_group, "Choose a workflow step from the sidebar."))
+with st.expander("Why the old 40+ tabs are now grouped", expanded=False):
+    st.write(
+        "EdgeTwin keeps all advanced functions, but they are organized into six product areas. "
+        "This makes it easier for customers and for you as operator: start with guided/demo flows, "
+        "build a pilot, validate trust, export/deploy, sell/deliver, and finally manage/admin."
+    )
+
+def render_home():
     st.header("Choose the customer problem")
     st.write(
         "One click loads the scenario, generates the fusion dataset, runs the Dataset Doctor, "
@@ -648,7 +641,7 @@ with home:
 # V19.1 USE CASE WIZARD / AUTO PILOT GENERATOR
 # ============================================================
 
-with wizard_tab:
+def render_wizard_tab():
     st.header("Use Case Wizard + Auto Pilot Generator")
     st.write(
         "This is the customer-facing flow: the customer chooses the problem, sensors and output level. "
@@ -882,7 +875,7 @@ with wizard_tab:
 # SENSOR FUSION
 # ============================================================
 
-with fusion_tab:
+def render_fusion_tab():
     st.header("Sensor Fusion Studio")
 
     templates = core.get_fusion_templates()
@@ -991,7 +984,7 @@ with fusion_tab:
 # ENTERPRISE AUDIT
 # ============================================================
 
-with audit_tab:
+def render_audit_tab():
     st.header("Enterprise Audit")
     st.write("This audits the current training feature dataset and creates a professional enterprise bundle.")
 
@@ -1075,7 +1068,7 @@ with audit_tab:
 # V20 SMART DATASET OPTIMIZER
 # ============================================================
 
-with optimizer_tab:
+def render_optimizer_tab():
     st.header("Smart Dataset Optimizer")
     st.write(
         "V20 maakt EdgeTwin sterker: de app geeft niet alleen kritiek, maar kan de dataset ook automatisch verbeteren "
@@ -1221,7 +1214,7 @@ with optimizer_tab:
 # V21 SYNTHETIC-TO-REAL BRIDGE
 # ============================================================
 
-with real_bridge_tab:
+def render_real_bridge_tab():
     st.header("Synthetic-to-Real Bridge")
     st.write(
         "V21 maakt EdgeTwin betrouwbaarder: upload echte WAV/CSV sensorbestanden, maak een OMEGA-X Signal Fingerprint, "
@@ -1473,7 +1466,7 @@ with real_bridge_tab:
 # V20.1 TRUST CENTER / COMMERCIAL READINESS
 # ============================================================
 
-with trust_tab:
+def render_trust_tab():
     st.header("Trust Center + Reliability Engine 2.0")
     st.write(
         "V21.1 is de betrouwbare verkooplaag: naast demo/pilot readiness berekent de app nu ook "
@@ -1661,7 +1654,7 @@ with trust_tab:
 # V22 DEPLOYMENT PLANNER
 # ============================================================
 
-with deployment_tab:
+def render_deployment_tab():
     st.header("Hardware BOM & Deployment Planner")
     st.write(
         "Turn the current dataset/use-case into a practical field-pilot plan: BOM, power budget, "
@@ -1851,7 +1844,7 @@ with deployment_tab:
 # V23 PROFESSIONAL REPORTS 2.0
 # ============================================================
 
-with reports_tab:
+def render_reports_tab():
     st.header("Professional Reports 2.0 • SaaS-light Monetization Gate")
     st.write(
         "Build a customer-ready report that combines dataset quality, Reliability Engine 2.0, Trust Center, "
@@ -1993,7 +1986,7 @@ with reports_tab:
 # V24.1 PRODUCT HARDENING & VALIDATION SUITE
 # ============================================================
 
-with hardening_tab:
+def render_hardening_tab():
     st.header("Product Hardening & Validation Suite")
     st.write(
         "This is the internal readiness gate before paid pilots: dataset safety, launch blockers, release checklist, "
@@ -2116,7 +2109,7 @@ with hardening_tab:
 # V24.2 BETA LAUNCH READINESS
 # ============================================================
 
-with beta_launch_tab:
+def render_beta_launch_tab():
     st.header("Beta Launch Readiness")
     st.write(
         "This turns the product into something you can safely show in a controlled beta: landing-page copy, "
@@ -2242,7 +2235,7 @@ with beta_launch_tab:
 # V24 SAAS-LIGHT / MONETIZATION GATE
 # ============================================================
 
-with monetization_tab:
+def render_monetization_tab():
     st.header("SaaS-light & Monetization Gate")
     st.write(
         "This keeps monetization simple: plan levels, locked premium exports, package suggestions and safe pricing guidance. "
@@ -2352,7 +2345,7 @@ with monetization_tab:
 # V25 API AUTOMATION
 # ============================================================
 
-with api_tab:
+def render_api_tab():
     st.header("API Automation")
     st.write(
         "This is the integration layer: API endpoint blueprint, access rules, sample requests, safe responses and a downloadable API bundle. "
@@ -2499,7 +2492,7 @@ with api_tab:
 # V26 INDUSTRY PACK MARKETPLACE / PACK BUILDER
 # ============================================================
 
-with marketplace_tab:
+def render_marketplace_tab():
     st.header("Industry Pack Marketplace & Pack Builder")
     st.write(
         "This turns EdgeTwin Studio into a reusable pack system: packaged use-case knowledge, default labels, sensors, "
@@ -2726,7 +2719,7 @@ with marketplace_tab:
 # V26.1 NORMAL VS ABNORMAL BASELINE ENGINE
 # ============================================================
 
-with normality_tab:
+def render_normality_tab():
     st.header("Normal vs Abnormal Baseline Engine • Edge Impulse Export • Edge Impulse Classifier Export")
     st.write(
         "This is the practical layer for customers: define what normal looks like, then score which samples are normal-like, "
@@ -2885,7 +2878,7 @@ with normality_tab:
 # V26.2 EDGE IMPULSE ANOMALY EXPORT
 # ============================================================
 
-with edge_impulse_tab:
+def render_edge_impulse_tab():
     st.header("Edge Impulse Anomaly Export")
     st.write(
         "Prepare the current EdgeTwin dataset for an Edge Impulse anomaly workflow. "
@@ -3057,7 +3050,7 @@ with edge_impulse_tab:
 # V26.3 EDGE IMPULSE CLASSIFIER EXPORT
 # ============================================================
 
-with ei_classifier_tab:
+def render_ei_classifier_tab():
     st.header("Edge Impulse Classifier Export")
     st.write(
         "Prepare labelled EdgeTwin datasets for supervised Edge Impulse classification. "
@@ -3217,7 +3210,7 @@ with ei_classifier_tab:
 # RELEASE SUCCESS GATE / ONE-CLICK CUSTOMER READINESS
 # ============================================================
 
-with success_gate_tab:
+def render_success_gate_tab():
     st.header("Release Success Gate • Golden Demo Suite • Closed Beta Launch Kit • Paid Export Gate • Real Field Validation • Edge Deployment Starter • Storage/Scalability • Operational Control Center • Production Safety & Error Observatory")
     st.write(
         "This is the final one-click gate before showing EdgeTwin Studio output to a beta customer. "
@@ -3376,7 +3369,7 @@ with success_gate_tab:
 # V27 GOLDEN DEMO SUITE / CUSTOMER PAIN PROOF MATRIX
 # ============================================================
 
-with golden_demo_tab:
+def render_golden_demo_tab():
     st.header("Golden Demo Suite + Customer Pain Proof Matrix")
     st.write(
         "This is the one-click proof flow. It runs a complete EdgeTwin pilot chain and then explains which real customer problems were solved, "
@@ -3522,7 +3515,7 @@ with golden_demo_tab:
 # V28 CLOSED BETA LAUNCH KIT
 # ============================================================
 
-with closed_beta_tab:
+def render_closed_beta_tab():
     st.header("Closed Beta Launch Kit • Paid Export Gate • Real Field Validation • Edge Deployment Starter • Storage/Scalability • Operational Control Center • Production Safety & Error Observatory")
     st.write(
         "Use this after the Golden Demo and Success Gate. It prepares a controlled beta plan, invite email, demo script, "
@@ -3671,7 +3664,7 @@ with closed_beta_tab:
 # V29 PAID EXPORT & LICENSE GATE
 # ============================================================
 
-with paid_export_tab:
+def render_paid_export_tab():
     st.header("Paid Export & License Gate")
     st.write(
         "Manual paid-delivery control for beta/commercial bundles. This does not process payments yet; "
@@ -3754,7 +3747,7 @@ with paid_export_tab:
 # V30 REAL FIELD VALIDATION PACK
 # ============================================================
 
-with field_validation_tab:
+def render_field_validation_tab():
     st.header("Real Field Validation Pack")
     st.write(
         "Use this when you have real WAV/CSV evidence from a machine, site or remote asset. "
@@ -3881,7 +3874,7 @@ with field_validation_tab:
 # V39 FIELD EVIDENCE 2.0 / ACCEPTANCE GATE
 # ============================================================
 
-with field_evidence_v2_tab:
+def render_field_evidence_v2_tab():
     st.header("Field Evidence 2.0 • Acceptance Gate")
     st.write(
         "This turns real field files and generated evidence into a stricter acceptance package: coverage, label evidence, "
@@ -4005,7 +3998,7 @@ with field_evidence_v2_tab:
 # V31 EDGE DEPLOYMENT STARTER KIT
 # ============================================================
 
-with edge_starter_tab:
+def render_edge_starter_tab():
     st.header("Edge Deployment Starter Kit")
     st.write(
         "Turns the pilot evidence into an implementation starter: feature contract, MQTT schema, firmware/gateway stubs, "
@@ -4089,7 +4082,7 @@ with edge_starter_tab:
 # V31.2 STORAGE / SCALABILITY RECOVERY
 # ============================================================
 
-with scalability_tab:
+def render_scalability_tab():
     st.header("Storage & Scalability Recovery")
     st.write(
         "V31.1 moves large DataFrames out of SQLite into local file storage. This keeps the beta app lighter and prepares "
@@ -4152,7 +4145,7 @@ with scalability_tab:
 # V32 OPERATIONAL CONTROL CENTER
 # ============================================================
 
-with operational_tab:
+def render_operational_tab():
     st.header("Operational Control Center")
     st.write(
         "This is the command center for running EdgeTwin Studio as a serious beta/product: storage, release readiness, "
@@ -4304,7 +4297,7 @@ with operational_tab:
 # V33 PRODUCTION SAFETY & ERROR OBSERVATORY
 # ============================================================
 
-with observability_tab:
+def render_observability_tab():
     st.header("Production Safety & Error Observatory")
     st.write(
         "V33 is the safety layer for closed beta and paid pilots: record incidents, check missing outputs, "
@@ -4467,7 +4460,7 @@ with observability_tab:
 # V34 CUSTOMER ASSURANCE & DATA GOVERNANCE CENTER
 # ============================================================
 
-with governance_tab:
+def render_governance_tab():
     st.header("Customer Assurance & Data Governance Center")
     st.write(
         "V34 prepares EdgeTwin for real customer trust: data categories, upload warnings, retention policy, "
@@ -4602,7 +4595,7 @@ with governance_tab:
 # V35 CUSTOMER ONBOARDING & GUIDED SUCCESS FLOW
 # ============================================================
 
-with onboarding_tab:
+def render_onboarding_tab():
     st.header("Customer Onboarding & Guided Success Flow")
     st.write(
         "V35 turns the full EdgeTwin platform into a guided customer journey. Instead of asking a customer to understand every tab, "
@@ -4751,7 +4744,7 @@ with onboarding_tab:
 # V36 CUSTOMER WORKSPACE / PROJECT LIFECYCLE
 # ============================================================
 
-with workspace_tab:
+def render_workspace_tab():
     st.header("Customer Workspace & Project Lifecycle")
     st.write(
         "V36 turns EdgeTwin into a project workspace: it tracks where a customer is in the journey, "
@@ -4873,7 +4866,7 @@ with workspace_tab:
 # V37 ADMIN DASHBOARD / USAGE TRACKING
 # ============================================================
 
-with admin_tab:
+def render_admin_tab():
     st.header("Admin Dashboard & Usage Tracking • Commercial License Certificate")
     st.write(
         "V37 gives the operator a lightweight admin/customer-success dashboard: project history, ready bundles, "
@@ -5063,7 +5056,7 @@ with admin_tab:
 # V38 COMMERCIAL LICENSE CERTIFICATE / PAID EXPORT LOCKING
 # ============================================================
 
-with license_cert_tab:
+def render_license_cert_tab():
     st.header("Commercial License Certificate & Paid Export Locking")
     st.write(
         "V38 turns the paid export gate into a customer-facing delivery certificate: scope, unlocked exports, locked exports, "
@@ -5216,7 +5209,7 @@ with license_cert_tab:
 # V40 FULL PRODUCT READINESS GATE
 # ============================================================
 
-with product_readiness_tab:
+def render_product_readiness_tab():
     st.header("V40 Full Product Readiness Gate • Security & Access Control Hardening • Customer Delivery Portal • Customer Success Feedback Loop")
     st.write(
         "This is the final consolidated readiness gate before showing EdgeTwin Studio to serious beta users or paid pilot customers. "
@@ -5328,7 +5321,7 @@ with product_readiness_tab:
 # V42 CUSTOMER DELIVERY PORTAL / DELIVERABLES CENTER
 # ============================================================
 
-with delivery_tab:
+def render_delivery_tab():
     st.header("Customer Delivery Portal / Deliverables Center")
     st.write(
         "V42 prepares a single customer handoff manifest: what is ready, what is missing, which claims are safe, "
@@ -5495,7 +5488,7 @@ with delivery_tab:
 # V43 CUSTOMER SUCCESS FEEDBACK LOOP
 # ============================================================
 
-with customer_success_tab:
+def render_customer_success_tab():
     st.header("Customer Success Feedback Loop / Post-Delivery Learning")
     st.write(
         "V43 closes the loop after delivery: collect structured feedback, score customer success, "
@@ -5659,7 +5652,7 @@ with customer_success_tab:
 # V44 PRICING VALIDATION / OFFER BUILDER
 # ============================================================
 
-with pricing_offer_tab:
+def render_pricing_offer_tab():
     st.header("Pricing Validation & Offer Builder • Paid Pilot Launch Readiness")
     st.write(
         "V44 turns the current product evidence into a safe commercial offer: what to sell, "
@@ -5825,7 +5818,7 @@ with pricing_offer_tab:
 # V45 PAID PILOT LAUNCH READINESS
 # ============================================================
 
-with paid_pilot_v45_tab:
+def render_paid_pilot_v45_tab():
     st.header("Paid Pilot Launch Readiness V45")
     st.write(
         "This gate decides whether the current offer can safely become a paid pilot. "
@@ -5989,7 +5982,7 @@ with paid_pilot_v45_tab:
 # SIGNAL CANVAS
 # ============================================================
 
-with canvas_tab:
+def render_canvas_tab():
     st.header("Signal Canvas")
 
     d_live = core.generate_universal_signal(2.0, st.session_state.sr, st.session_state.base_f, st.session_state.harm_r, st.session_state.imp_r, st.session_state.noise_l)
@@ -6025,7 +6018,7 @@ with canvas_tab:
 # INDUSTRY PACKS
 # ============================================================
 
-with packs_tab:
+def render_packs_tab():
     st.header("Industry Packs")
 
     pack_name = st.selectbox("Choose pack", core.get_industry_packs(), key="industry_pack_select_v191")
@@ -6060,7 +6053,7 @@ with packs_tab:
 # HARDWARE ARCHITECT
 # ============================================================
 
-with hardware_tab:
+def render_hardware_tab():
     st.header("Hardware Architect")
 
     target = st.radio("Optimization target", ["balanced", "low_power", "performance", "gateway"], horizontal=True, key="hardware_target_v191")
@@ -6088,3 +6081,57 @@ with hardware_tab:
 
     st.subheader("Hardware catalog")
     st.dataframe(core.get_hardware_catalog(), use_container_width=True)
+
+
+# ============================================================
+# ORGANIZED PAGE DISPATCHER V45.2
+# ============================================================
+
+_PAGE_RENDERERS = {
+    'home': render_home,
+    'wizard_tab': render_wizard_tab,
+    'fusion_tab': render_fusion_tab,
+    'audit_tab': render_audit_tab,
+    'optimizer_tab': render_optimizer_tab,
+    'real_bridge_tab': render_real_bridge_tab,
+    'trust_tab': render_trust_tab,
+    'deployment_tab': render_deployment_tab,
+    'reports_tab': render_reports_tab,
+    'hardening_tab': render_hardening_tab,
+    'beta_launch_tab': render_beta_launch_tab,
+    'monetization_tab': render_monetization_tab,
+    'api_tab': render_api_tab,
+    'marketplace_tab': render_marketplace_tab,
+    'normality_tab': render_normality_tab,
+    'edge_impulse_tab': render_edge_impulse_tab,
+    'ei_classifier_tab': render_ei_classifier_tab,
+    'success_gate_tab': render_success_gate_tab,
+    'golden_demo_tab': render_golden_demo_tab,
+    'closed_beta_tab': render_closed_beta_tab,
+    'paid_export_tab': render_paid_export_tab,
+    'field_validation_tab': render_field_validation_tab,
+    'field_evidence_v2_tab': render_field_evidence_v2_tab,
+    'edge_starter_tab': render_edge_starter_tab,
+    'scalability_tab': render_scalability_tab,
+    'operational_tab': render_operational_tab,
+    'observability_tab': render_observability_tab,
+    'governance_tab': render_governance_tab,
+    'onboarding_tab': render_onboarding_tab,
+    'workspace_tab': render_workspace_tab,
+    'admin_tab': render_admin_tab,
+    'license_cert_tab': render_license_cert_tab,
+    'product_readiness_tab': render_product_readiness_tab,
+    'delivery_tab': render_delivery_tab,
+    'customer_success_tab': render_customer_success_tab,
+    'pricing_offer_tab': render_pricing_offer_tab,
+    'paid_pilot_v45_tab': render_paid_pilot_v45_tab,
+    'canvas_tab': render_canvas_tab,
+    'packs_tab': render_packs_tab,
+    'hardware_tab': render_hardware_tab,
+}
+
+render_func = _PAGE_RENDERERS.get(nav_page_key)
+if render_func is None:
+    st.error("Selected page is not available in this build.")
+else:
+    render_func()
