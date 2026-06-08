@@ -14,7 +14,7 @@ import core
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V52", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio V57", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -131,6 +131,17 @@ def init_state():
         "customer_ui_v51_bundle": None,
         "field_learning_v52_snapshot": None,
         "field_learning_v52_bundle": None,
+        "launch_experience_v53_snapshot": None,
+        "launch_experience_v53_bundle": None,
+        "launch_assets_v54_snapshot": None,
+        "launch_assets_v54_bundle": None,
+        "first_customer_beta_v55_snapshot": None,
+        "first_customer_beta_v55_bundle": None,
+        "real_upload_v56_snapshot": None,
+        "real_upload_v56_bundle": None,
+        "real_upload_v56_features_df": pd.DataFrame(),
+        "checkout_v57_snapshot": None,
+        "checkout_v57_bundle": None,
         "workspace_mode_v50": "Customer Mode",
         "field_evidence_v2_snapshot": None,
         "field_evidence_v2_bundle": None,
@@ -220,6 +231,7 @@ def reset_generated_bundles():
     st.session_state.customer_mode_v50_bundle = None
     st.session_state.customer_ui_v51_bundle = None
     st.session_state.field_learning_v52_bundle = None
+    st.session_state.real_upload_v56_bundle = None
     st.session_state.field_evidence_v2_bundle = None
     st.session_state.admin_usage_bundle = None
     st.session_state.observability_bundle = None
@@ -229,6 +241,7 @@ def reset_generated_bundles():
     st.session_state.workspace_lifecycle_bundle = None
     st.session_state.product_readiness_v40_bundle = None
     st.session_state.security_hardening_v41_bundle = None
+    st.session_state.first_customer_beta_v55_bundle = None
 
 
 def run_demo(demo_name):
@@ -554,10 +567,10 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER / ORGANIZED NAVIGATION V45.2
 # ============================================================
 
-st.title("EdgeTwin Studio V52")
+st.title("EdgeTwin Studio V57")
 st.caption(
-    "Privacy-Safe Field Learning: customer data stays private by default, while opt-in feature learning can strengthen EdgeTwin safely. "
-    "V52 keeps the clean customer route and adds a privacy-first path for learning from real field data without blindly reusing raw customer files."
+    "Public Launch Assets: customer route, safe sales copy, offer ladder, outreach assets and privacy-first learning. "
+    "V57 keeps the full engine behind the scenes and adds checkout/payment-readiness gating for paid pilot delivery without processing payments directly."
 )
 
 st.markdown("""
@@ -598,10 +611,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-FOUNDER_NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_bridge_tab', 'field_learning_v52_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
-CUSTOMER_NAV_GROUPS = {'1. Start': ['customer_home_v50_tab'], '2. Create pilot': ['wizard_tab'], '3. Review readiness': ['customer_review_v50_tab', 'field_learning_v52_tab'], '4. Download / handoff': ['reports_tab', 'delivery_tab'], '5. Request proposal': ['lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab']}
+FOUNDER_NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_upload_v56_tab', 'real_bridge_tab', 'field_learning_v52_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
+CUSTOMER_NAV_GROUPS = {'1. Start': ['customer_home_v50_tab', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab'], '2. Create pilot': ['wizard_tab', 'real_upload_v56_tab'], '3. Review readiness': ['customer_review_v50_tab', 'field_learning_v52_tab'], '4. Download / handoff': ['reports_tab', 'delivery_tab'], '5. Request proposal': ['lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab']}
 NAV_GROUPS = CUSTOMER_NAV_GROUPS if st.session_state.workspace_mode_v50 == 'Customer Mode' else FOUNDER_NAV_GROUPS
-NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning V52', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
+NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning V52', 'launch_experience_v53_tab': '🚀 Launch Experience V53', 'launch_assets_v54_tab': '🌐 Launch Assets V54', 'first_customer_beta_v55_tab': '🧪 First Customer Beta V55', 'real_upload_v56_tab': '📥 Real Upload V56', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'checkout_v57_tab': '🛒 Checkout V57', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
 NAV_LABELS.update({'customer_home_v50_tab': '✨ Customer Start', 'customer_review_v50_tab': '✅ Readiness & Next Step'})
 NAV_HINTS = {
     "1. Start & Guided Flow": "For demos, guided onboarding, golden demo proof and project lifecycle overview.",
@@ -610,7 +623,7 @@ NAV_HINTS = {
     "4. Deploy & Export": "Prepare hardware/deployment plans, reports, Edge Impulse exports and API automation.",
     "5. Sell & Deliver": "Manage founder workload, qualify leads, create pricing offers, paid pilot checks, licenses, customer delivery and follow-up.",
     "6. Operator & Admin": "Control product health, governance, storage, errors, admin usage, hardening and hardware catalog.",
-    "1. Start": "A calm customer-facing front door with three simple cards and no engineering overload.",
+    "1. Start": "A calm customer-facing front door with three simple cards, launch-ready copy and no engineering overload.",
     "2. Create pilot": "Generate the pilot package while the advanced engine stays hidden behind the route.",
     "3. Review readiness": "Show customer-safe status badges, readiness, privacy-safe learning options, gaps and the honest next step.",
     "4. Download / handoff": "Give the customer only the relevant reports, bundles and handoff outputs.",
@@ -7051,6 +7064,173 @@ def render_customer_review_v50_tab():
     st.caption(snap.get("disclaimer", ""))
 
 
+
+# ============================================================
+# V53 — Launch-Ready Customer Experience
+# ============================================================
+
+def render_launch_experience_v53_tab():
+    st.header("Launch-Ready Customer Experience V53")
+    st.write(
+        "Create customer-facing copy, safe status badges, demo script and launch-readiness evidence. "
+        "This does not weaken the engine; it translates the full EdgeTwin workflow into a calmer buyer experience."
+    )
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        target_segment = st.selectbox(
+            "Target customer segment",
+            [
+                "Industrial maintenance team",
+                "Security / tamper integrator",
+                "Remote asset operator",
+                "Forestry / agriculture operator",
+                "Edge AI consultant / system integrator",
+                "Custom technical team",
+            ],
+            key="v53_target_segment",
+        )
+        customer_problem = st.text_area(
+            "Customer problem statement",
+            value=(st.session_state.last_demo_summary or {}).get(
+                "problem",
+                "The customer wants to validate an Edge AI sensor pilot but lacks clear data, labels, reliability evidence and hardware direction.",
+            ),
+            height=110,
+            key="v53_customer_problem",
+        )
+        desired_outcome = st.selectbox(
+            "Desired customer outcome",
+            ["Pilot package", "Real-data readiness report", "Proposal request", "Paid pilot decision", "Deployment planning"],
+            key="v53_desired_outcome",
+        )
+    with c2:
+        proof_level = st.selectbox(
+            "Current proof level",
+            ["Synthetic pilot", "Real data uploaded", "Field evidence available"],
+            key="v53_proof_level",
+        )
+        cta_mode = st.selectbox(
+            "Primary call to action",
+            ["Request proposal", "Download pilot bundle", "Book discovery", "Start pilot route"],
+            key="v53_cta_mode",
+        )
+        include_price_hint = st.checkbox("Include price/package positioning", value=True, key="v53_include_price_hint")
+        include_privacy_badge = st.checkbox("Include privacy-safe learning badge", value=True, key="v53_include_privacy_badge")
+        include_field_validation_notice = st.checkbox("Show field validation notice", value=True, key="v53_include_field_validation_notice")
+
+    if len(dataset_df) == 0:
+        st.info("No dataset loaded yet. V53 can still create launch copy, but a generated pilot dataset makes the experience stronger.")
+    else:
+        st.success(f"Dataset detected: {len(dataset_df)} rows, {len(dataset_df.columns)} columns.")
+
+    if st.button("Build Launch-Ready Experience V53", type="primary", use_container_width=True, key="v53_build_launch_experience"):
+        snap = core.build_launch_ready_customer_experience_v53(
+            project_name=st.session_state.project_name,
+            dataset_df=dataset_df,
+            target_segment=target_segment,
+            customer_problem=customer_problem,
+            desired_outcome=desired_outcome,
+            proof_level=proof_level,
+            cta_mode=cta_mode,
+            include_price_hint=include_price_hint,
+            include_privacy_badge=include_privacy_badge,
+            include_field_validation_notice=include_field_validation_notice,
+            customer_ui_snapshot=st.session_state.customer_ui_v51_snapshot,
+            field_learning_snapshot=st.session_state.field_learning_v52_snapshot,
+            pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+            proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+        )
+        st.session_state.launch_experience_v53_snapshot = snap
+        st.session_state.launch_experience_v53_bundle = core.create_launch_ready_customer_experience_v53_bundle(
+            st.session_state.project_name,
+            snap,
+            dataset_df,
+        )
+        st.success("Launch-ready customer experience created.")
+
+    snap = st.session_state.launch_experience_v53_snapshot
+    if snap:
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Launch score", f"{snap.get('launch_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "Unknown"))
+        m3.metric("CTA", snap.get("primary_cta", "Unknown"))
+
+        if snap.get("decision") == "GO":
+            st.success(snap.get("launch_status", "Launch-ready"))
+        elif snap.get("decision") == "CONDITIONAL GO":
+            st.warning(snap.get("launch_status", "Conditional launch"))
+        else:
+            st.error(snap.get("launch_status", "Not ready"))
+
+        st.markdown("#### Customer status badges")
+        badges = snap.get("status_badges", [])
+        if badges:
+            st.markdown(" ".join([f'<span class="v51-badge">{b}</span>' for b in badges]), unsafe_allow_html=True)
+
+        st.markdown("#### Launch copy")
+        st.text_area("Landing / demo copy", snap.get("landing_copy", ""), height=240, key="v53_landing_copy")
+
+        st.markdown("#### Simple customer route")
+        cols = st.columns(3)
+        for i, step in enumerate(snap.get("customer_steps", [])):
+            with cols[i % 3]:
+                st.markdown(f"### {step.get('step')}. {step.get('title')}")
+                st.write(step.get("copy", ""))
+
+        st.markdown("#### Recommended next step")
+        st.info(snap.get("recommended_next_step", "Create the pilot package and review readiness."))
+
+        bcol, wcol = st.columns(2)
+        with bcol:
+            st.subheader("Blockers")
+            blockers = snap.get("blockers", [])
+            if blockers:
+                for item in blockers:
+                    st.error(item)
+            else:
+                st.success("No major launch blockers detected.")
+        with wcol:
+            st.subheader("Warnings")
+            warnings = snap.get("warnings", [])
+            if warnings:
+                for item in warnings:
+                    st.warning(item)
+            else:
+                st.success("No major launch warnings detected.")
+
+        with st.expander("Demo script", expanded=False):
+            for item in snap.get("demo_script", []):
+                st.write(f"- {item}")
+        with st.expander("Safe claims and claims to avoid", expanded=False):
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("#### Safe claims")
+                for item in snap.get("safe_claims", []):
+                    st.success(item)
+            with c2:
+                st.markdown("#### Avoid")
+                for item in snap.get("claims_to_avoid", []):
+                    st.warning(item)
+        with st.expander("FAQ", expanded=False):
+            for item in snap.get("faq", []):
+                st.markdown(f"**{item.get('question')}**")
+                st.write(item.get("answer", ""))
+
+        if st.session_state.launch_experience_v53_bundle:
+            st.download_button(
+                "Download Launch-Ready Customer Experience Bundle V53",
+                st.session_state.launch_experience_v53_bundle,
+                file_name=f"{st.session_state.project_name}_launch_ready_customer_experience_v53.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v53_download_launch_experience_bundle",
+            )
+
+    st.caption("V53 is a customer-experience and launch-copy layer. It keeps the full engine behind the scenes and does not certify production performance.")
+
+
 # ============================================================
 # V52 — Privacy-Safe Field Learning System
 # ============================================================
@@ -7191,6 +7371,632 @@ def render_field_learning_v52_tab():
     )
 
 
+
+# ============================================================
+# V54 — Public Launch Page & Sales Assets
+# ============================================================
+
+def render_launch_assets_v54_tab():
+    st.header("Public Launch Page & Sales Assets V54")
+    st.write(
+        "Create simple customer-facing website copy, offer cards, outreach email, LinkedIn message and launch checklist. "
+        "This helps you explain the product without manually rewriting the story for every lead."
+    )
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+
+    c1, c2 = st.columns([1.12, 1])
+    with c1:
+        market_focus = st.selectbox(
+            "Market focus",
+            [
+                "Predictive maintenance / machine health",
+                "Acoustic tamper / construction security",
+                "Remote asset monitoring",
+                "Forestry / agriculture monitoring",
+                "Edge AI consultant toolkit",
+                "Custom sensor fusion pilot",
+            ],
+            key="v54_market_focus",
+        )
+        buyer_persona = st.selectbox(
+            "Buyer persona",
+            [
+                "Maintenance manager / technical lead",
+                "Security integrator / operations manager",
+                "IoT product manager",
+                "Founder / innovation lead",
+                "System integrator / consultant",
+                "Engineering team",
+            ],
+            key="v54_buyer_persona",
+        )
+        primary_offer = st.selectbox(
+            "Primary offer",
+            ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Pilot", "Enterprise / Custom Pilot"],
+            index=1,
+            key="v54_primary_offer",
+        )
+        price_anchor = st.text_input("Price anchor / range", value="€750 – €2,500 per pilot", key="v54_price_anchor")
+    with c2:
+        primary_cta = st.selectbox(
+            "Primary CTA",
+            ["Request a pilot proposal", "Book a discovery call", "Generate a pilot package", "Upload real sensor data"],
+            key="v54_primary_cta",
+        )
+        launch_channel = st.selectbox(
+            "Launch channel",
+            ["Direct outreach / LinkedIn", "Landing page", "Private beta invite", "Partner/system integrator intro", "Customer demo call"],
+            key="v54_launch_channel",
+        )
+        proof_level = st.selectbox(
+            "Proof level",
+            ["Pilot package available", "Real customer data uploaded", "Real field evidence available"],
+            key="v54_proof_level",
+        )
+        include_pricing = st.checkbox("Include price positioning", value=True, key="v54_include_pricing")
+        include_calendar_cta = st.checkbox("Include calendar/discovery CTA", value=True, key="v54_include_calendar_cta")
+
+    if len(dataset_df) > 0:
+        st.success(f"Dataset detected: {len(dataset_df)} rows, {len(dataset_df.columns)} columns.")
+    else:
+        st.info("No dataset loaded yet. V54 can still create launch assets, but a generated pilot dataset makes the offer stronger.")
+
+    if st.button("Build Public Launch Assets V54", type="primary", use_container_width=True, key="v54_build_launch_assets"):
+        snap = core.build_public_launch_assets_v54(
+            project_name=st.session_state.project_name,
+            dataset_df=dataset_df,
+            market_focus=market_focus,
+            buyer_persona=buyer_persona,
+            primary_offer=primary_offer,
+            price_anchor=price_anchor,
+            primary_cta=primary_cta,
+            launch_channel=launch_channel,
+            proof_level=proof_level,
+            include_pricing=include_pricing,
+            include_calendar_cta=include_calendar_cta,
+            launch_experience_snapshot=st.session_state.launch_experience_v53_snapshot,
+            pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+            proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+            field_learning_snapshot=st.session_state.field_learning_v52_snapshot,
+            product_readiness_snapshot=st.session_state.product_readiness_v40_snapshot,
+        )
+        st.session_state.launch_assets_v54_snapshot = snap
+        st.session_state.launch_assets_v54_bundle = core.create_public_launch_assets_v54_bundle(
+            st.session_state.project_name,
+            snap,
+            dataset_df,
+        )
+        st.success("Public launch assets created.")
+
+    snap = st.session_state.launch_assets_v54_snapshot
+    if snap:
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Launch assets score", f"{snap.get('launch_asset_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "Unknown"))
+        m3.metric("Primary offer", snap.get("primary_offer", "Unknown"))
+
+        if snap.get("decision") == "GO":
+            st.success(snap.get("launch_status", "Ready for outreach"))
+        elif snap.get("decision") == "CONDITIONAL GO":
+            st.warning(snap.get("launch_status", "Use careful outreach"))
+        else:
+            st.error(snap.get("launch_status", "Not ready"))
+
+        st.subheader("Website / landing copy")
+        st.markdown(f"### {snap.get('headline', '')}")
+        st.write(snap.get("subheadline", ""))
+        st.info(snap.get("positioning", ""))
+
+        st.subheader("Problem → EdgeTwin response")
+        ps = pd.DataFrame(snap.get("problem_solution_rows", []))
+        if len(ps) > 0:
+            st.dataframe(ps, use_container_width=True)
+
+        st.subheader("Offer cards")
+        offer_df = pd.DataFrame(snap.get("offer_cards", []))
+        if len(offer_df) > 0:
+            st.dataframe(offer_df, use_container_width=True)
+
+        with st.expander("Outreach email", expanded=False):
+            st.text_area("Email draft", snap.get("outreach_email", ""), height=260, key="v54_outreach_email")
+        with st.expander("LinkedIn message", expanded=False):
+            st.text_area("LinkedIn draft", snap.get("linkedin_message", ""), height=130, key="v54_linkedin_message")
+        with st.expander("Demo agenda and launch checklist", expanded=False):
+            st.markdown("#### Demo agenda")
+            for item in snap.get("demo_agenda", []):
+                st.write(f"- {item}")
+            st.markdown("#### Launch checklist")
+            st.dataframe(pd.DataFrame(snap.get("launch_checklist", [])), use_container_width=True)
+
+        c_safe, c_avoid = st.columns(2)
+        with c_safe:
+            st.markdown("#### Safe claims")
+            for item in snap.get("safe_claims", []):
+                st.success(item)
+        with c_avoid:
+            st.markdown("#### Claims to avoid")
+            for item in snap.get("claims_to_avoid", []):
+                st.warning(item)
+
+        if snap.get("blockers"):
+            st.subheader("Blockers")
+            for item in snap.get("blockers", []):
+                st.error(item)
+        if snap.get("warnings"):
+            st.subheader("Warnings")
+            for item in snap.get("warnings", []):
+                st.warning(item)
+
+        if st.session_state.launch_assets_v54_bundle:
+            st.download_button(
+                "Download Public Launch Assets Bundle V54",
+                st.session_state.launch_assets_v54_bundle,
+                file_name=f"{st.session_state.project_name}_public_launch_assets_v54.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v54_download_public_launch_assets_bundle",
+            )
+
+    st.caption("V54 creates launch and sales assets only. Keep all claims pilot-focused and require field validation before production deployment.")
+
+
+# ============================================================
+# V55 — First Customer Beta Script / Test Run Planner
+# ============================================================
+
+def render_first_customer_beta_v55_tab():
+    st.header("First Customer Beta Script V55")
+    st.write(
+        "Build a structured first-customer beta/demo plan so every conversation follows the same safe route: "
+        "problem, pilot package, readiness, boundaries, next step and feedback."
+    )
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+
+    c1, c2 = st.columns([1.1, 1])
+    with c1:
+        target_segment = st.selectbox(
+            "Target customer segment",
+            [
+                "Predictive maintenance / machine health",
+                "Security / tamper integrator",
+                "Remote asset / forestry pilot",
+                "Edge AI consultant / integrator",
+                "Custom industrial sensor pilot",
+            ],
+            key="v55_target_segment",
+        )
+        beta_goal = st.selectbox(
+            "Main beta goal",
+            [
+                "Validate customer understanding",
+                "Validate paid pilot interest",
+                "Validate real-data upload flow",
+                "Validate Edge Impulse export usefulness",
+                "Validate report and proposal clarity",
+            ],
+            key="v55_beta_goal",
+        )
+        customer_data_status = st.selectbox(
+            "Customer data status",
+            ["No data yet", "Synthetic pilot only", "Has example CSV/WAV", "Has real field dataset", "Unknown"],
+            key="v55_customer_data_status",
+        )
+        demo_duration = st.slider("Demo / beta call duration", 20, 90, 45, 5, key="v55_demo_duration")
+    with c2:
+        technical_maturity = st.selectbox(
+            "Customer technical maturity",
+            ["Non-technical decision maker", "Mixed business/engineering", "Engineering team", "AI/ML team"],
+            index=1,
+            key="v55_technical_maturity",
+        )
+        commercial_stage = st.selectbox(
+            "Commercial stage",
+            ["First conversation", "Demo booked", "Pricing discussion", "Proposal/SOW stage", "Paid pilot candidate"],
+            key="v55_commercial_stage",
+        )
+        include_follow_up = st.checkbox("Create follow-up email", value=True, key="v55_include_follow_up")
+        strict_scope_control = st.checkbox("Strict scope control", value=True, key="v55_strict_scope_control")
+
+    if len(dataset_df) > 0:
+        st.success(f"Dataset detected: {len(dataset_df)} rows. The beta script can reference current project evidence.")
+    else:
+        st.info("No dataset loaded. The beta script will focus on discovery and demo flow rather than evidence delivery.")
+
+    if st.button("Build First Customer Beta Script V55", type="primary", use_container_width=True, key="v55_build_beta_script"):
+        snap = core.build_first_customer_beta_script_v55(
+            project_name=st.session_state.project_name,
+            dataset_df=dataset_df,
+            target_segment=target_segment,
+            beta_goal=beta_goal,
+            customer_data_status=customer_data_status,
+            demo_duration=demo_duration,
+            technical_maturity=technical_maturity,
+            commercial_stage=commercial_stage,
+            include_follow_up=include_follow_up,
+            strict_scope_control=strict_scope_control,
+            launch_assets_snapshot=st.session_state.launch_assets_v54_snapshot,
+            launch_experience_snapshot=st.session_state.launch_experience_v53_snapshot,
+            field_learning_snapshot=st.session_state.field_learning_v52_snapshot,
+            pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+            proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+            product_readiness_snapshot=st.session_state.product_readiness_v40_snapshot,
+        )
+        st.session_state.first_customer_beta_v55_snapshot = snap
+        st.session_state.first_customer_beta_v55_bundle = core.create_first_customer_beta_script_v55_bundle(
+            st.session_state.project_name,
+            snap,
+            dataset_df,
+        )
+        st.success("First customer beta script created.")
+
+    snap = st.session_state.first_customer_beta_v55_snapshot
+    if snap:
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Beta script score", f"{snap.get('beta_script_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "Unknown"))
+        m3.metric("Beta goal", snap.get("beta_goal", "Unknown"))
+
+        if snap.get("decision") == "GO":
+            st.success(snap.get("beta_status", "Ready for first beta call"))
+        elif snap.get("decision") == "CONDITIONAL GO":
+            st.warning(snap.get("beta_status", "Use with careful positioning"))
+        else:
+            st.error(snap.get("beta_status", "Not ready"))
+
+        st.subheader("Call agenda")
+        for row in snap.get("call_agenda", []):
+            st.write(f"**{row.get('minute')} min — {row.get('section')}**: {row.get('goal')}")
+
+        st.subheader("Live demo script")
+        for step in snap.get("demo_steps", []):
+            st.write(f"**{step.get('step')}. {step.get('title')}**")
+            st.caption(step.get("operator_note", ""))
+            st.write(step.get("customer_message", ""))
+
+        c_a, c_b = st.columns(2)
+        with c_a:
+            st.markdown("#### Feedback questions")
+            for item in snap.get("feedback_questions", []):
+                st.info(item)
+        with c_b:
+            st.markdown("#### Success metrics")
+            for item in snap.get("success_metrics", []):
+                st.success(item)
+
+        with st.expander("Founder checklist", expanded=False):
+            st.dataframe(pd.DataFrame(snap.get("founder_checklist", [])), use_container_width=True)
+        with st.expander("Customer required inputs", expanded=False):
+            st.dataframe(pd.DataFrame(snap.get("customer_required_inputs", [])), use_container_width=True)
+        with st.expander("Follow-up email", expanded=False):
+            st.text_area("Email draft", snap.get("follow_up_email", ""), height=240, key="v55_follow_up_email")
+
+        c_safe, c_avoid = st.columns(2)
+        with c_safe:
+            st.markdown("#### Safe claims")
+            for item in snap.get("safe_claims", []):
+                st.success(item)
+        with c_avoid:
+            st.markdown("#### Claims to avoid")
+            for item in snap.get("claims_to_avoid", []):
+                st.warning(item)
+
+        if snap.get("blockers"):
+            st.subheader("Blockers")
+            for item in snap.get("blockers", []):
+                st.error(item)
+        if snap.get("warnings"):
+            st.subheader("Warnings")
+            for item in snap.get("warnings", []):
+                st.warning(item)
+
+        st.info(snap.get("recommended_next_step", ""))
+
+        if st.session_state.first_customer_beta_v55_bundle:
+            st.download_button(
+                "Download First Customer Beta Script Bundle V55",
+                st.session_state.first_customer_beta_v55_bundle,
+                file_name=f"{st.session_state.project_name}_first_customer_beta_script_v55.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v55_download_first_customer_beta_script_bundle",
+            )
+
+    st.caption("V55 is a demo/beta execution script. Keep the conversation pilot-focused and use customer feedback to improve the product, not to promise production accuracy.")
+
+
+# ============================================================
+# V56 — Real Upload Experience 2.0 / Customer Data Intake
+# ============================================================
+
+def render_real_upload_v56_tab():
+    st.header("Real Upload Experience V56")
+    st.write(
+        "Upload real WAV/CSV field files in a controlled, privacy-first way. "
+        "EdgeTwin inspects the files, extracts safe feature-level evidence and tells you what is usable, missing or risky before downstream trust/report flows."
+    )
+
+    c1, c2 = st.columns([1.2, 1])
+    with c1:
+        use_case = st.selectbox(
+            "Upload use-case context",
+            ["Predictive Maintenance", "Security / Tamper", "Smart Forestry / Remote Area", "Remote Asset Monitoring", "Custom Sensor Fusion"],
+            key="v56_upload_use_case",
+        )
+        expected_labels_text = st.text_area(
+            "Expected labels/classes (optional)",
+            value="Normal, Warning, Event, Critical",
+            height=80,
+            key="v56_expected_labels_text",
+            help="Used only to check whether uploaded files cover the customer classes."
+        )
+        shared_label = st.text_input(
+            "Default label for uploaded files if unknown",
+            value="Unlabeled",
+            key="v56_default_upload_label",
+        )
+    with c2:
+        learning_mode = st.radio(
+            "Data learning mode",
+            ["Private only", "Feature learning allowed", "Raw data permission"],
+            index=0,
+            key="v56_learning_mode",
+            help="Private only is the safest default. Feature learning uses derived features only. Raw data permission should be rare and require written consent."
+        )
+        st.caption("Raw uploaded files are not added to any global learning bundle by default.")
+
+    uploaded_files = st.file_uploader(
+        "Upload WAV/CSV field files",
+        type=["wav", "csv"],
+        accept_multiple_files=True,
+        key="v56_real_upload_files",
+    )
+
+    upload_records = []
+    feature_rows = []
+    if uploaded_files:
+        st.subheader("File inspection preview")
+        preview_rows = []
+        for up in uploaded_files:
+            content = up.getvalue()
+            file_type = up.name.split(".")[-1].lower() if "." in up.name else "unknown"
+            features = core.extract_features_from_bytes(content, up.name, st.session_state.sr)
+            label = shared_label.strip().replace(" ", "_") or "Unlabeled"
+            rec = {
+                "filename": up.name,
+                "file_type": file_type,
+                "size_bytes": len(content),
+                "label": label,
+                "features": features,
+            }
+            if isinstance(features, dict) and "error" in features:
+                rec["error"] = features.get("error")
+            else:
+                safe_row = {"Label": label, "Filename": up.name, "FileType": file_type}
+                for k, v in (features or {}).items():
+                    if k != "error":
+                        safe_row[k] = v
+                feature_rows.append(safe_row)
+            upload_records.append(rec)
+            preview_rows.append({
+                "filename": up.name,
+                "type": file_type,
+                "size_mb": round(len(content) / (1024 * 1024), 3),
+                "label": label,
+                "status": "ERROR" if rec.get("error") else "OK",
+                "message": rec.get("error", "Feature inspection completed."),
+            })
+        st.dataframe(pd.DataFrame(preview_rows), use_container_width=True)
+
+    expected_labels = [x.strip().replace(" ", "_") for x in expected_labels_text.replace(";", ",").split(",") if x.strip()]
+
+    if st.button("Build Real Upload Intake Plan V56", type="primary", use_container_width=True, key="v56_build_upload_intake"):
+        feature_df = pd.DataFrame(feature_rows)
+        snapshot = core.inspect_real_upload_records_v56(
+            upload_records=upload_records,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            use_case=use_case,
+            learning_mode=learning_mode,
+            expected_labels=expected_labels,
+        )
+        bundle = core.create_real_upload_experience_v56_bundle(
+            st.session_state.project_name,
+            snapshot,
+            feature_df=feature_df,
+            dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.session_state.real_upload_v56_snapshot = snapshot
+        st.session_state.real_upload_v56_bundle = bundle
+        st.session_state.real_upload_v56_features_df = feature_df
+        st.success("Real upload intake plan generated.")
+
+    snap = st.session_state.real_upload_v56_snapshot
+    if snap:
+        st.subheader("Upload readiness result")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Upload score", f"{snap.get('upload_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "Unknown"))
+        m3.metric("Files", snap.get("uploaded_file_count", 0))
+        m4.metric("Feature rows", snap.get("feature_rows_count", 0))
+        if snap.get("decision") == "GO":
+            st.success(snap.get("status_text", ""))
+        elif snap.get("decision") == "CONDITIONAL GO":
+            st.warning(snap.get("status_text", ""))
+        else:
+            st.error(snap.get("status_text", ""))
+
+        if snap.get("privacy_flags"):
+            st.subheader("Privacy flags")
+            for item in snap.get("privacy_flags", []):
+                st.warning(item)
+
+        if snap.get("blockers"):
+            st.subheader("Blockers")
+            for item in snap.get("blockers", []):
+                st.error(item)
+        if snap.get("warnings"):
+            st.subheader("Warnings")
+            for item in snap.get("warnings", []):
+                st.warning(item)
+
+        st.subheader("Next actions")
+        for item in snap.get("next_actions", []):
+            st.info(item)
+
+        with st.expander("Inspected files and privacy policy", expanded=False):
+            st.dataframe(pd.DataFrame(snap.get("inspected_files", [])), use_container_width=True)
+            st.json(snap.get("privacy_policy", {}))
+
+        feature_df = st.session_state.real_upload_v56_features_df
+        if isinstance(feature_df, pd.DataFrame) and len(feature_df) > 0:
+            st.subheader("Safe extracted feature rows")
+            st.dataframe(feature_df.head(50), use_container_width=True)
+            if st.button("Load extracted feature rows into Enterprise Audit", use_container_width=True, key="v56_load_features_to_audit"):
+                st.session_state.dataset = feature_df.copy()
+                st.success("Safe feature rows loaded into Enterprise Audit dataset.")
+
+        if st.session_state.real_upload_v56_bundle:
+            st.download_button(
+                "Download Real Upload Experience Bundle V56",
+                st.session_state.real_upload_v56_bundle,
+                file_name=f"{st.session_state.project_name}_real_upload_experience_v56.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v56_download_real_upload_bundle",
+            )
+
+    st.caption("V56 keeps raw customer uploads private by default and converts usable evidence into safer feature-level rows for downstream readiness and trust checks.")
+
+
+
+# ============================================================
+# V57 — Checkout & Paid Download Readiness / Payment Prep
+# ============================================================
+
+def render_checkout_v57_tab():
+    st.header("Checkout & Paid Download Readiness V57")
+    st.write(
+        "Prepare a controlled checkout/invoice step for paid pilot bundles. "
+        "V57 does not process payments directly; it checks whether scope, license, privacy and delivery conditions are ready before payment or paid download unlock."
+    )
+
+    c1, c2 = st.columns([1.2, 1])
+    with c1:
+        customer_name = st.text_input("Customer / organization name", value="Customer", key="v57_customer_name")
+        customer_email = st.text_input("Customer email", value="", key="v57_customer_email")
+        package_name = st.selectbox("Package", core.get_checkout_packages_v57(), index=1, key="v57_package_name")
+        payment_provider = st.selectbox(
+            "Payment provider mode",
+            ["Manual invoice first", "Stripe/live checkout", "Payment link placeholder", "Enterprise procurement"],
+            index=0,
+            key="v57_payment_provider",
+        )
+        payment_method = st.selectbox(
+            "Payment method",
+            ["Manual invoice / bank transfer", "Stripe card checkout", "Payment link", "PO / enterprise invoice"],
+            index=0,
+            key="v57_payment_method",
+        )
+        tax_mode = st.selectbox(
+            "Tax/VAT handling",
+            ["EU B2B reverse charge / manual review", "Domestic VAT manual review", "Outside EU manual review", "Tax not configured yet"],
+            index=0,
+            key="v57_tax_mode",
+        )
+    with c2:
+        invoice_details_complete = st.checkbox("Invoice/customer details complete", value=False, key="v57_invoice_details_complete")
+        sow_scope_accepted = st.checkbox("SOW/scope accepted", value=bool(st.session_state.get("proposal_sow_snapshot")), key="v57_sow_scope_accepted")
+        license_certificate_ready = st.checkbox("License/certificate ready", value=bool(st.session_state.get("license_cert_snapshot")), key="v57_license_ready")
+        delivery_bundle_ready = st.checkbox("Delivery bundle ready", value=bool(st.session_state.get("delivery_snapshot")), key="v57_delivery_ready")
+        privacy_notice_ready = st.checkbox("Privacy/customer data notice ready", value=True, key="v57_privacy_notice_ready")
+        refund_policy_acknowledged = st.checkbox("Refund/cancellation policy acknowledged", value=False, key="v57_refund_ack")
+        st.info("For first paid pilots, manual invoice/payment link is safer than fully automated checkout. Stripe can come later after scope and terms are stable.")
+
+    if st.button("Build Checkout Readiness V57", type="primary", use_container_width=True, key="v57_build_checkout"):
+        snapshot = core.build_checkout_readiness_v57(
+            project_name=st.session_state.project_name,
+            customer_name=customer_name,
+            customer_email=customer_email,
+            package_name=package_name,
+            payment_method=payment_method,
+            invoice_details_complete=invoice_details_complete,
+            sow_scope_accepted=sow_scope_accepted,
+            license_certificate_ready=license_certificate_ready,
+            delivery_bundle_ready=delivery_bundle_ready,
+            privacy_notice_ready=privacy_notice_ready,
+            refund_policy_acknowledged=refund_policy_acknowledged,
+            tax_mode=tax_mode,
+            payment_provider=payment_provider,
+            selected_plan=st.session_state.selected_plan,
+            pricing_offer_snapshot=st.session_state.get("pricing_offer_snapshot"),
+            paid_pilot_snapshot=st.session_state.get("paid_pilot_v45_snapshot"),
+            delivery_snapshot=st.session_state.get("delivery_snapshot"),
+        )
+        st.session_state.checkout_v57_snapshot = snapshot
+        st.session_state.checkout_v57_bundle = core.create_checkout_readiness_v57_bundle(
+            st.session_state.project_name,
+            snapshot,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        decision = snapshot.get("decision")
+        if decision == "GO":
+            st.success("Checkout/invoice step is ready.")
+        elif decision == "CONDITIONAL GO":
+            st.warning("Checkout is close, but clean up the warnings first.")
+        else:
+            st.error("Do not send checkout/invoice yet. Fix blockers first.")
+
+    if st.session_state.checkout_v57_snapshot:
+        snap = st.session_state.checkout_v57_snapshot
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Checkout score", f"{snap.get('checkout_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "Unknown"))
+        m3.metric("Package", snap.get("package_name", "Unknown"))
+        m4.metric("Price", f"{snap.get('currency', 'EUR')} {snap.get('price', 0):,.0f}")
+
+        st.subheader("Customer checkout copy")
+        st.write(snap.get("customer_checkout_copy", ""))
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Blockers")
+            for item in snap.get("blockers", []) or ["No hard blockers recorded."]:
+                st.error(item) if snap.get("blockers") else st.success(item)
+            st.markdown("#### Internal next actions")
+            for item in snap.get("internal_next_actions", []):
+                st.write(f"- {item}")
+        with c2:
+            st.markdown("#### Warnings")
+            for item in snap.get("warnings", []) or ["No warnings recorded."]:
+                st.warning(item) if snap.get("warnings") else st.success(item)
+            st.markdown("#### Deliverables unlocked by scope")
+            for item in snap.get("deliverables", []):
+                st.write(f"- {item}")
+
+        st.subheader("Invoice line items")
+        st.dataframe(pd.DataFrame(snap.get("line_items", [])), use_container_width=True)
+
+        with st.expander("Safe claims / claims to avoid", expanded=False):
+            st.markdown("**Safe claims**")
+            for item in snap.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.markdown("**Avoid**")
+            for item in snap.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+
+        if st.session_state.checkout_v57_bundle:
+            st.download_button(
+                "Download Checkout Readiness Bundle V57",
+                st.session_state.checkout_v57_bundle,
+                file_name=f"{st.session_state.project_name}_checkout_readiness_v57.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v57_download_checkout_bundle",
+            )
+
+    st.caption("V57 prepares payment/download gating. It does not replace tax/legal review and does not process payments inside this local app.")
+
 # ============================================================
 # ORGANIZED PAGE DISPATCHER V45.2
 # ============================================================
@@ -7198,6 +8004,10 @@ def render_field_learning_v52_tab():
 _PAGE_RENDERERS = {
     'customer_home_v50_tab': render_customer_home_v50_tab,
     'customer_review_v50_tab': render_customer_review_v50_tab,
+    'launch_experience_v53_tab': render_launch_experience_v53_tab,
+    'launch_assets_v54_tab': render_launch_assets_v54_tab,
+    'first_customer_beta_v55_tab': render_first_customer_beta_v55_tab,
+    'real_upload_v56_tab': render_real_upload_v56_tab,
     'home': render_home,
     'wizard_tab': render_wizard_tab,
     'fusion_tab': render_fusion_tab,
@@ -7238,6 +8048,7 @@ _PAGE_RENDERERS = {
     'lead_intake_v48_tab': render_lead_intake_v48_tab,
     'pricing_offer_tab': render_pricing_offer_tab,
     'proposal_sow_tab': render_proposal_sow_tab,
+    'checkout_v57_tab': render_checkout_v57_tab,
     'quote_to_cash_tab': render_quote_to_cash_tab,
     'paid_pilot_v45_tab': render_paid_pilot_v45_tab,
     'canvas_tab': render_canvas_tab,
