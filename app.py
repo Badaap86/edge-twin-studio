@@ -101,6 +101,8 @@ def init_state():
         "customer_assurance_bundle": None,
         "onboarding_snapshot": None,
         "onboarding_bundle": None,
+        "guided_success_bundle": None,
+        "security_v41_snapshot": None,
         "workspace_lifecycle_snapshot": None,
         "workspace_lifecycle_bundle": None,
         "admin_usage_snapshot": None,
@@ -201,6 +203,7 @@ def reset_generated_bundles():
     st.session_state.observability_bundle = None
     st.session_state.customer_assurance_bundle = None
     st.session_state.onboarding_bundle = None
+    st.session_state.guided_success_bundle = None
     st.session_state.workspace_lifecycle_bundle = None
     st.session_state.product_readiness_v40_bundle = None
     st.session_state.security_hardening_v41_bundle = None
@@ -4678,6 +4681,7 @@ with onboarding_tab:
                 snapshot,
                 st.session_state.dataset,
             )
+            st.session_state.guided_success_bundle = st.session_state.onboarding_bundle
         st.success("Guided Success Plan created.")
 
     if st.session_state.onboarding_snapshot:
