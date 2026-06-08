@@ -14,7 +14,7 @@ import core
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V49", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio V52", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -125,6 +125,13 @@ def init_state():
         "lead_intake_v48_bundle": None,
         "founder_ops_v49_snapshot": None,
         "founder_ops_v49_bundle": None,
+        "customer_mode_v50_snapshot": None,
+        "customer_mode_v50_bundle": None,
+        "customer_ui_v51_snapshot": None,
+        "customer_ui_v51_bundle": None,
+        "field_learning_v52_snapshot": None,
+        "field_learning_v52_bundle": None,
+        "workspace_mode_v50": "Customer Mode",
         "field_evidence_v2_snapshot": None,
         "field_evidence_v2_bundle": None,
         "product_readiness_v40_snapshot": None,
@@ -210,6 +217,9 @@ def reset_generated_bundles():
     st.session_state.quote_to_cash_bundle = None
     st.session_state.lead_intake_v48_bundle = None
     st.session_state.founder_ops_v49_bundle = None
+    st.session_state.customer_mode_v50_bundle = None
+    st.session_state.customer_ui_v51_bundle = None
+    st.session_state.field_learning_v52_bundle = None
     st.session_state.field_evidence_v2_bundle = None
     st.session_state.admin_usage_bundle = None
     st.session_state.observability_bundle = None
@@ -337,13 +347,25 @@ st.sidebar.title("EdgeTwin Studio")
 st.sidebar.caption("Powered by OMEGA-X Engine")
 st.sidebar.success(f"Logged in as {st.session_state.user['username']}")
 
-st.session_state.selected_plan = st.sidebar.selectbox(
-    "Access plan",
-    core.get_pricing_plans(),
-    index=core.get_pricing_plans().index(st.session_state.selected_plan) if st.session_state.selected_plan in core.get_pricing_plans() else 0,
-    key="sidebar_selected_plan_v24",
+workspace_mode_v50 = st.sidebar.radio(
+    "Workspace mode",
+    ["Customer Mode", "Founder Mode"],
+    index=0 if st.session_state.workspace_mode_v50 == "Customer Mode" else 1,
+    key="workspace_mode_v50",
+    horizontal=False,
 )
-st.sidebar.caption("V24 local plan simulator. Payments are not connected yet.")
+is_founder_mode = workspace_mode_v50 == "Founder Mode"
+
+if is_founder_mode:
+    st.session_state.selected_plan = st.sidebar.selectbox(
+        "Access plan",
+        core.get_pricing_plans(),
+        index=core.get_pricing_plans().index(st.session_state.selected_plan) if st.session_state.selected_plan in core.get_pricing_plans() else 0,
+        key="sidebar_selected_plan_v24",
+    )
+    st.sidebar.caption("Founder-only local plan simulator. Payments are not connected yet.")
+else:
+    st.sidebar.caption("Customer Mode hides advanced/admin tools and shows the clean pilot route.")
 
 st.session_state.project_name = st.sidebar.text_input(
     "Project name",
@@ -376,6 +398,11 @@ if st.sidebar.button("Save project", use_container_width=True, key="sidebar_save
         "proposal_sow_snapshot": st.session_state.proposal_sow_snapshot,
         "quote_to_cash_snapshot": st.session_state.quote_to_cash_snapshot,
         "lead_intake_v48_snapshot": st.session_state.lead_intake_v48_snapshot,
+        "founder_ops_v49_snapshot": st.session_state.founder_ops_v49_snapshot,
+        "customer_mode_v50_snapshot": st.session_state.customer_mode_v50_snapshot,
+        "customer_ui_v51_snapshot": st.session_state.customer_ui_v51_snapshot,
+        "field_learning_v52_snapshot": st.session_state.field_learning_v52_snapshot,
+        "workspace_mode_v50": st.session_state.workspace_mode_v50,
         "observability_snapshot": st.session_state.observability_snapshot,
         "customer_assurance_snapshot": st.session_state.customer_assurance_snapshot,
         "workspace_lifecycle_snapshot": st.session_state.workspace_lifecycle_snapshot,
@@ -436,6 +463,10 @@ if len(projects) > 0:
             st.session_state.quote_to_cash_snapshot = settings.get("quote_to_cash_snapshot")
             st.session_state.lead_intake_v48_snapshot = settings.get("lead_intake_v48_snapshot")
             st.session_state.founder_ops_v49_snapshot = settings.get("founder_ops_v49_snapshot")
+            st.session_state.customer_mode_v50_snapshot = settings.get("customer_mode_v50_snapshot")
+            st.session_state.customer_ui_v51_snapshot = settings.get("customer_ui_v51_snapshot")
+            st.session_state.field_learning_v52_snapshot = settings.get("field_learning_v52_snapshot")
+            st.session_state.workspace_mode_v50 = settings.get("workspace_mode_v50", st.session_state.workspace_mode_v50)
             st.session_state.security_hardening_v41_snapshot = settings.get("security_hardening_v41_snapshot")
             st.session_state.commercial_license_certificate = settings.get("commercial_license_certificate")
             st.session_state.customer_delivery_snapshot = settings.get("customer_delivery_snapshot")
@@ -451,58 +482,63 @@ if len(projects) > 0:
             st.sidebar.success("Project loaded. Re-run export if you want fresh ZIP/PDF bundles.")
             st.rerun()
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("Canvas settings")
+if is_founder_mode:
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Advanced signal settings")
 
-signal_type = st.sidebar.radio(
-    "Signal type",
-    ["Audio / Acoustic", "Vibration / IMU"],
-    key="sidebar_signal_type",
-)
+    signal_type = st.sidebar.radio(
+        "Signal type",
+        ["Audio / Acoustic", "Vibration / IMU"],
+        key="sidebar_signal_type",
+    )
 
-st.session_state.sr = 4000 if signal_type == "Vibration / IMU" else 16000
+    st.session_state.sr = 4000 if signal_type == "Vibration / IMU" else 16000
 
-st.session_state.current_label = st.sidebar.text_input(
-    "Dataset label",
-    st.session_state.current_label,
-    key="sidebar_dataset_label",
-)
+    st.session_state.current_label = st.sidebar.text_input(
+        "Dataset label",
+        st.session_state.current_label,
+        key="sidebar_dataset_label",
+    )
 
-st.session_state.base_f = st.sidebar.slider(
-    "Base frequency",
-    0.0,
-    1000.0,
-    float(st.session_state.base_f),
-    5.0,
-    key="sidebar_base_frequency",
-)
+    st.session_state.base_f = st.sidebar.slider(
+        "Base frequency",
+        0.0,
+        1000.0,
+        float(st.session_state.base_f),
+        5.0,
+        key="sidebar_base_frequency",
+    )
 
-st.session_state.harm_r = st.sidebar.slider(
-    "Harmonics",
-    0.0,
-    2.0,
-    float(st.session_state.harm_r),
-    0.05,
-    key="sidebar_harmonics",
-)
+    st.session_state.harm_r = st.sidebar.slider(
+        "Harmonics",
+        0.0,
+        2.0,
+        float(st.session_state.harm_r),
+        0.05,
+        key="sidebar_harmonics",
+    )
 
-st.session_state.imp_r = st.sidebar.slider(
-    "Impact rate",
-    0.0,
-    50.0,
-    float(st.session_state.imp_r),
-    0.5,
-    key="sidebar_impact_rate",
-)
+    st.session_state.imp_r = st.sidebar.slider(
+        "Impact rate",
+        0.0,
+        50.0,
+        float(st.session_state.imp_r),
+        0.5,
+        key="sidebar_impact_rate",
+    )
 
-st.session_state.noise_l = st.sidebar.slider(
-    "Noise",
-    0.0,
-    1.0,
-    float(st.session_state.noise_l),
-    0.02,
-    key="sidebar_noise",
-)
+    st.session_state.noise_l = st.sidebar.slider(
+        "Noise",
+        0.0,
+        1.0,
+        float(st.session_state.noise_l),
+        0.02,
+        key="sidebar_noise",
+    )
+else:
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Customer flow")
+    st.sidebar.caption("Advanced signal sliders, admin screens and engineering tools are hidden in Customer Mode.")
 
 if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
     del st.session_state.user
@@ -518,21 +554,67 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER / ORGANIZED NAVIGATION V45.2
 # ============================================================
 
-st.title("EdgeTwin Studio V49")
+st.title("EdgeTwin Studio V52")
 st.caption(
-    "Founder-ops ready workspace: Start → Build Pilot → Validate & Trust → Deploy & Export → Sell & Deliver → Operator/Admin. "
-    "V49 adds follow-up automation, founder task queue and workload control so leads do not become chaos."
+    "Privacy-Safe Field Learning: customer data stays private by default, while opt-in feature learning can strengthen EdgeTwin safely. "
+    "V52 keeps the clean customer route and adds a privacy-first path for learning from real field data without blindly reusing raw customer files."
 )
 
-NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_bridge_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
-NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
+st.markdown("""
+<style>
+.v51-hero {
+    padding: 1.05rem 1.15rem;
+    border: 1px solid rgba(120,120,120,0.25);
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+    margin-bottom: 1rem;
+}
+.v51-card {
+    padding: 1rem;
+    border: 1px solid rgba(120,120,120,0.22);
+    border-radius: 16px;
+    min-height: 150px;
+    background: rgba(255,255,255,0.03);
+}
+.v51-badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    margin: 0.12rem 0.18rem 0.12rem 0;
+    border-radius: 999px;
+    border: 1px solid rgba(120,120,120,0.28);
+    font-size: 0.86rem;
+}
+.v51-step {
+    padding: 0.65rem 0.75rem;
+    border-left: 4px solid rgba(120,120,120,0.55);
+    margin: 0.4rem 0;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.025);
+}
+.v51-small {
+    opacity: 0.78;
+    font-size: 0.92rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
+FOUNDER_NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_bridge_tab', 'field_learning_v52_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
+CUSTOMER_NAV_GROUPS = {'1. Start': ['customer_home_v50_tab'], '2. Create pilot': ['wizard_tab'], '3. Review readiness': ['customer_review_v50_tab', 'field_learning_v52_tab'], '4. Download / handoff': ['reports_tab', 'delivery_tab'], '5. Request proposal': ['lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab']}
+NAV_GROUPS = CUSTOMER_NAV_GROUPS if st.session_state.workspace_mode_v50 == 'Customer Mode' else FOUNDER_NAV_GROUPS
+NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning V52', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
+NAV_LABELS.update({'customer_home_v50_tab': '✨ Customer Start', 'customer_review_v50_tab': '✅ Readiness & Next Step'})
 NAV_HINTS = {
     "1. Start & Guided Flow": "For demos, guided onboarding, golden demo proof and project lifecycle overview.",
     "2. Build Pilot": "Generate datasets, choose sensors/use-cases, create packs and optimize weak datasets.",
     "3. Validate & Trust": "Check reliability, real-data bridge, normal/abnormal baseline, field evidence and readiness gates.",
     "4. Deploy & Export": "Prepare hardware/deployment plans, reports, Edge Impulse exports and API automation.",
     "5. Sell & Deliver": "Manage founder workload, qualify leads, create pricing offers, paid pilot checks, licenses, customer delivery and follow-up.",
-    "6. Operator & Admin": "Control product health, governance, storage, errors, admin usage, hardening and hardware catalog."
+    "6. Operator & Admin": "Control product health, governance, storage, errors, admin usage, hardening and hardware catalog.",
+    "1. Start": "A calm customer-facing front door with three simple cards and no engineering overload.",
+    "2. Create pilot": "Generate the pilot package while the advanced engine stays hidden behind the route.",
+    "3. Review readiness": "Show customer-safe status badges, readiness, privacy-safe learning options, gaps and the honest next step.",
+    "4. Download / handoff": "Give the customer only the relevant reports, bundles and handoff outputs.",
+    "5. Request proposal": "Qualify the request, build pricing and create a proposal/SOW when the lead is ready."
 }
 
 st.sidebar.markdown("---")
@@ -541,23 +623,30 @@ nav_group = st.sidebar.radio(
     "Section",
     list(NAV_GROUPS.keys()),
     index=0,
-    key="workspace_nav_group_v45_2",
+    key=f"workspace_nav_group_v50_{st.session_state.workspace_mode_v50}",
 )
 nav_options = NAV_GROUPS.get(nav_group, [])
 nav_page_key = st.sidebar.selectbox(
     "Open tool",
     nav_options,
     format_func=lambda k: NAV_LABELS.get(k, k),
-    key=f"workspace_nav_page_{nav_group}",
+    key=f"workspace_nav_page_v50_{st.session_state.workspace_mode_v50}_{nav_group}",
 )
 
 st.markdown(f"### {NAV_LABELS.get(nav_page_key, nav_page_key)}")
-st.info(NAV_HINTS.get(nav_group, "Choose a workflow step from the sidebar."))
-with st.expander("Why the old 40+ tabs are now grouped", expanded=False):
+if st.session_state.workspace_mode_v50 == "Customer Mode":
+    nav_hint_text = NAV_HINTS.get(nav_group, "Choose the next customer step from the sidebar.")
+    st.markdown(
+        f'<div class="v51-hero"><b>Simple customer route.</b><br><span class="v51-small">{nav_hint_text}</span></div>',
+        unsafe_allow_html=True,
+    )
+else:
+    st.info(NAV_HINTS.get(nav_group, "Choose a workflow step from the sidebar."))
+with st.expander("Why V51 stays simple for customers", expanded=False):
     st.write(
-        "EdgeTwin keeps all advanced functions, but they are organized into six product areas. "
-        "This makes it easier for customers and for you as operator: start with guided/demo flows, "
-        "build a pilot, validate trust, export/deploy, sell/deliver, and finally manage/admin."
+        "Customer Mode is intentionally calm: the buyer sees the route, readiness and next step. "
+        "The full Dataset Doctor, Reliability Engine, Synthetic-to-Real Bridge, trust gates, reports, pricing and delivery logic still run behind the scenes. "
+        "Founder Mode keeps the complete operating system available for you without overwhelming customers."
     )
 
 def render_home():
@@ -6770,16 +6859,352 @@ def render_founder_ops_v49_tab():
 
 
 # ============================================================
+# V50 CUSTOMER MODE / SIMPLIFIED CUSTOMER ROUTE
+# ============================================================
+
+
+def _v51_badge(text):
+    return f"<span class=\"v51-badge\">{text}</span>"
+
+
+def _build_v51_customer_snapshot():
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    snap = core.build_customer_ui_v51_summary(
+        project_name=st.session_state.project_name,
+        dataset_df=dataset_df,
+        auto_pilot_result=st.session_state.auto_pilot_result,
+        fusion_doctor=st.session_state.fusion_doctor,
+        trust_gate=st.session_state.trust_gate,
+        pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+        proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+        paid_pilot_snapshot=st.session_state.paid_pilot_v45_snapshot,
+        delivery_snapshot=st.session_state.customer_delivery_snapshot,
+        lead_intake_snapshot=st.session_state.lead_intake_v48_snapshot,
+    )
+    st.session_state.customer_ui_v51_snapshot = snap
+    # Keep V50 snapshot populated for backwards compatibility with saved projects/bundles.
+    st.session_state.customer_mode_v50_snapshot = snap.get("base_v50_snapshot", snap)
+    return snap
+
+
+def _render_v51_status_badges(snap):
+    badges = snap.get("status_badges", [])
+    if badges:
+        st.markdown(" ".join(_v51_badge(str(b)) for b in badges), unsafe_allow_html=True)
+
+
+def _render_v51_card(title, body, footer=""):
+    footer_html = f"<br><br><span class=\"v51-small\">{footer}</span>" if footer else ""
+    st.markdown(f"<div class=\"v51-card\"><h4>{title}</h4><p>{body}</p>{footer_html}</div>", unsafe_allow_html=True)
+
+def _build_v50_customer_snapshot():
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    snap = core.build_customer_mode_v50_summary(
+        project_name=st.session_state.project_name,
+        dataset_df=dataset_df,
+        auto_pilot_result=st.session_state.auto_pilot_result,
+        fusion_doctor=st.session_state.fusion_doctor,
+        trust_gate=st.session_state.trust_gate,
+        pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+        proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+        paid_pilot_snapshot=st.session_state.paid_pilot_v45_snapshot,
+        delivery_snapshot=st.session_state.customer_delivery_snapshot,
+        lead_intake_snapshot=st.session_state.lead_intake_v48_snapshot,
+    )
+    st.session_state.customer_mode_v50_snapshot = snap
+    return snap
+
+
+
+def render_customer_home_v50_tab():
+    st.header("Customer Start — Clean Pilot Route V51")
+    snap = _build_v51_customer_snapshot()
+
+    _render_v51_status_badges(snap)
+    st.markdown(
+        "<div class=\"v51-hero\"><h3>From sensor idea to pilot package — without the technical chaos.</h3>"
+        "<p>The customer sees a simple route. EdgeTwin still runs the full OMEGA-X engine behind it: dataset generation, feature extraction, reliability checks, trust gates, hardware advice and customer-safe deliverables.</p></div>",
+        unsafe_allow_html=True,
+    )
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Customer clarity", f"{snap.get('customer_clarity_score', 0)}%")
+    m2.metric("Readiness", snap.get("customer_status", "Needs setup"))
+    m3.metric("Dataset rows", snap.get("dataset_rows", 0))
+    m4.metric("Next step", snap.get("primary_next_step", "Choose problem"))
+
+    verdict = snap.get("customer_verdict", "")
+    if snap.get("customer_clarity_score", 0) >= 80:
+        st.success(verdict)
+    elif snap.get("customer_clarity_score", 0) >= 55:
+        st.warning(verdict)
+    else:
+        st.info(verdict)
+
+    st.subheader("Simple customer journey")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        _render_v51_card(
+            "1. Choose the problem",
+            "The customer describes the machine, sensor idea, environment and what should be detected.",
+            "No engineering settings needed at the front door."
+        )
+    with c2:
+        _render_v51_card(
+            "2. Generate the pilot",
+            "EdgeTwin creates the pilot dataset, features, first reliability view and hardware direction.",
+            "Advanced checks stay under the hood."
+        )
+    with c3:
+        _render_v51_card(
+            "3. Review & hand off",
+            "The customer gets a clear readiness status, honest limitations, downloads and proposal route.",
+            "Pilot-ready does not mean production-certified."
+        )
+
+    st.subheader("Where this project is now")
+    for step in snap.get("customer_route", []):
+        status = step.get("status", "Pending")
+        prefix = "✅" if status == "Done" else "➡️" if status == "Next" else "○"
+        st.markdown(
+            f"<div class=\"v51-step\"><b>{prefix} {step.get('step', '')}. {step.get('title', '')}</b> "
+            f"<span class=\"v51-small\">— {step.get('description', '')}</span></div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
+    left, right = st.columns([1.15, 1])
+    with left:
+        st.markdown("#### Customer sees")
+        for item in snap.get("customer_visible_outputs", []):
+            st.write(f"✓ {item}")
+    with right:
+        st.markdown("#### Hidden but still active")
+        for item in snap.get("hidden_advanced_tools", []):
+            st.caption(f"• {item}")
+
+    with st.expander("Advanced details", expanded=False):
+        st.write("These are internal/customer-success details. Keep this collapsed during normal buyer demos.")
+        st.json({k: v for k, v in snap.items() if k not in ["base_v50_snapshot"]})
+
+    if st.button("Build Customer UI Bundle V51", type="primary", use_container_width=True, key="v51_build_customer_ui_bundle"):
+        st.session_state.customer_ui_v51_bundle = core.create_customer_ui_v51_bundle(
+            st.session_state.project_name,
+            snap,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.success("Customer UI bundle created.")
+
+    if st.session_state.customer_ui_v51_bundle:
+        st.download_button(
+            "Download Customer UI Bundle V51",
+            st.session_state.customer_ui_v51_bundle,
+            file_name=f"{st.session_state.project_name}_customer_ui_v51.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="v51_download_customer_ui_bundle",
+        )
+
+
+def render_customer_review_v50_tab():
+    st.header("Readiness & Next Step — Customer View V51")
+    snap = _build_v51_customer_snapshot()
+
+    _render_v51_status_badges(snap)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Readiness", f"{snap.get('customer_clarity_score', 0)}%")
+    c2.metric("Status", snap.get("customer_status", "Not ready"))
+    c3.metric("Risk level", snap.get("risk_level", "Unknown"))
+
+    st.markdown("#### Recommended next step")
+    st.info(snap.get("primary_next_step_long", "Create the pilot package first."))
+
+    ready_col, need_col = st.columns(2)
+    with ready_col:
+        st.subheader("Ready")
+        ready_items = snap.get("ready_items", [])
+        if ready_items:
+            for item in ready_items:
+                st.success(item)
+        else:
+            st.info("Nothing customer-facing is ready yet. Start with Create pilot.")
+    with need_col:
+        st.subheader("Still needed")
+        missing_items = snap.get("missing_items", [])
+        if missing_items:
+            for item in missing_items:
+                st.warning(item)
+        else:
+            st.success("No major customer-facing gaps detected for a controlled pilot discussion.")
+
+    st.subheader("Customer-safe summary")
+    st.text_area("Summary", snap.get("safe_customer_summary", ""), height=180, key="v51_safe_customer_summary")
+
+    with st.expander("Advanced details", expanded=False):
+        st.markdown("#### UI simplification rules")
+        for rule in snap.get("ui_simplification_rules", []):
+            st.write(f"- {rule}")
+        st.markdown("#### Engine still active behind the clean UI")
+        for item in snap.get("engine_kept_active", []):
+            st.write(f"- {item}")
+
+    st.caption(snap.get("disclaimer", ""))
+
+
+# ============================================================
+# V52 — Privacy-Safe Field Learning System
+# ============================================================
+
+def render_field_learning_v52_tab():
+    st.header("Privacy-Safe Field Learning V52")
+    st.write(
+        "Use real customer field data without making privacy or trust mistakes. "
+        "By default, customer data stays private. EdgeTwin can learn only from safe extracted features when explicit opt-in is selected."
+    )
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+
+    c1, c2 = st.columns([1.2, 1])
+    with c1:
+        consent_mode = st.selectbox(
+            "Data permission mode",
+            ["Private only", "Feature learning allowed", "Raw data permission"],
+            index=0,
+            key="v52_consent_mode",
+            help="Private only is the default. Feature learning is the recommended opt-in. Raw data permission should be rare and contractual."
+        )
+        customer_sector = st.selectbox(
+            "Sector / environment",
+            ["Industrial maintenance", "Building security", "Forestry / outdoor", "Agriculture", "Logistics", "Custom"],
+            key="v52_customer_sector",
+        )
+        use_case_type = st.text_input(
+            "Use-case label",
+            value=str(st.session_state.auto_pilot_config.get("use_case_type", "Custom pilot")) if st.session_state.auto_pilot_config else "Custom pilot",
+            key="v52_use_case_type",
+        )
+        retention_days = st.number_input("Retention days", min_value=7, max_value=3650, value=180, step=30, key="v52_retention_days")
+
+    with c2:
+        contains_audio = st.checkbox("Dataset may include raw audio or audio filenames", value=False, key="v52_contains_audio")
+        contains_gps = st.checkbox("Dataset may include GPS/location data", value=False, key="v52_contains_gps")
+        contains_machine_ids = st.checkbox("Dataset may include machine/customer IDs", value=False, key="v52_contains_machine_ids")
+        contains_personal_data = st.checkbox("Dataset may include personal/employee/customer data", value=False, key="v52_contains_personal_data")
+        allow_cross_customer_learning = st.checkbox(
+            "Allow cross-customer aggregate feature learning",
+            value=(consent_mode == "Feature learning allowed"),
+            key="v52_allow_cross_customer_learning",
+        )
+
+    st.caption(
+        "Recommended default: Private only. Best scalable option: Feature learning allowed, because EdgeTwin learns from aggregate feature patterns without copying raw customer files into the global engine."
+    )
+
+    if len(dataset_df) == 0:
+        st.info("No dataset loaded yet. Generate a pilot dataset or upload real customer data first. V52 can still create the privacy policy/checklist.")
+    else:
+        st.success(f"Dataset detected: {len(dataset_df)} rows, {len(dataset_df.columns)} columns.")
+
+    if st.button("Build Privacy-Safe Learning Plan V52", type="primary", use_container_width=True, key="v52_build_privacy_learning"):
+        snap = core.build_privacy_safe_field_learning_v52(
+            project_name=st.session_state.project_name,
+            dataset_df=dataset_df,
+            consent_mode=consent_mode,
+            customer_sector=customer_sector,
+            use_case_type=use_case_type,
+            retention_days=int(retention_days),
+            contains_audio=contains_audio,
+            contains_gps=contains_gps,
+            contains_machine_ids=contains_machine_ids,
+            contains_personal_data=contains_personal_data,
+            allow_cross_customer_learning=allow_cross_customer_learning,
+        )
+        st.session_state.field_learning_v52_snapshot = snap
+        st.session_state.field_learning_v52_bundle = core.create_privacy_safe_field_learning_v52_bundle(
+            st.session_state.project_name,
+            snap,
+            dataset_df,
+        )
+        st.success("Privacy-safe learning plan created.")
+
+    snap = st.session_state.field_learning_v52_snapshot
+    if snap:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Privacy score", f"{snap.get('privacy_score', 0)}%")
+        m2.metric("Learning mode", snap.get("learning_mode", "Unknown"))
+        m3.metric("Risk", snap.get("risk_level", "Unknown"))
+        m4.metric("Rows usable", snap.get("feature_rows_available", 0))
+
+        if snap.get("risk_level") == "High":
+            st.error(snap.get("verdict", "High privacy risk. Keep data private until consent and minimization are solved."))
+        elif snap.get("risk_level") == "Medium":
+            st.warning(snap.get("verdict", "Use feature-only learning and keep raw data private."))
+        else:
+            st.success(snap.get("verdict", "Privacy posture looks acceptable for controlled feature learning."))
+
+        st.subheader("Allowed vs blocked")
+        allowed_col, blocked_col = st.columns(2)
+        with allowed_col:
+            st.markdown("#### Allowed actions")
+            for item in snap.get("allowed_actions", []):
+                st.success(item)
+        with blocked_col:
+            st.markdown("#### Blocked by default")
+            for item in snap.get("blocked_actions", []):
+                st.warning(item)
+
+        st.subheader("Safe learning output")
+        st.write(snap.get("learning_summary", ""))
+        features = snap.get("safe_feature_candidates", [])
+        if features:
+            st.dataframe(pd.DataFrame(features), use_container_width=True)
+        else:
+            st.info("No safe numeric feature columns found yet. Generate/extract features first.")
+
+        with st.expander("Consent text for Proposal / SOW", expanded=False):
+            st.text_area("Customer consent clause", snap.get("customer_consent_clause", ""), height=180, key="v52_consent_clause_text")
+
+        with st.expander("Advanced privacy details", expanded=False):
+            st.markdown("#### Data minimization plan")
+            for item in snap.get("data_minimization_plan", []):
+                st.write(f"- {item}")
+            st.markdown("#### Retention and deletion")
+            for item in snap.get("retention_and_deletion_plan", []):
+                st.write(f"- {item}")
+            st.markdown("#### Audit log events")
+            for item in snap.get("audit_log_events", []):
+                st.write(f"- {item}")
+            st.json({k: v for k, v in snap.items() if k not in ["safe_feature_candidates", "feature_library_preview"]})
+
+        if st.session_state.field_learning_v52_bundle:
+            st.download_button(
+                "Download Privacy-Safe Field Learning Bundle V52",
+                st.session_state.field_learning_v52_bundle,
+                file_name=f"{st.session_state.project_name}_privacy_safe_field_learning_v52.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v52_download_privacy_learning_bundle",
+            )
+
+    st.caption(
+        "V52 is a workflow and data-minimization layer. It is not legal advice and does not automatically make customer data anonymous. Real anonymisation requires careful removal of identifiers and re-identification risk checks."
+    )
+
+
+# ============================================================
 # ORGANIZED PAGE DISPATCHER V45.2
 # ============================================================
 
 _PAGE_RENDERERS = {
+    'customer_home_v50_tab': render_customer_home_v50_tab,
+    'customer_review_v50_tab': render_customer_review_v50_tab,
     'home': render_home,
     'wizard_tab': render_wizard_tab,
     'fusion_tab': render_fusion_tab,
     'audit_tab': render_audit_tab,
     'optimizer_tab': render_optimizer_tab,
     'real_bridge_tab': render_real_bridge_tab,
+    'field_learning_v52_tab': render_field_learning_v52_tab,
     'trust_tab': render_trust_tab,
     'deployment_tab': render_deployment_tab,
     'reports_tab': render_reports_tab,
