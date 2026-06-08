@@ -14,7 +14,7 @@ import core
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V45", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio V49", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -117,6 +117,14 @@ def init_state():
         "pricing_offer_bundle": None,
         "paid_pilot_v45_snapshot": None,
         "paid_pilot_v45_bundle": None,
+        "proposal_sow_snapshot": None,
+        "proposal_sow_bundle": None,
+        "quote_to_cash_snapshot": None,
+        "quote_to_cash_bundle": None,
+        "lead_intake_v48_snapshot": None,
+        "lead_intake_v48_bundle": None,
+        "founder_ops_v49_snapshot": None,
+        "founder_ops_v49_bundle": None,
         "field_evidence_v2_snapshot": None,
         "field_evidence_v2_bundle": None,
         "product_readiness_v40_snapshot": None,
@@ -198,6 +206,10 @@ def reset_generated_bundles():
     st.session_state.customer_success_bundle = None
     st.session_state.pricing_offer_bundle = None
     st.session_state.paid_pilot_v45_bundle = None
+    st.session_state.proposal_sow_bundle = None
+    st.session_state.quote_to_cash_bundle = None
+    st.session_state.lead_intake_v48_bundle = None
+    st.session_state.founder_ops_v49_bundle = None
     st.session_state.field_evidence_v2_bundle = None
     st.session_state.admin_usage_bundle = None
     st.session_state.observability_bundle = None
@@ -361,6 +373,9 @@ if st.sidebar.button("Save project", use_container_width=True, key="sidebar_save
         "edge_deployment_starter_snapshot": st.session_state.edge_deployment_starter_snapshot,
         "pricing_offer_snapshot": st.session_state.pricing_offer_snapshot,
         "paid_pilot_v45_snapshot": st.session_state.paid_pilot_v45_snapshot,
+        "proposal_sow_snapshot": st.session_state.proposal_sow_snapshot,
+        "quote_to_cash_snapshot": st.session_state.quote_to_cash_snapshot,
+        "lead_intake_v48_snapshot": st.session_state.lead_intake_v48_snapshot,
         "observability_snapshot": st.session_state.observability_snapshot,
         "customer_assurance_snapshot": st.session_state.customer_assurance_snapshot,
         "workspace_lifecycle_snapshot": st.session_state.workspace_lifecycle_snapshot,
@@ -417,6 +432,10 @@ if len(projects) > 0:
             st.session_state.edge_deployment_starter_snapshot = settings.get("edge_deployment_starter_snapshot")
             st.session_state.pricing_offer_snapshot = settings.get("pricing_offer_snapshot")
             st.session_state.paid_pilot_v45_snapshot = settings.get("paid_pilot_v45_snapshot")
+            st.session_state.proposal_sow_snapshot = settings.get("proposal_sow_snapshot")
+            st.session_state.quote_to_cash_snapshot = settings.get("quote_to_cash_snapshot")
+            st.session_state.lead_intake_v48_snapshot = settings.get("lead_intake_v48_snapshot")
+            st.session_state.founder_ops_v49_snapshot = settings.get("founder_ops_v49_snapshot")
             st.session_state.security_hardening_v41_snapshot = settings.get("security_hardening_v41_snapshot")
             st.session_state.commercial_license_certificate = settings.get("commercial_license_certificate")
             st.session_state.customer_delivery_snapshot = settings.get("customer_delivery_snapshot")
@@ -499,20 +518,20 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER / ORGANIZED NAVIGATION V45.2
 # ============================================================
 
-st.title("EdgeTwin Studio V45.2")
+st.title("EdgeTwin Studio V49")
 st.caption(
-    "Organized workspace: Start → Build Pilot → Validate & Trust → Deploy & Export → Sell & Deliver → Operator/Admin. "
-    "This keeps the product understandable while preserving the full V45 capability set."
+    "Founder-ops ready workspace: Start → Build Pilot → Validate & Trust → Deploy & Export → Sell & Deliver → Operator/Admin. "
+    "V49 adds follow-up automation, founder task queue and workload control so leads do not become chaos."
 )
 
-NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_bridge_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['pricing_offer_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
-NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'pricing_offer_tab': '💶 Pricing Offer', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
+NAV_GROUPS = {'1. Start & Guided Flow': ['home', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'real_bridge_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['product_readiness_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
+NAV_LABELS = {'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
 NAV_HINTS = {
     "1. Start & Guided Flow": "For demos, guided onboarding, golden demo proof and project lifecycle overview.",
     "2. Build Pilot": "Generate datasets, choose sensors/use-cases, create packs and optimize weak datasets.",
     "3. Validate & Trust": "Check reliability, real-data bridge, normal/abnormal baseline, field evidence and readiness gates.",
     "4. Deploy & Export": "Prepare hardware/deployment plans, reports, Edge Impulse exports and API automation.",
-    "5. Sell & Deliver": "Create pricing offers, paid pilot checks, licenses, customer delivery and success follow-up.",
+    "5. Sell & Deliver": "Manage founder workload, qualify leads, create pricing offers, paid pilot checks, licenses, customer delivery and follow-up.",
     "6. Operator & Admin": "Control product health, governance, storage, errors, admin usage, hardening and hardware catalog."
 }
 
@@ -5814,6 +5833,178 @@ def render_pricing_offer_tab():
         st.info("Use this before quoting a price or offering a paid pilot. It keeps the offer honest, scoped and commercially strong.")
 
 
+
+
+# ============================================================
+# V46 PROPOSAL & STATEMENT OF WORK GENERATOR
+# ============================================================
+
+def render_proposal_sow_tab():
+    st.header("Proposal & Statement of Work Generator V46")
+    st.write(
+        "V46 turns the selected offer into a customer-ready proposal and scoped statement of work. "
+        "It keeps expectations clear: what is included, what is excluded, what evidence exists, "
+        "what milestones apply, and what must be accepted before delivery."
+    )
+
+    s1, s2, s3 = st.columns(3)
+    with s1:
+        customer_name = st.text_input("Customer contact name", "Beta Customer", key="v46_customer_name")
+        customer_org = st.text_input("Customer organization", "Customer Organization", key="v46_customer_org")
+        customer_email = st.text_input("Customer email", "customer@example.com", key="v46_customer_email")
+        proposal_use_case = st.text_input(
+            "Proposal use-case",
+            st.session_state.pricing_offer_snapshot.get("use_case", "Predictive Maintenance") if st.session_state.pricing_offer_snapshot else "Predictive Maintenance",
+            key="v46_use_case",
+        )
+    with s2:
+        default_tier = st.session_state.pricing_offer_snapshot.get("recommended_tier", "Professional Pilot Bundle") if st.session_state.pricing_offer_snapshot else "Professional Pilot Bundle"
+        proposal_tier = st.selectbox(
+            "Proposed package",
+            ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Mini Audit", "Real-Data Pilot Bundle", "Enterprise Custom Review"],
+            index=["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Mini Audit", "Real-Data Pilot Bundle", "Enterprise Custom Review"].index(default_tier) if default_tier in ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Mini Audit", "Real-Data Pilot Bundle", "Enterprise Custom Review"] else 1,
+            key="v46_proposal_tier",
+        )
+        proposal_valid_days = st.number_input("Proposal valid for days", 7, 90, 14, 1, key="v46_valid_days")
+        delivery_window = st.selectbox("Target delivery window", ["2-3 business days", "1 week", "2 weeks", "Custom"], index=1, key="v46_delivery_window")
+    with s3:
+        scope_mode = st.selectbox(
+            "Scope mode",
+            ["Fixed-scope paid pilot", "Evidence-building starter", "Real-data audit", "Enterprise/custom review"],
+            index=0,
+            key="v46_scope_mode",
+        )
+        include_dataset = st.checkbox("Include dataset snapshot in SOW bundle", value=False, key="v46_include_dataset")
+        st.metric("Dataset rows", len(st.session_state.dataset) if isinstance(st.session_state.dataset, pd.DataFrame) else 0)
+
+    assumptions = st.text_area(
+        "Customer assumptions / boundaries",
+        "Customer provides truthful use-case context. Field validation remains required before production deployment.",
+        height=90,
+        key="v46_assumptions",
+    )
+    notes = st.text_area(
+        "Internal proposal notes",
+        "Keep scope tight. Do not promise guaranteed accuracy, ROI, safety certification or production readiness.",
+        height=90,
+        key="v46_notes",
+    )
+
+    if st.button("Build Proposal & SOW", type="primary", use_container_width=True, key="v46_build_proposal_sow"):
+        snapshot = core.build_customer_proposal_sow(
+            project_name=st.session_state.project_name,
+            customer_name=customer_name,
+            customer_organization=customer_org,
+            customer_email=customer_email,
+            use_case=proposal_use_case,
+            proposed_package=proposal_tier,
+            selected_plan=st.session_state.selected_plan,
+            scope_mode=scope_mode,
+            proposal_valid_days=int(proposal_valid_days),
+            delivery_window=delivery_window,
+            dataset_df=st.session_state.dataset,
+            pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+            paid_pilot_snapshot=st.session_state.paid_pilot_v45_snapshot,
+            customer_delivery_snapshot=st.session_state.customer_delivery_snapshot,
+            commercial_license_certificate=st.session_state.commercial_license_certificate,
+            field_evidence_snapshot=st.session_state.field_evidence_v2_snapshot,
+            product_readiness_snapshot=st.session_state.product_readiness_v40_snapshot,
+            security_snapshot=st.session_state.security_hardening_v41_snapshot,
+            governance_snapshot=st.session_state.customer_assurance_snapshot,
+            assumptions=assumptions,
+            notes=notes,
+        )
+        st.session_state.proposal_sow_snapshot = snapshot
+        dataset_for_bundle = st.session_state.dataset if include_dataset else pd.DataFrame()
+        st.session_state.proposal_sow_bundle = core.create_customer_proposal_sow_bundle(
+            st.session_state.project_name,
+            snapshot,
+            dataset_for_bundle,
+        )
+        if hasattr(core, "record_export_event"):
+            core.record_export_event(
+                st.session_state.user.get("id"),
+                st.session_state.project_id,
+                st.session_state.project_name,
+                "Proposal & SOW V46",
+                st.session_state.selected_plan,
+                status=snapshot.get("decision", "created"),
+                notes=snapshot.get("safe_status_line", ""),
+            )
+        st.success("Proposal & SOW bundle built.")
+
+    if st.session_state.proposal_sow_snapshot:
+        snap = st.session_state.proposal_sow_snapshot
+        scores = snap.get("scores", {})
+        p1, p2, p3, p4 = st.columns(4)
+        p1.metric("Proposal Score", f"{scores.get('proposal_score', 0)}%")
+        p2.metric("Decision", snap.get("decision", "Unknown"))
+        p3.metric("Package", snap.get("proposed_package", "Unknown"))
+        p4.metric("Validity", f"{snap.get('proposal_valid_days', 0)} days")
+
+        decision = snap.get("decision", "")
+        if decision == "GO":
+            st.success(snap.get("safe_status_line", ""))
+        elif decision == "CONDITIONAL GO":
+            st.warning(snap.get("safe_status_line", ""))
+        else:
+            st.error(snap.get("safe_status_line", ""))
+
+        if st.session_state.proposal_sow_bundle:
+            st.download_button(
+                "Download Proposal & SOW Bundle",
+                st.session_state.proposal_sow_bundle,
+                file_name=f"{st.session_state.project_name}_proposal_sow_v46.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v46_download_proposal_sow_bundle",
+            )
+
+        proposal_tabs = st.tabs(["Proposal", "Scope", "Milestones", "Acceptance", "Risks", "Claims", "Email", "Full snapshot"])
+        with proposal_tabs[0]:
+            st.markdown("#### Customer proposal text")
+            st.text_area("Proposal", snap.get("proposal_text", ""), height=280, key="v46_proposal_text_preview")
+        with proposal_tabs[1]:
+            st.markdown("#### Included deliverables")
+            st.dataframe(pd.DataFrame(snap.get("included_deliverables", [])), use_container_width=True)
+            st.markdown("#### Excluded deliverables")
+            for item in snap.get("excluded_deliverables", []):
+                st.warning(item)
+        with proposal_tabs[2]:
+            st.dataframe(pd.DataFrame(snap.get("milestones", [])), use_container_width=True)
+            st.markdown("#### Responsibilities")
+            st.dataframe(pd.DataFrame(snap.get("responsibilities", [])), use_container_width=True)
+        with proposal_tabs[3]:
+            st.dataframe(pd.DataFrame(snap.get("acceptance_criteria", [])), use_container_width=True)
+            st.markdown("#### Required before signature / delivery")
+            for item in snap.get("required_before_signature", []):
+                st.info(item)
+            for item in snap.get("required_before_delivery", []):
+                st.info(item)
+        with proposal_tabs[4]:
+            blockers = snap.get("blockers", [])
+            if blockers:
+                for item in blockers:
+                    st.error(item)
+            else:
+                st.success("No hard SOW blockers detected.")
+            for item in snap.get("warnings", []):
+                st.warning(item)
+        with proposal_tabs[5]:
+            st.markdown("#### Safe claims")
+            for item in snap.get("safe_claims", []):
+                st.write(f"- {item}")
+            st.markdown("#### Claims to avoid")
+            for item in snap.get("claims_to_avoid", []):
+                st.write(f"- {item}")
+        with proposal_tabs[6]:
+            st.text_area("Customer email draft", snap.get("customer_email_draft", ""), height=260, key="v46_email_draft_preview")
+        with proposal_tabs[7]:
+            st.json(snap)
+    else:
+        st.info("Use this after Pricing Offer V44 and before Paid Pilot V45 delivery. It creates a clear customer proposal and SOW so the scope cannot drift.")
+
+
 # ============================================================
 # V45 PAID PILOT LAUNCH READINESS
 # ============================================================
@@ -6083,6 +6274,501 @@ def render_hardware_tab():
     st.dataframe(core.get_hardware_catalog(), use_container_width=True)
 
 
+
+
+# ============================================================
+# V47 QUOTE-TO-CASH / INVOICE READINESS CENTER
+# ============================================================
+
+def render_quote_to_cash_tab():
+    st.header("Quote-to-Cash & Invoice Readiness V47")
+    st.write(
+        "This gate turns a scoped paid pilot offer into a clean commercial handoff: quote, invoice readiness, payment checklist, line items, safe terms and delivery gating. "
+        "It does not process payments and is not legal/tax/accounting advice."
+    )
+
+    p1, p2, p3 = st.columns(3)
+    with p1:
+        customer_name = st.text_input("Customer contact name", "Beta Customer", key="v47_customer_name")
+        customer_org = st.text_input("Customer organization", "Customer Organization", key="v47_customer_org")
+        customer_email = st.text_input("Customer billing email", "customer@example.com", key="v47_customer_email")
+        offer_tier_default = "Professional Pilot Bundle"
+        if st.session_state.pricing_offer_snapshot:
+            offer_tier_default = st.session_state.pricing_offer_snapshot.get("recommended_tier", offer_tier_default)
+        offer_tier = st.selectbox(
+            "Offer tier",
+            ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Mini Audit", "Real-Data Pilot Bundle", "Enterprise Custom Review"],
+            index=["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Mini Audit", "Real-Data Pilot Bundle", "Enterprise Custom Review"].index(offer_tier_default) if offer_tier_default in ["Starter Pilot Bundle", "Professional Pilot Bundle", "Real-Data Mini Audit", "Real-Data Pilot Bundle", "Enterprise Custom Review"] else 1,
+            key="v47_offer_tier",
+        )
+    with p2:
+        currency = st.selectbox("Currency", ["EUR", "USD", "GBP", "HUF"], index=0, key="v47_currency")
+        suggested_price = 499.0
+        if st.session_state.pricing_offer_snapshot:
+            pr = st.session_state.pricing_offer_snapshot.get("price_range", {})
+            suggested_price = float(pr.get("mid", pr.get("high", pr.get("low", suggested_price))) or suggested_price) if isinstance(pr, dict) else suggested_price
+        quoted_price = st.number_input("Quoted pilot price", min_value=0.0, max_value=50000.0, value=float(suggested_price), step=50.0, key="v47_quoted_price")
+        vat_rate = st.number_input("VAT/tax estimate %", min_value=0.0, max_value=50.0, value=0.0, step=1.0, key="v47_vat_rate")
+        payment_terms = st.selectbox("Payment terms", ["Due on receipt", "Net 7", "Net 14", "50% upfront / 50% before delivery", "Custom"], index=0, key="v47_payment_terms")
+    with p3:
+        payment_status = st.selectbox("Payment status", ["Not discussed", "Quote requested", "Quote accepted", "Invoice sent", "Paid / invoice confirmed"], index=1, key="v47_payment_status")
+        invoice_details_status = st.selectbox("Invoice details", ["Missing", "Requested", "Received", "Verified"], index=1, key="v47_invoice_details_status")
+        legal_scope_status = st.selectbox("Scope/SOW status", ["Not started", "Draft scope", "Scope reviewed", "Scope accepted", "Signed / accepted"], index=1, key="v47_legal_scope_status")
+        delivery_status = st.selectbox("Delivery status", ["Not delivered yet", "Delivery bundle ready", "Delivered"], index=0, key="v47_delivery_status")
+        license_status = st.selectbox("License/certificate status", ["Not issued", "Draft issued", "Issued", "Signed / accepted"], index=0, key="v47_license_status")
+
+    with st.expander("Purchase order / procurement options", expanded=False):
+        customer_po_required = st.checkbox("Customer requires PO before invoice", value=False, key="v47_po_required")
+        customer_po_status = st.selectbox("PO status", ["Not required", "Requested", "Received", "Approved"], index=0, key="v47_po_status")
+
+    if st.button("Build Quote-to-Cash Readiness Pack", type="primary", use_container_width=True, key="v47_build_quote_to_cash"):
+        snap = core.build_quote_to_cash_invoice_readiness(
+            customer_name=customer_name,
+            customer_org=customer_org,
+            customer_email=customer_email,
+            offer_tier=offer_tier,
+            currency=currency,
+            quoted_price=quoted_price,
+            vat_rate=vat_rate,
+            payment_terms=payment_terms,
+            payment_status=payment_status,
+            invoice_details_status=invoice_details_status,
+            legal_scope_status=legal_scope_status,
+            delivery_status=delivery_status,
+            license_status=license_status,
+            customer_po_required=customer_po_required,
+            customer_po_status=customer_po_status,
+            paid_pilot_snapshot=st.session_state.paid_pilot_v45_snapshot,
+            proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+            pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+            delivery_snapshot=st.session_state.customer_delivery_snapshot,
+            license_certificate=st.session_state.commercial_license_certificate,
+        )
+        st.session_state.quote_to_cash_snapshot = snap
+        st.session_state.quote_to_cash_bundle = core.create_quote_to_cash_invoice_bundle(
+            st.session_state.project_name,
+            snap,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.success("Quote-to-Cash readiness pack built.")
+
+    if st.session_state.quote_to_cash_snapshot:
+        snap = st.session_state.quote_to_cash_snapshot
+        a, b, c, d = st.columns(4)
+        a.metric("Quote-to-Cash Score", f"{snap.get('quote_to_cash_score', 0)}%")
+        b.metric("Decision", snap.get("decision", "Unknown"))
+        c.metric("Revenue status", snap.get("revenue_status", "Unknown"))
+        d.metric("Total", f"{snap.get('currency', 'EUR')} {snap.get('total_amount', 0)}")
+
+        if snap.get("decision") == "GO":
+            st.success(snap.get("revenue_status", ""))
+        elif snap.get("decision") == "CONDITIONAL GO":
+            st.warning(snap.get("revenue_status", ""))
+        else:
+            st.error(snap.get("revenue_status", ""))
+
+        if st.session_state.quote_to_cash_bundle:
+            st.download_button(
+                "Download Quote-to-Cash Bundle V47",
+                st.session_state.quote_to_cash_bundle,
+                file_name=f"{st.session_state.project_name}_quote_to_cash_v47.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v47_download_quote_to_cash_bundle",
+            )
+
+        tabs = st.tabs(["Line items", "Checks", "Blockers", "Terms", "Customer email", "Full snapshot"])
+        with tabs[0]:
+            st.dataframe(pd.DataFrame(snap.get("line_items", [])), use_container_width=True)
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snap.get("ready_checks", [])), use_container_width=True)
+            st.markdown("#### Payment checklist")
+            for item in snap.get("payment_checklist", []):
+                st.info(item)
+        with tabs[2]:
+            blockers = snap.get("blockers", [])
+            if blockers:
+                for item in blockers:
+                    st.error(item)
+            else:
+                st.success("No hard invoice blockers detected.")
+            for item in snap.get("warnings", []):
+                st.warning(item)
+        with tabs[3]:
+            for item in snap.get("quote_terms", []):
+                st.write(f"- {item}")
+            st.caption(snap.get("disclaimer", ""))
+        with tabs[4]:
+            st.text_area("Customer email draft", snap.get("customer_email_draft", ""), height=280, key="v47_email_preview")
+        with tabs[5]:
+            st.json(snap)
+    else:
+        st.info("Use this after Pricing Offer V44 and Proposal/SOW V46. V47 prepares quote, invoice readiness and payment checklist without processing payments.")
+
+
+# ============================================================
+# V48 CUSTOMER LEAD INTAKE / QUALIFICATION CENTER
+# ============================================================
+
+def render_lead_intake_v48_tab():
+    st.header("Customer Lead Intake & Qualification V48")
+    st.write(
+        "This turns an interested customer into a clean next action: qualify the use case, check readiness, flag risks, "
+        "prepare discovery questions and route the lead to demo, proposal, paid pilot or nurture."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_name = st.text_input("Contact name", "Beta Customer", key="v48_contact_name")
+        customer_org = st.text_input("Organization", "Customer Organization", key="v48_customer_org")
+        customer_email = st.text_input("Email", "customer@example.com", key="v48_customer_email")
+        industry = st.selectbox(
+            "Industry / domain",
+            ["Manufacturing", "Construction / Site Security", "Smart Forestry", "Agriculture", "Utilities / Remote Assets", "Research / Lab", "Other"],
+            index=0,
+            key="v48_industry",
+        )
+    with c2:
+        use_case = st.selectbox(
+            "Requested use case",
+            ["Predictive maintenance", "Anomaly detection", "Security / intrusion", "Tamper detection", "Machine health", "Environmental monitoring", "Custom sensor pilot"],
+            index=0,
+            key="v48_use_case",
+        )
+        urgency = st.selectbox(
+            "Urgency",
+            ["Exploring only", "Pilot in 1-3 months", "Pilot this month", "Urgent operational pain"],
+            index=1,
+            key="v48_urgency",
+        )
+        budget_range = st.selectbox(
+            "Budget signal",
+            ["Unknown", "Below €500", "€500-€1,500", "€1,500-€5,000", "€5,000+"],
+            index=2,
+            key="v48_budget_range",
+        )
+        decision_status = st.selectbox(
+            "Decision status",
+            ["Just researching", "Technical evaluator", "Budget owner involved", "Decision maker involved"],
+            index=1,
+            key="v48_decision_status",
+        )
+    with c3:
+        data_status = st.selectbox(
+            "Real data status",
+            ["No data yet", "Can collect data", "Sample data available", "Labeled dataset available"],
+            index=1,
+            key="v48_data_status",
+        )
+        sensor_status = st.selectbox(
+            "Sensor / hardware status",
+            ["Unknown", "Need hardware advice", "Sensors selected", "Hardware already installed"],
+            index=1,
+            key="v48_sensor_status",
+        )
+        deployment_environment = st.selectbox(
+            "Deployment environment",
+            ["Indoor machine", "Outdoor asset", "Remote/off-grid", "Vehicle/mobile", "Mixed/unknown"],
+            index=0,
+            key="v48_deployment_environment",
+        )
+        technical_owner = st.selectbox(
+            "Technical owner availability",
+            ["Unknown", "No technical owner", "Part-time technical owner", "Dedicated technical owner"],
+            index=2,
+            key="v48_technical_owner",
+        )
+
+    with st.expander("Risk and scope checks", expanded=False):
+        safety_critical = st.checkbox("Use case could affect safety-critical decisions", value=False, key="v48_safety_critical")
+        regulated_context = st.checkbox("Regulated/compliance-heavy environment", value=False, key="v48_regulated_context")
+        needs_installation = st.checkbox("Customer expects on-site installation", value=False, key="v48_needs_installation")
+        wants_guaranteed_accuracy = st.checkbox("Customer asks for guaranteed accuracy / production certainty", value=False, key="v48_guaranteed_accuracy")
+        requested_outcome = st.text_area(
+            "Customer requested outcome",
+            "We want to know if this sensor idea can become a reliable Edge AI pilot and what hardware/data we need.",
+            height=110,
+            key="v48_requested_outcome",
+        )
+
+    if st.button("Build Lead Qualification Pack", type="primary", use_container_width=True, key="v48_build_lead_intake"):
+        snap = core.build_customer_lead_intake_qualification(
+            customer_name=customer_name,
+            customer_org=customer_org,
+            customer_email=customer_email,
+            industry=industry,
+            use_case=use_case,
+            urgency=urgency,
+            budget_range=budget_range,
+            decision_status=decision_status,
+            data_status=data_status,
+            sensor_status=sensor_status,
+            deployment_environment=deployment_environment,
+            technical_owner=technical_owner,
+            requested_outcome=requested_outcome,
+            safety_critical=safety_critical,
+            regulated_context=regulated_context,
+            needs_installation=needs_installation,
+            wants_guaranteed_accuracy=wants_guaranteed_accuracy,
+            pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+            proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+            quote_to_cash_snapshot=st.session_state.quote_to_cash_snapshot,
+            paid_pilot_snapshot=st.session_state.paid_pilot_v45_snapshot,
+        )
+        st.session_state.lead_intake_v48_snapshot = snap
+        st.session_state.lead_intake_v48_bundle = core.create_customer_lead_intake_bundle(
+            st.session_state.project_name,
+            snap,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.success("Lead qualification pack built.")
+
+    if st.session_state.lead_intake_v48_snapshot:
+        snap = st.session_state.lead_intake_v48_snapshot
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Qualification", f"{snap.get('qualification_score', 0)}%")
+        m2.metric("Fit", snap.get("fit_level", "Unknown"))
+        m3.metric("Route", snap.get("recommended_route", "Unknown"))
+        m4.metric("Commercial stage", snap.get("commercial_stage", "Unknown"))
+
+        if snap.get("fit_level") in ["High-fit paid pilot", "Good-fit pilot"]:
+            st.success(snap.get("operator_verdict", ""))
+        elif snap.get("fit_level") == "Nurture / needs clarity":
+            st.warning(snap.get("operator_verdict", ""))
+        else:
+            st.error(snap.get("operator_verdict", ""))
+
+        if st.session_state.lead_intake_v48_bundle:
+            st.download_button(
+                "Download Lead Intake Bundle V48",
+                st.session_state.lead_intake_v48_bundle,
+                file_name=f"{st.session_state.project_name}_lead_intake_v48.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v48_download_lead_intake_bundle",
+            )
+
+        tabs = st.tabs(["Next actions", "Discovery questions", "Risks", "Customer email", "Routing", "Full snapshot"])
+        with tabs[0]:
+            for item in snap.get("next_actions", []):
+                st.info(item)
+            st.markdown("#### Customer required inputs")
+            for item in snap.get("customer_required_inputs", []):
+                st.write(f"- {item}")
+        with tabs[1]:
+            for item in snap.get("discovery_questions", []):
+                st.write(f"- {item}")
+        with tabs[2]:
+            blockers = snap.get("blockers", [])
+            warnings = snap.get("warnings", [])
+            if blockers:
+                for item in blockers:
+                    st.error(item)
+            else:
+                st.success("No hard lead blockers detected.")
+            for item in warnings:
+                st.warning(item)
+            st.markdown("#### Claims to avoid")
+            for item in snap.get("claims_to_avoid", []):
+                st.caption(f"- {item}")
+        with tabs[3]:
+            st.text_area("Customer email draft", snap.get("customer_email_draft", ""), height=320, key="v48_email_preview")
+        with tabs[4]:
+            st.json(snap.get("routing", {}))
+            st.markdown("#### Sales follow-up checklist")
+            for item in snap.get("sales_followup_checklist", []):
+                st.write(f"- {item}")
+        with tabs[5]:
+            st.json(snap)
+    else:
+        st.info("Use this before Pricing Offer/SOW. V48 helps avoid bad-fit leads and turns serious leads into a clean next step.")
+
+
+# ============================================================
+# V49 FOUNDER OPS / FOLLOW-UP AUTOMATION CENTER
+# ============================================================
+
+def render_founder_ops_v49_tab():
+    st.header("Founder Ops & Customer Follow-up V49")
+    st.write(
+        "This page turns customer interest into a practical founder task queue: what to do now, what to automate, "
+        "what to ask the customer, and what not to spend time on. Built for one busy founder, not a big sales team."
+    )
+
+    snapshot_status = {
+        "Lead Intake V48": bool(st.session_state.lead_intake_v48_snapshot),
+        "Pricing Offer V44": bool(st.session_state.pricing_offer_snapshot),
+        "Proposal/SOW V46": bool(st.session_state.proposal_sow_snapshot),
+        "Quote-to-Cash V47": bool(st.session_state.quote_to_cash_snapshot),
+        "Paid Pilot V45": bool(st.session_state.paid_pilot_v45_snapshot),
+        "Delivery Portal": bool(st.session_state.customer_delivery_snapshot),
+        "Customer Success": bool(st.session_state.customer_success_snapshot),
+    }
+    st.caption("Connected workflow signals")
+    sc = st.columns(len(snapshot_status))
+    for idx, (name, ok) in enumerate(snapshot_status.items()):
+        sc[idx].metric(name, "Ready" if ok else "Missing")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_name = st.text_input("Customer contact", "Beta Customer", key="v49_customer_name")
+        customer_org = st.text_input("Organization", "Customer Organization", key="v49_customer_org")
+        customer_email = st.text_input("Customer email", "customer@example.com", key="v49_customer_email")
+        current_stage = st.selectbox(
+            "Current stage",
+            ["New lead", "Discovery", "Pricing", "Proposal/SOW", "Quote sent", "Awaiting payment", "Paid pilot", "Delivery", "Post-delivery follow-up"],
+            index=1,
+            key="v49_current_stage",
+        )
+    with c2:
+        founder_hours = st.slider("Founder hours available this week", 1, 40, 8, key="v49_founder_hours")
+        max_customer_hours = st.slider("Max custom hours for this customer this week", 1, 20, 3, key="v49_max_customer_hours")
+        urgency = st.selectbox("Customer urgency", ["Low", "Normal", "High", "Critical"], index=1, key="v49_customer_urgency")
+        customer_responsiveness = st.selectbox(
+            "Customer responsiveness",
+            ["Unknown", "Slow", "Normal", "Fast"],
+            index=2,
+            key="v49_customer_responsiveness",
+        )
+    with c3:
+        payment_status = st.selectbox(
+            "Payment status",
+            ["Not discussed", "Quote requested", "Invoice details missing", "Invoice ready", "Awaiting payment", "Paid", "Overdue"],
+            index=0,
+            key="v49_payment_status",
+        )
+        data_status = st.selectbox(
+            "Data/status",
+            ["No data", "Customer can collect", "Sample data received", "Labeled data received", "Dataset ready"],
+            index=1,
+            key="v49_data_status",
+        )
+        next_deadline = st.selectbox(
+            "Next deadline pressure",
+            ["None", "This week", "48 hours", "Today"],
+            index=0,
+            key="v49_deadline_pressure",
+        )
+        support_load = st.selectbox("Support load", ["Low", "Normal", "High", "Too high"], index=1, key="v49_support_load")
+
+    with st.expander("Founder workload and risk flags", expanded=False):
+        waiting_on_customer = st.checkbox("Waiting on customer input", value=True, key="v49_waiting_customer")
+        needs_follow_up = st.checkbox("Needs follow-up email", value=True, key="v49_needs_followup")
+        unclear_scope = st.checkbox("Scope is still unclear", value=False, key="v49_unclear_scope")
+        high_custom_work = st.checkbox("Customer is pulling toward too much custom work", value=False, key="v49_high_custom_work")
+        unsafe_expectation = st.checkbox("Customer expects guarantees / production certainty", value=False, key="v49_unsafe_expectation")
+        internal_notes = st.text_area(
+            "Internal notes",
+            "Keep the next step small, paid, and clearly scoped. Avoid unpaid custom engineering.",
+            height=100,
+            key="v49_internal_notes",
+        )
+        outstanding_inputs_text = st.text_area(
+            "Outstanding customer inputs, one per line",
+            "Representative sample data or permission to generate synthetic pilot data\nNamed technical contact\nAcceptance criteria for first pilot",
+            height=110,
+            key="v49_outstanding_inputs",
+        )
+
+    if st.button("Build Founder Ops Plan", type="primary", use_container_width=True, key="v49_build_founder_ops"):
+        outstanding_inputs = [line.strip() for line in outstanding_inputs_text.splitlines() if line.strip()]
+        snap = core.build_founder_ops_followup_center(
+            customer_name=customer_name,
+            customer_org=customer_org,
+            customer_email=customer_email,
+            current_stage=current_stage,
+            founder_hours_available=founder_hours,
+            max_customer_hours=max_customer_hours,
+            urgency=urgency,
+            customer_responsiveness=customer_responsiveness,
+            payment_status=payment_status,
+            data_status=data_status,
+            next_deadline=next_deadline,
+            support_load=support_load,
+            waiting_on_customer=waiting_on_customer,
+            needs_follow_up=needs_follow_up,
+            unclear_scope=unclear_scope,
+            high_custom_work=high_custom_work,
+            unsafe_expectation=unsafe_expectation,
+            outstanding_customer_inputs=outstanding_inputs,
+            internal_notes=internal_notes,
+            lead_intake_snapshot=st.session_state.lead_intake_v48_snapshot,
+            pricing_offer_snapshot=st.session_state.pricing_offer_snapshot,
+            proposal_sow_snapshot=st.session_state.proposal_sow_snapshot,
+            quote_to_cash_snapshot=st.session_state.quote_to_cash_snapshot,
+            paid_pilot_snapshot=st.session_state.paid_pilot_v45_snapshot,
+            delivery_snapshot=st.session_state.customer_delivery_snapshot,
+            customer_success_snapshot=st.session_state.customer_success_snapshot,
+            observability_snapshot=st.session_state.observability_snapshot,
+        )
+        st.session_state.founder_ops_v49_snapshot = snap
+        st.session_state.founder_ops_v49_bundle = core.create_founder_ops_followup_bundle(
+            st.session_state.project_name,
+            snap,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.success("Founder Ops plan built.")
+
+    if st.session_state.founder_ops_v49_snapshot:
+        snap = st.session_state.founder_ops_v49_snapshot
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Ops score", f"{snap.get('ops_score', 0)}%")
+        m2.metric("Mode", snap.get("operator_mode", "Unknown"))
+        m3.metric("Overload risk", snap.get("overload_risk", "Unknown"))
+        m4.metric("Do-now tasks", len(snap.get("do_now_queue", [])))
+
+        if snap.get("overload_risk") == "Low":
+            st.success(snap.get("founder_verdict", ""))
+        elif snap.get("overload_risk") == "Medium":
+            st.warning(snap.get("founder_verdict", ""))
+        else:
+            st.error(snap.get("founder_verdict", ""))
+
+        if st.session_state.founder_ops_v49_bundle:
+            st.download_button(
+                "Download Founder Ops Bundle V49",
+                st.session_state.founder_ops_v49_bundle,
+                file_name=f"{st.session_state.project_name}_founder_ops_v49.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v49_download_founder_ops_bundle",
+            )
+
+        tabs = st.tabs(["Do now", "Task queue", "Emails", "Weekly plan", "Automate/stop", "Risks", "Full snapshot"])
+        with tabs[0]:
+            for item in snap.get("do_now_queue", []):
+                st.info(f"{item.get('priority', '')}: {item.get('task', '')} — {item.get('time_box', '')}")
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snap.get("task_queue", [])), use_container_width=True)
+        with tabs[2]:
+            st.text_area("Customer follow-up email", snap.get("customer_followup_email", ""), height=260, key="v49_customer_email_preview")
+            st.text_area("Internal operator note", snap.get("internal_operator_note", ""), height=180, key="v49_internal_note_preview")
+        with tabs[3]:
+            st.dataframe(pd.DataFrame(snap.get("weekly_plan", [])), use_container_width=True)
+        with tabs[4]:
+            st.markdown("#### Automate next")
+            for item in snap.get("automation_opportunities", []):
+                st.write(f"- {item}")
+            st.markdown("#### Stop doing")
+            for item in snap.get("stop_doing_list", []):
+                st.warning(item)
+        with tabs[5]:
+            blockers = snap.get("blockers", [])
+            warnings = snap.get("warnings", [])
+            if blockers:
+                for item in blockers:
+                    st.error(item)
+            else:
+                st.success("No hard founder-ops blockers detected.")
+            for item in warnings:
+                st.warning(item)
+            st.caption(snap.get("disclaimer", ""))
+        with tabs[6]:
+            st.json(snap)
+    else:
+        st.info("Use this after Lead Intake or any customer conversation. V49 helps you protect your time and keep next actions controlled.")
+
+
 # ============================================================
 # ORGANIZED PAGE DISPATCHER V45.2
 # ============================================================
@@ -6123,7 +6809,11 @@ _PAGE_RENDERERS = {
     'product_readiness_tab': render_product_readiness_tab,
     'delivery_tab': render_delivery_tab,
     'customer_success_tab': render_customer_success_tab,
+    'founder_ops_v49_tab': render_founder_ops_v49_tab,
+    'lead_intake_v48_tab': render_lead_intake_v48_tab,
     'pricing_offer_tab': render_pricing_offer_tab,
+    'proposal_sow_tab': render_proposal_sow_tab,
+    'quote_to_cash_tab': render_quote_to_cash_tab,
     'paid_pilot_v45_tab': render_paid_pilot_v45_tab,
     'canvas_tab': render_canvas_tab,
     'packs_tab': render_packs_tab,
