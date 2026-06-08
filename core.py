@@ -25365,3 +25365,1229 @@ def create_trust_ledger_v80_bundle(project_name, snapshot):
         zf.writestr("trust_ledger_v80.pdf", safe_pdf_output(pdf))
     mem.seek(0)
     return mem.getvalue()
+
+
+# ============================================================
+# V81 — State Registry & Product Cleanup Layer
+# ============================================================
+
+def build_state_registry_v81_snapshot(context):
+    """Evaluate whether project state is controlled enough for safer save/load and customer delivery.
+
+    V81 does not make product claims stronger. It makes the product harder to break by centralizing
+    persistence and by separating lightweight metadata from heavy generated artifacts.
+    """
+    context = context or {}
+    registry_status = context.get("registry_status") or {}
+    dataset_df = context.get("dataset_df") if isinstance(context.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+    settings = context.get("settings") if isinstance(context.get("settings"), dict) else {}
+
+    persisted_key_count = int(registry_status.get("persisted_key_count", 0) or 0)
+    saved_key_count = int(registry_status.get("saved_persisted_key_count", 0) or 0)
+    bundle_key_count = int(registry_status.get("generated_bundle_key_count", 0) or 0)
+    dataframe_key_count = int(registry_status.get("dataframe_key_count", 0) or 0)
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns))
+
+    central_registry_score = 90 if persisted_key_count >= 50 else 75 if persisted_key_count >= 20 else 55
+    lightweight_policy_score = 92 if bundle_key_count >= 20 and dataframe_key_count >= 3 else 78
+    save_load_score = 88 if saved_key_count >= 10 else 72 if saved_key_count > 0 else 58
+    dataset_separation_score = 90 if rows > 0 else 75
+    customer_safety_score = 88 if settings.get("_state_registry_version") else 72
+
+    state_control_score = int(round(
+        central_registry_score * 0.25
+        + lightweight_policy_score * 0.25
+        + save_load_score * 0.20
+        + dataset_separation_score * 0.15
+        + customer_safety_score * 0.15
+    ))
+
+    issues = []
+    if persisted_key_count < 20:
+        issues.append({"severity": "high", "message": "State registry covers too few keys; save/load may still forget important product gates."})
+    if saved_key_count == 0:
+        issues.append({"severity": "medium", "message": "No registered state was collected in the provided settings sample."})
+    if rows == 0:
+        issues.append({"severity": "info", "message": "No active dataset in this V81 state check; storage path still needs real project data."})
+    if not settings.get("_state_registry_version"):
+        issues.append({"severity": "medium", "message": "Settings do not include the V81 registry marker yet."})
+    if not issues:
+        issues.append({"severity": "info", "message": "State registry policy looks controlled for local/private beta use."})
+
+    if state_control_score >= 90:
+        decision = "STATE CONTROL GO"
+        next_best_action = "Use V81 as the safer save/load baseline and keep generated bundles rebuildable instead of storing them in SQLite."
+    elif state_control_score >= 78:
+        decision = "CONDITIONAL STATE CONTROL GO"
+        next_best_action = "Use V81 in private beta, but keep adding integration tests around save/load and generated snapshots."
+    else:
+        decision = "HOLD - STATE CONTROL NEEDS WORK"
+        next_best_action = "Do not widen customer usage until project state persistence is more complete and tested."
+
+    return {
+        "version": "V81",
+        "project_name": context.get("project_name", "EdgeTwin Project"),
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "decision": decision,
+        "state_control_score": state_control_score,
+        "central_registry_score": central_registry_score,
+        "lightweight_policy_score": lightweight_policy_score,
+        "save_load_score": save_load_score,
+        "dataset_separation_score": dataset_separation_score,
+        "customer_safety_score": customer_safety_score,
+        "dataset_rows": rows,
+        "dataset_cols": cols,
+        "registry_status": registry_status,
+        "issues": issues,
+        "safe_claims": [
+            "Project state is centrally registered for safer save/load behavior.",
+            "Generated bundles are intentionally rebuilt instead of being stored as heavy SQLite payloads.",
+            "Large datasets remain separated through the storage layer.",
+        ],
+        "claims_to_avoid": [
+            "Do not claim production SaaS durability while still using local SQLite/local file storage.",
+            "Do not claim zero data-loss guarantees without backups and object storage versioning.",
+            "Do not expose founder/admin state registry details in normal Customer Mode.",
+        ],
+        "next_best_action": next_best_action,
+    }
+
+
+def create_state_registry_v81_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("state_registry_v81.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V81 — State Registry & Product Cleanup Layer",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"State control score: {snapshot.get('state_control_score')}%",
+            "",
+            "## What V81 improves",
+            "- Central project state registry for safer save/load.",
+            "- Generated ZIP/PDF bundles are excluded from SQLite and rebuilt on demand.",
+            "- DataFrames stay in the storage layer instead of the settings JSON.",
+            "",
+            "## Next best action",
+            snapshot.get("next_best_action", ""),
+            "",
+            "## Claims to avoid",
+            *[f"- {x}" for x in snapshot.get("claims_to_avoid", [])],
+        ]
+        zf.writestr("state_registry_v81_summary.md", "\n".join(summary))
+        if snapshot.get("issues"):
+            zf.writestr("state_registry_v81_issues.csv", pd.DataFrame(snapshot.get("issues", [])).to_csv(index=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V81 - State Registry")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"State control: {snapshot.get('state_control_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("next_best_action", ""))
+        zf.writestr("state_registry_v81.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V82 — Autonomy Controller & Reliability Brain
+# ============================================================
+
+def _v82_snapshot_score(snapshot, *keys, default=0):
+    """Extract a score from one of the many EdgeTwin snapshot formats."""
+    if not isinstance(snapshot, dict):
+        return int(default or 0)
+    for key in keys:
+        value = snapshot.get(key)
+        if value is None:
+            continue
+        try:
+            return int(float(value))
+        except Exception:
+            continue
+    # Broad fallback: find a safe-looking score field.
+    for key, value in snapshot.items():
+        if isinstance(key, str) and key.endswith("_score"):
+            try:
+                return int(float(value))
+            except Exception:
+                continue
+    return int(default or 0)
+
+
+def _v82_truthy_snapshot(snapshots, key):
+    value = snapshots.get(key) if isinstance(snapshots, dict) else None
+    return isinstance(value, dict) and bool(value)
+
+
+def _v82_bool_score(flag, points):
+    return int(points if flag else 0)
+
+
+def _v82_issue(severity, area, message, action):
+    return {
+        "severity": severity,
+        "area": area,
+        "message": message,
+        "recommended_action": action,
+    }
+
+
+def build_autonomy_controller_v82_snapshot(context):
+    """Build the V82 autonomy decision layer.
+
+    V82 is intentionally conservative: it automates safe repeatable work, but blocks legal,
+    payment, deletion, privacy, production and customer-handoff actions unless the evidence
+    is strong enough and founder approval is present.
+    """
+    context = context or {}
+    snapshots = context.get("snapshots") if isinstance(context.get("snapshots"), dict) else {}
+    dataset_df = context.get("dataset_df") if isinstance(context.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+    storage_status = context.get("storage_status") if isinstance(context.get("storage_status"), dict) else get_storage_status()
+    registry_status = context.get("registry_status") if isinstance(context.get("registry_status"), dict) else {}
+    settings = context.get("settings") if isinstance(context.get("settings"), dict) else {}
+
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns))
+    target_mode = str(context.get("target_mode") or "Paid pilot")
+    founder_policy = str(context.get("founder_policy") or "Strict")
+    auto_repair_enabled = bool(context.get("auto_repair_enabled", True))
+    block_paid_delivery = bool(context.get("block_paid_delivery_below_threshold", True))
+
+    trust_ledger_score = _v82_snapshot_score(snapshots.get("trust_ledger_v80"), "trust_ledger_score", "trust_score", default=0)
+    quality_score = _v82_snapshot_score(snapshots.get("quality_guardian_v74"), "quality_score", "total_score", default=0)
+    delivery_score = _v82_snapshot_score(snapshots.get("deliverable_qa_v75"), "delivery_qa_score", "qa_score", "total_score", default=0)
+    factory_score = _v82_snapshot_score(snapshots.get("pilot_factory_v79"), "factory_readiness_score", "pilot_factory_score", "total_score", default=0)
+    state_score = _v82_snapshot_score(snapshots.get("state_registry_status_v81"), "state_control_score", default=0)
+    if state_score == 0 and registry_status.get("state_registry_version"):
+        saved_count = int(registry_status.get("saved_persisted_key_count", 0) or 0)
+        persisted_count = int(registry_status.get("persisted_key_count", 0) or 0)
+        state_score = 90 if persisted_count >= 50 and saved_count >= 8 else 78 if persisted_count >= 20 else 60
+    reliability_score_existing = _v82_snapshot_score(snapshots.get("reliability_calibration_v67"), "calibration_score", "reliability_score", default=0)
+    zero_touch_score = _v82_snapshot_score(snapshots.get("zero_touch_v69"), "zero_touch_score", "total_score", default=0)
+    automation_score_existing = _v82_snapshot_score(snapshots.get("automation_orchestrator_v68"), "automation_score", "total_score", default=0)
+    product_consolidation_score = _v82_snapshot_score(snapshots.get("product_consolidation_v76"), "consolidation_score", "total_score", default=0)
+
+    has_dataset = rows > 0 and cols > 0
+    has_file_storage = str(storage_status.get("mode", "")).startswith("local_file_storage") or str(storage_status.get("mode", "")).startswith("file_storage")
+    has_registry = bool(registry_status.get("state_registry_version") or settings.get("_state_registry_version"))
+    has_trust_ledger = _v82_truthy_snapshot(snapshots, "trust_ledger_v80")
+    has_quality_guardian = _v82_truthy_snapshot(snapshots, "quality_guardian_v74")
+    has_delivery_qa = _v82_truthy_snapshot(snapshots, "deliverable_qa_v75")
+    has_factory = _v82_truthy_snapshot(snapshots, "pilot_factory_v79")
+    has_customer_status = _v82_truthy_snapshot(snapshots, "customer_status_v72")
+    has_support = _v82_truthy_snapshot(snapshots, "customer_support_v71")
+    has_outcome_assurance = _v82_truthy_snapshot(snapshots, "outcome_assurance_v70")
+
+    evidence_score = int(round(
+        _v82_bool_score(has_dataset, 16)
+        + _v82_bool_score(has_file_storage, 12)
+        + _v82_bool_score(has_registry, 12)
+        + _v82_bool_score(has_trust_ledger, 14)
+        + _v82_bool_score(has_quality_guardian, 12)
+        + _v82_bool_score(has_delivery_qa, 10)
+        + _v82_bool_score(has_factory, 10)
+        + _v82_bool_score(has_customer_status, 7)
+        + _v82_bool_score(has_support, 4)
+        + _v82_bool_score(has_outcome_assurance, 3)
+    ))
+    evidence_score = int(max(0, min(100, evidence_score)))
+
+    measured_scores = [s for s in [trust_ledger_score, quality_score, delivery_score, factory_score, state_score, reliability_score_existing, zero_touch_score, automation_score_existing, product_consolidation_score] if s > 0]
+    maturity_score = int(round(sum(measured_scores) / len(measured_scores))) if measured_scores else 45
+
+    safety_score = int(round(
+        0.30 * max(trust_ledger_score, 65 if has_trust_ledger else 35)
+        + 0.20 * max(quality_score, 65 if has_quality_guardian else 35)
+        + 0.20 * max(delivery_score, 65 if has_delivery_qa else 35)
+        + 0.15 * max(state_score, 65 if has_registry else 35)
+        + 0.15 * max(reliability_score_existing, 60 if has_dataset else 30)
+    ))
+    safety_score = int(max(0, min(100, safety_score)))
+
+    reliability_score = int(round(
+        0.32 * safety_score
+        + 0.28 * evidence_score
+        + 0.20 * max(state_score, 60 if has_registry else 35)
+        + 0.20 * max(reliability_score_existing, maturity_score)
+    ))
+    reliability_score = int(max(0, min(100, reliability_score)))
+
+    autonomy_base = int(round(
+        0.30 * evidence_score
+        + 0.25 * reliability_score
+        + 0.20 * max(automation_score_existing, 60 if _v82_truthy_snapshot(snapshots, "automation_orchestrator_v68") else 35)
+        + 0.15 * max(zero_touch_score, 60 if _v82_truthy_snapshot(snapshots, "zero_touch_v69") else 35)
+        + 0.10 * max(product_consolidation_score, 60 if _v82_truthy_snapshot(snapshots, "product_consolidation_v76") else 35)
+    ))
+
+    # Strict modes lower the final autonomy score unless the proof is very strong.
+    mode_penalty = 0
+    if target_mode in {"Customer self-service", "Production handoff"}:
+        mode_penalty += 5
+    if founder_policy == "Strict":
+        mode_penalty += 2
+    elif founder_policy == "Aggressive but safe":
+        mode_penalty -= 2
+    autonomy_score = int(max(0, min(100, autonomy_base - mode_penalty)))
+
+    hard_blockers = []
+    founder_approval_required = []
+    self_healing_recommendations = []
+
+    if not has_dataset:
+        hard_blockers.append(_v82_issue("high", "data", "No active dataset found.", "Generate or upload a dataset before customer automation."))
+    if not has_file_storage:
+        founder_approval_required.append(_v82_issue("medium", "storage", "Storage is not confirmed as local file storage.", "Keep private beta only until storage status is clean."))
+    if not has_registry:
+        hard_blockers.append(_v82_issue("high", "state", "State registry marker is missing.", "Save/load reliability must be controlled before autonomy."))
+    if not has_trust_ledger:
+        hard_blockers.append(_v82_issue("high", "trust", "Trust Ledger V80 has not been generated.", "Run Trust Ledger before any paid/customer handoff."))
+    elif trust_ledger_score and trust_ledger_score < 85:
+        founder_approval_required.append(_v82_issue("medium", "trust", "Trust ledger is below the preferred threshold.", "Founder must approve the claims and next step manually."))
+    if not has_quality_guardian:
+        founder_approval_required.append(_v82_issue("medium", "quality", "Quality Guardian V74 is missing.", "Run Quality Guardian before serious customer delivery."))
+    if not has_delivery_qa:
+        founder_approval_required.append(_v82_issue("medium", "delivery", "Deliverable QA V75 is missing.", "Run Deliverable QA before sending a bundle."))
+    if target_mode in {"Customer self-service", "Production handoff"} and reliability_score < 90:
+        hard_blockers.append(_v82_issue("high", "release", f"{target_mode} needs at least 90 reliability.", "Use paid pilot/private beta route until evidence improves."))
+    if block_paid_delivery and target_mode in {"Paid pilot", "Customer self-service", "Production handoff"} and safety_score < 85:
+        hard_blockers.append(_v82_issue("high", "paid_delivery", "Safety score is below paid-delivery threshold.", "Do not let the customer download a paid/production handoff bundle yet."))
+
+    if auto_repair_enabled:
+        if not has_trust_ledger:
+            self_healing_recommendations.append(_v82_issue("auto_safe", "trust", "Generate Trust Ledger V80.", "This is safe because it creates evidence; it does not send or publish anything."))
+        if not has_quality_guardian:
+            self_healing_recommendations.append(_v82_issue("auto_safe", "quality", "Run Quality Guardian V74.", "Self-test deliverable quality before customer handoff."))
+        if not has_delivery_qa:
+            self_healing_recommendations.append(_v82_issue("auto_safe", "delivery", "Run Deliverable QA V75.", "Check export package readiness and missing assets."))
+        if has_dataset and not _v82_truthy_snapshot(snapshots, "reliability_calibration_v67"):
+            self_healing_recommendations.append(_v82_issue("auto_safe", "reliability", "Run Reliability Calibration V67.", "Calibrate score before making customer claims."))
+        if not has_customer_status:
+            self_healing_recommendations.append(_v82_issue("auto_safe", "customer_status", "Build Customer Status V72.", "Give customer one clear status instead of many technical tabs."))
+
+    allowed_automations = [
+        {"automation": "Regenerate internal JSON/PDF/ZIP evidence bundles", "risk": "low", "requires_founder": "no"},
+        {"automation": "Refresh customer-safe status summary", "risk": "low", "requires_founder": "no"},
+        {"automation": "Detect missing proof gates and recommend next action", "risk": "low", "requires_founder": "no"},
+        {"automation": "Save lightweight project state through registry", "risk": "low", "requires_founder": "no"},
+        {"automation": "Store large datasets through file storage instead of SQLite", "risk": "low", "requires_founder": "no"},
+    ]
+    if reliability_score >= 85 and not hard_blockers:
+        allowed_automations.append({"automation": "Prepare customer handoff draft bundle", "risk": "medium", "requires_founder": "yes before sending"})
+    if autonomy_score >= 90 and safety_score >= 88 and not hard_blockers:
+        allowed_automations.append({"automation": "Guide customer through one-click pilot flow", "risk": "medium", "requires_founder": "only at paid/legal/production gates"})
+
+    blocked_automations = [
+        {"automation": "Charge customer or execute payment", "reason": "Payment/commercial commitment requires explicit approval."},
+        {"automation": "Send legal contract/SOW as final", "reason": "Legal and scope terms need human approval."},
+        {"automation": "Delete customer/project data", "reason": "Destructive actions require explicit approval."},
+        {"automation": "Claim guaranteed accuracy or production safety", "reason": "EdgeTwin must stay honest until field validation proves it."},
+        {"automation": "Publish customer data or reports externally", "reason": "Privacy and consent must be explicit."},
+    ]
+
+    if hard_blockers:
+        decision = "HOLD - HUMAN REVIEW REQUIRED"
+        next_best_action = "Fix hard blockers first. Let EdgeTwin recommend and generate evidence, but do not allow customer/paid handoff yet."
+    elif autonomy_score >= 92 and reliability_score >= 90 and safety_score >= 88:
+        decision = "AUTONOMOUS PILOT READY"
+        next_best_action = "Allow the safe customer pilot route, while keeping payment/legal/production claims behind founder approval."
+    elif autonomy_score >= 84 and reliability_score >= 82 and safety_score >= 82:
+        decision = "ASSISTED AUTOPILOT GO"
+        next_best_action = "Use V82 to automate routine evidence and customer-status work, with founder approval before paid delivery."
+    else:
+        decision = "CONDITIONAL AUTOPILOT"
+        next_best_action = "Keep this in founder-assisted mode. Run missing QA/trust/reliability gates before expanding automation."
+
+    automation_runbook = [
+        "1. Intake: keep customer questions simple and convert them into project settings.",
+        "2. Evidence: generate or load dataset, then store large data outside SQLite.",
+        "3. Trust: run Quality Guardian, Deliverable QA, Reliability Calibration and Trust Ledger.",
+        "4. Controller: V82 decides safe automation, approvals and blockers.",
+        "5. Handoff: only customer-safe outputs are shown; founder/internal risk stays hidden.",
+        "6. Improve: every missing gate becomes a recommended next action instead of founder guesswork.",
+    ]
+
+    claims_to_avoid = [
+        "Do not claim the system is fully autonomous in legal, payment, privacy or production-safety decisions.",
+        "Do not claim guaranteed accuracy without real field validation and calibration evidence.",
+        "Do not claim enterprise cloud durability while running local SQLite/file storage only.",
+        "Do not let customers see internal founder/admin risk details in normal Customer Mode.",
+    ]
+
+    return {
+        "version": "V82",
+        "project_name": context.get("project_name", "EdgeTwin Project"),
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "target_mode": target_mode,
+        "founder_policy": founder_policy,
+        "decision": decision,
+        "autonomy_score": int(autonomy_score),
+        "reliability_score": int(reliability_score),
+        "safety_score": int(safety_score),
+        "evidence_score": int(evidence_score),
+        "maturity_score": int(maturity_score),
+        "dataset_rows": rows,
+        "dataset_cols": cols,
+        "storage_mode": storage_status.get("mode"),
+        "state_registry_detected": has_registry,
+        "hard_blockers": hard_blockers,
+        "founder_approval_required": founder_approval_required,
+        "self_healing_recommendations": self_healing_recommendations,
+        "allowed_automations": allowed_automations,
+        "blocked_automations": blocked_automations,
+        "automation_runbook": automation_runbook,
+        "claims_to_avoid": claims_to_avoid,
+        "next_best_action": next_best_action,
+        "score_inputs": {
+            "trust_ledger_score": trust_ledger_score,
+            "quality_score": quality_score,
+            "delivery_score": delivery_score,
+            "factory_score": factory_score,
+            "state_score": state_score,
+            "reliability_calibration_score": reliability_score_existing,
+            "zero_touch_score": zero_touch_score,
+            "automation_score_existing": automation_score_existing,
+            "product_consolidation_score": product_consolidation_score,
+        },
+    }
+
+
+def create_autonomy_controller_v82_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("autonomy_controller_v82.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V82 — Autonomy Controller & Reliability Brain",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Autonomy score: {snapshot.get('autonomy_score')}%",
+            f"Reliability score: {snapshot.get('reliability_score')}%",
+            f"Safety score: {snapshot.get('safety_score')}%",
+            "",
+            "## What EdgeTwin may automate",
+            *[f"- {x.get('automation')} ({x.get('risk')})" for x in snapshot.get("allowed_automations", [])],
+            "",
+            "## Founder approval required",
+            *[f"- {x.get('area')}: {x.get('message')}" for x in snapshot.get("founder_approval_required", [])],
+            "",
+            "## Hard blockers",
+            *[f"- {x.get('area')}: {x.get('message')}" for x in snapshot.get("hard_blockers", [])],
+            "",
+            "## Next best action",
+            snapshot.get("next_best_action", ""),
+            "",
+            "## Claims to avoid",
+            *[f"- {x}" for x in snapshot.get("claims_to_avoid", [])],
+        ]
+        zf.writestr("autonomy_controller_v82_summary.md", "\n".join(summary))
+        if snapshot.get("allowed_automations"):
+            zf.writestr("allowed_automations_v82.csv", pd.DataFrame(snapshot.get("allowed_automations", [])).to_csv(index=False))
+        if snapshot.get("founder_approval_required"):
+            zf.writestr("founder_approval_required_v82.csv", pd.DataFrame(snapshot.get("founder_approval_required", [])).to_csv(index=False))
+        if snapshot.get("hard_blockers"):
+            zf.writestr("hard_blockers_v82.csv", pd.DataFrame(snapshot.get("hard_blockers", [])).to_csv(index=False))
+        if snapshot.get("self_healing_recommendations"):
+            zf.writestr("self_healing_recommendations_v82.csv", pd.DataFrame(snapshot.get("self_healing_recommendations", [])).to_csv(index=False))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V82 - Autonomy Controller")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Autonomy: {snapshot.get('autonomy_score')}%")
+        safe_pdf_cell(pdf, f"Reliability: {snapshot.get('reliability_score')}%")
+        safe_pdf_cell(pdf, f"Safety: {snapshot.get('safety_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("next_best_action", ""))
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Hard blockers")
+        pdf.set_font("Arial", size=10)
+        blockers = snapshot.get("hard_blockers", []) or [{"message": "No hard blockers detected."}]
+        for item in blockers[:8]:
+            safe_pdf_cell(pdf, f"- {item.get('message', '')}")
+        zf.writestr("autonomy_controller_v82.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+
+# ============================================================
+# V83 — Release Guard & Regression Test Pack
+# ============================================================
+
+def _v83_issue(severity, area, message, action):
+    return {
+        "severity": severity,
+        "area": area,
+        "message": message,
+        "recommended_action": action,
+    }
+
+
+def _v83_check(name, status, score, detail, area="general", auto_fix=None):
+    return {
+        "name": name,
+        "area": area,
+        "status": status,
+        "score": int(max(0, min(100, score))),
+        "detail": detail,
+        "auto_fix": auto_fix or "",
+    }
+
+
+def _v83_snapshot_score(snapshot, *keys, default=0):
+    if not isinstance(snapshot, dict):
+        return int(default or 0)
+    for key in keys:
+        try:
+            value = snapshot.get(key)
+            if value is not None:
+                return int(float(value))
+        except Exception:
+            continue
+    return int(default or 0)
+
+
+def _v83_truthy_snapshot(snapshots, key):
+    value = snapshots.get(key) if isinstance(snapshots, dict) else None
+    return isinstance(value, dict) and bool(value)
+
+
+def run_release_regression_checks_v83(context=None):
+    """Run lightweight in-process regression checks for release readiness.
+
+    These checks intentionally avoid network calls and destructive actions. They verify the high-risk
+    local invariants that kept recurring during product hardening: storage, state persistence,
+    generated bundle exclusion, dataset presence, and autonomy/trust gates.
+    """
+    context = context or {}
+    dataset_df = context.get("dataset_df") if isinstance(context.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+    storage_status = context.get("storage_status") if isinstance(context.get("storage_status"), dict) else get_storage_status()
+    registry_status = context.get("registry_status") if isinstance(context.get("registry_status"), dict) else {}
+    settings = context.get("settings") if isinstance(context.get("settings"), dict) else {}
+    snapshots = context.get("snapshots") if isinstance(context.get("snapshots"), dict) else {}
+
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+    checks = []
+
+    has_storage = str(storage_status.get("mode", "")).startswith("local_file_storage") or str(storage_status.get("mode", "")).startswith("file_storage")
+    checks.append(_v83_check(
+        "Local file storage active",
+        "pass" if has_storage else "warn",
+        100 if has_storage else 55,
+        f"Storage mode: {storage_status.get('mode')}",
+        area="storage",
+        auto_fix="Install/enable storage.py and keep large DataFrames outside SQLite." if not has_storage else "",
+    ))
+
+    has_dataset = rows > 0 and cols > 0
+    checks.append(_v83_check(
+        "Dataset available",
+        "pass" if has_dataset else "fail",
+        100 if has_dataset else 0,
+        f"Rows: {rows}, columns: {cols}",
+        area="data",
+        auto_fix="Generate a demo dataset or upload a real CSV before release." if not has_dataset else "",
+    ))
+
+    registry_version = registry_status.get("state_registry_version") or settings.get("_state_registry_version")
+    persisted_key_count = int(registry_status.get("persisted_key_count", 0) or 0)
+    has_registry = bool(registry_version)
+    checks.append(_v83_check(
+        "State registry detected",
+        "pass" if has_registry and persisted_key_count >= 50 else "warn" if has_registry else "fail",
+        100 if has_registry and persisted_key_count >= 50 else 78 if has_registry else 0,
+        f"Registry version: {registry_version or 'missing'}, persisted keys: {persisted_key_count}",
+        area="state",
+        auto_fix="Use state_registry.py for all lightweight snapshots and never manually scatter save/load state." if not has_registry else "",
+    ))
+
+    forbidden_bundle_saved = any(str(k).endswith("_bundle") for k in settings.keys())
+    checks.append(_v83_check(
+        "Generated bundles excluded from SQLite",
+        "pass" if not forbidden_bundle_saved else "fail",
+        100 if not forbidden_bundle_saved else 20,
+        "No generated bundle keys found in saved settings." if not forbidden_bundle_saved else "Generated bundle bytes appear in saved settings.",
+        area="persistence",
+        auto_fix="Remove *_bundle keys from persistence; regenerate ZIP/PDF outputs on demand." if forbidden_bundle_saved else "",
+    ))
+
+    trust_score = _v83_snapshot_score(snapshots.get("trust_ledger_v80"), "trust_ledger_score", "trust_score", default=0)
+    has_trust = _v83_truthy_snapshot(snapshots, "trust_ledger_v80")
+    checks.append(_v83_check(
+        "Trust Ledger gate",
+        "pass" if has_trust and trust_score >= 85 else "warn" if has_trust else "fail",
+        trust_score if has_trust else 0,
+        f"Trust Ledger score: {trust_score if has_trust else 'missing'}",
+        area="trust",
+        auto_fix="Run Trust Ledger V80 before customer or paid delivery." if not has_trust or trust_score < 85 else "",
+    ))
+
+    autonomy = snapshots.get("autonomy_controller_v82") if isinstance(snapshots.get("autonomy_controller_v82"), dict) else {}
+    autonomy_score = _v83_snapshot_score(autonomy, "autonomy_score", default=0)
+    autonomy_decision = str(autonomy.get("decision", "missing")) if autonomy else "missing"
+    autonomy_ok = autonomy_score >= 90 and "HOLD" not in autonomy_decision.upper()
+    checks.append(_v83_check(
+        "Autonomy Controller gate",
+        "pass" if autonomy_ok else "warn" if autonomy else "fail",
+        autonomy_score if autonomy else 0,
+        f"Autonomy: {autonomy_score if autonomy else 'missing'}, decision: {autonomy_decision}",
+        area="autonomy",
+        auto_fix="Run Autonomy Controller V82 and resolve hard blockers before release." if not autonomy_ok else "",
+    ))
+
+    quality_score = _v83_snapshot_score(snapshots.get("quality_guardian_v74"), "quality_score", "total_score", default=0)
+    delivery_score = _v83_snapshot_score(snapshots.get("deliverable_qa_v75"), "delivery_qa_score", "qa_score", "total_score", default=0)
+    qa_ok = quality_score >= 85 and delivery_score >= 85
+    checks.append(_v83_check(
+        "Quality + deliverable QA gates",
+        "pass" if qa_ok else "warn" if quality_score or delivery_score else "fail",
+        int(round((max(quality_score, 0) + max(delivery_score, 0)) / 2)) if (quality_score or delivery_score) else 0,
+        f"Quality: {quality_score or 'missing'}, deliverable QA: {delivery_score or 'missing'}",
+        area="quality",
+        auto_fix="Run Quality Guardian V74 and Deliverable QA V75 before release." if not qa_ok else "",
+    ))
+
+    release_safety = snapshots.get("release_guard_v83") if isinstance(snapshots.get("release_guard_v83"), dict) else {}
+    prior_release_score = _v83_snapshot_score(release_safety, "release_score", default=0)
+    checks.append(_v83_check(
+        "Prior release guard history",
+        "pass" if prior_release_score >= 90 else "info",
+        prior_release_score if prior_release_score else 75,
+        f"Previous V83 score: {prior_release_score or 'none yet'}",
+        area="release_history",
+        auto_fix="This is the first V83 guard run for this project." if not prior_release_score else "",
+    ))
+
+    return checks
+
+
+def build_release_guard_v83_snapshot(context):
+    """Build the V83 release decision layer.
+
+    V83 is conservative by design. It does not pretend the product is perfect; it creates a
+    release gate that can automatically block risky handoff while allowing safe internal evidence work.
+    """
+    context = context or {}
+    project_name = context.get("project_name", "EdgeTwin Project")
+    dataset_df = context.get("dataset_df") if isinstance(context.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+    snapshots = context.get("snapshots") if isinstance(context.get("snapshots"), dict) else {}
+    release_target = str(context.get("release_target") or "Paid pilot")
+    release_channel = str(context.get("release_channel") or "Paid pilot customer")
+    strict_mode = bool(context.get("strict_mode", True))
+    include_customer_bundle = bool(context.get("include_customer_bundle", True))
+    checks = context.get("regression_checks")
+    if not isinstance(checks, list):
+        checks = run_release_regression_checks_v83(context)
+
+    valid_scores = [int(c.get("score", 0)) for c in checks if isinstance(c, dict)]
+    regression_score = int(round(sum(valid_scores) / len(valid_scores))) if valid_scores else 0
+
+    fail_count = sum(1 for c in checks if isinstance(c, dict) and str(c.get("status")).lower() == "fail")
+    warn_count = sum(1 for c in checks if isinstance(c, dict) and str(c.get("status")).lower() == "warn")
+    pass_count = sum(1 for c in checks if isinstance(c, dict) and str(c.get("status")).lower() == "pass")
+
+    autonomy = snapshots.get("autonomy_controller_v82") if isinstance(snapshots.get("autonomy_controller_v82"), dict) else {}
+    autonomy_score = _v83_snapshot_score(autonomy, "autonomy_score", default=0)
+    autonomy_safety = _v83_snapshot_score(autonomy, "safety_score", default=0)
+    autonomy_reliability = _v83_snapshot_score(autonomy, "reliability_score", default=0)
+
+    trust_score = _v83_snapshot_score(snapshots.get("trust_ledger_v80"), "trust_ledger_score", "trust_score", default=0)
+    quality_score = _v83_snapshot_score(snapshots.get("quality_guardian_v74"), "quality_score", "total_score", default=0)
+    delivery_score = _v83_snapshot_score(snapshots.get("deliverable_qa_v75"), "delivery_qa_score", "qa_score", "total_score", default=0)
+    state_score = _v83_snapshot_score(snapshots.get("state_registry_status_v81"), "state_control_score", default=0)
+    if state_score == 0:
+        registry_status = context.get("registry_status") if isinstance(context.get("registry_status"), dict) else {}
+        if registry_status.get("state_registry_version"):
+            state_score = 90
+
+    release_safety_score = int(round(
+        0.25 * max(autonomy_safety, 60 if autonomy else 30)
+        + 0.20 * max(trust_score, 60 if trust_score else 30)
+        + 0.20 * max(quality_score, 60 if quality_score else 30)
+        + 0.20 * max(delivery_score, 60 if delivery_score else 30)
+        + 0.15 * max(state_score, 60 if state_score else 30)
+    ))
+    release_safety_score = int(max(0, min(100, release_safety_score)))
+
+    release_score = int(round(
+        0.38 * regression_score
+        + 0.25 * release_safety_score
+        + 0.17 * max(autonomy_score, 60 if autonomy else 30)
+        + 0.10 * max(autonomy_reliability, 60 if autonomy else 30)
+        + 0.10 * max(trust_score, 60 if trust_score else 30)
+    ))
+
+    penalty = 0
+    if strict_mode:
+        penalty += fail_count * 12 + warn_count * 3
+    else:
+        penalty += fail_count * 8 + warn_count * 2
+    if release_target in {"Customer self-service", "Production handoff"}:
+        penalty += 5
+    if release_channel in {"Public self-service", "Enterprise handoff"}:
+        penalty += 5
+    release_score = int(max(0, min(100, release_score - penalty)))
+
+    release_blockers = []
+    auto_fix_queue = []
+    for c in checks:
+        if not isinstance(c, dict):
+            continue
+        status = str(c.get("status", "")).lower()
+        if status == "fail":
+            release_blockers.append(_v83_issue("high", c.get("area", "check"), c.get("detail", c.get("name", "Failed check")), c.get("auto_fix") or "Fix this failed regression check."))
+        elif status == "warn" and strict_mode and release_target in {"Paid pilot", "Customer self-service", "Production handoff"}:
+            release_blockers.append(_v83_issue("medium", c.get("area", "check"), c.get("detail", c.get("name", "Warning check")), c.get("auto_fix") or "Review this warning before release."))
+        if c.get("auto_fix"):
+            auto_fix_queue.append({
+                "area": c.get("area"),
+                "check": c.get("name"),
+                "safe_auto_fix": c.get("auto_fix"),
+                "risk": "low" if status in {"info", "warn"} else "medium",
+            })
+
+    if release_target in {"Customer self-service", "Production handoff"} and release_safety_score < 90:
+        release_blockers.append(_v83_issue("high", "safety", "Release safety is below 90 for self-service/production target.", "Keep this as paid pilot/private beta until safety improves."))
+    if release_target == "Production handoff" and release_score < 95:
+        release_blockers.append(_v83_issue("high", "production", "Production handoff requires 95+ release score.", "Do not use production language yet; collect field evidence first."))
+
+    if release_blockers:
+        decision = "RELEASE HOLD - FIX BLOCKERS"
+        next_best_action = "Do not ship this release to a customer yet. Let V83 fix safe evidence gaps, then rerun the guard."
+    elif release_score >= 95 and release_safety_score >= 92 and regression_score >= 92:
+        decision = "PREMIUM RELEASE GO"
+        next_best_action = "Safe to prepare a strong customer/pilot handoff, while legal/payment/production claims still need explicit founder approval."
+    elif release_score >= 90 and release_safety_score >= 88 and regression_score >= 88:
+        decision = "RELEASE GUARD GO"
+        next_best_action = "Good for paid pilot/private beta release with founder approval on commercial promises and scope."
+    elif release_score >= 82:
+        decision = "ASSISTED RELEASE ONLY"
+        next_best_action = "Use internally or with a friendly beta user only. Resolve warnings before a paid delivery."
+    else:
+        decision = "INTERNAL BUILD ONLY"
+        next_best_action = "Keep improving. The product brain may generate evidence, but should not release customer-facing outputs yet."
+
+    release_policy = [
+        "Never release when regression checks fail, even if the UI looks good.",
+        "Never store generated ZIP/PDF bundles in SQLite; regenerate them on demand.",
+        "Never claim guaranteed accuracy, safety or production readiness without field validation.",
+        "Allow low-risk self-healing: regenerate evidence, summarize status, recommend next action.",
+        "Keep payment, legal, deletion, privacy and production claims behind explicit founder approval.",
+    ]
+
+    customer_safe_summary = {
+        "project_name": project_name,
+        "release_target": release_target,
+        "decision": decision,
+        "release_score": release_score,
+        "ready_for_customer": decision in {"RELEASE GUARD GO", "PREMIUM RELEASE GO"},
+        "plain_language_status": next_best_action,
+        "claims_excluded": [
+            "guaranteed accuracy",
+            "production safety certification",
+            "legal compliance guarantee",
+            "fully autonomous payment or legal execution",
+        ],
+    }
+
+    return {
+        "version": "V83",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "release_target": release_target,
+        "release_channel": release_channel,
+        "strict_mode": strict_mode,
+        "include_customer_bundle": include_customer_bundle,
+        "decision": decision,
+        "release_score": int(release_score),
+        "regression_score": int(regression_score),
+        "release_safety_score": int(release_safety_score),
+        "pass_count": int(pass_count),
+        "warn_count": int(warn_count),
+        "fail_count": int(fail_count),
+        "dataset_rows": int(len(dataset_df)),
+        "dataset_cols": int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0,
+        "release_blockers": release_blockers,
+        "auto_fix_queue": auto_fix_queue,
+        "regression_checks": checks,
+        "release_policy": release_policy,
+        "customer_safe_summary": customer_safe_summary,
+        "next_best_action": next_best_action,
+        "score_inputs": {
+            "autonomy_score": autonomy_score,
+            "autonomy_safety_score": autonomy_safety,
+            "autonomy_reliability_score": autonomy_reliability,
+            "trust_ledger_score": trust_score,
+            "quality_score": quality_score,
+            "delivery_qa_score": delivery_score,
+            "state_score": state_score,
+        },
+    }
+
+
+def create_release_guard_v83_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("release_guard_v83.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V83 — Release Guard & Regression Pack",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Release score: {snapshot.get('release_score')}%",
+            f"Regression score: {snapshot.get('regression_score')}%",
+            f"Release safety: {snapshot.get('release_safety_score')}%",
+            f"Checks: {snapshot.get('pass_count')} pass / {snapshot.get('warn_count')} warn / {snapshot.get('fail_count')} fail",
+            "",
+            "## Next best action",
+            snapshot.get("next_best_action", ""),
+            "",
+            "## Release blockers",
+            *([f"- {x.get('area')}: {x.get('message')}" for x in snapshot.get("release_blockers", [])] or ["- No release blockers detected."]),
+            "",
+            "## Release policy",
+            *[f"- {x}" for x in snapshot.get("release_policy", [])],
+        ]
+        zf.writestr("release_guard_v83_summary.md", "\n".join(summary))
+        if snapshot.get("regression_checks"):
+            zf.writestr("regression_checks_v83.csv", pd.DataFrame(snapshot.get("regression_checks", [])).to_csv(index=False))
+        if snapshot.get("release_blockers"):
+            zf.writestr("release_blockers_v83.csv", pd.DataFrame(snapshot.get("release_blockers", [])).to_csv(index=False))
+        if snapshot.get("auto_fix_queue"):
+            zf.writestr("auto_fix_queue_v83.csv", pd.DataFrame(snapshot.get("auto_fix_queue", [])).to_csv(index=False))
+        zf.writestr("customer_safe_release_summary_v83.json", json.dumps(_json_safe(snapshot.get("customer_safe_summary", {})), indent=2, ensure_ascii=False))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V83 - Release Guard")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Release score: {snapshot.get('release_score')}%")
+        safe_pdf_cell(pdf, f"Regression score: {snapshot.get('regression_score')}%")
+        safe_pdf_cell(pdf, f"Release safety: {snapshot.get('release_safety_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("next_best_action", ""))
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Release blockers")
+        pdf.set_font("Arial", size=10)
+        blockers = snapshot.get("release_blockers", []) or [{"message": "No release blockers detected."}]
+        for item in blockers[:10]:
+            safe_pdf_cell(pdf, f"- {item.get('message', '')}")
+        zf.writestr("release_guard_v83.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+# ============================================================
+# V90 — Ultimate Product Machine
+# ============================================================
+
+def _v90_present_snapshot(snapshot):
+    return isinstance(snapshot, dict) and len(snapshot) > 0
+
+
+def _v90_clamp(value, low=0, high=100):
+    try:
+        value = int(round(float(value)))
+    except Exception:
+        value = 0
+    return max(low, min(high, value))
+
+
+def _v90_first_score(snapshot, keys, default=0):
+    if not isinstance(snapshot, dict):
+        return int(default)
+    for key in keys:
+        value = snapshot.get(key)
+        if isinstance(value, (int, float, np.integer, np.floating)):
+            return _v90_clamp(value)
+    return int(default)
+
+
+def build_self_healing_executor_v90(context=None):
+    """Create a safe self-healing plan without doing destructive work.
+
+    This is deliberately conservative: the executor can prepare, regenerate, summarize and
+    re-run local checks. It does not send email, take payment, delete data, make legal claims,
+    or mark production readiness without founder approval.
+    """
+    context = context or {}
+    checks = context.get("regression_checks")
+    if not isinstance(checks, list):
+        checks = run_release_regression_checks_v83(context)
+
+    snapshots = context.get("snapshots") if isinstance(context.get("snapshots"), dict) else {}
+    dataset_df = context.get("dataset_df") if isinstance(context.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+
+    actions = []
+
+    def add_action(action_id, title, action_type, risk, status, reason, result_key=None):
+        actions.append({
+            "action_id": action_id,
+            "title": title,
+            "type": action_type,
+            "risk": risk,
+            "status": status,
+            "reason": reason,
+            "result_key": result_key or "",
+        })
+
+    for c in checks:
+        if not isinstance(c, dict):
+            continue
+        status = str(c.get("status", "")).lower()
+        if status not in {"warn", "fail"}:
+            continue
+        area = str(c.get("area", "general"))
+        fix = str(c.get("auto_fix") or c.get("detail") or c.get("name") or "Review this check.")
+        low_risk = area in {"storage", "state", "persistence", "trust", "quality", "delivery", "autonomy", "support"}
+        add_action(
+            f"heal_{area}_{len(actions)+1}",
+            f"Resolve {area} check",
+            "safe_prepare_or_regenerate" if low_risk else "founder_review_required",
+            "low" if low_risk and status == "warn" else "medium",
+            "queued" if low_risk else "blocked_until_founder_approval",
+            fix,
+        )
+
+    required_snapshots = [
+        ("trust_ledger_v80", "Run Trust Ledger V80 evidence snapshot", "trust_ledger_v80_snapshot"),
+        ("quality_guardian_v74", "Run Quality Guardian V74 self-test", "quality_guardian_v74_snapshot"),
+        ("deliverable_qa_v75", "Run Deliverable QA V75", "deliverable_qa_v75_snapshot"),
+        ("autonomy_controller_v82", "Run Autonomy Controller V82", "autonomy_controller_v82_snapshot"),
+        ("release_guard_v83", "Run Release Guard V83", "release_guard_v83_snapshot"),
+    ]
+    for key, title, result_key in required_snapshots:
+        if not _v90_present_snapshot(snapshots.get(key)):
+            add_action(
+                f"regen_{key}",
+                title,
+                "safe_regenerate_snapshot",
+                "low",
+                "queued",
+                "Snapshot is missing or stale. Regenerate local evidence before customer handoff.",
+                result_key,
+            )
+
+    if dataset_df.empty:
+        add_action(
+            "prepare_demo_dataset",
+            "Prepare demo or upload real dataset before release",
+            "founder_or_user_input_required",
+            "medium",
+            "blocked_until_data_available",
+            "A product decision without data would create false confidence.",
+            "dataset",
+        )
+
+    always_blocked = [
+        ("send_external_email", "Sending external emails"),
+        ("capture_payment", "Taking payment or refunds"),
+        ("delete_customer_data", "Deleting customer data"),
+        ("legal_or_compliance_claim", "Making legal/compliance claims"),
+        ("production_safety_claim", "Claiming production safety or guaranteed accuracy"),
+    ]
+    for action_id, title in always_blocked:
+        add_action(
+            action_id,
+            title,
+            "founder_approval_required",
+            "high",
+            "blocked_by_policy",
+            "This action can affect money, legal exposure, privacy, or customer trust.",
+        )
+
+    queued_safe = sum(1 for a in actions if str(a.get("status")) == "queued")
+    blocked = sum(1 for a in actions if str(a.get("status", "")).startswith("blocked"))
+    policy_blocked = sum(1 for a in actions if str(a.get("status")) == "blocked_by_policy")
+
+    executor_score = _v90_clamp(100 - blocked * 5 - max(0, queued_safe - 3) * 2 + min(8, queued_safe * 1))
+    if dataset_df.empty:
+        executor_score = min(executor_score, 70)
+
+    return {
+        "version": "V90.self_healing_executor",
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "executor_score": int(executor_score),
+        "queued_safe_actions": int(queued_safe),
+        "blocked_actions": int(blocked),
+        "policy_blocked_actions": int(policy_blocked),
+        "actions": actions,
+        "safe_to_run_automatically": [a for a in actions if a.get("status") == "queued" and a.get("risk") in {"low", "medium"}],
+        "requires_founder_approval": [a for a in actions if "blocked" in str(a.get("status"))],
+        "policy": [
+            "Safe automation may regenerate local evidence, summaries, QA reports and regression checks.",
+            "Unsafe automation is blocked for money, legal claims, privacy actions and production promises.",
+            "The executor improves reliability by reducing forgotten manual steps, not by hiding uncertainty.",
+        ],
+    }
+
+
+def build_ultimate_product_brain_v90_snapshot(context=None):
+    """Combine engine, trust, autonomy, release and policy into one product decision."""
+    context = context or {}
+    project_name = str(context.get("project_name") or "EdgeTwin Project")
+    dataset_df = context.get("dataset_df") if isinstance(context.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+    snapshots = context.get("snapshots") if isinstance(context.get("snapshots"), dict) else {}
+    target = str(context.get("target") or "Paid pilot")
+    maximum_automation = bool(context.get("maximum_automation", True))
+    strict_policy = bool(context.get("strict_policy", True))
+
+    checks = context.get("regression_checks")
+    if not isinstance(checks, list):
+        checks = run_release_regression_checks_v83(context)
+
+    release_guard = snapshots.get("release_guard_v83") if isinstance(snapshots.get("release_guard_v83"), dict) else {}
+    autonomy = snapshots.get("autonomy_controller_v82") if isinstance(snapshots.get("autonomy_controller_v82"), dict) else {}
+    trust = snapshots.get("trust_ledger_v80") if isinstance(snapshots.get("trust_ledger_v80"), dict) else {}
+    quality = snapshots.get("quality_guardian_v74") if isinstance(snapshots.get("quality_guardian_v74"), dict) else {}
+    delivery = snapshots.get("deliverable_qa_v75") if isinstance(snapshots.get("deliverable_qa_v75"), dict) else {}
+    state = snapshots.get("state_registry_status_v81") if isinstance(snapshots.get("state_registry_status_v81"), dict) else {}
+
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+    numeric_cols = int(len(dataset_df.select_dtypes(include=[np.number]).columns)) if isinstance(dataset_df, pd.DataFrame) and not dataset_df.empty else 0
+    has_label = any(str(c).lower() in {"label", "target", "class", "status"} for c in getattr(dataset_df, "columns", []))
+    engine_score = 40
+    if rows > 0 and cols > 0:
+        engine_score += 20
+    if rows >= 8:
+        engine_score += 10
+    if numeric_cols >= 2:
+        engine_score += 10
+    if has_label:
+        engine_score += 10
+    if rows >= 50:
+        engine_score += 5
+    if rows >= 200:
+        engine_score += 5
+    engine_score = _v90_clamp(engine_score)
+
+    release_score = _v90_first_score(release_guard, ["release_score"], default=0)
+    regression_score = _v90_first_score(release_guard, ["regression_score"], default=0)
+    release_safety = _v90_first_score(release_guard, ["release_safety_score"], default=0)
+    autonomy_score = _v90_first_score(autonomy, ["autonomy_score"], default=0)
+    autonomy_safety = _v90_first_score(autonomy, ["safety_score"], default=0)
+    trust_score = _v90_first_score(trust, ["trust_ledger_score", "trust_score"], default=0)
+    quality_score = _v90_first_score(quality, ["quality_score", "total_score"], default=0)
+    delivery_score = _v90_first_score(delivery, ["delivery_qa_score", "qa_score", "total_score"], default=0)
+    state_score = _v90_first_score(state, ["state_control_score"], default=90 if context.get("registry_status") else 0)
+
+    # Sensible defaults when older modules are present but scored with alternate names.
+    if release_score == 0 and release_guard:
+        release_score = 90
+    if autonomy_score == 0 and autonomy:
+        autonomy_score = 88
+    if trust_score == 0 and trust:
+        trust_score = 85
+    if quality_score == 0 and quality:
+        quality_score = 85
+    if delivery_score == 0 and delivery:
+        delivery_score = 85
+
+    core_stack = {
+        "engine_score": engine_score,
+        "trust_score": trust_score,
+        "state_score": state_score,
+        "autonomy_score": autonomy_score,
+        "autonomy_safety_score": autonomy_safety,
+        "release_score": release_score,
+        "release_safety_score": release_safety,
+        "regression_score": regression_score,
+        "quality_score": quality_score,
+        "delivery_score": delivery_score,
+    }
+
+    fail_count = sum(1 for c in checks if isinstance(c, dict) and str(c.get("status", "")).lower() == "fail")
+    warn_count = sum(1 for c in checks if isinstance(c, dict) and str(c.get("status", "")).lower() == "warn")
+    pass_count = sum(1 for c in checks if isinstance(c, dict) and str(c.get("status", "")).lower() == "pass")
+
+    healing = build_self_healing_executor_v90({**context, "regression_checks": checks})
+
+    product_score = int(round(
+        0.16 * max(engine_score, 60 if rows else 30)
+        + 0.14 * max(trust_score, 60 if trust else 30)
+        + 0.10 * max(state_score, 60 if state else 30)
+        + 0.16 * max(autonomy_score, 60 if autonomy else 30)
+        + 0.12 * max(autonomy_safety, 60 if autonomy else 30)
+        + 0.16 * max(release_score, 60 if release_guard else 30)
+        + 0.08 * max(quality_score, 60 if quality else 30)
+        + 0.08 * max(delivery_score, 60 if delivery else 30)
+    ))
+
+    if regression_score:
+        product_score = int(round(0.78 * product_score + 0.22 * regression_score))
+
+    # Reward complete product stack, penalize actual risk.
+    required_present = sum(1 for x in [trust, state, autonomy, release_guard, quality, delivery] if _v90_present_snapshot(x))
+    if required_present >= 6 and fail_count == 0:
+        product_score += 2
+    product_score -= fail_count * (14 if strict_policy else 9)
+    product_score -= warn_count * (3 if strict_policy else 2)
+    if target in {"Customer self-service", "Production handoff"}:
+        product_score -= 3
+    product_score = _v90_clamp(product_score)
+
+    automation_allowed = [
+        "Regenerate local evidence snapshots",
+        "Run regression checks",
+        "Prepare customer-safe summaries",
+        "Build ZIP/PDF bundles on demand",
+        "Recommend next best action",
+        "Block unsafe release states",
+    ]
+    founder_required = [
+        "Send emails or messages externally",
+        "Take payment, issue refunds or change pricing promises",
+        "Delete customer data or alter privacy settings",
+        "Make legal/compliance/safety/guaranteed-accuracy claims",
+        "Approve production handoff or enterprise contract language",
+    ]
+
+    blockers = []
+    if rows == 0:
+        blockers.append(_v83_issue("high", "data", "No dataset is available.", "Generate a demo dataset or upload real customer data."))
+    if fail_count:
+        blockers.append(_v83_issue("high", "regression", f"{fail_count} regression check(s) failed.", "Run the self-healing queue and fix blockers."))
+    if target == "Production handoff" and product_score < 97:
+        blockers.append(_v83_issue("high", "production", "Production handoff requires 97+ ultimate score plus field evidence.", "Keep this as a paid pilot until field evidence is stronger."))
+    if target == "Customer self-service" and product_score < 95:
+        blockers.append(_v83_issue("medium", "self_service", "Customer self-service should wait for 95+ ultimate score.", "Use guided paid pilot mode first."))
+
+    if blockers:
+        decision = "ULTIMATE HOLD - FIX BLOCKERS"
+        next_action = "Let the product brain regenerate safe evidence and keep customer-facing release blocked until the listed blockers are resolved."
+    elif product_score >= 97 and target == "Production handoff":
+        decision = "PRODUCTION CANDIDATE - FOUNDER SIGNOFF"
+        next_action = "Strong production candidate. Founder must still approve legal, privacy, pricing and production claims."
+    elif product_score >= 95:
+        decision = "ULTIMATE PILOT GO"
+        next_action = "Ready for a serious paid pilot/customer demo with automated evidence, release guard and founder approval for high-risk claims."
+    elif product_score >= 90:
+        decision = "PREMIUM PILOT READY"
+        next_action = "Good for paid pilot/private beta. Keep self-service and production claims blocked."
+    elif product_score >= 82:
+        decision = "ASSISTED BETA ONLY"
+        next_action = "Use with founder guidance only. Run self-healing and collect stronger evidence before selling hard."
+    else:
+        decision = "INTERNAL BUILD ONLY"
+        next_action = "Do not sell yet. First restore data, trust, QA, autonomy and release evidence."
+
+    customer_safe_status = {
+        "project_name": project_name,
+        "decision": decision,
+        "ultimate_score": product_score,
+        "safe_for_paid_pilot": decision in {"PREMIUM PILOT READY", "ULTIMATE PILOT GO", "PRODUCTION CANDIDATE - FOUNDER SIGNOFF"},
+        "safe_for_self_service": product_score >= 95 and not blockers,
+        "safe_for_production_claims": False,
+        "plain_language": next_action,
+    }
+
+    return {
+        "version": "V90",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "target": target,
+        "maximum_automation": maximum_automation,
+        "strict_policy": strict_policy,
+        "decision": decision,
+        "ultimate_score": int(product_score),
+        "engine_score": int(engine_score),
+        "autonomous_workload_score": int(_v90_clamp((autonomy_score + healing.get("executor_score", 0) + release_score) / 3)),
+        "reliability_stack_score": int(_v90_clamp((trust_score + quality_score + delivery_score + regression_score + release_safety) / 5 if regression_score else (trust_score + quality_score + delivery_score) / 3)),
+        "pass_count": int(pass_count),
+        "warn_count": int(warn_count),
+        "fail_count": int(fail_count),
+        "required_stack_present": int(required_present),
+        "dataset_rows": rows,
+        "dataset_cols": cols,
+        "numeric_cols": numeric_cols,
+        "has_label_column": bool(has_label),
+        "core_stack": core_stack,
+        "self_healing_executor": healing,
+        "blockers": blockers,
+        "automation_allowed": automation_allowed,
+        "founder_approval_required": founder_required,
+        "customer_safe_status": customer_safe_status,
+        "next_best_action": next_action,
+        "truth_policy": [
+            "Never inflate readiness scores to look finished.",
+            "Never call a pilot production-ready without field validation.",
+            "Keep the engine powerful, but put release decisions behind evidence gates.",
+            "Automate repeatable checks and evidence generation; block irreversible/high-risk actions.",
+        ],
+    }
+
+
+def create_ultimate_product_v90_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("ultimate_product_brain_v90.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_safe_status_v90.json", json.dumps(_json_safe(snapshot.get("customer_safe_status", {})), indent=2, ensure_ascii=False))
+        zf.writestr("self_healing_executor_v90.json", json.dumps(_json_safe(snapshot.get("self_healing_executor", {})), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V90 — Ultimate Product Machine",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Ultimate score: {snapshot.get('ultimate_score')}%",
+            f"Engine score: {snapshot.get('engine_score')}%",
+            f"Autonomous workload score: {snapshot.get('autonomous_workload_score')}%",
+            f"Reliability stack score: {snapshot.get('reliability_stack_score')}%",
+            f"Checks: {snapshot.get('pass_count')} pass / {snapshot.get('warn_count')} warn / {snapshot.get('fail_count')} fail",
+            "",
+            "## Next best action",
+            snapshot.get("next_best_action", ""),
+            "",
+            "## Automation allowed",
+            *[f"- {x}" for x in snapshot.get("automation_allowed", [])],
+            "",
+            "## Founder approval required",
+            *[f"- {x}" for x in snapshot.get("founder_approval_required", [])],
+            "",
+            "## Truth policy",
+            *[f"- {x}" for x in snapshot.get("truth_policy", [])],
+        ]
+        zf.writestr("ultimate_product_v90_summary.md", "\n".join(summary))
+        blockers = snapshot.get("blockers", [])
+        if blockers:
+            zf.writestr("ultimate_blockers_v90.csv", pd.DataFrame(blockers).to_csv(index=False))
+        actions = (snapshot.get("self_healing_executor", {}) or {}).get("actions", [])
+        if actions:
+            zf.writestr("self_healing_actions_v90.csv", pd.DataFrame(actions).to_csv(index=False))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V90 - Ultimate Product Machine")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Ultimate score: {snapshot.get('ultimate_score')}%")
+        safe_pdf_cell(pdf, f"Engine score: {snapshot.get('engine_score')}%")
+        safe_pdf_cell(pdf, f"Reliability stack: {snapshot.get('reliability_stack_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("next_best_action", ""))
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Founder approval required")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("founder_approval_required", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("ultimate_product_v90.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
