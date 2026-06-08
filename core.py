@@ -16443,3 +16443,734 @@ def create_founder_ops_followup_bundle(project_name, snapshot, dataset_df=None):
         zf.writestr("README.txt", "EdgeTwin Studio V49 Founder Ops bundle. Use this to protect founder time, route customer follow-up and avoid unpaid custom chaos. Not legal/financial/tax advice.\n")
     return zip_buf.getvalue()
 
+
+
+# ============================================================
+# V50 CUSTOMER MODE / SIMPLIFIED CUSTOMER ROUTE
+# ============================================================
+
+def _v50_has_rows(dataset_df):
+    return isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0
+
+
+def _v50_snapshot_score(snapshot, key='overall_score'):
+    if not isinstance(snapshot, dict):
+        return 0
+    for candidate in [key, 'customer_clarity_score', 'overall_score', 'readiness_score', 'trust_score', 'pilot_readiness_score', 'pricing_score', 'proposal_score', 'delivery_score', 'reliability_score']:
+        val = snapshot.get(candidate)
+        if isinstance(val, (int, float)):
+            return max(0, min(100, int(round(float(val)))))
+    return 0
+
+
+def build_customer_mode_v50_summary(
+    project_name,
+    dataset_df=None,
+    auto_pilot_result=None,
+    fusion_doctor=None,
+    trust_gate=None,
+    pricing_offer_snapshot=None,
+    proposal_sow_snapshot=None,
+    paid_pilot_snapshot=None,
+    delivery_snapshot=None,
+    lead_intake_snapshot=None,
+):
+    """Create a customer-safe route summary for the V50 simplified UI.
+
+    V50 is intentionally not a new technical engine. It is a UX/product gate that
+    hides advanced/admin complexity from buyers while keeping Founder Mode intact.
+    """
+    dataset_rows = int(len(dataset_df)) if _v50_has_rows(dataset_df) else 0
+    has_dataset = dataset_rows > 0
+    has_pilot = bool(auto_pilot_result) or has_dataset
+    has_doctor = isinstance(fusion_doctor, dict) and bool(fusion_doctor)
+    has_trust = isinstance(trust_gate, dict) and bool(trust_gate)
+    has_lead = isinstance(lead_intake_snapshot, dict) and bool(lead_intake_snapshot)
+    has_price = isinstance(pricing_offer_snapshot, dict) and bool(pricing_offer_snapshot)
+    has_sow = isinstance(proposal_sow_snapshot, dict) and bool(proposal_sow_snapshot)
+    has_paid_pilot = isinstance(paid_pilot_snapshot, dict) and bool(paid_pilot_snapshot)
+    has_delivery = isinstance(delivery_snapshot, dict) and bool(delivery_snapshot)
+
+    doctor_score = _v50_snapshot_score(fusion_doctor) if has_doctor else 0
+    trust_score = _v50_snapshot_score(trust_gate, 'trust_score') if has_trust else 0
+    proposal_score = _v50_snapshot_score(proposal_sow_snapshot, 'proposal_score') if has_sow else 0
+    pricing_score = _v50_snapshot_score(pricing_offer_snapshot, 'pricing_score') if has_price else 0
+    delivery_score = _v50_snapshot_score(delivery_snapshot, 'delivery_score') if has_delivery else 0
+
+    # Weighted for customer clarity, not model accuracy.
+    score = 15
+    if has_lead:
+        score += 10
+    if has_pilot:
+        score += 22
+    if has_dataset:
+        score += 8
+    if has_doctor:
+        score += min(15, round(doctor_score * 0.15))
+    if has_trust:
+        score += min(15, round(trust_score * 0.15))
+    if has_price:
+        score += 8
+    if has_sow:
+        score += 12
+    if has_paid_pilot:
+        score += 5
+    if has_delivery:
+        score += 10
+    score = max(0, min(100, int(score)))
+
+    route_defs = [
+        ('1', 'Choose problem', 'Select the customer use-case and describe the expected outcome.', has_lead or bool(auto_pilot_result)),
+        ('2', 'Generate pilot', 'Create a pilot dataset, features, hardware direction and first export package.', has_pilot),
+        ('3', 'Review trust', 'Check reliability, limitations, safe claims and field-validation needs.', has_doctor or has_trust),
+        ('4', 'Download / handoff', 'Prepare the customer-facing report, delivery bundle or export package.', has_delivery),
+        ('5', 'Request proposal', 'Move to pricing and Proposal/SOW only when scope and expectations are clear.', has_price or has_sow or has_paid_pilot),
+    ]
+    first_pending_seen = False
+    customer_route = []
+    for num, title, desc, done in route_defs:
+        if done:
+            status = 'Done'
+        elif not first_pending_seen:
+            status = 'Next'
+            first_pending_seen = True
+        else:
+            status = 'Pending'
+        customer_route.append({'step': num, 'title': title, 'description': desc, 'status': status})
+
+    next_steps = [step for step in customer_route if step['status'] == 'Next']
+    current_step = next_steps[0]['title'] if next_steps else 'Ready for controlled customer handoff'
+    next_action_short = current_step
+
+    ready_items = []
+    missing_items = []
+    if has_pilot:
+        ready_items.append('Pilot package/data foundation exists.')
+    else:
+        missing_items.append('Create a pilot package through the Use Case Wizard.')
+    if has_doctor or has_trust:
+        ready_items.append('Readiness/trust signals are available for customer review.')
+    else:
+        missing_items.append('Run a readiness/trust check before customer delivery.')
+    if has_price:
+        ready_items.append('Pricing offer exists or can be reviewed.')
+    else:
+        missing_items.append('Create pricing only after customer scope and data status are clear.')
+    if has_sow:
+        ready_items.append('Proposal/SOW exists with scope and exclusions.')
+    else:
+        missing_items.append('Create Proposal/SOW before paid pilot commitment.')
+    if has_delivery:
+        ready_items.append('Delivery portal/handoff snapshot exists.')
+
+    if score >= 85:
+        customer_status = 'Clear route'
+        risk_level = 'Low'
+        verdict = 'Customer Mode is clear enough for a controlled paid-pilot conversation.'
+    elif score >= 60:
+        customer_status = 'Almost clear'
+        risk_level = 'Medium'
+        verdict = 'Customer Mode is usable, but one or two customer-facing gaps should be closed before delivery.'
+    else:
+        customer_status = 'Needs setup'
+        risk_level = 'High'
+        verdict = 'Start with the guided pilot route before showing pricing, proposal or delivery outputs.'
+
+    visible_outputs = [
+        'Problem/use-case explanation',
+        'Pilot dataset and feature summary',
+        'Readiness and reliability summary',
+        'Safe limitations and field-validation message',
+        'Report/proposal/delivery outputs when ready',
+    ]
+    hidden_tools = [
+        'Storage internals and database scale tools',
+        'Security/admin/error observability screens',
+        'Raw signal sliders and engineering tuning',
+        'Founder workload and internal follow-up notes',
+        'Payment/invoice gates unless Founder Mode is active',
+    ]
+
+    safe_summary = f"""Project: {project_name}
+Customer status: {customer_status}
+Current step: {current_step}
+
+EdgeTwin Studio can prepare a pilot-ready sensor AI package with dataset generation, feature extraction, readiness checks, hardware direction and customer deliverables.
+
+Important limitation: this is a pilot preparation workflow. Production readiness, guaranteed accuracy, uptime, safety certification and regulatory compliance require separate field validation and are not promised by default.
+"""
+
+    return {
+        'version': 'V50 Customer Mode + Founder Mode',
+        'created_at': _now(),
+        'project_name': project_name,
+        'customer_clarity_score': score,
+        'customer_status': customer_status,
+        'risk_level': risk_level,
+        'customer_verdict': verdict,
+        'dataset_rows': dataset_rows,
+        'current_step': current_step,
+        'next_action_short': next_action_short,
+        'customer_route': customer_route,
+        'ready_items': ready_items,
+        'missing_items': missing_items,
+        'customer_visible_outputs': visible_outputs,
+        'hidden_advanced_tools': hidden_tools,
+        'connected_snapshots': {
+            'lead_intake_v48': has_lead,
+            'auto_pilot_or_dataset': has_pilot,
+            'fusion_doctor': has_doctor,
+            'trust_gate': has_trust,
+            'pricing_offer': has_price,
+            'proposal_sow': has_sow,
+            'paid_pilot': has_paid_pilot,
+            'delivery': has_delivery,
+        },
+        'scores': {
+            'doctor_score': doctor_score,
+            'trust_score': trust_score,
+            'pricing_score': pricing_score,
+            'proposal_score': proposal_score,
+            'delivery_score': delivery_score,
+        },
+        'safe_customer_summary': safe_summary,
+        'disclaimer': 'V50 is a customer-facing UX simplification and workflow guide. It is not a guarantee of model accuracy, production readiness, legal compliance, safety certification or payment readiness.',
+    }
+
+
+def create_customer_mode_v50_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Customer Route V50', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f'Project: {project_name}'), ln=True, align='C')
+    pdf.cell(0, 8, txt=clean_pdf_text(snapshot.get('version', 'V50')), ln=True, align='C')
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, 'Customer Route Result', 8, True)
+    safe_pdf_cell(pdf, f"Customer clarity: {snapshot.get('customer_clarity_score', 0)}%")
+    safe_pdf_cell(pdf, f"Status: {snapshot.get('customer_status', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Risk level: {snapshot.get('risk_level', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Verdict: {snapshot.get('customer_verdict', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, '5-Step Route', 8, True)
+    for step in snapshot.get('customer_route', []):
+        safe_pdf_multicell(pdf, f"{step.get('step', '')}. {step.get('title', '')} [{step.get('status', '')}] - {step.get('description', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Still Needed', 8, True)
+    for item in snapshot.get('missing_items', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    if not snapshot.get('missing_items'):
+        safe_pdf_multicell(pdf, 'No major customer-facing gaps detected.')
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Safe Customer Summary', 8, True)
+    safe_pdf_multicell(pdf, snapshot.get('safe_customer_summary', ''))
+    pdf.ln(3)
+    safe_pdf_multicell(pdf, snapshot.get('disclaimer', ''))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('customer_route_v50.pdf', safe_pdf_output(pdf))
+        zf.writestr('customer_mode_snapshot.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('customer_route.csv', pd.DataFrame(snapshot.get('customer_route', [])).to_csv(index=False))
+        zf.writestr('ready_items.csv', pd.DataFrame({'ready_item': snapshot.get('ready_items', [])}).to_csv(index=False))
+        zf.writestr('missing_items.csv', pd.DataFrame({'missing_item': snapshot.get('missing_items', [])}).to_csv(index=False))
+        zf.writestr('safe_customer_summary.txt', snapshot.get('safe_customer_summary', ''))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr('dataset_preview.csv', dataset_df.head(1000).to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V50 Customer Route bundle. Use Customer Mode for clean demos and buyer-facing pilot flow. Founder Mode keeps advanced internal operations hidden.\n')
+    return zip_buf.getvalue()
+
+# ============================================================
+# V51 — Customer Simplicity & UI Polish
+# ============================================================
+
+def build_customer_ui_v51_summary(
+    project_name,
+    dataset_df=None,
+    auto_pilot_result=None,
+    fusion_doctor=None,
+    trust_gate=None,
+    pricing_offer_snapshot=None,
+    proposal_sow_snapshot=None,
+    paid_pilot_snapshot=None,
+    delivery_snapshot=None,
+    lead_intake_snapshot=None,
+):
+    """Build a calmer customer-facing UX summary without weakening the engine.
+
+    V51 is deliberately a presentation/workflow layer. It keeps V50's customer route
+    and all existing EdgeTwin checks intact, but turns them into simpler status badges,
+    three visible cards and one primary next step.
+    """
+    base = build_customer_mode_v50_summary(
+        project_name=project_name,
+        dataset_df=dataset_df,
+        auto_pilot_result=auto_pilot_result,
+        fusion_doctor=fusion_doctor,
+        trust_gate=trust_gate,
+        pricing_offer_snapshot=pricing_offer_snapshot,
+        proposal_sow_snapshot=proposal_sow_snapshot,
+        paid_pilot_snapshot=paid_pilot_snapshot,
+        delivery_snapshot=delivery_snapshot,
+        lead_intake_snapshot=lead_intake_snapshot,
+    )
+
+    score = int(base.get('customer_clarity_score', 0))
+    dataset_rows = int(base.get('dataset_rows', 0))
+    has_dataset = dataset_rows > 0
+    has_trust = bool(base.get('connected_snapshots', {}).get('trust_gate')) or bool(base.get('connected_snapshots', {}).get('fusion_doctor'))
+    has_proposal = bool(base.get('connected_snapshots', {}).get('proposal_sow'))
+    has_price = bool(base.get('connected_snapshots', {}).get('pricing_offer'))
+    has_delivery = bool(base.get('connected_snapshots', {}).get('delivery'))
+
+    badges = []
+    if score >= 85:
+        badges.append('Pilot conversation ready')
+    elif score >= 60:
+        badges.append('Almost pilot-ready')
+    else:
+        badges.append('Setup needed')
+    badges.append('Pilot only — field validation required')
+    if has_dataset:
+        badges.append('Dataset generated')
+    else:
+        badges.append('Needs pilot dataset')
+    if has_trust:
+        badges.append('Readiness checked')
+    else:
+        badges.append('Needs readiness check')
+    if has_price or has_proposal:
+        badges.append('Proposal path available')
+    else:
+        badges.append('Scope before price')
+
+    if not has_dataset:
+        primary_short = 'Create pilot'
+        primary_long = 'Start with Create pilot: choose the use-case, sensors, labels and data status, then generate the pilot package.'
+    elif not has_trust:
+        primary_short = 'Review readiness'
+        primary_long = 'Run the readiness/trust review before sending outputs to a customer. Keep the field-validation limitation visible.'
+    elif not (has_price or has_proposal):
+        primary_short = 'Prepare proposal'
+        primary_long = 'The pilot foundation is ready enough for a controlled discussion. Qualify the lead, then create pricing and Proposal/SOW.'
+    elif not has_delivery:
+        primary_short = 'Prepare handoff'
+        primary_long = 'Pricing/proposal exists. Prepare the customer delivery bundle and make sure scope, exclusions and acceptance criteria are clear.'
+    else:
+        primary_short = 'Controlled handoff'
+        primary_long = 'The customer route is clear. Use this for a controlled paid-pilot handoff, not as a production guarantee.'
+
+    customer_cards = [
+        {
+            'title': 'Choose problem',
+            'body': 'Customer explains the machine, environment, sensor idea and detection goal.',
+            'visible': 'Plain-language intake',
+            'hidden_engine': 'Use-case defaults, sensor assumptions, class generation rules',
+        },
+        {
+            'title': 'Generate pilot',
+            'body': 'EdgeTwin creates the pilot dataset, features, reliability signals and first export outputs.',
+            'visible': 'One guided pilot action',
+            'hidden_engine': 'Signal generation, feature extraction, Dataset Doctor, hardware direction',
+        },
+        {
+            'title': 'Review & handoff',
+            'body': 'Customer sees readiness, limitations, downloads and proposal route without admin overload.',
+            'visible': 'Readiness + next step',
+            'hidden_engine': 'Trust gates, safe claims, pricing, SOW, delivery and founder controls',
+        },
+    ]
+
+    engine_kept_active = [
+        'Dataset Doctor and class-balance checks',
+        'Reliability/Trust scoring and safe-claim guidance',
+        'Synthetic-to-real and normality workflow when data exists',
+        'Hardware/deployment planner and Edge Impulse exports',
+        'Pricing, Proposal/SOW, delivery and founder-ops gates in Founder Mode',
+    ]
+    ui_rules = [
+        'Show one primary next step instead of many technical choices.',
+        'Keep risky claims visible: pilot-ready is not production-certified.',
+        'Move engineering details into Advanced details.',
+        'Do not remove engine checks; hide them until they help the customer decision.',
+        'Use Founder Mode for pricing, payment gates, storage, security and admin work.',
+    ]
+
+    safe_summary = f"""Project: {project_name}
+Customer status: {base.get('customer_status', 'Unknown')}
+Readiness: {score}%
+Primary next step: {primary_short}
+
+EdgeTwin Studio prepares a customer-safe pilot route: choose the problem, generate the pilot package, review readiness, then move to handoff or proposal only when scope and limitations are clear.
+
+The simplified V51 interface does not reduce the technical engine. Dataset generation, feature extraction, reliability checks, trust gates, hardware direction and delivery controls remain active behind the clean customer view.
+
+Important limitation: this is a pilot preparation workflow. Production deployment, guaranteed accuracy, uptime, safety certification and regulatory compliance require separate field validation and are not promised by default.
+"""
+
+    result = dict(base)
+    result.update({
+        'version': 'V51 Customer Simplicity & UI Polish',
+        'ui_layer': 'Customer-facing simplified route with Founder Mode preserved',
+        'status_badges': badges,
+        'primary_next_step': primary_short,
+        'primary_next_step_long': primary_long,
+        'customer_cards': customer_cards,
+        'engine_kept_active': engine_kept_active,
+        'ui_simplification_rules': ui_rules,
+        'safe_customer_summary': safe_summary,
+        'base_v50_snapshot': base,
+        'disclaimer': 'V51 simplifies the customer interface only. It does not guarantee model accuracy, production readiness, legal compliance, safety certification, payment readiness or field performance.',
+    })
+    return result
+
+
+def create_customer_ui_v51_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Customer UI V51', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f'Project: {project_name}'), ln=True, align='C')
+    pdf.cell(0, 8, txt=clean_pdf_text(snapshot.get('version', 'V51')), ln=True, align='C')
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, 'Customer View Result', 8, True)
+    safe_pdf_cell(pdf, f"Readiness: {snapshot.get('customer_clarity_score', 0)}%")
+    safe_pdf_cell(pdf, f"Status: {snapshot.get('customer_status', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Risk level: {snapshot.get('risk_level', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Primary next step: {snapshot.get('primary_next_step_long', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Status Badges', 8, True)
+    safe_pdf_multicell(pdf, ', '.join(snapshot.get('status_badges', [])))
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Simple Customer Cards', 8, True)
+    for card in snapshot.get('customer_cards', []):
+        safe_pdf_multicell(pdf, f"{card.get('title', '')}: {card.get('body', '')}")
+        safe_pdf_multicell(pdf, f"Visible: {card.get('visible', '')}")
+        safe_pdf_multicell(pdf, f"Hidden engine: {card.get('hidden_engine', '')}")
+        pdf.ln(2)
+
+    safe_pdf_cell(pdf, 'Engine Kept Active', 8, True)
+    for item in snapshot.get('engine_kept_active', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Safe Customer Summary', 8, True)
+    safe_pdf_multicell(pdf, snapshot.get('safe_customer_summary', ''))
+    pdf.ln(3)
+    safe_pdf_multicell(pdf, snapshot.get('disclaimer', ''))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('customer_ui_v51.pdf', safe_pdf_output(pdf))
+        zf.writestr('customer_ui_v51_snapshot.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('customer_cards.csv', pd.DataFrame(snapshot.get('customer_cards', [])).to_csv(index=False))
+        zf.writestr('status_badges.csv', pd.DataFrame({'badge': snapshot.get('status_badges', [])}).to_csv(index=False))
+        zf.writestr('engine_kept_active.csv', pd.DataFrame({'engine_component': snapshot.get('engine_kept_active', [])}).to_csv(index=False))
+        zf.writestr('ui_simplification_rules.csv', pd.DataFrame({'rule': snapshot.get('ui_simplification_rules', [])}).to_csv(index=False))
+        zf.writestr('safe_customer_summary.txt', snapshot.get('safe_customer_summary', ''))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr('dataset_preview.csv', dataset_df.head(1000).to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V51 Customer UI bundle. V51 simplifies the customer-facing route while preserving the full EdgeTwin/OMEGA-X engine behind it.\n')
+    return zip_buf.getvalue()
+
+# ============================================================
+# V52 — Privacy-Safe Field Learning System
+# ============================================================
+
+def _v52_contains_any(columns, patterns):
+    cols = [str(c).lower() for c in columns]
+    return any(any(p in c for p in patterns) for c in cols)
+
+
+def _v52_safe_numeric_feature_summary(dataset_df, max_features=40):
+    """Return aggregate numeric feature summaries only; never raw rows."""
+    if not isinstance(dataset_df, pd.DataFrame) or len(dataset_df) == 0:
+        return []
+    rows = []
+    numeric_cols = [c for c in dataset_df.columns if pd.api.types.is_numeric_dtype(dataset_df[c])]
+    sensitive_patterns = ['gps', 'lat', 'lon', 'lng', 'location', 'address', 'name', 'email', 'phone', 'customer', 'operator', 'employee', 'user', 'id']
+    for col in numeric_cols[:max_features]:
+        low = str(col).lower()
+        sensitivity_flag = 'potential_identifier' if any(p in low for p in sensitive_patterns) else 'feature_candidate'
+        series = pd.to_numeric(dataset_df[col], errors='coerce').dropna()
+        if len(series) == 0:
+            continue
+        rows.append({
+            'feature': str(col),
+            'count': int(series.count()),
+            'mean': float(series.mean()),
+            'std': float(series.std()) if len(series) > 1 else 0.0,
+            'min': float(series.min()),
+            'max': float(series.max()),
+            'safe_status': sensitivity_flag,
+            'learning_use': 'blocked_until_review' if sensitivity_flag != 'feature_candidate' else 'aggregate_only',
+        })
+    return rows
+
+
+def build_privacy_safe_field_learning_v52(
+    project_name,
+    dataset_df=None,
+    consent_mode='Private only',
+    customer_sector='Custom',
+    use_case_type='Custom pilot',
+    retention_days=180,
+    contains_audio=False,
+    contains_gps=False,
+    contains_machine_ids=False,
+    contains_personal_data=False,
+    allow_cross_customer_learning=False,
+):
+    """Build a privacy-first plan for learning from real customer field data.
+
+    The default is private project use only. Global/cross-customer learning is only
+    recommended for aggregate feature statistics when there is explicit opt-in.
+    This function intentionally avoids storing raw rows in the returned learning library.
+    """
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    columns = list(dataset_df.columns)
+    rows = int(len(dataset_df))
+    cols = int(len(columns))
+    consent_mode = consent_mode or 'Private only'
+
+    detected_audio = bool(contains_audio or _v52_contains_any(columns, ['audio', 'wav', 'filename', 'file_name', 'raw_signal']))
+    detected_gps = bool(contains_gps or _v52_contains_any(columns, ['gps', 'lat', 'lon', 'lng', 'location', 'address']))
+    detected_ids = bool(contains_machine_ids or _v52_contains_any(columns, ['machine_id', 'device_id', 'customer_id', 'project_id', 'serial', 'asset_id']))
+    detected_personal = bool(contains_personal_data or _v52_contains_any(columns, ['name', 'email', 'phone', 'employee', 'operator', 'user']))
+
+    risk_points = 0
+    if consent_mode == 'Raw data permission':
+        risk_points += 30
+    elif consent_mode == 'Feature learning allowed':
+        risk_points += 10
+    if detected_audio:
+        risk_points += 18
+    if detected_gps:
+        risk_points += 20
+    if detected_ids:
+        risk_points += 18
+    if detected_personal:
+        risk_points += 30
+    if retention_days > 365:
+        risk_points += 10
+    if allow_cross_customer_learning and consent_mode != 'Feature learning allowed':
+        risk_points += 15
+
+    privacy_score = max(0, min(100, 100 - risk_points))
+    if privacy_score >= 78:
+        risk_level = 'Low'
+    elif privacy_score >= 55:
+        risk_level = 'Medium'
+    else:
+        risk_level = 'High'
+
+    if consent_mode == 'Private only':
+        learning_mode = 'Project-private learning only'
+    elif consent_mode == 'Feature learning allowed' and allow_cross_customer_learning:
+        learning_mode = 'Opt-in aggregate feature learning'
+    elif consent_mode == 'Feature learning allowed':
+        learning_mode = 'Feature extraction allowed, global learning disabled'
+    else:
+        learning_mode = 'Raw-data permission requested — restricted review required'
+
+    safe_features = _v52_safe_numeric_feature_summary(dataset_df)
+    usable_features = [f for f in safe_features if f.get('safe_status') == 'feature_candidate']
+
+    allowed_actions = []
+    blocked_actions = []
+    if consent_mode == 'Private only':
+        allowed_actions += [
+            'Use data only inside this customer project.',
+            'Generate project-specific features, readiness checks and reports.',
+            'Delete/export project data on customer request.',
+        ]
+        blocked_actions += [
+            'Do not use this customer data for global templates.',
+            'Do not copy raw files into cross-customer training libraries.',
+            'Do not publish or reuse customer-specific patterns outside the project.',
+        ]
+    elif consent_mode == 'Feature learning allowed':
+        allowed_actions += [
+            'Extract aggregate numeric features for privacy-safe learning.',
+            'Use de-identified feature statistics to improve templates and thresholds.',
+            'Keep raw files/private identifiers out of the global learning library.',
+        ]
+        if allow_cross_customer_learning:
+            allowed_actions.append('Use aggregate feature patterns across customers after minimization checks.')
+        else:
+            blocked_actions.append('Cross-customer learning remains disabled until the opt-in box is selected.')
+        blocked_actions += [
+            'Do not store raw audio/GPS/customer files in global training by default.',
+            'Do not include customer names, machine IDs, exact location or operator data in learning exports.',
+        ]
+    else:
+        allowed_actions += [
+            'Use raw data only for the explicitly scoped project purpose.',
+            'Run restricted review before any raw-data transfer or long retention.',
+        ]
+        blocked_actions += [
+            'Do not treat raw permission as automatic global training permission.',
+            'Do not keep raw data longer than the agreed retention period.',
+            'Do not use raw audio/location/person data without written scope and deletion terms.',
+        ]
+
+    if detected_audio:
+        blocked_actions.append('Raw audio is blocked from global learning unless there is a separate written permission and review.')
+    if detected_gps:
+        blocked_actions.append('Exact GPS/location data must be generalized or removed before feature learning.')
+    if detected_ids or detected_personal:
+        blocked_actions.append('Customer/device/person identifiers must be removed before any cross-customer learning.')
+
+    data_minimization_plan = [
+        'Prefer feature-only learning: RMS, kurtosis, crest factor, band energy, spectral shape and class-level statistics.',
+        'Remove customer/project names, exact locations, serial numbers, device IDs and operator/person identifiers.',
+        'Store only aggregate feature summaries in the global learning library.',
+        'Keep raw files inside the private project vault unless a separate written permission exists.',
+        'Use small dataset previews for reports; never export complete raw customer data inside global bundles.',
+    ]
+
+    retention_and_deletion_plan = [
+        f'Default retention for this project setting: {int(retention_days)} days.',
+        'Customer can request export/delete of project data.',
+        'Learning library should retain aggregate feature summaries, not raw customer files.',
+        'If consent is withdrawn, stop future learning use and remove project-linked metadata where possible.',
+    ]
+
+    audit_log_events = [
+        'Record data permission mode selected.',
+        'Record feature extraction date and project ID.',
+        'Record whether cross-customer aggregate learning was enabled.',
+        'Record generated bundles/reports and deletion/export requests.',
+    ]
+
+    if risk_level == 'Low' and consent_mode == 'Feature learning allowed' and usable_features:
+        verdict = 'Good candidate for opt-in aggregate feature learning. Keep raw data private and use only minimized feature statistics.'
+    elif consent_mode == 'Private only':
+        verdict = 'Safest mode: data stays private to this customer project. EdgeTwin can still improve this customer pilot without global reuse.'
+    elif risk_level == 'High':
+        verdict = 'High privacy risk. Keep this data private until identifiers, raw audio/location/person risks and consent terms are solved.'
+    else:
+        verdict = 'Use cautiously: feature-only learning may be possible, but identifiers/raw data risks must be minimized first.'
+
+    learning_summary = f"""V52 learning mode: {learning_mode}
+Project: {project_name}
+Sector/use-case: {customer_sector} / {use_case_type}
+Dataset: {rows} rows, {cols} columns
+Usable aggregate feature candidates: {len(usable_features)}
+
+Recommended approach: keep customer data private by default. If the customer explicitly opts in, use only de-identified aggregate feature statistics to improve EdgeTwin templates, thresholds and realism. Raw files, exact locations, customer identities and personal data should not enter the global learning engine by default.
+"""
+
+    consent_clause = f"""Optional anonymised feature learning clause for Proposal/SOW:
+
+By default, Customer project data is used only for the Customer's own pilot project. Customer may optionally allow EdgeTwin Studio to use de-identified and aggregated feature statistics derived from the project, such as signal feature distributions and class-level summary metrics, to improve templates, reliability scoring and pilot-generation quality.
+
+This optional learning does not grant permission to publish, sell, or reuse raw customer files, exact locations, customer names, machine identifiers, personal data, raw audio, images, or confidential operational information outside the agreed project scope. Customer may request export or deletion according to the agreed retention terms. Production deployment and compliance validation remain separate from this pilot workflow.
+"""
+
+    return {
+        'version': 'V52 Privacy-Safe Field Learning System',
+        'project_name': project_name,
+        'customer_sector': customer_sector,
+        'use_case_type': use_case_type,
+        'consent_mode': consent_mode,
+        'allow_cross_customer_learning': bool(allow_cross_customer_learning),
+        'learning_mode': learning_mode,
+        'privacy_score': int(privacy_score),
+        'risk_level': risk_level,
+        'verdict': verdict,
+        'dataset_rows': rows,
+        'dataset_cols': cols,
+        'feature_rows_available': len(usable_features),
+        'detected_risks': {
+            'raw_audio_or_files': detected_audio,
+            'gps_or_location': detected_gps,
+            'machine_or_customer_ids': detected_ids,
+            'personal_data': detected_personal,
+        },
+        'safe_feature_candidates': usable_features,
+        'feature_library_preview': usable_features[:20],
+        'allowed_actions': allowed_actions,
+        'blocked_actions': blocked_actions,
+        'data_minimization_plan': data_minimization_plan,
+        'retention_and_deletion_plan': retention_and_deletion_plan,
+        'audit_log_events': audit_log_events,
+        'learning_summary': learning_summary,
+        'customer_consent_clause': consent_clause,
+        'recommended_next_step': 'Use Feature learning allowed only when the customer explicitly opts in; otherwise keep data project-private.',
+        'disclaimer': 'V52 is not legal advice and does not automatically anonymise data. Treat raw audio, location, identifiers and personal data as restricted unless separately reviewed and agreed.',
+    }
+
+
+def create_privacy_safe_field_learning_v52_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Privacy-Safe Field Learning V52', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f'Project: {project_name}'), ln=True, align='C')
+    pdf.cell(0, 8, txt=clean_pdf_text(snapshot.get('version', 'V52')), ln=True, align='C')
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, 'Privacy Learning Result', 8, True)
+    safe_pdf_cell(pdf, f"Privacy score: {snapshot.get('privacy_score', 0)}%")
+    safe_pdf_cell(pdf, f"Learning mode: {snapshot.get('learning_mode', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Risk level: {snapshot.get('risk_level', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Verdict: {snapshot.get('verdict', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Allowed Actions', 8, True)
+    for item in snapshot.get('allowed_actions', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(3)
+
+    safe_pdf_cell(pdf, 'Blocked By Default', 8, True)
+    for item in snapshot.get('blocked_actions', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(3)
+
+    safe_pdf_cell(pdf, 'Data Minimization Plan', 8, True)
+    for item in snapshot.get('data_minimization_plan', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(3)
+
+    safe_pdf_cell(pdf, 'Consent Clause', 8, True)
+    safe_pdf_multicell(pdf, snapshot.get('customer_consent_clause', ''))
+    pdf.ln(3)
+    safe_pdf_multicell(pdf, snapshot.get('disclaimer', ''))
+
+    safe_features_df = pd.DataFrame(snapshot.get('safe_feature_candidates', []))
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('privacy_safe_field_learning_v52.pdf', safe_pdf_output(pdf))
+        zf.writestr('privacy_learning_snapshot.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('safe_feature_library_preview.csv', safe_features_df.to_csv(index=False))
+        zf.writestr('allowed_actions.csv', pd.DataFrame({'allowed_action': snapshot.get('allowed_actions', [])}).to_csv(index=False))
+        zf.writestr('blocked_actions.csv', pd.DataFrame({'blocked_action': snapshot.get('blocked_actions', [])}).to_csv(index=False))
+        zf.writestr('data_minimization_plan.csv', pd.DataFrame({'minimization_step': snapshot.get('data_minimization_plan', [])}).to_csv(index=False))
+        zf.writestr('retention_and_deletion_plan.csv', pd.DataFrame({'retention_step': snapshot.get('retention_and_deletion_plan', [])}).to_csv(index=False))
+        zf.writestr('customer_consent_clause.txt', snapshot.get('customer_consent_clause', ''))
+        zf.writestr('learning_summary.txt', snapshot.get('learning_summary', ''))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            # Deliberately no raw rows here; schema-only export keeps bundle safe.
+            schema = pd.DataFrame({'column': list(dataset_df.columns), 'dtype': [str(dataset_df[c].dtype) for c in dataset_df.columns]})
+            zf.writestr('dataset_schema_only.csv', schema.to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V52 Privacy-Safe Field Learning bundle. This bundle contains consent, minimization and aggregate feature-learning outputs. It intentionally does not include raw customer data rows.\n')
+    return zip_buf.getvalue()
+
