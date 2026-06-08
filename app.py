@@ -1,10 +1,6 @@
-import io
-import json
 import uuid
-import zipfile
 import warnings
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -18,7 +14,7 @@ import core
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V19", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio V32", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -50,6 +46,55 @@ def init_state():
         "auto_pilot_result": None,
         "auto_pilot_bundle": None,
         "auto_pilot_config": None,
+        "optimizer_result": None,
+        "optimizer_bundle": None,
+        "trust_gate": None,
+        "trust_bundle": None,
+        "real_bridge_result": None,
+        "real_bridge_bundle": None,
+        "reliability_v2": None,
+        "reliability_v2_bundle": None,
+        "deployment_plan": None,
+        "deployment_bundle": None,
+        "professional_report_bundle": None,
+        "professional_report_snapshot": None,
+        "monetization_snapshot": None,
+        "monetization_bundle": None,
+        "hardening_snapshot": None,
+        "hardening_bundle": None,
+        "beta_launch_snapshot": None,
+        "beta_launch_bundle": None,
+        "api_automation_snapshot": None,
+        "api_automation_bundle": None,
+        "api_simulation_response": None,
+        "pack_marketplace_snapshot": None,
+        "pack_marketplace_bundle": None,
+        "custom_pack_definition": None,
+        "marketplace_generated_dataset": pd.DataFrame(),
+        "normality_result": None,
+        "normality_bundle": None,
+        "edge_impulse_snapshot": None,
+        "edge_impulse_bundle": None,
+        "edge_impulse_classifier_snapshot": None,
+        "edge_impulse_classifier_bundle": None,
+        "release_success_snapshot": None,
+        "release_success_bundle": None,
+        "golden_demo_result": None,
+        "golden_demo_bundle": None,
+        "closed_beta_kit": None,
+        "closed_beta_bundle": None,
+        "paid_license_snapshot": None,
+        "paid_license_bundle": None,
+        "field_validation_snapshot": None,
+        "field_validation_bundle": None,
+        "field_validation_df": pd.DataFrame(),
+        "edge_deployment_starter_snapshot": None,
+        "edge_deployment_starter_bundle": None,
+        "scalability_snapshot": None,
+        "scalability_bundle": None,
+        "operational_control_snapshot": None,
+        "operational_control_bundle": None,
+        "selected_plan": "Founder Test Mode",
     }
 
     for key, val in defaults.items():
@@ -92,6 +137,33 @@ def render_doctor(doctor):
             st.info(msg)
 
 
+def reset_generated_bundles():
+    st.session_state.fusion_bundle = None
+    st.session_state.enterprise_bundle = None
+    st.session_state.auto_pilot_bundle = None
+    st.session_state.optimizer_bundle = None
+    st.session_state.trust_bundle = None
+    st.session_state.real_bridge_bundle = None
+    st.session_state.reliability_v2_bundle = None
+    st.session_state.deployment_bundle = None
+    st.session_state.professional_report_bundle = None
+    st.session_state.monetization_bundle = None
+    st.session_state.hardening_bundle = None
+    st.session_state.beta_launch_bundle = None
+    st.session_state.api_automation_bundle = None
+    st.session_state.pack_marketplace_bundle = None
+    st.session_state.normality_bundle = None
+    st.session_state.edge_impulse_bundle = None
+    st.session_state.edge_impulse_classifier_bundle = None
+    st.session_state.release_success_bundle = None
+    st.session_state.golden_demo_bundle = None
+    st.session_state.closed_beta_bundle = None
+    st.session_state.paid_license_bundle = None
+    st.session_state.field_validation_bundle = None
+    st.session_state.edge_deployment_starter_bundle = None
+    st.session_state.scalability_bundle = None
+
+
 def run_demo(demo_name):
     result = core.run_demo_project(demo_name)
     demo = result["demo"]
@@ -116,6 +188,8 @@ def run_demo(demo_name):
 
     st.session_state.fusion_bundle = bundle
     st.session_state.dataset = training_df.copy()
+    st.session_state.fusion_training_df = training_df.copy()
+    st.session_state.fusion_doctor = doctor
 
     st.session_state.enterprise_bundle = core.create_enterprise_bundle(
         st.session_state.project_name,
@@ -129,7 +203,7 @@ def run_auto_pilot(config):
     result = core.run_auto_pilot_project(config)
     st.session_state.auto_pilot_result = result
     st.session_state.auto_pilot_config = config
-    st.session_state.project_name = f"{config.get('use_case_type', 'Custom').replace(' ', '_')}_Auto_Pilot"
+    st.session_state.project_name = f"{config.get('use_case_type', 'Custom').replace(' ', '_').replace('/', '_')}_Auto_Pilot"
     st.session_state.fusion_df = result["fusion_df"]
     st.session_state.fusion_manifest = result["manifest"]
     st.session_state.fusion_doctor = result["doctor"]
@@ -149,6 +223,8 @@ def run_auto_pilot(config):
     )
 
     st.session_state.fusion_bundle = fusion_bundle
+    st.session_state.fusion_doctor = doctor
+    st.session_state.fusion_training_df = training_df.copy()
     st.session_state.enterprise_bundle = core.create_enterprise_bundle(
         st.session_state.project_name,
         st.session_state.dataset,
@@ -191,7 +267,7 @@ if "user" not in st.session_state:
                 st.success("Account created.")
                 st.rerun()
             else:
-                st.error("Username already exists.")
+                st.error("Username already exists, username is empty, or password is too short. Use at least 6 characters.")
 
     st.stop()
 
@@ -204,6 +280,14 @@ st.sidebar.title("EdgeTwin Studio")
 st.sidebar.caption("Powered by OMEGA-X Engine")
 st.sidebar.success(f"Logged in as {st.session_state.user['username']}")
 
+st.session_state.selected_plan = st.sidebar.selectbox(
+    "Access plan",
+    core.get_pricing_plans(),
+    index=core.get_pricing_plans().index(st.session_state.selected_plan) if st.session_state.selected_plan in core.get_pricing_plans() else 0,
+    key="sidebar_selected_plan_v24",
+)
+st.sidebar.caption("V24 local plan simulator. Payments are not connected yet.")
+
 st.session_state.project_name = st.sidebar.text_input(
     "Project name",
     st.session_state.project_name,
@@ -215,7 +299,20 @@ if st.sidebar.button("Save project", use_container_width=True, key="sidebar_save
         "selected_template": st.session_state.selected_template,
         "last_demo_summary": st.session_state.last_demo_summary,
         "fusion_manifest": st.session_state.fusion_manifest,
+        "fusion_doctor": st.session_state.fusion_doctor,
         "auto_pilot_config": st.session_state.auto_pilot_config,
+        "hardware_result": st.session_state.hardware_result,
+        "optimizer_result": st.session_state.optimizer_result,
+        "trust_gate": st.session_state.trust_gate,
+        "real_bridge_summary": core.compact_bridge_summary(st.session_state.real_bridge_result) if st.session_state.real_bridge_result else {},
+        "sr": st.session_state.sr,
+        "selected_plan": st.session_state.selected_plan,
+        "monetization_snapshot": st.session_state.monetization_snapshot,
+        "release_success_snapshot": st.session_state.release_success_snapshot,
+        "closed_beta_kit": st.session_state.closed_beta_kit,
+        "paid_license_snapshot": st.session_state.paid_license_snapshot,
+        "field_validation_snapshot": st.session_state.field_validation_snapshot,
+        "edge_deployment_starter_snapshot": st.session_state.edge_deployment_starter_snapshot,
     }
 
     core.save_project(
@@ -242,9 +339,32 @@ if len(projects) > 0:
         loaded = core.load_project(proj_id, st.session_state.user["id"])
 
         if loaded:
+            settings = loaded.get("settings", {}) or {}
+            st.session_state.project_id = proj_id
             st.session_state.project_name = loaded["name"]
             st.session_state.dataset = loaded["dataset"]
-            st.sidebar.success("Project loaded.")
+            st.session_state.fusion_training_df = loaded["dataset"].copy()
+            st.session_state.selected_template = settings.get("selected_template", st.session_state.selected_template)
+            st.session_state.last_demo_summary = settings.get("last_demo_summary", {})
+            st.session_state.fusion_manifest = settings.get("fusion_manifest", {})
+            st.session_state.fusion_doctor = settings.get("fusion_doctor", {})
+            st.session_state.auto_pilot_config = settings.get("auto_pilot_config")
+            st.session_state.hardware_result = settings.get("hardware_result")
+            st.session_state.optimizer_result = settings.get("optimizer_result")
+            st.session_state.trust_gate = settings.get("trust_gate")
+            st.session_state.real_bridge_result = None
+            st.session_state.selected_plan = settings.get("selected_plan", st.session_state.selected_plan)
+            st.session_state.monetization_snapshot = settings.get("monetization_snapshot")
+            st.session_state.release_success_snapshot = settings.get("release_success_snapshot")
+            st.session_state.closed_beta_kit = settings.get("closed_beta_kit")
+            st.session_state.paid_license_snapshot = settings.get("paid_license_snapshot")
+            st.session_state.field_validation_snapshot = settings.get("field_validation_snapshot")
+            st.session_state.edge_deployment_starter_snapshot = settings.get("edge_deployment_starter_snapshot")
+            st.session_state.sr = int(settings.get("sr", st.session_state.sr))
+            st.session_state.fusion_df = pd.DataFrame()
+            st.session_state.auto_pilot_result = None
+            reset_generated_bundles()
+            st.sidebar.success("Project loaded. Re-run export if you want fresh ZIP/PDF bundles.")
             st.rerun()
 
 st.sidebar.markdown("---")
@@ -309,15 +429,36 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER
 # ============================================================
 
-st.title("EdgeTwin Studio V19")
-st.caption("Self-Selling Demo • Use Case Wizard • Auto Pilot Generator • Reliability Score • Sensor Fusion • Dataset Doctor")
+st.title("EdgeTwin Studio V32")
+st.caption("Self-Selling Demo • Use Case Wizard • Smart Optimizer • Synthetic-to-Real Bridge • Reliability Engine 2.0 • Trust Center • Deployment Planner • Reports 2.0 • Product Hardening • Beta Launch Readiness • SaaS-light Monetization Gate • API Automation • Industry Pack Marketplace • Normal vs Abnormal Baseline Engine • Edge Impulse Export • Edge Impulse Classifier Export • Release Success Gate • Golden Demo Suite • Closed Beta Launch Kit • Paid Export Gate • Real Field Validation • Edge Deployment Starter • Storage/Scalability • Operational Control Center")
 
-home, wizard_tab, fusion_tab, audit_tab, canvas_tab, packs_tab, hardware_tab = st.tabs(
+home, wizard_tab, fusion_tab, audit_tab, optimizer_tab, real_bridge_tab, trust_tab, deployment_tab, reports_tab, hardening_tab, beta_launch_tab, monetization_tab, api_tab, marketplace_tab, normality_tab, edge_impulse_tab, ei_classifier_tab, success_gate_tab, golden_demo_tab, closed_beta_tab, paid_export_tab, field_validation_tab, edge_starter_tab, scalability_tab, operational_tab, canvas_tab, packs_tab, hardware_tab = st.tabs(
     [
         "🏠 Self-Selling Demo",
         "🧭 Use Case Wizard",
         "🧬 Sensor Fusion Studio",
         "🩺 Enterprise Audit",
+        "🧪 Smart Optimizer",
+        "🔗 Real Bridge",
+        "🛡️ Trust Center",
+        "🚀 Deployment Planner",
+        "📑 Reports 2.0",
+        "🧰 Product Hardening",
+        "🧲 Beta Launch",
+        "💳 Monetization Gate",
+        "🔌 API Automation",
+        "🛒 Pack Marketplace",
+        "⚖️ Normality Engine",
+        "📤 Edge Impulse Export",
+        "🎯 EI Classifier Export",
+        "✅ Success Gate",
+        "🏆 Golden Demo",
+        "🚪 Closed Beta",
+        "🔐 Paid Export",
+        "🌍 Field Validation",
+        "🧩 Edge Starter",
+        "📚 Storage/Scale",
+        "🕹️ Control Center",
         "📈 Signal Canvas",
         "📦 Industry Packs",
         "🧱 Hardware Architect",
@@ -391,7 +532,7 @@ with home:
                 file_name=f"{st.session_state.project_name}_fusion_bundle.zip",
                 mime="application/zip",
                 use_container_width=True,
-                key="demo_download_professional_fusion_bundle_v19",
+                key="demo_download_professional_fusion_bundle_v191",
             )
 
         if st.session_state.enterprise_bundle:
@@ -401,7 +542,7 @@ with home:
                 file_name=f"{st.session_state.project_name}_enterprise_bundle.zip",
                 mime="application/zip",
                 use_container_width=True,
-                key="demo_download_enterprise_bundle_v19",
+                key="demo_download_enterprise_bundle_v191",
             )
 
         if isinstance(st.session_state.fusion_training_df, pd.DataFrame) and len(st.session_state.fusion_training_df) > 0:
@@ -411,7 +552,7 @@ with home:
                 file_name=f"{st.session_state.project_name}_training.csv",
                 mime="text/csv",
                 use_container_width=True,
-                key="demo_download_training_csv_v19",
+                key="demo_download_training_csv_v191",
             )
 
         if isinstance(st.session_state.fusion_df, pd.DataFrame) and len(st.session_state.fusion_df) > 0:
@@ -421,13 +562,12 @@ with home:
             if "Label" in st.session_state.fusion_df.columns:
                 fig = px.histogram(st.session_state.fusion_df, x="Label", title="Label distribution")
                 st.plotly_chart(fig, use_container_width=True)
-
     else:
         st.info("Run one of the demo cards above. This is the self-selling front door of the product.")
 
 
 # ============================================================
-# V19 USE CASE WIZARD / AUTO PILOT GENERATOR
+# V19.1 USE CASE WIZARD / AUTO PILOT GENERATOR
 # ============================================================
 
 with wizard_tab:
@@ -476,10 +616,11 @@ with wizard_tab:
         )
 
     with c2:
+        env_options = core.get_environment_options()
         environment = st.selectbox(
             "Environment",
-            core.get_environment_options(),
-            index=core.get_environment_options().index(defaults.get("environment", "Custom")) if defaults.get("environment", "Custom") in core.get_environment_options() else 0,
+            env_options,
+            index=env_options.index(defaults.get("environment", "Custom")) if defaults.get("environment", "Custom") in env_options else 0,
             key=f"wizard_environment_{use_case}",
         )
 
@@ -492,10 +633,11 @@ with wizard_tab:
             key=f"wizard_samples_{use_case}",
         )
 
+        priority_options = ["balanced", "low_power", "performance", "gateway"]
         priority = st.radio(
             "Optimization priority",
-            ["balanced", "low_power", "performance", "gateway"],
-            index=["balanced", "low_power", "performance", "gateway"].index(defaults.get("priority", "balanced")),
+            priority_options,
+            index=priority_options.index(defaults.get("priority", "balanced")),
             horizontal=False,
             key=f"wizard_priority_{use_case}",
         )
@@ -511,7 +653,7 @@ with wizard_tab:
             "Customer has real sensor data already",
             value=False,
             key=f"wizard_has_real_data_{use_case}",
-            help="V19 records this in the reliability estimate. V21 will use uploads to build synthetic variants around real signal fingerprints.",
+            help="V19.1 records this in the reliability estimate. V21 will use uploads to build synthetic variants around real signal fingerprints.",
         )
 
     with st.expander("Optional: upload example real files for early inspection", expanded=False):
@@ -525,7 +667,7 @@ with wizard_tab:
         if uploaded_files:
             feature_rows = []
             for up in uploaded_files:
-                features = core.extract_features_from_bytes(up.read(), up.name, defaults.get("sample_rate", 16000))
+                features = core.extract_features_from_bytes(up.getvalue(), up.name, defaults.get("sample_rate", 16000))
                 features["Filename"] = up.name
                 feature_rows.append(features)
             real_df = pd.DataFrame(feature_rows)
@@ -596,6 +738,8 @@ with wizard_tab:
             st.warning(reliability.get("verdict", ""))
         else:
             st.success(reliability.get("verdict", ""))
+
+        st.caption("Reliability is a pilot estimate based on dataset structure, class balance, label separation and sensor coverage. Field validation is required before production deployment.")
 
         render_doctor(doctor)
 
@@ -754,14 +898,15 @@ with fusion_tab:
 
         st.dataframe(st.session_state.fusion_df.head(50), use_container_width=True)
 
-        st.download_button(
-            "Download Professional Fusion Bundle",
-            st.session_state.fusion_bundle,
-            file_name=f"{st.session_state.project_name}_fusion_bundle.zip",
-            mime="application/zip",
-            use_container_width=True,
-            key="fusion_tab_download_professional_bundle_v19",
-        )
+        if st.session_state.fusion_bundle:
+            st.download_button(
+                "Download Professional Fusion Bundle",
+                st.session_state.fusion_bundle,
+                file_name=f"{st.session_state.project_name}_fusion_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="fusion_tab_download_professional_bundle_v191",
+            )
 
 
 # ============================================================
@@ -806,7 +951,8 @@ with audit_tab:
                         fig = px.bar(imp_df, x="Feature", y="Importance", title="Permutation importance")
                         st.plotly_chart(fig, use_container_width=True)
 
-                        preds = cross_val_predict(clf, X, y, cv=min(5, y.value_counts().min()))
+                        cv = min(5, int(y.value_counts().min()))
+                        preds = cross_val_predict(clf, X, y, cv=cv)
                         labels = list(y.unique())
                         cm = confusion_matrix(y, preds, labels=labels)
                         fig_cm = px.imshow(cm, x=labels, y=labels, text_auto=True, title="Cross-validation confusion matrix")
@@ -824,7 +970,7 @@ with audit_tab:
                     file_name=f"{st.session_state.project_name}_enterprise_bundle.zip",
                     mime="application/zip",
                     use_container_width=True,
-                    key="audit_download_enterprise_bundle_v19",
+                    key="audit_download_enterprise_bundle_v191",
                 )
 
             else:
@@ -836,13 +982,3118 @@ with audit_tab:
     else:
         st.info("Run a demo, use the wizard, or generate a fusion dataset first.")
 
-    uploaded = st.file_uploader("Or upload your own CSV for audit", type=["csv"], key="audit_upload_csv_v19")
+    uploaded = st.file_uploader("Or upload your own CSV for audit", type=["csv"], key="audit_upload_csv_v191")
 
     if uploaded:
         df = pd.read_csv(uploaded)
         st.session_state.dataset = df
+        reset_generated_bundles()
         st.success("CSV loaded into Enterprise Audit.")
         st.rerun()
+
+
+
+# ============================================================
+# V20 SMART DATASET OPTIMIZER
+# ============================================================
+
+with optimizer_tab:
+    st.header("Smart Dataset Optimizer")
+    st.write(
+        "V20 maakt EdgeTwin sterker: de app geeft niet alleen kritiek, maar kan de dataset ook automatisch verbeteren "
+        "voor een betere pilot-start. Gebruik dit als voorbereiding, niet als vervanging van echte veldvalidatie."
+    )
+
+    if isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0 and "Label" in st.session_state.dataset.columns:
+        report = core.smart_dataset_optimizer_report(st.session_state.dataset)
+
+        if report.get("status") == "ok":
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Current Score", f"{report.get('current_score', 0)}%")
+            c2.metric("Rows", report.get("rows", 0))
+            c3.metric("Weakest Class", report.get("weakest_class", "-"))
+            c4.metric("Target / Class", report.get("target_per_class", 0))
+
+            st.subheader("Optimizer diagnosis")
+            for item in report.get("recommended_actions", []):
+                sev = item.get("severity", "info")
+                msg = item.get("message", "")
+                if sev == "high":
+                    st.error(msg)
+                elif sev == "medium":
+                    st.warning(msg)
+                else:
+                    st.info(msg)
+
+            left, right = st.columns([1, 1])
+            with left:
+                st.markdown("#### Class counts")
+                counts_df = pd.DataFrame(
+                    [{"Label": k, "Samples": v} for k, v in report.get("class_counts", {}).items()]
+                )
+                st.dataframe(counts_df, use_container_width=True)
+
+            with right:
+                st.markdown("#### Feature issues")
+                st.write(f"Redundant features: {len(report.get('redundant_features', []))}")
+                st.write(f"Low variance features: {len(report.get('low_variance_features', []))}")
+                if report.get("redundant_features"):
+                    st.caption(", ".join(report.get("redundant_features", [])[:10]))
+
+            st.markdown("---")
+            st.subheader("Choose improvements")
+
+            o1, o2 = st.columns(2)
+            with o1:
+                balance_classes = st.checkbox("Balance classes / add weak-class samples", value=True, key="optimizer_balance_v20")
+                improve_separation = st.checkbox("Improve label separation", value=True, key="optimizer_separation_v20")
+                add_noise = st.checkbox("Add realistic noise variants", value=False, key="optimizer_noise_v20")
+                reduce_features = st.checkbox("Reduce redundant / low-variance features", value=False, key="optimizer_reduce_v20")
+            with o2:
+                target_per_class = st.number_input(
+                    "Target samples per class",
+                    min_value=1,
+                    max_value=50000,
+                    value=int(report.get("target_per_class", 50) or 50),
+                    step=10,
+                    key="optimizer_target_per_class_v20",
+                )
+                noise_strength = st.slider("Noise strength", 0.0, 0.20, 0.03, 0.01, key="optimizer_noise_strength_v20")
+                separation_strength = st.slider("Separation strength", 0.0, 0.30, 0.08, 0.01, key="optimizer_separation_strength_v20")
+                st.caption("Houd separation/noise laag voor geloofwaardige pilotdata.")
+
+            actions = []
+            if balance_classes:
+                actions.append("balance_classes")
+            if improve_separation:
+                actions.append("improve_label_separation")
+            if add_noise:
+                actions.append("add_realistic_noise")
+            if reduce_features:
+                actions.append("reduce_redundant_features")
+
+            if st.button("Run Smart Dataset Optimizer", type="primary", use_container_width=True, key="optimizer_run_v20"):
+                before_df = st.session_state.dataset.copy()
+                with st.spinner("Optimizing dataset..."):
+                    result = core.run_smart_dataset_optimizer(
+                        before_df,
+                        actions=actions,
+                        target_per_class=target_per_class,
+                        noise_strength=noise_strength,
+                        separation_strength=separation_strength,
+                    )
+                    st.session_state.dataset = result["optimized_df"].copy()
+                    st.session_state.fusion_training_df = result["optimized_df"].copy()
+                    st.session_state.optimizer_result = result
+                    st.session_state.optimizer_bundle = core.create_optimizer_bundle(
+                        st.session_state.project_name,
+                        before_df,
+                        result,
+                    )
+                    st.session_state.enterprise_bundle = None
+                    st.session_state.fusion_bundle = None
+                    st.session_state.auto_pilot_bundle = None
+                st.success("Dataset optimized and loaded into Enterprise Audit.")
+
+            if st.session_state.optimizer_result:
+                result = st.session_state.optimizer_result
+                before = result.get("before_report", {})
+                after = result.get("after_report", {})
+
+                st.markdown("---")
+                st.subheader("Optimization result")
+                r1, r2, r3, r4 = st.columns(4)
+                r1.metric("Before Score", f"{before.get('current_score', 0)}%")
+                r2.metric("After Score", f"{after.get('current_score', 0)}%")
+                r3.metric("Rows After", len(result.get("optimized_df", pd.DataFrame())))
+                r4.metric("Features After", after.get("feature_count", 0))
+
+                for ch in result.get("changes", []):
+                    st.success(ch.get("message", ""))
+
+                st.dataframe(result.get("optimized_df", pd.DataFrame()).head(50), use_container_width=True)
+
+                d1, d2 = st.columns(2)
+                d1.download_button(
+                    "Download Optimized CSV",
+                    st.session_state.dataset.to_csv(index=False),
+                    file_name=f"{st.session_state.project_name}_optimized_dataset.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                    key="optimizer_download_csv_v20",
+                )
+                if st.session_state.optimizer_bundle:
+                    d2.download_button(
+                        "Download Optimizer Bundle",
+                        st.session_state.optimizer_bundle,
+                        file_name=f"{st.session_state.project_name}_optimizer_bundle.zip",
+                        mime="application/zip",
+                        use_container_width=True,
+                        key="optimizer_download_bundle_v20",
+                    )
+
+            st.info(core.RELIABILITY_DISCLAIMER)
+        else:
+            st.warning(report.get("recommended_actions", [{}])[0].get("message", "Dataset cannot be optimized yet."))
+    else:
+        st.info("Run a demo, use the wizard, generate a fusion dataset, or upload a CSV with a Label column first.")
+
+
+# ============================================================
+# V21 SYNTHETIC-TO-REAL BRIDGE
+# ============================================================
+
+with real_bridge_tab:
+    st.header("Synthetic-to-Real Bridge")
+    st.write(
+        "V21 maakt EdgeTwin betrouwbaarder: upload echte WAV/CSV sensorbestanden, maak een OMEGA-X Signal Fingerprint, "
+        "genereer real-based variants en vergelijk hoe dicht synthetic data bij echte velddata ligt."
+    )
+
+    st.info(
+        "Gebruik dit als geloofwaardigheidslaag: echte data -> fingerprint -> synthetic variants -> similarity score -> real samples needed."
+    )
+
+    col_a, col_b = st.columns([1.2, 1])
+    with col_a:
+        uploaded_real_files = st.file_uploader(
+            "Upload real WAV/CSV files",
+            type=["wav", "csv"],
+            accept_multiple_files=True,
+            key="real_bridge_upload_v21",
+            help="CSV mag time,value of één numerieke signaalkolom bevatten. WAV wordt automatisch naar mono fingerprint omgezet.",
+        )
+
+        label_mode = st.radio(
+            "Label handling",
+            ["Use one label for all uploads", "Infer label from filename"],
+            horizontal=True,
+            key="real_bridge_label_mode_v21",
+        )
+
+        bridge_label = st.text_input(
+            "Label for uploaded files",
+            value=st.session_state.current_label,
+            key="real_bridge_label_v21",
+            help="Bij meerdere classes kun je best duidelijke filenames gebruiken, of later per class apart uploaden.",
+        )
+
+    with col_b:
+        sr_hint = st.number_input(
+            "CSV sample-rate hint",
+            min_value=100,
+            max_value=48000,
+            value=int(st.session_state.sr),
+            step=100,
+            key="real_bridge_sr_hint_v21",
+        )
+        variants_per_file = st.number_input(
+            "Variants per real file",
+            min_value=1,
+            max_value=500,
+            value=25,
+            step=5,
+            key="real_bridge_variants_v21",
+        )
+        jitter_strength = st.slider(
+            "Variant realism jitter",
+            min_value=0.01,
+            max_value=0.25,
+            value=0.08,
+            step=0.01,
+            key="real_bridge_jitter_v21",
+            help="Lager = dichter bij echte fingerprint. Hoger = meer variatie, maar minder veilig.",
+        )
+        compare_current_dataset = st.checkbox(
+            "Compare with current synthetic/project dataset",
+            value=isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0,
+            key="real_bridge_compare_current_v21",
+        )
+
+    if uploaded_real_files:
+        preview_rows = []
+        for up in uploaded_real_files:
+            label = core.label_from_filename(up.name) if label_mode == "Infer label from filename" else bridge_label
+            preview_rows.append({"Filename": up.name, "Label": label, "Size KB": round(len(up.getvalue()) / 1024, 1)})
+        st.subheader("Upload preview")
+        st.dataframe(pd.DataFrame(preview_rows), use_container_width=True)
+
+    if st.button("Run Synthetic-to-Real Bridge", type="primary", use_container_width=True, key="real_bridge_run_v21"):
+        if not uploaded_real_files:
+            st.warning("Upload eerst minimaal één WAV/CSV bestand.")
+        else:
+            file_specs = []
+            for up in uploaded_real_files:
+                label = core.label_from_filename(up.name) if label_mode == "Infer label from filename" else bridge_label
+                file_specs.append({"filename": up.name, "bytes": up.getvalue(), "label": label})
+
+            existing_df = st.session_state.dataset if compare_current_dataset and isinstance(st.session_state.dataset, pd.DataFrame) else None
+            with st.spinner("Building real signal fingerprints and synthetic variants..."):
+                result = core.run_synthetic_to_real_bridge(
+                    file_specs,
+                    existing_synthetic_df=existing_df,
+                    variants_per_file=int(variants_per_file),
+                    jitter_strength=float(jitter_strength),
+                    sr_hint=int(sr_hint),
+                )
+                st.session_state.real_bridge_result = result
+
+                bridge_df = result.get("bridge_training_df", pd.DataFrame())
+                if isinstance(bridge_df, pd.DataFrame) and len(bridge_df) > 0:
+                    st.session_state.dataset = bridge_df.copy()
+                    st.session_state.fusion_training_df = bridge_df.copy()
+                    st.session_state.fusion_doctor = result.get("doctor", {})
+                    numeric_cols = [c for c in bridge_df.columns if c != "Label" and pd.api.types.is_numeric_dtype(bridge_df[c])]
+                    st.session_state.hardware_result = core.hardware_auto_architect(
+                        max(1, len(numeric_cols)),
+                        int(sr_hint),
+                        "performance" if int(sr_hint) >= 8000 else "balanced",
+                    )
+                    st.session_state.reliability_v2 = core.build_reliability_engine_v2(
+                        bridge_df,
+                        doctor=result.get("doctor", {}),
+                        reliability=result.get("reliability", {}),
+                        hardware_result=st.session_state.hardware_result,
+                        bridge_result=result,
+                        selected_sensors=["Audio", "Vibration"],
+                        has_real_data=True,
+                    )
+                    result["reliability_v2"] = st.session_state.reliability_v2
+                    st.session_state.real_bridge_bundle = core.create_synthetic_to_real_bridge_bundle(
+                        st.session_state.project_name,
+                        result,
+                    )
+                    st.session_state.enterprise_bundle = None
+                    st.session_state.trust_bundle = None
+                    st.session_state.reliability_v2_bundle = None
+                    st.session_state.deployment_bundle = None
+                    st.session_state.professional_report_bundle = None
+                    st.session_state.monetization_bundle = None
+            if st.session_state.real_bridge_result.get("status") == "ok":
+                st.success("Synthetic-to-Real Bridge completed and loaded into Enterprise Audit.")
+            else:
+                st.error("No valid real files could be fingerprinted. Check CSV/WAV format.")
+
+    if st.session_state.real_bridge_result:
+        result = st.session_state.real_bridge_result
+        summary = result.get("summary", {})
+        similarity = result.get("similarity", {})
+        reliability = result.get("reliability", {})
+        sample_plan = result.get("sample_plan", {})
+
+        st.markdown("---")
+        st.subheader("Bridge result")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Real files", summary.get("real_files", 0))
+        m2.metric("Generated variants", summary.get("generated_variants", 0))
+        m3.metric("Synthetic-to-Real", f"{similarity.get('similarity_score', 0)}%")
+        m4.metric("Reliability", f"{reliability.get('reliability_score', 0)}%")
+
+        rel2 = result.get("reliability_v2") or core.build_reliability_engine_v2(
+            result.get("bridge_training_df", pd.DataFrame()),
+            doctor=result.get("doctor", {}),
+            reliability=reliability,
+            hardware_result=st.session_state.hardware_result,
+            bridge_result=result,
+            selected_sensors=["Audio", "Vibration"],
+            has_real_data=True,
+        )
+        st.session_state.reliability_v2 = rel2
+
+        st.markdown("#### Reliability Engine 2.0")
+        rr1, rr2, rr3, rr4 = st.columns(4)
+        rr1.metric("Readiness Stage", rel2.get("readiness_stage", "Unknown"))
+        rr2.metric("Production Risk", rel2.get("production_risk_level", "Unknown"))
+        rr3.metric("Trust Score", f"{rel2.get('trust_score_v2', 0)}%")
+        rr4.metric("Real Samples Needed", rel2.get("total_real_samples_needed", 0))
+
+        if rel2.get("go_no_go") == "GO":
+            st.success(rel2.get("decision", ""))
+        elif rel2.get("go_no_go") == "CONDITIONAL":
+            st.warning(rel2.get("decision", ""))
+        else:
+            st.error(rel2.get("decision", ""))
+
+        class_risks = pd.DataFrame(rel2.get("class_risks", []))
+        if len(class_risks) > 0:
+            with st.expander("Per-class risk / real samples needed", expanded=True):
+                st.dataframe(class_risks, use_container_width=True)
+
+        sensor_scores = pd.DataFrame(rel2.get("sensor_value_scores", []))
+        if len(sensor_scores) > 0:
+            with st.expander("Sensor Value Score", expanded=False):
+                st.dataframe(sensor_scores, use_container_width=True)
+
+        risk = similarity.get("dataset_risk", "Unknown")
+        verdict = similarity.get("verdict", "")
+        if risk == "High":
+            st.error(verdict)
+        elif risk == "Medium":
+            st.warning(verdict)
+        else:
+            st.success(verdict)
+
+        st.caption(core.BRIDGE_DISCLAIMER)
+
+        left, right = st.columns([1, 1])
+        with left:
+            st.markdown("#### Real samples needed")
+            st.write(f"Target per class: **{sample_plan.get('target_per_class', 0)}**")
+            st.write(f"Additional recommended total: **{sample_plan.get('total_needed', 0)}**")
+            needed_df = pd.DataFrame(
+                [{"Label": k, "Needed": v} for k, v in (sample_plan.get("needed_by_class", {}) or {}).items()]
+            )
+            if len(needed_df) > 0:
+                st.dataframe(needed_df, use_container_width=True)
+
+        with right:
+            st.markdown("#### Comparable features")
+            common = similarity.get("common_features", [])
+            st.write(f"Common numeric features: **{len(common)}**")
+            if common:
+                st.caption(", ".join(common[:12]))
+            if similarity.get("weak_labels"):
+                st.warning("Weak labels: " + ", ".join(similarity.get("weak_labels", [])))
+
+        fp_df = result.get("fingerprint_df", pd.DataFrame())
+        var_df = result.get("variant_df", pd.DataFrame())
+        train_df = result.get("bridge_training_df", pd.DataFrame())
+
+        with st.expander("Real signal fingerprints", expanded=True):
+            st.dataframe(fp_df.head(50), use_container_width=True)
+
+        with st.expander("Real-based synthetic variants", expanded=False):
+            st.dataframe(var_df.head(50), use_container_width=True)
+
+        with st.expander("Bridge training dataset loaded into audit", expanded=False):
+            st.dataframe(train_df.head(50), use_container_width=True)
+
+        d1, d2 = st.columns(2)
+        if isinstance(train_df, pd.DataFrame) and len(train_df) > 0:
+            d1.download_button(
+                "Download Bridge Training CSV",
+                train_df.to_csv(index=False),
+                file_name=f"{st.session_state.project_name}_bridge_training_dataset.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="real_bridge_download_training_v21",
+            )
+        if st.session_state.real_bridge_bundle:
+            d2.download_button(
+                "Download Synthetic-to-Real Bundle",
+                st.session_state.real_bridge_bundle,
+                file_name=f"{st.session_state.project_name}_synthetic_to_real_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="real_bridge_download_bundle_v21",
+            )
+    else:
+        st.info("Upload real WAV/CSV data to create the V21 bridge. This is the strongest trust feature before paid pilot bundles.")
+
+
+# ============================================================
+# V20.1 TRUST CENTER / COMMERCIAL READINESS
+# ============================================================
+
+with trust_tab:
+    st.header("Trust Center + Reliability Engine 2.0")
+    st.write(
+        "V21.1 is de betrouwbare verkooplaag: naast demo/pilot readiness berekent de app nu ook "
+        "per-class risico, sensor value, production risk en hoeveel echte samples nog nodig zijn."
+    )
+
+    if isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0:
+        default_real_data = bool(st.session_state.real_bridge_result)
+        if isinstance(st.session_state.auto_pilot_config, dict):
+            default_real_data = default_real_data or bool(st.session_state.auto_pilot_config.get("has_real_data", False))
+
+        has_real_data_for_gate = st.checkbox(
+            "This project includes real field data",
+            value=default_real_data,
+            key="trust_has_real_data_v201",
+            help="Laat dit alleen aan staan als er echte WAV/CSV velddata is gebruikt of geupload.",
+        )
+
+        doctor_for_gate = st.session_state.fusion_doctor if isinstance(st.session_state.fusion_doctor, dict) and st.session_state.fusion_doctor else None
+
+        reliability_for_gate = None
+        if isinstance(st.session_state.real_bridge_result, dict):
+            reliability_for_gate = st.session_state.real_bridge_result.get("reliability")
+
+        if reliability_for_gate is None and isinstance(st.session_state.auto_pilot_result, dict):
+            reliability_for_gate = st.session_state.auto_pilot_result.get("reliability")
+
+        if reliability_for_gate is None and doctor_for_gate:
+            reliability_for_gate = core.calculate_reliability_score(
+                doctor_for_gate,
+                has_real_data=has_real_data_for_gate,
+                selected_sensors=(st.session_state.fusion_manifest or {}).get("selected_sensors", []),
+            )
+
+        trust_gate = core.build_trust_gate(
+            st.session_state.dataset,
+            doctor=doctor_for_gate,
+            reliability=reliability_for_gate,
+            hardware_result=st.session_state.hardware_result,
+            has_real_data=has_real_data_for_gate,
+        )
+        st.session_state.trust_gate = trust_gate
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Trust Level", trust_gate.get("trust_level", "Unknown"))
+        c2.metric("Data Quality", f"{trust_gate.get('data_quality_score', 0)}%")
+        c3.metric("Reliability", f"{trust_gate.get('reliability_score', 0)}%")
+        c4.metric("Hardware Fit", f"{trust_gate.get('hardware_fit_score', 0)}%")
+
+        st.subheader("Decision gate")
+        go_no_go = trust_gate.get("go_no_go", "Unknown")
+        if "No-go" in go_no_go:
+            st.error(go_no_go)
+        elif "internal" in go_no_go.lower() or "demo" in go_no_go.lower():
+            st.warning(go_no_go)
+        else:
+            st.success(go_no_go)
+
+        st.info(trust_gate.get("production_status", ""))
+
+        left, right = st.columns([1, 1])
+        with left:
+            st.markdown("#### Commercial packaging")
+            st.write(f"**Suggested package:** {trust_gate.get('commercial_package', 'Unknown')}")
+            st.write(f"**Suggested price range:** {trust_gate.get('suggested_price_range', 'Unknown')}")
+            st.write(f"**Rows:** {trust_gate.get('rows', 0)}")
+            st.write(f"**Classes:** {trust_gate.get('class_count', 0)}")
+            st.write(f"**Weakest class:** {trust_gate.get('weakest_class', '-')}")
+
+        with right:
+            st.markdown("#### Red flags")
+            flags = trust_gate.get("red_flags", [])
+            if flags:
+                for flag in flags:
+                    st.warning(flag)
+            else:
+                st.success("No major red flags detected.")
+
+        st.markdown("#### Recommended next steps")
+        for step in trust_gate.get("next_steps", []):
+            st.write(f"- {step}")
+
+        selected_sensors_for_rel = []
+        if isinstance(st.session_state.fusion_manifest, dict):
+            selected_sensors_for_rel = st.session_state.fusion_manifest.get("selected_sensors", []) or []
+        if not selected_sensors_for_rel and isinstance(st.session_state.auto_pilot_config, dict):
+            selected_sensors_for_rel = st.session_state.auto_pilot_config.get("selected_sensors", []) or []
+
+        rel2 = core.build_reliability_engine_v2(
+            st.session_state.dataset,
+            doctor=doctor_for_gate,
+            reliability=reliability_for_gate,
+            hardware_result=st.session_state.hardware_result,
+            bridge_result=st.session_state.real_bridge_result,
+            selected_sensors=selected_sensors_for_rel,
+            has_real_data=has_real_data_for_gate,
+        )
+        st.session_state.reliability_v2 = rel2
+
+        st.markdown("---")
+        st.subheader("Reliability Engine 2.0")
+        v1, v2, v3, v4 = st.columns(4)
+        v1.metric("Trust Score V2", f"{rel2.get('trust_score_v2', 0)}%")
+        v2.metric("Readiness Stage", rel2.get("readiness_stage", "Unknown"))
+        v3.metric("Production Risk", rel2.get("production_risk_level", "Unknown"))
+        v4.metric("Real Samples Needed", rel2.get("total_real_samples_needed", 0))
+
+        decision = rel2.get("decision", "")
+        if rel2.get("go_no_go") == "GO":
+            st.success(decision)
+        elif rel2.get("go_no_go") == "CONDITIONAL":
+            st.warning(decision)
+        else:
+            st.error(decision)
+
+        cl, srcol = st.columns([1.25, 1])
+        with cl:
+            st.markdown("#### Per-class risk")
+            class_risks = pd.DataFrame(rel2.get("class_risks", []))
+            if len(class_risks) > 0:
+                st.dataframe(class_risks, use_container_width=True)
+            else:
+                st.info("No class risk table available yet.")
+
+        with srcol:
+            st.markdown("#### Sensor Value Score")
+            sensor_scores = pd.DataFrame(rel2.get("sensor_value_scores", []))
+            if len(sensor_scores) > 0:
+                st.dataframe(sensor_scores, use_container_width=True)
+            else:
+                st.info("No sensor value scores available yet.")
+
+        with st.expander("Safe commercial claim language", expanded=False):
+            st.markdown("**Allowed to say**")
+            for claim in rel2.get("allowed_claims", []):
+                st.write(f"- {claim}")
+            st.markdown("**Do not claim yet**")
+            for claim in rel2.get("blocked_claims", []):
+                st.write(f"- {claim}")
+
+        st.caption(core.RELIABILITY_DISCLAIMER)
+
+        btrust, brel = st.columns(2)
+        if btrust.button("Generate Trust Bundle", type="primary", use_container_width=True, key="trust_generate_bundle_v201"):
+            st.session_state.trust_bundle = core.create_trust_bundle(
+                st.session_state.project_name,
+                st.session_state.dataset,
+                trust_gate,
+            )
+            st.success("Trust Bundle generated.")
+
+        if brel.button("Generate Reliability 2.0 Bundle", type="primary", use_container_width=True, key="rel_v2_generate_bundle_v211"):
+            st.session_state.reliability_v2_bundle = core.create_reliability_v2_bundle(
+                st.session_state.project_name,
+                st.session_state.dataset,
+                rel2,
+            )
+            st.success("Reliability 2.0 Bundle generated.")
+
+        dtrust, drel = st.columns(2)
+        if st.session_state.trust_bundle:
+            dtrust.download_button(
+                "Download Trust Bundle",
+                st.session_state.trust_bundle,
+                file_name=f"{st.session_state.project_name}_trust_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="trust_download_bundle_v201",
+            )
+        if st.session_state.reliability_v2_bundle:
+            drel.download_button(
+                "Download Reliability 2.0 Bundle",
+                st.session_state.reliability_v2_bundle,
+                file_name=f"{st.session_state.project_name}_reliability_v2_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="rel_v2_download_bundle_v211",
+            )
+    else:
+        st.info("Generate or upload a dataset first. Then this tab tells you if it is demo-ready, pilot-ready or not billable yet.")
+
+
+
+# ============================================================
+# V22 DEPLOYMENT PLANNER
+# ============================================================
+
+with deployment_tab:
+    st.header("Hardware BOM & Deployment Planner")
+    st.write(
+        "Turn the current dataset/use-case into a practical field-pilot plan: BOM, power budget, "
+        "communication choice, enclosure target, maintenance interval, risks and validation steps."
+    )
+
+    defaults = core.infer_deployment_defaults(
+        st.session_state.dataset,
+        st.session_state.fusion_manifest,
+        st.session_state.hardware_result,
+    )
+
+    c1, c2 = st.columns([1.2, 1])
+
+    with c1:
+        dep_environment = st.selectbox(
+            "Deployment environment",
+            core.get_environment_options(),
+            index=core.get_environment_options().index(defaults.get("environment")) if defaults.get("environment") in core.get_environment_options() else 0,
+            key="deployment_environment_v22",
+        )
+
+        dep_sensors = st.multiselect(
+            "Sensors in deployment",
+            core.get_sensor_options(),
+            default=[s for s in defaults.get("selected_sensors", []) if s in core.get_sensor_options()],
+            key="deployment_sensors_v22",
+        )
+
+        deployment_scale = st.selectbox(
+            "Deployment scale",
+            ["Pilot: 1-5 nodes", "Small rollout: 6-25 nodes", "Larger rollout: 25+ nodes"],
+            index=0,
+            key="deployment_scale_v22",
+        )
+
+        communication = st.selectbox(
+            "Communication mode",
+            ["LoRa / LoRaWAN", "WiFi / MQTT", "LTE / NB-IoT", "Wired Ethernet"],
+            index=["LoRa / LoRaWAN", "WiFi / MQTT", "LTE / NB-IoT", "Wired Ethernet"].index(defaults.get("communication", "WiFi / MQTT")),
+            key="deployment_comm_v22",
+        )
+
+    with c2:
+        power_source = st.selectbox(
+            "Power source",
+            ["Mains + small backup", "Battery only", "Solar + battery", "Vehicle / machine power"],
+            index=["Mains + small backup", "Battery only", "Solar + battery", "Vehicle / machine power"].index(defaults.get("power_source", "Mains + small backup")),
+            key="deployment_power_v22",
+        )
+
+        enclosure_target = st.selectbox(
+            "Enclosure target",
+            ["Indoor / IP40", "Outdoor / IP65", "Outdoor harsh / IP67", "Industrial / IP67 + vibration mount"],
+            index=["Indoor / IP40", "Outdoor / IP65", "Outdoor harsh / IP67", "Industrial / IP67 + vibration mount"].index(defaults.get("enclosure_target", "Outdoor / IP65")),
+            key="deployment_enclosure_v22",
+        )
+
+        autonomy_days = st.number_input(
+            "Autonomy target / backup days",
+            min_value=1,
+            max_value=90,
+            value=int(defaults.get("autonomy_days", 7)),
+            step=1,
+            key="deployment_autonomy_v22",
+        )
+
+        dep_priority = st.radio(
+            "Deployment priority",
+            ["balanced", "low_power", "performance", "gateway"],
+            index=["balanced", "low_power", "performance", "gateway"].index(defaults.get("priority", "balanced")),
+            horizontal=True,
+            key="deployment_priority_v22",
+        )
+
+        dep_sample_rate = st.number_input(
+            "Sample rate for planning",
+            min_value=1000,
+            max_value=48000,
+            value=int(defaults.get("sample_rate", st.session_state.sr)),
+            step=1000,
+            key="deployment_sample_rate_v22",
+        )
+
+    st.caption(core.DEPLOYMENT_DISCLAIMER)
+
+    if st.button("Generate Deployment Plan", type="primary", use_container_width=True, key="deployment_generate_v22"):
+        with st.spinner("Building deployment plan..."):
+            plan = core.build_deployment_plan(
+                project_name=st.session_state.project_name,
+                dataset_df=st.session_state.dataset,
+                manifest=st.session_state.fusion_manifest,
+                hardware_result=st.session_state.hardware_result,
+                selected_sensors=dep_sensors,
+                environment=dep_environment,
+                deployment_scale=deployment_scale,
+                autonomy_days=autonomy_days,
+                communication=communication,
+                power_source=power_source,
+                enclosure_target=enclosure_target,
+                maintenance_profile="standard",
+                priority=dep_priority,
+                sample_rate=dep_sample_rate,
+            )
+            st.session_state.deployment_plan = plan
+            st.session_state.deployment_bundle = core.create_deployment_bundle(
+                st.session_state.project_name,
+                plan,
+                st.session_state.dataset,
+            )
+            st.session_state.hardware_result = {
+                "recommendation": plan.get("hardware", {}).get("recommended_board"),
+                "ranking": st.session_state.hardware_result.get("ranking", []) if isinstance(st.session_state.hardware_result, dict) else [],
+                "reason": plan.get("hardware", {}).get("reason", ""),
+            }
+        st.success("Deployment plan generated.")
+
+    if st.session_state.deployment_plan:
+        plan = st.session_state.deployment_plan
+        hw = plan.get("hardware", {})
+        edge = plan.get("edge_settings", {})
+        power = plan.get("power_budget", {})
+        cost = plan.get("cost_estimate", {})
+
+        st.subheader("Deployment Summary")
+        d1, d2, d3, d4 = st.columns(4)
+        d1.metric("Readiness", plan.get("readiness", "Unknown"))
+        d2.metric("Go / No-Go", plan.get("go_no_go", "Unknown"))
+        d3.metric("Hardware", hw.get("recommended_board", "Unknown"))
+        d4.metric("Nodes", plan.get("node_count_estimate", 0))
+
+        p1, p2, p3, p4 = st.columns(4)
+        p1.metric("Latency", f"{edge.get('estimated_latency_ms', 0)} ms")
+        p2.metric("RAM", f"{edge.get('estimated_ram_kb', 0)} KB")
+        p3.metric("Avg current", f"{power.get('average_current_ma', 0)} mA")
+        p4.metric("Battery", f"{power.get('recommended_battery_mAh', 0)} mAh")
+
+        st.info(plan.get("communication_plan", {}).get("payload_policy", ""))
+
+        if plan.get("go_no_go") == "NO-GO":
+            st.error("Deployment is not ready yet. Fix high-risk hardware, power or data issues first.")
+        elif plan.get("go_no_go") == "CONDITIONAL":
+            st.warning("Deployment-prep ready, but validate the listed risks before customer promises.")
+        else:
+            st.success("Good candidate for a controlled field pilot. Still validate before production rollout.")
+
+        st.subheader("Budgetary BOM")
+        bom_df = pd.DataFrame(plan.get("bom", []))
+        if len(bom_df):
+            st.dataframe(bom_df, use_container_width=True)
+            fig_cost = px.bar(bom_df, x="component", y="line_max_eur", color="category", title="BOM cost estimate by item")
+            st.plotly_chart(fig_cost, use_container_width=True)
+
+        st.subheader("Power & Maintenance")
+        st.write(power.get("notes", ""))
+        st.write(f"**Estimated maintenance interval:** {power.get('maintenance_interval_estimate', 'Unknown')}")
+
+        st.subheader("Deployment Risks")
+        for risk in plan.get("deployment_risks", []):
+            sev = risk.get("severity", "info")
+            msg = f"{risk.get('risk')} — {risk.get('mitigation')}"
+            if sev == "high":
+                st.error(msg)
+            elif sev == "medium":
+                st.warning(msg)
+            else:
+                st.info(msg)
+
+        st.subheader("Validation Plan")
+        for step in plan.get("validation_plan", []):
+            st.write(f"- {step}")
+
+        if st.session_state.deployment_bundle:
+            st.download_button(
+                "Download Deployment Bundle",
+                st.session_state.deployment_bundle,
+                file_name=f"{st.session_state.project_name}_deployment_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="deployment_download_bundle_v22",
+            )
+    else:
+        st.info("Generate a deployment plan after running a demo, wizard, real bridge or audit. This turns the dataset into a field-pilot plan.")
+
+
+# ============================================================
+# V23 PROFESSIONAL REPORTS 2.0
+# ============================================================
+
+with reports_tab:
+    st.header("Professional Reports 2.0 • SaaS-light Monetization Gate")
+    st.write(
+        "Build a customer-ready report that combines dataset quality, Reliability Engine 2.0, Trust Center, "
+        "Synthetic-to-Real status, hardware direction and deployment planning into one paid-consultancy style bundle."
+    )
+
+    has_dataset = isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0
+    has_deployment = isinstance(st.session_state.deployment_plan, dict) and bool(st.session_state.deployment_plan)
+    has_reliability = isinstance(st.session_state.reliability_v2, dict) and bool(st.session_state.reliability_v2)
+    has_trust = isinstance(st.session_state.trust_gate, dict) and bool(st.session_state.trust_gate)
+    has_bridge = isinstance(st.session_state.real_bridge_result, dict) and bool(st.session_state.real_bridge_result)
+
+    status_cols = st.columns(5)
+    status_cols[0].metric("Dataset", "Yes" if has_dataset else "No")
+    status_cols[1].metric("Reliability V2", "Yes" if has_reliability else "No")
+    status_cols[2].metric("Trust", "Yes" if has_trust else "No")
+    status_cols[3].metric("Real Bridge", "Yes" if has_bridge else "No")
+    status_cols[4].metric("Deployment", "Yes" if has_deployment else "No")
+
+    if not has_dataset:
+        st.warning("Generate or upload a dataset first. Reports 2.0 works best after the Wizard, Real Bridge, Trust Center and Deployment Planner have been run.")
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        report_type = st.selectbox(
+            "Report type",
+            core.get_professional_report_types(),
+            index=0,
+            key="reports_type_v23",
+        )
+        customer_name = st.text_input("Customer / organization name", value="Customer", key="reports_customer_v23")
+        customer_problem = st.text_area(
+            "Customer problem / context",
+            value=st.session_state.last_demo_summary.get("problem", "Customer wants to move from sensor idea to a validated Edge AI pilot with less trial-and-error."),
+            height=100,
+            key="reports_problem_v23",
+        )
+    with c2:
+        package_level = st.selectbox(
+            "Package level",
+            ["Starter Pilot", "Professional Pilot", "Enterprise Deployment", "Real-Data Pilot"],
+            index=1,
+            key="reports_package_level_v23",
+        )
+        audience = st.selectbox(
+            "Audience",
+            ["Executive / decision maker", "Technical team", "Mixed business + technical", "Investor / partner"],
+            index=2,
+            key="reports_audience_v23",
+        )
+        prepared_by = st.text_input("Prepared by", value="EdgeTwin Studio / OMEGA-X Engine", key="reports_prepared_by_v23")
+        include_dataset_snapshot = st.checkbox("Include dataset CSV snapshot in ZIP", value=True, key="reports_include_dataset_v23")
+        include_bom = st.checkbox("Include deployment BOM when available", value=True, key="reports_include_bom_v23")
+
+    st.caption(core.REPORTS_DISCLAIMER)
+
+    if st.button("Generate Professional Report Bundle", type="primary", use_container_width=True, key="reports_generate_bundle_v23"):
+        with st.spinner("Building professional report package..."):
+            snapshot = core.build_professional_report_snapshot(
+                project_name=st.session_state.project_name,
+                dataset_df=st.session_state.dataset,
+                manifest=st.session_state.fusion_manifest,
+                doctor=st.session_state.fusion_doctor,
+                reliability_v2=st.session_state.reliability_v2,
+                trust_gate=st.session_state.trust_gate,
+                deployment_plan=st.session_state.deployment_plan,
+                hardware_result=st.session_state.hardware_result,
+                commercial_summary=st.session_state.last_demo_summary,
+                real_bridge_result=st.session_state.real_bridge_result,
+                report_type=report_type,
+                package_level=package_level,
+                customer_name=customer_name,
+                customer_problem=customer_problem,
+                audience=audience,
+                prepared_by=prepared_by,
+            )
+            bundle = core.create_professional_report_bundle(
+                st.session_state.project_name,
+                snapshot,
+                st.session_state.dataset if include_dataset_snapshot else None,
+                st.session_state.deployment_plan if include_bom else None,
+            )
+            st.session_state.professional_report_snapshot = snapshot
+            st.session_state.professional_report_bundle = bundle
+        st.success("Professional report bundle generated.")
+
+    if st.session_state.professional_report_snapshot:
+        snap = st.session_state.professional_report_snapshot
+        exec_summary = snap.get("executive_summary", {})
+        readiness = snap.get("readiness", {})
+        dataset_quality = snap.get("dataset_quality", {})
+        commercial = snap.get("commercial_positioning", {})
+
+        st.subheader("Report Preview")
+        p1, p2, p3, p4 = st.columns(4)
+        p1.metric("Decision", readiness.get("go_no_go", "Unknown"))
+        p2.metric("Readiness", readiness.get("stage", "Unknown"))
+        p3.metric("Trust", f"{readiness.get('trust_score', 0)}%")
+        p4.metric("Suggested package", commercial.get("suggested_package", "Unknown"))
+
+        st.markdown("#### Executive summary")
+        st.write(exec_summary.get("summary", ""))
+        st.write(f"**Decision:** {exec_summary.get('decision', '')}")
+        st.write(f"**Recommended next step:** {exec_summary.get('next_step', '')}")
+
+        st.markdown("#### Dataset quality")
+        q1, q2, q3, q4 = st.columns(4)
+        q1.metric("Rows", dataset_quality.get("rows", 0))
+        q2.metric("Labels", dataset_quality.get("labels", 0))
+        q3.metric("Features", dataset_quality.get("features", 0))
+        q4.metric("Quality", f"{dataset_quality.get('overall_score', 0)}%")
+
+        if commercial.get("allowed_claims"):
+            st.markdown("#### Safe commercial claims")
+            for claim in commercial.get("allowed_claims", [])[:5]:
+                st.info(claim)
+
+        if commercial.get("blocked_claims"):
+            st.markdown("#### Claims to avoid")
+            for claim in commercial.get("blocked_claims", [])[:5]:
+                st.warning(claim)
+
+        if st.session_state.professional_report_bundle:
+            st.download_button(
+                "Download Professional Report Bundle",
+                st.session_state.professional_report_bundle,
+                file_name=f"{st.session_state.project_name}_professional_report_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="reports_download_bundle_v23",
+            )
+    else:
+        st.info("Run this after the Wizard/Real Bridge/Trust Center/Deployment Planner for the strongest paid report output.")
+
+
+
+
+# ============================================================
+# V24.1 PRODUCT HARDENING & VALIDATION SUITE
+# ============================================================
+
+with hardening_tab:
+    st.header("Product Hardening & Validation Suite")
+    st.write(
+        "This is the internal readiness gate before paid pilots: dataset safety, launch blockers, release checklist, "
+        "benchmark sanity tests and safe-to-sell guidance. Use this before you send anything to a real customer."
+    )
+
+    has_real_data = bool(st.session_state.real_bridge_result)
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Dataset rows", len(dataset_df))
+    c2.metric("Real bridge", "Yes" if has_real_data else "No")
+    c3.metric("Deployment plan", "Yes" if st.session_state.deployment_plan else "No")
+    c4.metric("Reports 2.0", "Yes" if st.session_state.professional_report_snapshot else "No")
+
+    st.info(
+        "V24.1 is intentionally strict. It may block paid claims even when the demo looks good. "
+        "That is good: it protects trust and helps EdgeTwin feel professional."
+    )
+
+    if st.button("Run Product Hardening Scan", type="primary", use_container_width=True, key="hardening_run_scan_v241"):
+        with st.spinner("Running product-readiness validation..."):
+            st.session_state.hardening_snapshot = core.run_product_hardening_suite(
+                st.session_state.project_name,
+                dataset_df,
+                doctor=st.session_state.fusion_doctor,
+                reliability_v2=st.session_state.reliability_v2,
+                trust_gate=st.session_state.trust_gate,
+                deployment_plan=st.session_state.deployment_plan,
+                professional_report_snapshot=st.session_state.professional_report_snapshot,
+                monetization_snapshot=st.session_state.monetization_snapshot,
+                has_real_data=has_real_data,
+            )
+            st.session_state.hardening_bundle = None
+            st.session_state.beta_launch_bundle = None
+        st.success("Hardening scan completed.")
+
+    if st.session_state.hardening_snapshot:
+        snap = st.session_state.hardening_snapshot
+        st.subheader("Readiness result")
+        r1, r2, r3, r4 = st.columns(4)
+        r1.metric("Product Readiness", f"{snap.get('product_readiness_score', 0)}%")
+        r2.metric("Level", snap.get("readiness_level", "Unknown"))
+        r3.metric("Launch Risk", snap.get("launch_risk", "Unknown"))
+        r4.metric("Safe to sell", snap.get("safe_to_sell", "Unknown"))
+
+        score = int(snap.get("product_readiness_score", 0))
+        msg = snap.get("recommended_next_action", "")
+        if score >= 88:
+            st.success(msg)
+        elif score >= 74:
+            st.warning(msg)
+        else:
+            st.error(msg)
+
+        st.caption(snap.get("disclaimer", ""))
+
+        st.subheader("Score breakdown")
+        breakdown = pd.DataFrame([snap.get("score_breakdown", {})])
+        st.dataframe(breakdown, use_container_width=True)
+
+        st.subheader("Blockers")
+        blockers = pd.DataFrame(snap.get("blockers", []))
+        if len(blockers):
+            st.dataframe(blockers, use_container_width=True)
+        else:
+            st.success("No critical/high blockers detected by the V24.1 scan.")
+
+        dscan = snap.get("dataset_scan", {}) or {}
+        st.subheader("Dataset safety")
+        ds1, ds2 = st.columns([1, 2])
+        with ds1:
+            st.json(dscan.get("summary", {}))
+        with ds2:
+            issues = pd.DataFrame(dscan.get("issues", []))
+            if len(issues):
+                st.dataframe(issues, use_container_width=True)
+
+        st.subheader("Release checklist")
+        checklist = pd.DataFrame(snap.get("release_checklist", []))
+        if len(checklist):
+            st.dataframe(checklist, use_container_width=True)
+
+        st.subheader("Internal benchmark sanity tests")
+        bench = pd.DataFrame(snap.get("benchmark_cases", []))
+        if len(bench):
+            st.dataframe(bench, use_container_width=True)
+
+        with st.expander("Hardening rules and known limitations", expanded=False):
+            st.markdown("#### Hardening rules")
+            for item in snap.get("hardening_rules", []):
+                st.write(f"- {item}")
+            st.markdown("#### Known limitations")
+            for item in snap.get("known_limitations", []):
+                st.write(f"- {item}")
+
+        if st.button("Create Product Hardening Bundle", type="primary", use_container_width=True, key="hardening_create_bundle_v241"):
+            st.session_state.hardening_bundle = core.create_product_hardening_bundle(
+                st.session_state.project_name,
+                snap,
+                dataset_df,
+            )
+            st.success("Product hardening bundle created.")
+
+        if st.session_state.hardening_bundle:
+            st.download_button(
+                "Download Product Hardening Bundle",
+                st.session_state.hardening_bundle,
+                file_name=f"{st.session_state.project_name}_product_hardening_v24_1.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="hardening_download_bundle_v241",
+            )
+    else:
+        st.info("Run the hardening scan after generating a dataset and preferably after Trust Center, Real Bridge, Deployment Planner and Reports 2.0.")
+
+
+
+# ============================================================
+# V24.2 BETA LAUNCH READINESS
+# ============================================================
+
+with beta_launch_tab:
+    st.header("Beta Launch Readiness")
+    st.write(
+        "This turns the product into something you can safely show in a controlled beta: landing-page copy, "
+        "demo script, package cards, feedback questions, watermark rules and launch blockers."
+    )
+
+    bc1, bc2 = st.columns([1.15, 1])
+    with bc1:
+        target_segment = st.selectbox(
+            "Target beta customer",
+            core.get_beta_target_segments(),
+            key="beta_target_segment_v242",
+        )
+    with bc2:
+        beta_mode = st.selectbox(
+            "Beta mode",
+            ["Private demo", "Founder-led beta", "Controlled paid beta"],
+            index=1,
+            key="beta_mode_v242",
+        )
+
+    segment_profile = core.get_beta_target_segment(target_segment)
+    st.info(segment_profile.get("pain", ""))
+    st.caption(f"Suggested first paid offer: {segment_profile.get('best_paid_offer', 'Professional Pilot Bundle')}")
+
+    snapshot = core.build_beta_launch_snapshot(
+        st.session_state.project_name,
+        target_segment=target_segment,
+        beta_mode=beta_mode,
+        dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        trust_gate=st.session_state.trust_gate,
+        reliability_v2=st.session_state.reliability_v2,
+        real_bridge_result=st.session_state.real_bridge_result,
+        deployment_plan=st.session_state.deployment_plan,
+        professional_report_snapshot=st.session_state.professional_report_snapshot,
+        hardening_snapshot=st.session_state.hardening_snapshot,
+        monetization_snapshot=st.session_state.monetization_snapshot,
+    )
+    st.session_state.beta_launch_snapshot = snapshot
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Beta readiness", f"{snapshot.get('beta_readiness_score', 0)}%")
+    m2.metric("Readiness", snapshot.get("readiness", "Unknown"))
+    m3.metric("Target", snapshot.get("target_segment", "Unknown"))
+
+    if snapshot.get("readiness") == "Paid beta ready":
+        st.success(snapshot.get("launch_action", ""))
+    elif snapshot.get("readiness") == "Founder-led beta ready":
+        st.warning(snapshot.get("launch_action", ""))
+    else:
+        st.error(snapshot.get("launch_action", ""))
+
+    st.subheader("Customer-facing positioning")
+    st.markdown(f"### {snapshot.get('safe_public_tagline', '')}")
+    st.write(snapshot.get("safe_positioning", ""))
+
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        st.markdown("#### Demo script")
+        for item in snapshot.get("demo_script", []):
+            st.write(f"- {item}")
+    with c2:
+        st.markdown("#### Beta rules")
+        for item in snapshot.get("beta_rules", []):
+            st.write(f"- {item}")
+
+    st.subheader("Launch checklist")
+    checklist_df = pd.DataFrame(snapshot.get("launch_checklist", []))
+    if len(checklist_df):
+        st.dataframe(checklist_df, use_container_width=True)
+
+    blockers = snapshot.get("blockers", []) or []
+    if blockers:
+        st.subheader("Launch blockers")
+        for item in blockers:
+            st.error(f"{item.get('area')} / {item.get('check')}: {item.get('next_step')}")
+    else:
+        st.success("No high/critical beta launch blockers detected by V24.2.")
+
+    st.subheader("Package cards")
+    package_df = pd.DataFrame(snapshot.get("package_cards", []))
+    if len(package_df):
+        st.dataframe(package_df, use_container_width=True)
+
+    st.subheader("Landing-page copy")
+    landing_df = pd.DataFrame(snapshot.get("landing_page_sections", []))
+    if len(landing_df):
+        st.dataframe(landing_df, use_container_width=True)
+
+    st.subheader("Beta feedback questions")
+    feedback_df = pd.DataFrame(snapshot.get("feedback_questions", []))
+    if len(feedback_df):
+        st.dataframe(feedback_df, use_container_width=True)
+
+    with st.expander("Watermark / paid unlock policy", expanded=False):
+        st.json(snapshot.get("watermark_policy", {}))
+        st.markdown("#### Paid unlock preparation")
+        for item in snapshot.get("paid_unlock_preparation", []):
+            st.write(f"- {item}")
+
+    if st.button("Create Beta Launch Bundle", type="primary", use_container_width=True, key="beta_launch_create_bundle_v242"):
+        st.session_state.beta_launch_bundle = core.create_beta_launch_bundle(
+            st.session_state.project_name,
+            snapshot,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.success("Beta Launch bundle created.")
+
+    if st.session_state.beta_launch_bundle:
+        st.download_button(
+            "Download Beta Launch Bundle",
+            st.session_state.beta_launch_bundle,
+            file_name=f"{st.session_state.project_name}_beta_launch_bundle.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="beta_launch_download_bundle_v242",
+        )
+
+    st.caption(snapshot.get("disclaimer", ""))
+
+
+# ============================================================
+# V24 SAAS-LIGHT / MONETIZATION GATE
+# ============================================================
+
+with monetization_tab:
+    st.header("SaaS-light & Monetization Gate")
+    st.write(
+        "This keeps monetization simple: plan levels, locked premium exports, package suggestions and safe pricing guidance. "
+        "No payment provider is connected yet; this is the access/pricing layer you can later connect to Stripe."
+    )
+
+    plan_names = core.get_pricing_plans()
+    st.session_state.selected_plan = st.selectbox(
+        "Simulate customer plan",
+        plan_names,
+        index=plan_names.index(st.session_state.selected_plan) if st.session_state.selected_plan in plan_names else 0,
+        key="monetization_selected_plan_v24",
+    )
+
+    plan = core.get_pricing_plan(st.session_state.selected_plan)
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Monthly price", "Custom" if plan.get("monthly_price_eur") is None else f"€{plan.get('monthly_price_eur', 0)}")
+    p2.metric("Projects", plan.get("project_limit", 0))
+    p3.metric("Bundles/month", plan.get("monthly_bundle_limit", 0))
+    p4.metric("Real uploads", plan.get("real_upload_limit", 0))
+    st.info(plan.get("description", ""))
+    st.caption(f"Best for: {plan.get('best_for', '')}")
+
+    state_like = {
+        "fusion_bundle": bool(st.session_state.fusion_bundle),
+        "enterprise_bundle": bool(st.session_state.enterprise_bundle),
+        "optimizer_result": bool(st.session_state.optimizer_result),
+        "trust_gate": bool(st.session_state.trust_gate),
+        "real_bridge_result": bool(st.session_state.real_bridge_result),
+        "reliability_v2": bool(st.session_state.reliability_v2),
+        "deployment_plan": bool(st.session_state.deployment_plan),
+        "professional_report_snapshot": bool(st.session_state.professional_report_snapshot),
+    }
+
+    snapshot = core.build_monetization_snapshot(
+        st.session_state.project_name,
+        selected_plan=st.session_state.selected_plan,
+        dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        trust_gate=st.session_state.trust_gate,
+        reliability_v2=st.session_state.reliability_v2,
+        real_bridge_result=st.session_state.real_bridge_result,
+        deployment_plan=st.session_state.deployment_plan,
+        professional_report_snapshot=st.session_state.professional_report_snapshot,
+        state_like=state_like,
+        usage={"bundles_used": 0, "real_uploads": 0},
+    )
+
+    st.session_state.monetization_snapshot = snapshot
+    rec = snapshot.get("package_recommendation", {})
+
+    st.subheader("Recommended package")
+    r1, r2, r3 = st.columns(3)
+    r1.metric("Package", rec.get("suggested_package", "Unknown"))
+    r2.metric("Plan", rec.get("suggested_plan", "Unknown"))
+    r3.metric("Price range", rec.get("suggested_price_range", "Unknown"))
+    st.success(rec.get("reason", ""))
+
+    st.subheader("Available outputs on this project")
+    available_access = pd.DataFrame(snapshot.get("available_access", []))
+    if len(available_access):
+        st.dataframe(available_access, use_container_width=True)
+    else:
+        st.info("No outputs are available yet. Run the Wizard or a Demo first.")
+
+    st.subheader("Full export access matrix")
+    matrix = pd.DataFrame(snapshot.get("access_matrix", []))
+    if len(matrix):
+        st.dataframe(matrix, use_container_width=True)
+
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        st.markdown("#### Safe sales positioning")
+        for item in snapshot.get("safe_sales_positioning", []):
+            st.write(f"- {item}")
+    with c2:
+        st.markdown("#### Next monetization steps")
+        for item in snapshot.get("next_steps", []):
+            st.write(f"- {item}")
+
+    st.subheader("Price ladder")
+    ladder = pd.DataFrame(snapshot.get("price_ladder", []))
+    if len(ladder):
+        st.dataframe(ladder, use_container_width=True)
+
+    if st.button("Create Monetization Gate Bundle", type="primary", use_container_width=True, key="monetization_create_bundle_v24"):
+        st.session_state.monetization_bundle = core.create_monetization_bundle(
+            st.session_state.project_name,
+            snapshot,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.success("Monetization bundle created.")
+
+    if st.session_state.monetization_bundle:
+        st.download_button(
+            "Download Monetization Gate Bundle",
+            st.session_state.monetization_bundle,
+            file_name=f"{st.session_state.project_name}_monetization_gate_bundle.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="monetization_download_bundle_v24",
+        )
+
+    st.warning("V24 does not take payments yet. It defines access rules and package logic first. That is safer before adding Stripe.")
+
+
+# ============================================================
+# V25 API AUTOMATION
+# ============================================================
+
+with api_tab:
+    st.header("API Automation")
+    st.write(
+        "This is the integration layer: API endpoint blueprint, access rules, sample requests, safe responses and a downloadable API bundle. "
+        "It is designed for private beta and enterprise integrations before exposing a public production API."
+    )
+
+    if "api_key" in st.session_state.user:
+        api_key = st.session_state.user.get("api_key", "")
+        shown_key = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 14 else "Available"
+        st.info(f"Current account API key: {shown_key}. Keep full keys private and rotate them before production launch.")
+
+    plan_names = core.get_pricing_plans()
+    api_plan = st.selectbox(
+        "Simulate API access plan",
+        plan_names,
+        index=plan_names.index(st.session_state.selected_plan) if st.session_state.selected_plan in plan_names else 0,
+        key="api_selected_plan_v25",
+    )
+    st.session_state.selected_plan = api_plan
+
+    api_mode = st.radio(
+        "API launch mode",
+        ["Local blueprint", "Private beta API", "Enterprise/on-premise"],
+        horizontal=True,
+        key="api_launch_mode_v25",
+    )
+
+    state_like = {
+        "fusion_bundle": bool(st.session_state.fusion_bundle),
+        "enterprise_bundle": bool(st.session_state.enterprise_bundle),
+        "optimizer_result": bool(st.session_state.optimizer_result),
+        "trust_gate": bool(st.session_state.trust_gate),
+        "real_bridge_result": bool(st.session_state.real_bridge_result),
+        "reliability_v2": bool(st.session_state.reliability_v2),
+        "deployment_plan": bool(st.session_state.deployment_plan),
+        "professional_report_snapshot": bool(st.session_state.professional_report_snapshot),
+        "hardening_snapshot": bool(st.session_state.hardening_snapshot),
+        "beta_launch_snapshot": bool(st.session_state.beta_launch_snapshot),
+        "monetization_snapshot": bool(st.session_state.monetization_snapshot),
+    }
+
+    snapshot = core.build_api_automation_snapshot(
+        st.session_state.project_name,
+        selected_plan=api_plan,
+        api_mode=api_mode,
+        dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        trust_gate=st.session_state.trust_gate,
+        reliability_v2=st.session_state.reliability_v2,
+        real_bridge_result=st.session_state.real_bridge_result,
+        deployment_plan=st.session_state.deployment_plan,
+        hardening_snapshot=st.session_state.hardening_snapshot,
+        beta_launch_snapshot=st.session_state.beta_launch_snapshot,
+        monetization_snapshot=st.session_state.monetization_snapshot,
+        state_like=state_like,
+    )
+    st.session_state.api_automation_snapshot = snapshot
+
+    a1, a2, a3, a4 = st.columns(4)
+    a1.metric("API readiness", f"{snapshot.get('api_readiness_score', 0)}%")
+    a2.metric("Access", snapshot.get("access_level", "Unknown"))
+    a3.metric("Mode", snapshot.get("api_mode", "Unknown"))
+    a4.metric("Integration risk", snapshot.get("integration_risk", "Unknown"))
+
+    if snapshot.get("api_readiness_score", 0) >= 80:
+        st.success(snapshot.get("api_verdict", ""))
+    elif snapshot.get("api_readiness_score", 0) >= 60:
+        st.warning(snapshot.get("api_verdict", ""))
+    else:
+        st.error(snapshot.get("api_verdict", ""))
+
+    st.subheader("Endpoint catalog")
+    endpoints_df = pd.DataFrame(snapshot.get("endpoint_catalog", []))
+    if len(endpoints_df):
+        st.dataframe(endpoints_df, use_container_width=True)
+
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        st.markdown("#### API safety rules")
+        for item in snapshot.get("api_safety_rules", []):
+            st.write(f"- {item}")
+    with c2:
+        st.markdown("#### Implementation checklist")
+        for item in snapshot.get("implementation_checklist", [])[:10]:
+            st.write(f"- {item}")
+
+    st.subheader("Sample request / response simulator")
+    endpoint_names = [e.get("endpoint") for e in snapshot.get("endpoint_catalog", [])]
+    selected_endpoint = st.selectbox(
+        "Endpoint",
+        endpoint_names,
+        index=0 if endpoint_names else None,
+        key="api_endpoint_select_v25",
+    ) if endpoint_names else None
+
+    if selected_endpoint:
+        sample_payload = core.get_api_sample_payload(selected_endpoint)
+        payload_text = st.text_area(
+            "JSON payload",
+            value=core.safe_json_dumps(sample_payload, indent=2),
+            height=220,
+            key="api_payload_text_v25",
+        )
+        if st.button("Simulate API response", type="primary", use_container_width=True, key="api_simulate_response_v25"):
+            try:
+                payload = core.parse_json_payload(payload_text)
+                st.session_state.api_simulation_response = core.simulate_api_endpoint(
+                    selected_endpoint,
+                    payload,
+                    dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+                    project_name=st.session_state.project_name,
+                    selected_plan=api_plan,
+                )
+            except Exception as e:
+                st.session_state.api_simulation_response = {"ok": False, "error": str(e)}
+
+        if st.session_state.api_simulation_response:
+            st.json(st.session_state.api_simulation_response)
+
+    st.subheader("API documentation preview")
+    st.markdown(core.generate_api_docs_markdown(snapshot))
+
+    if st.button("Create API Automation Bundle", type="primary", use_container_width=True, key="api_create_bundle_v25"):
+        st.session_state.api_automation_bundle = core.create_api_automation_bundle(
+            st.session_state.project_name,
+            snapshot,
+            st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        )
+        st.success("API Automation bundle created.")
+
+    if st.session_state.api_automation_bundle:
+        st.download_button(
+            "Download API Automation Bundle",
+            st.session_state.api_automation_bundle,
+            file_name=f"{st.session_state.project_name}_api_automation_bundle.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="api_download_bundle_v25",
+        )
+
+    st.warning("V25 is API-ready architecture, not a public production API yet. Keep first integrations private, logged and rate-limited.")
+
+
+# ============================================================
+# V26 INDUSTRY PACK MARKETPLACE / PACK BUILDER
+# ============================================================
+
+with marketplace_tab:
+    st.header("Industry Pack Marketplace & Pack Builder")
+    st.write(
+        "This turns EdgeTwin Studio into a reusable pack system: packaged use-case knowledge, default labels, sensors, "
+        "pricing position, export rights and dataset-generation settings. Keep it curated first: deep packs beat many shallow packs."
+    )
+
+    st.info("V26 is a marketplace blueprint and internal pack builder. Payments/licensing are simulated locally; use this to validate which packs are worth selling first.")
+
+    mc1, mc2, mc3 = st.columns([1, 1, 1])
+    with mc1:
+        marketplace_plan = st.selectbox(
+            "Customer plan",
+            core.get_pricing_plans(),
+            index=core.get_pricing_plans().index(st.session_state.selected_plan) if st.session_state.selected_plan in core.get_pricing_plans() else 0,
+            key="marketplace_plan_v26",
+        )
+    with mc2:
+        target_market = st.selectbox(
+            "Target market",
+            ["Predictive maintenance", "Security / tamper", "Forestry / remote area", "Agriculture", "Remote assets", "Industrial gateway", "Custom"],
+            key="marketplace_target_market_v26",
+        )
+    with mc3:
+        pack_depth = st.radio("Pack strategy", ["Curated paid packs", "Custom internal pack", "Founder test"], horizontal=False, key="marketplace_strategy_v26")
+
+    catalog = core.get_marketplace_pack_catalog()
+    catalog_df = pd.DataFrame(catalog)
+
+    st.subheader("Curated marketplace catalog")
+    st.dataframe(catalog_df, use_container_width=True)
+
+    state_like = {
+        "has_dataset": isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0,
+        "has_real_bridge": bool(st.session_state.real_bridge_result),
+        "has_reliability_v2": bool(st.session_state.reliability_v2),
+        "has_deployment_plan": bool(st.session_state.deployment_plan),
+        "has_professional_report": bool(st.session_state.professional_report_snapshot),
+        "has_api_plan": bool(st.session_state.api_automation_snapshot),
+    }
+
+    recommendations = core.recommend_marketplace_packs(
+        target_market=target_market,
+        selected_plan=marketplace_plan,
+        dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        trust_gate=st.session_state.trust_gate,
+        reliability_v2=st.session_state.reliability_v2,
+        real_bridge_result=st.session_state.real_bridge_result,
+        deployment_plan=st.session_state.deployment_plan,
+        state_like=state_like,
+    )
+
+    st.subheader("Recommended packs")
+    rec_df = pd.DataFrame(recommendations.get("recommendations", []))
+    if len(rec_df):
+        st.dataframe(rec_df, use_container_width=True)
+        fig = px.bar(rec_df, x="pack_id", y="fit_score", title="Marketplace pack fit score")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("No recommendations available yet.")
+
+    st.markdown("---")
+    st.subheader("Generate pack dataset")
+    pack_names = [p.get("pack_id") for p in catalog]
+    selected_pack_id = st.selectbox("Pack", pack_names, key="marketplace_selected_pack_id_v26")
+    samples_per_class = st.number_input("Samples per class", 10, 2000, 80, 10, key="marketplace_samples_per_class_v26")
+
+    selected_pack = core.get_marketplace_pack(selected_pack_id)
+    if selected_pack:
+        p1, p2, p3, p4 = st.columns(4)
+        p1.metric("Tier", selected_pack.get("tier", "Unknown"))
+        p2.metric("Min plan", selected_pack.get("minimum_plan", "Unknown"))
+        p3.metric("Suggested price", selected_pack.get("price_range", "Unknown"))
+        p4.metric("Classes", len(selected_pack.get("classes", [])))
+        st.write(selected_pack.get("description", ""))
+        st.caption("Sensors: " + ", ".join(selected_pack.get("sensors", [])))
+
+    if st.button("Generate Marketplace Pack Dataset", type="primary", use_container_width=True, key="marketplace_generate_dataset_v26"):
+        with st.spinner("Generating marketplace pack dataset..."):
+            df, manifest = core.generate_marketplace_pack_dataset(selected_pack_id, samples_per_class=samples_per_class)
+            st.session_state.dataset = df
+            st.session_state.marketplace_generated_dataset = df.copy()
+            st.session_state.fusion_manifest = manifest
+            st.session_state.pack_marketplace_snapshot = core.build_pack_marketplace_snapshot(
+                st.session_state.project_name,
+                selected_pack_id=selected_pack_id,
+                selected_plan=marketplace_plan,
+                target_market=target_market,
+                dataset_df=df,
+                trust_gate=st.session_state.trust_gate,
+                reliability_v2=st.session_state.reliability_v2,
+                real_bridge_result=st.session_state.real_bridge_result,
+                deployment_plan=st.session_state.deployment_plan,
+                recommendations=recommendations,
+            )
+            reset_generated_bundles()
+        st.success("Marketplace pack dataset generated and loaded into Enterprise Audit.")
+
+    st.markdown("---")
+    with st.expander("Build a custom pack definition", expanded=False):
+        custom_name = st.text_input("Custom pack name", value="Custom Audio Vibration Pack", key="marketplace_custom_name_v26")
+        custom_description = st.text_area(
+            "Description",
+            value="Reusable Edge AI pilot pack for a focused audio/vibration sensor use-case.",
+            height=80,
+            key="marketplace_custom_description_v26",
+        )
+        custom_use_case = st.selectbox("Use-case type", core.get_use_case_types(), key="marketplace_custom_use_case_v26")
+        custom_sensors = st.multiselect(
+            "Sensors",
+            core.get_sensor_options(),
+            default=["Audio", "Vibration"],
+            key="marketplace_custom_sensors_v26",
+        )
+        custom_labels = st.text_area(
+            "Classes / labels",
+            value="Normal, Warning, Event, Critical",
+            height=80,
+            key="marketplace_custom_labels_v26",
+        )
+        custom_sr = st.number_input("Sample rate", 1000, 48000, 16000, 1000, key="marketplace_custom_sr_v26")
+        custom_price_tier = st.selectbox("Commercial tier", ["Free Demo", "Starter", "Professional", "Real-Data Pilot", "Enterprise"], index=2, key="marketplace_custom_price_tier_v26")
+        license_model = st.selectbox("License model", ["Single project", "Reusable pack", "Team pack", "Enterprise/on-premise"], key="marketplace_custom_license_v26")
+
+        custom_def = core.build_custom_marketplace_pack(
+            name=custom_name,
+            description=custom_description,
+            use_case_type=custom_use_case,
+            sensors=custom_sensors,
+            labels_text=custom_labels,
+            sample_rate=custom_sr,
+            price_tier=custom_price_tier,
+            license_model=license_model,
+        )
+        validation = core.validate_marketplace_pack_definition(custom_def)
+        st.session_state.custom_pack_definition = custom_def
+
+        v1, v2, v3 = st.columns(3)
+        v1.metric("Pack quality", f"{validation.get('quality_score', 0)}%")
+        v2.metric("Commercial tier", custom_def.get("price_tier", "Unknown"))
+        v3.metric("Labels", len(custom_def.get("classes", [])))
+
+        if validation.get("quality_score", 0) >= 75:
+            st.success(validation.get("verdict", ""))
+        elif validation.get("quality_score", 0) >= 55:
+            st.warning(validation.get("verdict", ""))
+        else:
+            st.error(validation.get("verdict", ""))
+
+        for issue in validation.get("issues", []):
+            st.write(f"- {issue}")
+
+        if st.button("Generate Custom Pack Dataset", type="primary", use_container_width=True, key="marketplace_generate_custom_pack_v26"):
+            with st.spinner("Generating custom pack dataset..."):
+                df, manifest = core.generate_custom_marketplace_pack_dataset(custom_def, samples_per_class=samples_per_class)
+                st.session_state.dataset = df
+                st.session_state.marketplace_generated_dataset = df.copy()
+                st.session_state.fusion_manifest = manifest
+                st.session_state.pack_marketplace_snapshot = core.build_pack_marketplace_snapshot(
+                    st.session_state.project_name,
+                    selected_pack_id=custom_def.get("pack_id"),
+                    selected_plan=marketplace_plan,
+                    target_market=target_market,
+                    dataset_df=df,
+                    trust_gate=st.session_state.trust_gate,
+                    reliability_v2=st.session_state.reliability_v2,
+                    real_bridge_result=st.session_state.real_bridge_result,
+                    deployment_plan=st.session_state.deployment_plan,
+                    recommendations=recommendations,
+                    custom_pack_definition=custom_def,
+                    custom_pack_validation=validation,
+                )
+                reset_generated_bundles()
+            st.success("Custom pack dataset generated and loaded into Enterprise Audit.")
+
+    if st.session_state.pack_marketplace_snapshot:
+        snapshot = st.session_state.pack_marketplace_snapshot
+        st.markdown("---")
+        st.subheader("Marketplace readiness snapshot")
+        s1, s2, s3, s4 = st.columns(4)
+        s1.metric("Marketplace score", f"{snapshot.get('marketplace_readiness_score', 0)}%")
+        s2.metric("Pack status", snapshot.get("pack_status", "Unknown"))
+        s3.metric("Commercial fit", snapshot.get("commercial_fit", "Unknown"))
+        s4.metric("Minimum plan", snapshot.get("minimum_plan", "Unknown"))
+
+        if snapshot.get("marketplace_readiness_score", 0) >= 80:
+            st.success(snapshot.get("verdict", ""))
+        elif snapshot.get("marketplace_readiness_score", 0) >= 60:
+            st.warning(snapshot.get("verdict", ""))
+        else:
+            st.error(snapshot.get("verdict", ""))
+
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            st.markdown("#### What this pack should include")
+            for item in snapshot.get("pack_assets", []):
+                st.write(f"- {item}")
+        with c2:
+            st.markdown("#### Launch risks")
+            for item in snapshot.get("launch_risks", []):
+                st.write(f"- {item}")
+
+        if st.button("Create Marketplace Pack Bundle", type="primary", use_container_width=True, key="marketplace_create_bundle_v26"):
+            st.session_state.pack_marketplace_bundle = core.create_marketplace_pack_bundle(
+                st.session_state.project_name,
+                snapshot,
+                st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            )
+            st.success("Marketplace Pack bundle created.")
+
+    if st.session_state.pack_marketplace_bundle:
+        st.download_button(
+            "Download Marketplace Pack Bundle",
+            st.session_state.pack_marketplace_bundle,
+            file_name=f"{st.session_state.project_name}_marketplace_pack_bundle.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="marketplace_download_bundle_v26",
+        )
+
+    st.warning("Start with 3 deep packs: Predictive Maintenance, Acoustic Tamper, and Audio+Vibration Fusion. A small trusted catalog is stronger than a huge shallow marketplace.")
+
+
+# ============================================================
+# V26.1 NORMAL VS ABNORMAL BASELINE ENGINE
+# ============================================================
+
+with normality_tab:
+    st.header("Normal vs Abnormal Baseline Engine • Edge Impulse Export • Edge Impulse Classifier Export")
+    st.write(
+        "This is the practical layer for customers: define what normal looks like, then score which samples are normal-like, "
+        "watch-level, abnormal or critical abnormal. It helps turn sensor data into an understandable pilot threshold plan."
+    )
+
+    st.info("Use this as pilot preparation. A clean normal/baseline class is the most important input. Production thresholds still need field validation.")
+
+    if not isinstance(st.session_state.dataset, pd.DataFrame) or len(st.session_state.dataset) == 0:
+        st.warning("Generate or upload a dataset first. Best sources: Use Case Wizard, Real Bridge, Marketplace Pack or Industry Pack.")
+    elif "Label" not in st.session_state.dataset.columns:
+        st.warning("The current dataset needs a Label column before normality analysis can run.")
+    else:
+        df = st.session_state.dataset.copy()
+        labels = sorted([str(x) for x in df["Label"].dropna().unique().tolist()])
+        detected_labels, detection_notes = core.detect_normal_labels(df)
+        feature_cols = core.get_normality_feature_columns(df)
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Samples", len(df))
+        c2.metric("Labels", len(labels))
+        c3.metric("Detected normal labels", len(detected_labels))
+        c4.metric("Usable features", len(feature_cols))
+
+        for note in detection_notes:
+            st.caption(note)
+
+        left, right = st.columns([1.2, 1])
+        with left:
+            normal_labels = st.multiselect(
+                "Which labels should count as normal / baseline?",
+                labels,
+                default=[x for x in detected_labels if x in labels],
+                key="normality_selected_normal_labels_v261",
+                help="For machine health this is usually Healthy/Normal/Baseline. For security it is Normal_Background or Normal.",
+            )
+            st.caption("Tip: if this is wrong, the whole normal/abnormal decision becomes unreliable. Always confirm the baseline labels.")
+        with right:
+            sensitivity = st.slider(
+                "Baseline tolerance",
+                0.5,
+                2.0,
+                1.0,
+                0.05,
+                key="normality_sensitivity_v261",
+                help="Lower = stricter abnormal detection. Higher = more tolerant baseline.",
+            )
+            apply_scored = st.checkbox("Load scored dataset back into Enterprise Audit after analysis", value=False, key="normality_apply_scored_v261")
+
+        with st.expander("Normality feature columns", expanded=False):
+            st.write(feature_cols)
+
+        if st.button("Analyze Normal vs Abnormal", type="primary", use_container_width=True, key="normality_run_v261"):
+            with st.spinner("Building baseline profile and scoring normality..."):
+                result = core.run_normality_baseline_engine(
+                    df,
+                    normal_labels=normal_labels,
+                    sensitivity=sensitivity,
+                    project_context={
+                        "project_name": st.session_state.project_name,
+                        "selected_template": st.session_state.selected_template,
+                    },
+                )
+                st.session_state.normality_result = result
+                st.session_state.normality_bundle = None
+                if apply_scored and result.get("valid") and isinstance(result.get("scored_dataset"), pd.DataFrame):
+                    st.session_state.dataset = result["scored_dataset"].copy()
+                    reset_generated_bundles()
+            st.success("Normal vs Abnormal analysis completed.")
+
+    if st.session_state.normality_result:
+        result = st.session_state.normality_result
+        summary = result.get("summary", {})
+        profile = result.get("baseline_profile", {})
+
+        st.markdown("---")
+        st.subheader("Normality result")
+
+        n1, n2, n3, n4 = st.columns(4)
+        n1.metric("Normality Score", f"{summary.get('normality_score', 0)}%")
+        n2.metric("Abnormal Rate", f"{summary.get('abnormal_rate_pct', 0)}%")
+        n3.metric("Baseline Confidence", f"{summary.get('baseline_confidence', 0)}%")
+        n4.metric("Decision", summary.get("decision", "Unknown"))
+
+        decision = summary.get("decision", "Unknown")
+        if decision == "GO":
+            st.success(summary.get("verdict", ""))
+        elif decision == "NO-GO":
+            st.error(summary.get("verdict", ""))
+        else:
+            st.warning(summary.get("verdict", ""))
+
+        st.caption("Normal labels: " + ", ".join(profile.get("normal_labels", [])))
+        for issue in profile.get("issues", []):
+            st.warning(issue)
+
+        p1, p2 = st.columns([1, 1])
+        with p1:
+            st.markdown("#### Per-label normality")
+            per_label = pd.DataFrame(summary.get("per_label_summary", []))
+            if len(per_label):
+                st.dataframe(per_label, use_container_width=True)
+                fig = px.bar(per_label, x="label", y="mean_normality_score", title="Mean normality score per label")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No per-label summary available.")
+        with p2:
+            st.markdown("#### Top deviation features")
+            top_dev = pd.DataFrame(summary.get("top_deviation_features", []))
+            if len(top_dev):
+                st.dataframe(top_dev, use_container_width=True)
+                fig2 = px.bar(top_dev, x="feature", y="avg_deviation_z", title="Top deviation features")
+                st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.info("No deviation features available.")
+
+        st.markdown("#### Recommended next steps")
+        for step in summary.get("recommended_next_steps", []):
+            st.write(f"- {step}")
+
+        scored_df = result.get("scored_dataset")
+        if isinstance(scored_df, pd.DataFrame) and len(scored_df):
+            st.markdown("#### Scored dataset preview")
+            st.dataframe(scored_df.head(80), use_container_width=True)
+            st.download_button(
+                "Download scored normality CSV",
+                scored_df.to_csv(index=False),
+                file_name=f"{st.session_state.project_name}_normality_scored_dataset.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="normality_download_scored_csv_v261",
+            )
+
+        if st.button("Create Normality Bundle", type="primary", use_container_width=True, key="normality_create_bundle_v261"):
+            st.session_state.normality_bundle = core.create_normality_baseline_bundle(
+                st.session_state.project_name,
+                st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+                result,
+            )
+            st.success("Normality bundle created.")
+
+    if st.session_state.normality_bundle:
+        st.download_button(
+            "Download Normality Bundle",
+            st.session_state.normality_bundle,
+            file_name=f"{st.session_state.project_name}_normality_bundle.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="normality_download_bundle_v261",
+        )
+
+    st.warning("This engine explains normal-like versus abnormal relative to a selected baseline. It does not replace real field validation or safety certification.")
+
+
+# ============================================================
+# V26.2 EDGE IMPULSE ANOMALY EXPORT
+# ============================================================
+
+with edge_impulse_tab:
+    st.header("Edge Impulse Anomaly Export")
+    st.write(
+        "Prepare the current EdgeTwin dataset for an Edge Impulse anomaly workflow. "
+        "This is designed for the practical K-means style flow: learn normal behavior first, then flag deviations."
+    )
+
+    st.info(
+        "Best use: run the Normality Engine first, confirm the true normal/baseline labels, then export the normal-only training CSV and all-label evaluation CSV."
+    )
+
+    if not isinstance(st.session_state.dataset, pd.DataFrame) or len(st.session_state.dataset) == 0:
+        st.warning("Generate, upload or bridge a dataset first. Best sources: Real Bridge, Normality Engine, Auto Pilot or Marketplace Pack.")
+    elif "Label" not in st.session_state.dataset.columns:
+        st.warning("The current dataset needs a Label column before Edge Impulse export can run.")
+    else:
+        df = st.session_state.dataset.copy()
+        labels = sorted([str(x) for x in df["Label"].dropna().unique().tolist()])
+        detected_labels, detection_notes = core.detect_normal_labels(df)
+        previous_normal = []
+        if isinstance(st.session_state.normality_result, dict):
+            previous_normal = st.session_state.normality_result.get("baseline_profile", {}).get("normal_labels", []) or []
+        default_normal = [x for x in previous_normal if x in labels] or [x for x in detected_labels if x in labels]
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Samples", len(df))
+        c2.metric("Labels", len(labels))
+        c3.metric("Detected normal labels", len(default_normal))
+        c4.metric("Numeric features", len(core.get_edge_impulse_feature_columns(df)))
+
+        for note in detection_notes[:3]:
+            st.caption(note)
+
+        left, right = st.columns([1.2, 1])
+        with left:
+            normal_labels = st.multiselect(
+                "Normal / baseline labels for anomaly training",
+                labels,
+                default=default_normal,
+                key="ei_normal_labels_v262",
+                help="For K-means anomaly detection, train mostly on normal behavior. Abnormal labels are best used for validation/evaluation.",
+            )
+            workflow = st.selectbox(
+                "Export workflow",
+                [
+                    "K-means anomaly baseline",
+                    "Classification + anomaly layer",
+                    "Feature CSV only",
+                ],
+                index=0,
+                key="ei_workflow_v262",
+            )
+        with right:
+            suggested_k = core.suggest_edge_impulse_k(len(df[df["Label"].astype(str).isin(normal_labels)]), len(normal_labels)) if normal_labels else 8
+            k_clusters = st.number_input(
+                "Suggested K clusters",
+                min_value=4,
+                max_value=128,
+                value=int(suggested_k),
+                step=4,
+                key="ei_k_clusters_v262",
+                help="Edge Impulse still lets you tune this. This is only a starting recommendation.",
+            )
+            max_axes = st.slider("Max anomaly axes", 2, 12, 6, 1, key="ei_max_axes_v262")
+            include_derived = st.checkbox(
+                "Include EdgeTwin derived scores as export columns",
+                value=False,
+                key="ei_include_derived_v262",
+                help="Usually keep this off for Edge Impulse training; use raw signal/features where possible. Derived scores are useful for reports and evaluation.",
+            )
+
+        if st.button("Prepare Edge Impulse Export", type="primary", use_container_width=True, key="ei_prepare_export_v262"):
+            with st.spinner("Preparing Edge Impulse anomaly export package..."):
+                snapshot = core.build_edge_impulse_anomaly_export_snapshot(
+                    project_name=st.session_state.project_name,
+                    dataset_df=df,
+                    normal_labels=normal_labels,
+                    workflow=workflow,
+                    k_clusters=int(k_clusters),
+                    max_axes=int(max_axes),
+                    normality_result=st.session_state.normality_result,
+                    include_derived_scores=include_derived,
+                )
+                st.session_state.edge_impulse_snapshot = snapshot
+                st.session_state.edge_impulse_bundle = core.create_edge_impulse_anomaly_bundle(st.session_state.project_name, snapshot)
+            st.success("Edge Impulse export prepared.")
+
+    if st.session_state.edge_impulse_snapshot:
+        snapshot = st.session_state.edge_impulse_snapshot
+        summary = snapshot.get("summary", {})
+        files = snapshot.get("files", {})
+
+        st.markdown("---")
+        st.subheader("Edge Impulse export result")
+
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Export Readiness", f"{summary.get('export_readiness_score', 0)}%")
+        e2.metric("Normal Training Samples", summary.get("normal_training_samples", 0))
+        e3.metric("Recommended K", summary.get("recommended_k", 0))
+        e4.metric("Decision", summary.get("decision", "Unknown"))
+
+        decision = summary.get("decision", "Unknown")
+        if decision == "GO":
+            st.success(summary.get("verdict", ""))
+        elif decision == "NO-GO":
+            st.error(summary.get("verdict", ""))
+        else:
+            st.warning(summary.get("verdict", ""))
+
+        st.markdown("#### Recommended anomaly axes")
+        axes_df = pd.DataFrame(summary.get("recommended_axes", []))
+        if len(axes_df):
+            st.dataframe(axes_df, use_container_width=True)
+        else:
+            st.info("No recommended axes available yet.")
+
+        st.markdown("#### Edge Impulse steps")
+        for step in summary.get("edge_impulse_steps", []):
+            st.write(f"- {step}")
+
+        st.markdown("#### Warnings")
+        for warning in summary.get("warnings", []):
+            st.warning(warning)
+
+        d1, d2, d3, d4 = st.columns(4)
+        if isinstance(files.get("normal_training_csv"), pd.DataFrame):
+            d1.download_button(
+                "Download EI normal training CSV",
+                files["normal_training_csv"].to_csv(index=False),
+                file_name=f"{st.session_state.project_name}_edge_impulse_normal_training.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="ei_download_normal_csv_v262",
+            )
+        if isinstance(files.get("evaluation_csv"), pd.DataFrame):
+            d2.download_button(
+                "Download EI evaluation CSV",
+                files["evaluation_csv"].to_csv(index=False),
+                file_name=f"{st.session_state.project_name}_edge_impulse_evaluation.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="ei_download_eval_csv_v262",
+            )
+        d3.download_button(
+            "Download EI instructions",
+            files.get("instructions_md", ""),
+            file_name=f"{st.session_state.project_name}_edge_impulse_instructions.md",
+            mime="text/markdown",
+            use_container_width=True,
+            key="ei_download_instructions_v262",
+        )
+        if st.session_state.edge_impulse_bundle:
+            d4.download_button(
+                "Download EI Export Bundle",
+                st.session_state.edge_impulse_bundle,
+                file_name=f"{st.session_state.project_name}_edge_impulse_anomaly_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="ei_download_bundle_v262",
+            )
+
+        if isinstance(files.get("normal_training_csv"), pd.DataFrame):
+            st.markdown("#### Normal training CSV preview")
+            st.dataframe(files["normal_training_csv"].head(50), use_container_width=True)
+
+    st.warning("Use EdgeTwin as pilot preparation. Edge Impulse K-means thresholds and axes still need real-field validation before production deployment.")
+
+
+# ============================================================
+# V26.3 EDGE IMPULSE CLASSIFIER EXPORT
+# ============================================================
+
+with ei_classifier_tab:
+    st.header("Edge Impulse Classifier Export")
+    st.write(
+        "Prepare labelled EdgeTwin datasets for supervised Edge Impulse classification. "
+        "Use this when you want the model to distinguish classes such as Normal, Bearing_Wear, Drilling, Impact or Critical_Tamper."
+    )
+
+    st.info(
+        "Use V26.2 for K-means anomaly baseline. Use this tab for labelled event classification with train/test CSV exports and feature recommendations."
+    )
+
+    if not isinstance(st.session_state.dataset, pd.DataFrame) or len(st.session_state.dataset) == 0:
+        st.warning("Generate, upload or bridge a dataset first. Good sources: Real Bridge, Auto Pilot, Normality Engine or Marketplace Pack.")
+    elif "Label" not in st.session_state.dataset.columns:
+        st.warning("The current dataset needs a Label column before classifier export can run.")
+    else:
+        df = st.session_state.dataset.copy()
+        labels = sorted([str(x) for x in df["Label"].dropna().unique().tolist()])
+        feature_cols = core.get_edge_impulse_classifier_feature_columns(df)
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Samples", len(df))
+        c2.metric("Labels", len(labels))
+        c3.metric("Classifier features", len(feature_cols))
+        c4.metric("Smallest class", int(df["Label"].value_counts().min()) if len(labels) else 0)
+
+        left, right = st.columns([1.2, 1])
+        with left:
+            workflow = st.selectbox(
+                "Classifier workflow",
+                [
+                    "Supervised event classification",
+                    "Machine health classification",
+                    "Security/tamper classification",
+                    "Classifier + anomaly validation",
+                ],
+                index=0,
+                key="ei_classifier_workflow_v263",
+            )
+            min_samples = st.number_input(
+                "Minimum samples per class for GO decision",
+                min_value=5,
+                max_value=200,
+                value=20,
+                step=5,
+                key="ei_classifier_min_samples_v263",
+            )
+        with right:
+            test_size = st.slider("Holdout/test split", 0.10, 0.40, 0.20, 0.05, key="ei_classifier_test_size_v263")
+            max_features = st.slider("Max exported features", 3, 30, 12, 1, key="ei_classifier_max_features_v263")
+            include_derived = st.checkbox(
+                "Include EdgeTwin derived scores",
+                value=False,
+                key="ei_classifier_include_derived_v263",
+                help="Usually keep this off for model training. Derived scores are useful for evaluation/reporting, but raw features are safer for deployment.",
+            )
+
+        if st.button("Prepare Classifier Export", type="primary", use_container_width=True, key="ei_classifier_prepare_v263"):
+            with st.spinner("Preparing Edge Impulse classifier export package..."):
+                snapshot = core.build_edge_impulse_classifier_export_snapshot(
+                    project_name=st.session_state.project_name,
+                    dataset_df=df,
+                    workflow=workflow,
+                    test_size=float(test_size),
+                    include_derived_scores=include_derived,
+                    min_samples_per_class=int(min_samples),
+                    max_features=int(max_features),
+                )
+                st.session_state.edge_impulse_classifier_snapshot = snapshot
+                st.session_state.edge_impulse_classifier_bundle = core.create_edge_impulse_classifier_bundle(st.session_state.project_name, snapshot)
+            st.success("Edge Impulse classifier export prepared.")
+
+    if st.session_state.edge_impulse_classifier_snapshot:
+        snapshot = st.session_state.edge_impulse_classifier_snapshot
+        summary = snapshot.get("summary", {})
+        files = snapshot.get("files", {})
+
+        st.markdown("---")
+        st.subheader("Classifier export result")
+
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Readiness", f"{summary.get('export_readiness_score', 0)}%")
+        e2.metric("Train samples", summary.get("train_samples", 0))
+        e3.metric("Test samples", summary.get("test_samples", 0))
+        e4.metric("Decision", summary.get("decision", "Unknown"))
+
+        decision = summary.get("decision", "Unknown")
+        if decision == "GO":
+            st.success(summary.get("verdict", ""))
+        elif decision == "NO-GO":
+            st.error(summary.get("verdict", ""))
+        else:
+            st.warning(summary.get("verdict", ""))
+
+        class_df = files.get("class_summary_csv")
+        if isinstance(class_df, pd.DataFrame) and len(class_df):
+            st.markdown("#### Class readiness")
+            st.dataframe(class_df, use_container_width=True)
+
+        ranking_df = pd.DataFrame(summary.get("recommended_features", []))
+        if len(ranking_df):
+            st.markdown("#### Feature ranking for classifier")
+            st.dataframe(ranking_df[[c for c in ["feature", "classifier_value_score", "reason"] if c in ranking_df.columns]], use_container_width=True)
+
+        st.markdown("#### Edge Impulse steps")
+        for step in summary.get("edge_impulse_steps", []):
+            st.write(f"- {step}")
+
+        for warning in summary.get("warnings", []):
+            st.warning(warning)
+
+        d1, d2, d3, d4 = st.columns(4)
+        if isinstance(files.get("train_csv"), pd.DataFrame):
+            d1.download_button(
+                "Download classifier train CSV",
+                files["train_csv"].to_csv(index=False),
+                file_name=f"{st.session_state.project_name}_ei_classifier_train.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="ei_classifier_download_train_v263",
+            )
+        if isinstance(files.get("test_csv"), pd.DataFrame):
+            d2.download_button(
+                "Download classifier test CSV",
+                files["test_csv"].to_csv(index=False),
+                file_name=f"{st.session_state.project_name}_ei_classifier_test.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="ei_classifier_download_test_v263",
+            )
+        d3.download_button(
+            "Download classifier instructions",
+            files.get("instructions_md", ""),
+            file_name=f"{st.session_state.project_name}_ei_classifier_instructions.md",
+            mime="text/markdown",
+            use_container_width=True,
+            key="ei_classifier_download_instructions_v263",
+        )
+        if st.session_state.edge_impulse_classifier_bundle:
+            d4.download_button(
+                "Download Classifier Export Bundle",
+                st.session_state.edge_impulse_classifier_bundle,
+                file_name=f"{st.session_state.project_name}_edge_impulse_classifier_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="ei_classifier_download_bundle_v263",
+            )
+
+        if isinstance(files.get("train_csv"), pd.DataFrame):
+            st.markdown("#### Training CSV preview")
+            st.dataframe(files["train_csv"].head(50), use_container_width=True)
+
+    st.warning("Classifier exports are for pilot preparation. Real field validation and Edge Impulse training metrics are still required before deployment claims.")
+
+
+
+# ============================================================
+# RELEASE SUCCESS GATE / ONE-CLICK CUSTOMER READINESS
+# ============================================================
+
+with success_gate_tab:
+    st.header("Release Success Gate • Golden Demo Suite • Closed Beta Launch Kit • Paid Export Gate • Real Field Validation • Edge Deployment Starter • Storage/Scalability • Operational Control Center")
+    st.write(
+        "This is the final one-click gate before showing EdgeTwin Studio output to a beta customer. "
+        "It combines data quality, trust evidence, hardening, reports, Edge Impulse export readiness, "
+        "deployment planning and monetization positioning into one honest release decision."
+    )
+
+    intended_offer = st.selectbox(
+        "Intended offer level",
+        ["Free demo", "Private beta", "Paid pilot", "Real-data pilot", "Enterprise review"],
+        index=2,
+        key="success_gate_intended_offer_v264",
+    )
+
+    customer_type = st.selectbox(
+        "Target customer type",
+        ["Solo maker / hobby", "Small business", "Industrial pilot team", "Enterprise innovation team", "Internal OMEGA-X validation"],
+        index=2,
+        key="success_gate_customer_type_v264",
+    )
+
+    auto_refresh = st.checkbox(
+        "Auto-build missing internal evidence where possible",
+        value=True,
+        key="success_gate_auto_refresh_v264",
+        help="Creates lightweight internal snapshots for hardening/beta/monetization when they are missing. It does not fake real-data evidence.",
+    )
+
+    if st.button("Run Release Success Gate", type="primary", use_container_width=True, key="run_success_gate_v264"):
+        with st.spinner("Running final release readiness checks..."):
+            if auto_refresh:
+                if not st.session_state.hardening_snapshot:
+                    st.session_state.hardening_snapshot = core.run_product_hardening_suite(
+                        st.session_state.project_name,
+                        dataset_df=st.session_state.dataset,
+                        trust_gate=st.session_state.trust_gate,
+                        deployment_plan=st.session_state.deployment_plan,
+                        professional_report_snapshot=st.session_state.professional_report_snapshot,
+                        monetization_snapshot=st.session_state.monetization_snapshot,
+                        has_real_data=bool(st.session_state.real_bridge_result),
+                    )
+                if not st.session_state.beta_launch_snapshot:
+                    st.session_state.beta_launch_snapshot = core.build_beta_launch_snapshot(
+                        st.session_state.project_name,
+                        dataset_df=st.session_state.dataset,
+                        trust_gate=st.session_state.trust_gate,
+                        real_bridge_result=st.session_state.real_bridge_result,
+                        deployment_plan=st.session_state.deployment_plan,
+                        professional_report_snapshot=st.session_state.professional_report_snapshot,
+                        hardening_snapshot=st.session_state.hardening_snapshot,
+                        monetization_snapshot=st.session_state.monetization_snapshot,
+                    )
+                if not st.session_state.monetization_snapshot:
+                    st.session_state.monetization_snapshot = core.build_monetization_snapshot(
+                        st.session_state.project_name,
+                        selected_plan=st.session_state.selected_plan,
+                        dataset_df=st.session_state.dataset,
+                        trust_gate=st.session_state.trust_gate,
+                        reliability_v2=st.session_state.reliability_v2,
+                        real_bridge_result=st.session_state.real_bridge_result,
+                    )
+
+            snapshot = core.build_release_success_gate_snapshot(
+                project_name=st.session_state.project_name,
+                dataset_df=st.session_state.dataset,
+                intended_offer=intended_offer,
+                customer_type=customer_type,
+                selected_plan=st.session_state.selected_plan,
+                trust_gate=st.session_state.trust_gate,
+                reliability_v2=st.session_state.reliability_v2,
+                real_bridge_result=st.session_state.real_bridge_result,
+                deployment_plan=st.session_state.deployment_plan,
+                professional_report_snapshot=st.session_state.professional_report_snapshot,
+                hardening_snapshot=st.session_state.hardening_snapshot,
+                beta_launch_snapshot=st.session_state.beta_launch_snapshot,
+                monetization_snapshot=st.session_state.monetization_snapshot,
+                normality_result=st.session_state.normality_result,
+                edge_impulse_snapshot=st.session_state.edge_impulse_snapshot,
+                edge_impulse_classifier_snapshot=st.session_state.edge_impulse_classifier_snapshot,
+            )
+            st.session_state.release_success_snapshot = snapshot
+            st.session_state.release_success_bundle = core.create_release_success_gate_bundle(
+                st.session_state.project_name,
+                snapshot,
+                st.session_state.dataset,
+            )
+        st.success("Release Success Gate completed.")
+
+    snapshot = st.session_state.release_success_snapshot
+    if snapshot:
+        summary = snapshot.get("summary", {})
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Success Score", f"{summary.get('success_score', 0)}%")
+        c2.metric("Decision", summary.get("decision", "Unknown"))
+        c3.metric("Commercial Status", summary.get("commercial_status", "Unknown"))
+        c4.metric("Risk Level", summary.get("risk_level", "Unknown"))
+
+        decision = summary.get("decision", "")
+        if decision == "GO":
+            st.success(summary.get("verdict", ""))
+        elif decision == "CONDITIONAL GO":
+            st.warning(summary.get("verdict", ""))
+        else:
+            st.error(summary.get("verdict", ""))
+
+        st.markdown("#### Score breakdown")
+        breakdown = pd.DataFrame(snapshot.get("score_breakdown", []))
+        if len(breakdown) > 0:
+            st.dataframe(breakdown, use_container_width=True)
+            fig = px.bar(breakdown, x="area", y="score", title="Release success score breakdown")
+            st.plotly_chart(fig, use_container_width=True)
+
+        b1, b2 = st.columns(2)
+        with b1:
+            st.markdown("#### Must-fix blockers")
+            blockers = snapshot.get("blockers", [])
+            if blockers:
+                for item in blockers:
+                    st.error(item)
+            else:
+                st.success("No must-fix blockers detected by the Success Gate.")
+
+            st.markdown("#### Recommended next actions")
+            for item in snapshot.get("recommended_actions", []):
+                st.info(item)
+
+        with b2:
+            st.markdown("#### Evidence coverage")
+            evidence = pd.DataFrame(snapshot.get("evidence", []))
+            if len(evidence) > 0:
+                st.dataframe(evidence, use_container_width=True)
+
+            st.markdown("#### Safe customer wording")
+            st.write(summary.get("safe_customer_wording", ""))
+
+        st.markdown("#### Claims check")
+        claims_df = pd.DataFrame(snapshot.get("claims_check", []))
+        if len(claims_df) > 0:
+            st.dataframe(claims_df, use_container_width=True)
+
+        if st.session_state.release_success_bundle:
+            st.download_button(
+                "Download Release Success Bundle",
+                st.session_state.release_success_bundle,
+                file_name=f"{st.session_state.project_name}_release_success_gate_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_release_success_bundle_v264",
+            )
+    else:
+        st.info("Run the Success Gate after generating at least one dataset. For a paid pilot, also run Trust Center, Reports 2.0, Hardening and one Edge Impulse export route.")
+
+
+
+# ============================================================
+# V27 GOLDEN DEMO SUITE / CUSTOMER PAIN PROOF MATRIX
+# ============================================================
+
+with golden_demo_tab:
+    st.header("Golden Demo Suite + Customer Pain Proof Matrix")
+    st.write(
+        "This is the one-click proof flow. It runs a complete EdgeTwin pilot chain and then explains which real customer problems were solved, "
+        "which evidence was generated, and whether the package is safe to show as a demo or paid pilot candidate."
+    )
+
+    scenario_ids = core.get_golden_demo_scenarios()
+    scenario_titles = {sid: core.get_golden_demo_scenario(sid).get("title", sid) for sid in scenario_ids}
+
+    c1, c2, c3 = st.columns([1.2, 1, 1])
+    with c1:
+        selected_scenario = st.selectbox(
+            "Golden demo scenario",
+            scenario_ids,
+            format_func=lambda x: scenario_titles.get(x, x),
+            key="golden_demo_scenario_v27",
+        )
+    with c2:
+        golden_offer = st.selectbox(
+            "Intended offer",
+            ["Free demo", "Private beta", "Paid pilot", "Real-data pilot", "Enterprise review"],
+            index=2,
+            key="golden_demo_offer_v27",
+        )
+    with c3:
+        golden_plan = st.selectbox(
+            "Plan context",
+            ["Free Demo", "Starter", "Professional Pilot", "Real-Data Pilot", "Enterprise", "Founder Test Mode"],
+            index=5,
+            key="golden_demo_plan_v27",
+        )
+
+    scenario = core.get_golden_demo_scenario(selected_scenario)
+    st.info(scenario.get("customer_problem", ""))
+
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric("Use case", scenario.get("use_case_type", "Custom"))
+    s2.metric("Sensors", len(scenario.get("selected_sensors", [])))
+    s3.metric("Classes", len(scenario.get("classes", [])))
+    s4.metric("Sample rate", f"{scenario.get('sample_rate', 0)} Hz")
+
+    with st.expander("What this proves", expanded=False):
+        st.write("Target customer:", scenario.get("target_customer", ""))
+        st.write("Sales angle:", scenario.get("sales_angle", ""))
+        st.write("Normal labels:", ", ".join(scenario.get("normal_labels", [])))
+        st.write("Classes:", ", ".join(scenario.get("classes", [])))
+        st.warning("Golden demos prove the end-to-end pilot-preparation flow. They do not replace real field validation.")
+
+    run_col, load_col = st.columns([2, 1])
+    with run_col:
+        if st.button("Run Golden Demo Suite", type="primary", use_container_width=True, key="run_golden_demo_suite_v27"):
+            with st.spinner("Running full end-to-end pilot proof flow..."):
+                result = core.run_golden_demo_suite(
+                    selected_scenario,
+                    selected_plan=golden_plan,
+                    intended_offer=golden_offer,
+                    include_optimizer=True,
+                    include_edge_impulse=True,
+                )
+                st.session_state.golden_demo_result = result
+                st.session_state.golden_demo_bundle = core.create_golden_demo_bundle(
+                    result.get("summary", {}).get("project_name", st.session_state.project_name),
+                    result,
+                )
+                # Load the result back into the main workspace so all existing tabs can inspect it.
+                st.session_state.project_name = result.get("summary", {}).get("project_name", st.session_state.project_name)
+                st.session_state.dataset = result.get("dataset", pd.DataFrame())
+                artifacts = result.get("artifacts", {})
+                st.session_state.fusion_df = result.get("fusion_dataset", pd.DataFrame())
+                st.session_state.fusion_manifest = artifacts.get("pilot", {}).get("manifest", {}) if isinstance(artifacts.get("pilot"), dict) else {}
+                st.session_state.fusion_doctor = artifacts.get("pilot", {}).get("doctor", {}) if isinstance(artifacts.get("pilot"), dict) else {}
+                st.session_state.fusion_training_df = result.get("dataset", pd.DataFrame())
+                st.session_state.hardware_result = artifacts.get("pilot", {}).get("hardware") if isinstance(artifacts.get("pilot"), dict) else None
+                st.session_state.trust_gate = artifacts.get("trust_gate")
+                st.session_state.reliability_v2 = artifacts.get("reliability_v2")
+                st.session_state.normality_result = artifacts.get("normality_result")
+                st.session_state.deployment_plan = artifacts.get("deployment_plan")
+                st.session_state.professional_report_snapshot = artifacts.get("professional_report_snapshot")
+                st.session_state.hardening_snapshot = artifacts.get("hardening_snapshot")
+                st.session_state.beta_launch_snapshot = artifacts.get("beta_launch_snapshot")
+                st.session_state.monetization_snapshot = artifacts.get("monetization_snapshot")
+                st.session_state.edge_impulse_snapshot = artifacts.get("edge_impulse_snapshot")
+                st.session_state.edge_impulse_classifier_snapshot = artifacts.get("edge_impulse_classifier_snapshot")
+                st.session_state.release_success_snapshot = artifacts.get("release_success_snapshot")
+            st.success("Golden Demo Suite completed and loaded into the workspace.")
+
+    with load_col:
+        if st.session_state.golden_demo_bundle:
+            st.download_button(
+                "Download Golden Demo Bundle",
+                st.session_state.golden_demo_bundle,
+                file_name=f"{st.session_state.project_name}_golden_demo_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_golden_demo_bundle_v27",
+            )
+
+    result = st.session_state.golden_demo_result
+    if result:
+        summary = result.get("summary", {})
+        r1, r2, r3, r4 = st.columns(4)
+        r1.metric("Golden Demo Score", f"{summary.get('golden_demo_score', 0)}%")
+        r2.metric("Decision", summary.get("decision", "Unknown"))
+        r3.metric("Proof Matrix", f"{summary.get('proof_matrix_score', 0)}%")
+        r4.metric("Release Success", f"{summary.get('release_success_score', 0)}%")
+
+        if summary.get("decision") == "GO":
+            st.success(summary.get("customer_wording", ""))
+        elif summary.get("decision") == "CONDITIONAL GO":
+            st.warning(summary.get("customer_wording", ""))
+        else:
+            st.error(summary.get("customer_wording", ""))
+
+        st.markdown("#### End-to-end proof steps")
+        steps_df = pd.DataFrame(result.get("steps", []))
+        if len(steps_df) > 0:
+            st.dataframe(steps_df, use_container_width=True)
+            fig = px.bar(steps_df, x="step", y="score", color="status", title="Golden demo end-to-end step scores")
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("#### Customer Pain → EdgeTwin Proof Matrix")
+        proof_df = pd.DataFrame(result.get("pain_proof_matrix", []))
+        if len(proof_df) > 0:
+            st.dataframe(proof_df, use_container_width=True)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Dataset preview loaded into workspace")
+            dataset = result.get("dataset", pd.DataFrame())
+            if isinstance(dataset, pd.DataFrame) and len(dataset) > 0:
+                st.dataframe(dataset.head(50), use_container_width=True)
+        with c2:
+            st.markdown("#### What to say safely")
+            st.write(summary.get("customer_wording", ""))
+            st.warning(summary.get("disclaimer", ""))
+
+    else:
+        st.info("Run one Golden Demo to prove the full chain: customer problem → pilot package → proof matrix → release decision.")
+
+
+
+# ============================================================
+# V28 CLOSED BETA LAUNCH KIT
+# ============================================================
+
+with closed_beta_tab:
+    st.header("Closed Beta Launch Kit • Paid Export Gate • Real Field Validation • Edge Deployment Starter • Storage/Scalability • Operational Control Center")
+    st.write(
+        "Use this after the Golden Demo and Success Gate. It prepares a controlled beta plan, invite email, demo script, "
+        "feedback questions, safe claims and package recommendation so you can test EdgeTwin with a small number of trusted users."
+    )
+
+    beta_c1, beta_c2 = st.columns([1.15, 1])
+
+    with beta_c1:
+        target_segment = st.selectbox(
+            "Target beta segment",
+            core.get_closed_beta_segments(),
+            key="closed_beta_target_segment_v28",
+        )
+        segment_info = core.get_closed_beta_segment(target_segment)
+        st.info(segment_info.get("pain", ""))
+        beta_goal = st.text_area(
+            "Beta goal",
+            value="Validate whether EdgeTwin Studio helps a real customer move from sensor idea to pilot-ready package faster.",
+            height=95,
+            key="closed_beta_goal_v28",
+        )
+
+    with beta_c2:
+        selected_offer = st.selectbox(
+            "Offer to test",
+            [
+                "Free Feedback Beta",
+                "Starter Pilot Bundle",
+                "Professional Pilot Bundle",
+                "Real-Data Pilot Bundle",
+                "Enterprise Review Candidate",
+            ],
+            index=2,
+            key="closed_beta_offer_v28",
+        )
+        max_beta_users = st.number_input(
+            "Max beta users",
+            min_value=1,
+            max_value=25,
+            value=5,
+            step=1,
+            key="closed_beta_max_users_v28",
+        )
+        st.markdown("#### Segment promise")
+        st.write(segment_info.get("promise", ""))
+        st.caption(f"Best matching demo: {segment_info.get('best_demo', 'Unknown')}")
+
+    st.markdown("---")
+    st.caption("Best practice: run a Golden Demo first, then run the Success Gate, then create this Closed Beta Kit.")
+
+    if st.button("Create Closed Beta Launch Kit", type="primary", use_container_width=True, key="create_closed_beta_kit_v28"):
+        with st.spinner("Building closed beta launch kit..."):
+            kit = core.build_closed_beta_launch_kit(
+                project_name=st.session_state.project_name,
+                target_segment=target_segment,
+                selected_offer=selected_offer,
+                beta_goal=beta_goal,
+                max_beta_users=max_beta_users,
+                dataset_df=st.session_state.dataset,
+                golden_demo_result=st.session_state.golden_demo_result,
+                release_success_snapshot=st.session_state.release_success_snapshot,
+                hardening_snapshot=st.session_state.hardening_snapshot,
+                monetization_snapshot=st.session_state.monetization_snapshot,
+                professional_report_snapshot=st.session_state.professional_report_snapshot,
+            )
+            st.session_state.closed_beta_kit = kit
+            st.session_state.closed_beta_bundle = core.create_closed_beta_launch_bundle(st.session_state.project_name, kit)
+        st.success("Closed Beta Launch Kit created.")
+
+    kit = st.session_state.closed_beta_kit
+    if kit:
+        summary = kit.get("summary", {})
+        package = summary.get("package_recommendation", {}) or {}
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Beta Readiness", f"{summary.get('beta_readiness_score', 0)}%")
+        k2.metric("Decision", summary.get("decision", "Unknown"))
+        k3.metric("Max Users", summary.get("max_beta_users", 0))
+        k4.metric("Package", package.get("recommended_package", "Unknown"))
+
+        decision = summary.get("decision", "")
+        if decision == "READY FOR CONTROLLED BETA":
+            st.success(package.get("positioning", ""))
+        elif decision == "LIMITED BETA ONLY":
+            st.warning(package.get("positioning", ""))
+        else:
+            st.error(package.get("positioning", ""))
+
+        if st.session_state.closed_beta_bundle:
+            st.download_button(
+                "Download Closed Beta Launch Bundle",
+                st.session_state.closed_beta_bundle,
+                file_name=f"{st.session_state.project_name}_closed_beta_launch_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_closed_beta_bundle_v28",
+            )
+
+        e1, e2 = st.columns(2)
+        with e1:
+            st.markdown("#### Evidence")
+            evidence_df = pd.DataFrame(kit.get("evidence", []))
+            if len(evidence_df) > 0:
+                st.dataframe(evidence_df, use_container_width=True)
+            if kit.get("blockers"):
+                st.markdown("#### Blockers")
+                for item in kit.get("blockers", []):
+                    st.error(item)
+            if kit.get("warnings"):
+                st.markdown("#### Warnings")
+                for item in kit.get("warnings", []):
+                    st.warning(item)
+        with e2:
+            st.markdown("#### Invite email")
+            st.text_area("Copy/paste beta invite", kit.get("invite_email", ""), height=300, key="closed_beta_invite_preview_v28")
+
+        st.markdown("#### Demo script")
+        demo_df = pd.DataFrame(kit.get("demo_script", []))
+        if len(demo_df) > 0:
+            st.dataframe(demo_df, use_container_width=True)
+
+        st.markdown("#### Feedback questions")
+        feedback_df = pd.DataFrame(kit.get("feedback_questions", []))
+        if len(feedback_df) > 0:
+            st.dataframe(feedback_df, use_container_width=True)
+
+        st.markdown("#### 4-week beta plan")
+        week_df = pd.DataFrame(kit.get("week_plan", []))
+        if len(week_df) > 0:
+            st.dataframe(week_df, use_container_width=True)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Safe claims")
+            for claim in kit.get("safe_claims", []):
+                st.success(claim)
+        with c2:
+            st.markdown("#### Claims to avoid")
+            for claim in kit.get("claims_to_avoid", []):
+                st.warning(claim)
+    else:
+        st.info("Create a Closed Beta Launch Kit after running a Golden Demo. This helps you approach first testers without overpromising.")
+
+
+# ============================================================
+# V29 PAID EXPORT & LICENSE GATE
+# ============================================================
+
+with paid_export_tab:
+    st.header("Paid Export & License Gate")
+    st.write(
+        "Manual paid-delivery control for beta/commercial bundles. This does not process payments yet; "
+        "it creates entitlement metadata, delivery scope, safe-use terms and locked/unlocked export evidence."
+    )
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        customer_name = st.text_input("Customer / company name", "Beta Customer", key="paid_customer_name_v29")
+        customer_email = st.text_input("Customer email", "customer@example.com", key="paid_customer_email_v29")
+        package_options = list(getattr(core, "PAID_PACKAGE_EXPORTS", {"Professional Pilot Bundle": []}).keys())
+        requested_package = st.selectbox("Requested package", package_options, index=package_options.index("Professional Pilot Bundle") if "Professional Pilot Bundle" in package_options else 0, key="paid_requested_package_v29")
+    with c2:
+        plan_options = core.get_paid_license_plans() if hasattr(core, "get_paid_license_plans") else core.get_pricing_plans()
+        selected_paid_plan = st.selectbox("Selected customer plan", plan_options, index=plan_options.index(st.session_state.selected_plan) if st.session_state.selected_plan in plan_options else 0, key="paid_selected_plan_v29")
+        checkout_mode = st.selectbox("Checkout / delivery mode", ["Manual invoice", "Founder internal", "Stripe later", "Partner delivery"], index=0, key="paid_checkout_mode_v29")
+        watermark_free = st.checkbox("Watermark free demo exports", value=True, key="paid_watermark_v29")
+
+    st.caption(core.PAID_LICENSE_DISCLAIMER if hasattr(core, "PAID_LICENSE_DISCLAIMER") else "Manual paid export control. Not a payment processor.")
+
+    if st.button("Create Paid Export License Gate", type="primary", use_container_width=True, key="create_paid_license_gate_v29"):
+        snap = core.build_paid_export_license_gate(
+            st.session_state.project_name,
+            customer_name=customer_name,
+            customer_email=customer_email,
+            requested_package=requested_package,
+            selected_plan=selected_paid_plan,
+            checkout_mode=checkout_mode,
+            watermark_free_exports=watermark_free,
+            dataset_df=st.session_state.dataset,
+            monetization_snapshot=st.session_state.monetization_snapshot,
+            release_success_snapshot=st.session_state.release_success_snapshot,
+            professional_report_snapshot=st.session_state.professional_report_snapshot,
+            closed_beta_kit=st.session_state.closed_beta_kit,
+        )
+        st.session_state.paid_license_snapshot = snap
+        st.session_state.paid_license_bundle = core.create_paid_export_license_bundle(st.session_state.project_name, snap, st.session_state.dataset)
+        st.success("Paid Export License Gate created.")
+
+    if st.session_state.paid_license_snapshot:
+        snap = st.session_state.paid_license_snapshot
+        summary = snap.get("summary", {}) or {}
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Commercial readiness", f"{summary.get('commercial_readiness_score', 0)}%")
+        m2.metric("Decision", summary.get("decision", "Unknown"))
+        m3.metric("License status", summary.get("license_status", "Unknown"))
+        m4.metric("Price position", summary.get("price_position", "Unknown"))
+        st.info(summary.get("customer_message", ""))
+
+        if st.session_state.paid_license_bundle:
+            st.download_button(
+                "Download Paid Export License Bundle",
+                st.session_state.paid_license_bundle,
+                file_name=f"{st.session_state.project_name}_paid_export_license_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_paid_license_bundle_v29",
+            )
+
+        a1, a2 = st.columns(2)
+        with a1:
+            st.markdown("#### Entitlement manifest")
+            st.json(snap.get("entitlement_manifest", {}))
+            if snap.get("must_fix_before_charging"):
+                st.markdown("#### Must fix before charging")
+                for item in snap.get("must_fix_before_charging", []):
+                    st.error(item)
+        with a2:
+            st.markdown("#### Access matrix")
+            access_df = pd.DataFrame(snap.get("access_matrix", []))
+            if len(access_df) > 0:
+                st.dataframe(access_df, use_container_width=True)
+            st.markdown("#### Receipt preview")
+            st.text_area("Delivery note", snap.get("receipt_preview", ""), height=260, key="paid_receipt_preview_v29")
+    else:
+        st.info("Create this gate before sending paid bundle files. Founder Test Mode is internal only, not a real customer entitlement.")
+
+
+# ============================================================
+# V30 REAL FIELD VALIDATION PACK
+# ============================================================
+
+with field_validation_tab:
+    st.header("Real Field Validation Pack")
+    st.write(
+        "Use this when you have real WAV/CSV evidence from a machine, site or remote asset. "
+        "It checks field evidence coverage, normal/event labels, field-vs-synthetic similarity and what still must be collected."
+    )
+
+    scenario_options = core.get_field_validation_scenarios()
+    c1, c2 = st.columns([1.1, 1])
+    with c1:
+        scenario = st.selectbox("Validation scenario", scenario_options, key="field_validation_scenario_v30")
+        field_environment = st.selectbox("Field environment", core.get_environment_options(), index=2 if "Industrial" in core.get_environment_options() else 0, key="field_environment_v30")
+        device_setup = st.text_area("Device / sensor setup", "ESP32-S3 / RAK node with audio and vibration sensors. Feature-level validation only.", height=90, key="field_device_setup_v30")
+    with c2:
+        planned_days = st.number_input("Planned / completed field days", 1, 60, 7, 1, key="field_planned_days_v30")
+        minimum_files = st.number_input("Minimum real files target", 1, 500, 20, 1, key="field_min_files_v30")
+        use_current_dataset_as_field = st.checkbox("Use current dataset as temporary field evidence", value=False, key="field_use_current_dataset_v30")
+
+    with st.expander("Upload real field WAV/CSV files", expanded=False):
+        st.caption("Labels are inferred from filenames when possible. Use names like normal_01.wav, bearing_wear_02.csv, drilling_03.wav.")
+        uploaded_field_files = st.file_uploader("Real field files", type=["wav", "csv"], accept_multiple_files=True, key="field_validation_uploads_v30")
+        fallback_label = st.text_input("Fallback label if filename is unclear", "Normal_Field", key="field_fallback_label_v30")
+
+        def _infer_field_label(name, fallback):
+            txt = str(name or "").lower()
+            if any(k in txt for k in ["normal", "healthy", "baseline", "background", "idle", "calm"]):
+                return "Normal_Field"
+            if any(k in txt for k in ["bearing", "wear", "failure", "fault", "unbalance", "misalignment"]):
+                return "Bearing_Wear_Field"
+            if any(k in txt for k in ["drill", "grind", "cut", "tool", "tamper", "impact"]):
+                return "Tamper_Event_Field"
+            if any(k in txt for k in ["chain", "vehicle", "human", "threat"]):
+                return "Remote_Event_Field"
+            return fallback
+
+        if uploaded_field_files:
+            rows = []
+            for up in uploaded_field_files:
+                try:
+                    features = core.extract_features_from_bytes(up.read(), up.name, st.session_state.sr)
+                    if "error" not in features:
+                        features = dict(features)
+                        features["Label"] = _infer_field_label(up.name, fallback_label)
+                        features["Filename"] = up.name
+                        rows.append(features)
+                    else:
+                        st.warning(f"{up.name}: {features.get('error')}")
+                except Exception as exc:
+                    st.warning(f"{up.name}: {exc}")
+            if rows:
+                st.session_state.field_validation_df = pd.DataFrame(rows)
+                st.success(f"Loaded {len(rows)} field feature rows.")
+                st.dataframe(st.session_state.field_validation_df.head(30), use_container_width=True)
+
+    field_df = st.session_state.field_validation_df
+    if use_current_dataset_as_field and isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0:
+        field_df = st.session_state.dataset.copy()
+        st.info("Using current dataset as temporary field evidence. For real paid claims, upload actual field files.")
+
+    st.caption(core.FIELD_VALIDATION_DISCLAIMER if hasattr(core, "FIELD_VALIDATION_DISCLAIMER") else "Field validation is not production certification.")
+
+    if st.button("Build Real Field Validation Pack", type="primary", use_container_width=True, key="build_field_validation_pack_v30"):
+        snap = core.build_real_field_validation_pack(
+            st.session_state.project_name,
+            scenario,
+            field_environment,
+            device_setup,
+            planned_days,
+            minimum_files,
+            field_df=field_df,
+            synthetic_dataset_df=st.session_state.dataset,
+            reliability_v2=st.session_state.reliability_v2,
+            normality_result=st.session_state.normality_result,
+            deployment_plan=st.session_state.deployment_plan,
+            edge_impulse_snapshot=st.session_state.edge_impulse_snapshot,
+            edge_impulse_classifier_snapshot=st.session_state.edge_impulse_classifier_snapshot,
+            release_success_snapshot=st.session_state.release_success_snapshot,
+            license_gate_snapshot=st.session_state.paid_license_snapshot,
+        )
+        st.session_state.field_validation_snapshot = snap
+        st.session_state.field_validation_bundle = core.create_real_field_validation_bundle(st.session_state.project_name, snap, field_df, st.session_state.dataset)
+        st.success("Real Field Validation Pack created.")
+
+    if st.session_state.field_validation_snapshot:
+        snap = st.session_state.field_validation_snapshot
+        summary = snap.get("summary", {}) or {}
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Field evidence", f"{summary.get('field_evidence_score', 0)}%")
+        m2.metric("Decision", summary.get("decision", "Unknown"))
+        m3.metric("Real files", summary.get("real_file_count", 0))
+        m4.metric("Labels", summary.get("label_count", 0))
+        st.info(summary.get("customer_message", ""))
+        if st.session_state.field_validation_bundle:
+            st.download_button(
+                "Download Real Field Validation Bundle",
+                st.session_state.field_validation_bundle,
+                file_name=f"{st.session_state.project_name}_real_field_validation_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_field_validation_bundle_v30",
+            )
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Evidence items")
+            e_df = pd.DataFrame(snap.get("evidence_items", []))
+            if len(e_df) > 0:
+                st.dataframe(e_df, use_container_width=True)
+            for item in snap.get("blockers", []):
+                st.error(item)
+            for item in snap.get("must_collect_before_production", []):
+                st.warning(item)
+        with c2:
+            st.markdown("#### Label summary")
+            label_df = pd.DataFrame(snap.get("field_label_summary", []))
+            if len(label_df) > 0:
+                st.dataframe(label_df, use_container_width=True)
+            st.markdown("#### Field-vs-synthetic")
+            st.json(snap.get("field_vs_synthetic", {}))
+    else:
+        st.info("Upload field files or use the current dataset temporarily, then build the validation pack.")
+
+
+# ============================================================
+# V31 EDGE DEPLOYMENT STARTER KIT
+# ============================================================
+
+with edge_starter_tab:
+    st.header("Edge Deployment Starter Kit")
+    st.write(
+        "Turns the pilot evidence into an implementation starter: feature contract, MQTT schema, firmware/gateway stubs, "
+        "CSV validator and Node-RED starter flow. This is still pilot starter code, not production firmware certification."
+    )
+
+    hw_options = core.get_available_hardware() if hasattr(core, "get_available_hardware") else ["ESP32-S3"]
+    default_board = st.session_state.hardware_result.get("recommendation") if isinstance(st.session_state.hardware_result, dict) else "ESP32-S3"
+    c1, c2, c3 = st.columns(3)
+    target_board = c1.selectbox("Target board", hw_options, index=hw_options.index(default_board) if default_board in hw_options else 0, key="edge_starter_board_v31")
+    communication = c2.selectbox("Communication", ["WiFi / MQTT", "LoRa / LoRaWAN", "LTE / NB-IoT", "USB serial", "Local CSV logging"], index=0, key="edge_starter_comm_v31")
+    inference_mode = c3.selectbox("Inference mode", ["auto", "Edge Impulse classifier", "Edge Impulse anomaly", "TFLite Micro", "gateway scoring"], index=0, key="edge_starter_mode_v31")
+    c4, c5 = st.columns(2)
+    starter_sr = c4.number_input("Sample rate", 1000, 48000, int(st.session_state.sr), 1000, key="edge_starter_sr_v31")
+    starter_fft = c5.selectbox("FFT size", [512, 1024, 2048, 4096], index=1, key="edge_starter_fft_v31")
+
+    st.caption(core.EDGE_STARTER_DISCLAIMER if hasattr(core, "EDGE_STARTER_DISCLAIMER") else "Pilot implementation starter only. Validate before deployment.")
+
+    if st.button("Build Edge Deployment Starter Kit", type="primary", use_container_width=True, key="build_edge_starter_v31"):
+        snap = core.build_edge_deployment_starter_kit(
+            st.session_state.project_name,
+            dataset_df=st.session_state.dataset,
+            manifest=st.session_state.fusion_manifest,
+            hardware_result=st.session_state.hardware_result,
+            deployment_plan=st.session_state.deployment_plan,
+            reliability_v2=st.session_state.reliability_v2,
+            normality_result=st.session_state.normality_result,
+            edge_impulse_snapshot=st.session_state.edge_impulse_snapshot,
+            edge_impulse_classifier_snapshot=st.session_state.edge_impulse_classifier_snapshot,
+            field_validation_snapshot=st.session_state.field_validation_snapshot,
+            target_board=target_board,
+            communication=communication,
+            inference_mode=inference_mode,
+            sample_rate=starter_sr,
+            fft_size=starter_fft,
+        )
+        st.session_state.edge_deployment_starter_snapshot = snap
+        st.session_state.edge_deployment_starter_bundle = core.create_edge_deployment_starter_bundle(st.session_state.project_name, snap, st.session_state.dataset)
+        st.success("Edge Deployment Starter Kit created.")
+
+    if st.session_state.edge_deployment_starter_snapshot:
+        snap = st.session_state.edge_deployment_starter_snapshot
+        summary = snap.get("summary", {}) or {}
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Starter score", f"{summary.get('starter_score', 0)}%")
+        m2.metric("Decision", summary.get("decision", "Unknown"))
+        m3.metric("Target", summary.get("target_board", "Unknown"))
+        m4.metric("Mode", summary.get("inference_mode", "Unknown"))
+        st.info(summary.get("customer_message", ""))
+        if st.session_state.edge_deployment_starter_bundle:
+            st.download_button(
+                "Download Edge Deployment Starter Bundle",
+                st.session_state.edge_deployment_starter_bundle,
+                file_name=f"{st.session_state.project_name}_edge_deployment_starter_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_edge_starter_bundle_v31",
+            )
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Evidence")
+            e_df = pd.DataFrame(snap.get("evidence", []))
+            if len(e_df) > 0:
+                st.dataframe(e_df, use_container_width=True)
+            for item in snap.get("blockers", []):
+                st.error(item)
+            for item in snap.get("warnings", []):
+                st.warning(item)
+        with c2:
+            st.markdown("#### Feature contract")
+            fc_df = pd.DataFrame(snap.get("feature_contract", []))
+            if len(fc_df) > 0:
+                st.dataframe(fc_df, use_container_width=True)
+            st.markdown("#### MQTT schema")
+            st.json(snap.get("mqtt_schema", {}))
+    else:
+        st.info("Generate a dataset, deployment plan and Edge Impulse export first for a stronger starter kit.")
+
+
+# ============================================================
+# V31.2 STORAGE / SCALABILITY RECOVERY
+# ============================================================
+
+with scalability_tab:
+    st.header("Storage & Scalability Recovery")
+    st.write(
+        "V31.1 moves large DataFrames out of SQLite into local file storage. This keeps the beta app lighter and prepares "
+        "a later move to S3/MinIO + PostgreSQL without changing the product logic."
+    )
+
+    plan_options = core.get_pricing_plans()
+    scale_plan = st.selectbox("Plan for sample-limit check", plan_options, index=plan_options.index(st.session_state.selected_plan) if st.session_state.selected_plan in plan_options else 0, key="scale_plan_v31_2")
+    requested_samples = st.number_input("Requested generation samples", 0, 200000, int(len(st.session_state.dataset)) if isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0 else 500, 100, key="scale_requested_samples_v31_2")
+    sample_check = core.validate_sample_request(scale_plan, requested_samples)
+
+    if sample_check.get("was_capped"):
+        st.warning(sample_check.get("message"))
+    else:
+        st.success(sample_check.get("message"))
+
+    if st.button("Run Storage / Scalability Check", type="primary", use_container_width=True, key="run_scalability_check_v31_2"):
+        snap = core.get_scalability_readiness_snapshot(st.session_state.dataset, scale_plan)
+        st.session_state.scalability_snapshot = snap
+        try:
+            user_projects = core.get_user_projects(st.session_state.user["id"])
+        except Exception:
+            user_projects = pd.DataFrame()
+        st.session_state.scalability_bundle = core.create_scalability_storage_bundle(st.session_state.project_name, snap, user_projects)
+        st.success("Storage / Scalability check completed.")
+
+    if st.session_state.scalability_snapshot:
+        snap = st.session_state.scalability_snapshot
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Scalability score", f"{snap.get('scalability_score', 0)}%")
+        c2.metric("Dataset rows", snap.get("dataset_rows", 0))
+        c3.metric("Plan limit", snap.get("sample_limit", 0))
+        c4.metric("Storage mode", snap.get("storage", {}).get("mode", "Unknown"))
+        st.info(snap.get("recommendation", ""))
+        if st.session_state.scalability_bundle:
+            st.download_button(
+                "Download Storage / Scalability Bundle",
+                st.session_state.scalability_bundle,
+                file_name=f"{st.session_state.project_name}_storage_scalability_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_scalability_bundle_v31_2",
+            )
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Issues")
+            for item in snap.get("issues", []):
+                sev = item.get("severity", "info")
+                if sev == "high": st.error(item.get("message", ""))
+                elif sev == "medium": st.warning(item.get("message", ""))
+                else: st.info(item.get("message", ""))
+        with c2:
+            st.markdown("#### Storage status")
+            st.json(snap.get("storage", {}))
+    else:
+        st.info("Run this check after saving/loading projects or generating larger datasets.")
+
+
+# ============================================================
+# V32 OPERATIONAL CONTROL CENTER
+# ============================================================
+
+with operational_tab:
+    st.header("Operational Control Center")
+    st.write(
+        "This is the command center for running EdgeTwin Studio as a serious beta/product: storage, release readiness, "
+        "paid-export status, field validation, deployment starter, API readiness and must-fix blockers in one place."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        control_plan = st.selectbox(
+            "Operating plan",
+            core.get_pricing_plans(),
+            index=core.get_pricing_plans().index(st.session_state.selected_plan) if st.session_state.selected_plan in core.get_pricing_plans() else 0,
+            key="operational_plan_v32",
+        )
+    with c2:
+        operating_mode = st.selectbox(
+            "Operating mode",
+            ["Internal demo", "Closed beta", "Paid pilot", "Real-data pilot", "Enterprise review"],
+            index=1,
+            key="operational_mode_v32",
+        )
+    with c3:
+        support_level = st.selectbox(
+            "Support level",
+            ["Solo founder", "Assisted beta", "Enterprise handoff"],
+            index=0,
+            key="operational_support_v32",
+        )
+
+    open_notes = st.text_area(
+        "Open operator notes / known issues",
+        value="No critical known issue recorded. Validate with real data before production claims.",
+        height=80,
+        key="operational_notes_v32",
+    )
+
+    if st.button("Run Operational Control Check", type="primary", use_container_width=True, key="run_operational_control_v32"):
+        try:
+            user_projects = core.get_user_projects(st.session_state.user["id"])
+        except Exception:
+            user_projects = pd.DataFrame()
+        snapshot = core.build_operational_control_center_snapshot(
+            project_name=st.session_state.project_name,
+            dataset_df=st.session_state.dataset,
+            plan_name=control_plan,
+            operating_mode=operating_mode,
+            support_level=support_level,
+            user_projects=user_projects,
+            storage_snapshot=st.session_state.scalability_snapshot,
+            hardening_snapshot=st.session_state.hardening_snapshot,
+            release_success_snapshot=st.session_state.release_success_snapshot,
+            beta_launch_snapshot=st.session_state.beta_launch_snapshot,
+            paid_license_snapshot=st.session_state.paid_license_snapshot,
+            field_validation_snapshot=st.session_state.field_validation_snapshot,
+            edge_deployment_starter_snapshot=st.session_state.edge_deployment_starter_snapshot,
+            professional_report_snapshot=st.session_state.professional_report_snapshot,
+            api_automation_snapshot=st.session_state.api_automation_snapshot,
+            monetization_snapshot=st.session_state.monetization_snapshot,
+            trust_gate=st.session_state.trust_gate,
+            reliability_v2=st.session_state.reliability_v2,
+            normality_result=st.session_state.normality_result,
+            edge_impulse_snapshot=st.session_state.edge_impulse_snapshot,
+            edge_impulse_classifier_snapshot=st.session_state.edge_impulse_classifier_snapshot,
+            open_notes=open_notes,
+        )
+        st.session_state.operational_control_snapshot = snapshot
+        st.session_state.operational_control_bundle = core.create_operational_control_center_bundle(
+            st.session_state.project_name,
+            snapshot,
+            dataset_df=st.session_state.dataset,
+            projects_df=user_projects,
+        )
+        st.success("Operational Control Check completed.")
+
+    if st.session_state.operational_control_snapshot:
+        snap = st.session_state.operational_control_snapshot
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Operational score", f"{snap.get('operational_score', 0)}%")
+        c2.metric("Decision", snap.get("decision", "Unknown"))
+        c3.metric("Risk", snap.get("risk_level", "Unknown"))
+        c4.metric("Mode", snap.get("operating_mode", "Unknown"))
+
+        decision = snap.get("decision", "")
+        if decision == "GO":
+            st.success(snap.get("operator_summary", ""))
+        elif decision == "CONDITIONAL GO":
+            st.warning(snap.get("operator_summary", ""))
+        else:
+            st.error(snap.get("operator_summary", ""))
+
+        if st.session_state.operational_control_bundle:
+            st.download_button(
+                "Download Operational Control Bundle",
+                st.session_state.operational_control_bundle,
+                file_name=f"{st.session_state.project_name}_operational_control_bundle_v32.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_operational_control_bundle_v32",
+            )
+
+        st.markdown("#### Control panels")
+        panels = pd.DataFrame(snap.get("control_panels", []))
+        if len(panels) > 0:
+            st.dataframe(panels, use_container_width=True)
+
+        lcol, rcol = st.columns(2)
+        with lcol:
+            st.markdown("#### Must-fix blockers")
+            blockers = snap.get("must_fix_blockers", [])
+            if blockers:
+                for item in blockers:
+                    sev = item.get("severity", "info")
+                    msg = item.get("message", "")
+                    if sev == "high":
+                        st.error(msg)
+                    elif sev == "medium":
+                        st.warning(msg)
+                    else:
+                        st.info(msg)
+            else:
+                st.success("No must-fix blockers detected for the selected operating mode.")
+
+            st.markdown("#### Next actions")
+            for item in snap.get("next_actions", []):
+                st.write(f"- {item}")
+
+        with rcol:
+            st.markdown("#### Daily operator checklist")
+            checklist = pd.DataFrame(snap.get("daily_operator_checklist", []))
+            if len(checklist) > 0:
+                st.dataframe(checklist, use_container_width=True)
+            st.markdown("#### Safe status line")
+            st.info(snap.get("safe_status_line", ""))
+
+        with st.expander("Launch runbook", expanded=False):
+            for section in snap.get("launch_runbook", []):
+                st.markdown(f"**{section.get('title', '')}**")
+                for step in section.get("steps", []):
+                    st.write(f"- {step}")
+
+        with st.expander("Full operational snapshot", expanded=False):
+            st.json(snap)
+    else:
+        st.info("Run this after generating at least one dataset and the key readiness checks. It is the operator view before demo, beta or paid pilot delivery.")
 
 
 # ============================================================
@@ -869,7 +4120,7 @@ with canvas_tab:
     st.subheader("Extracted features")
     st.json(features)
 
-    if st.button("Add current signal features to audit dataset", key="canvas_add_features_v19"):
+    if st.button("Add current signal features to audit dataset", key="canvas_add_features_v191"):
         new_row = pd.DataFrame([features])
 
         if isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset) > 0:
@@ -877,6 +4128,7 @@ with canvas_tab:
         else:
             st.session_state.dataset = new_row
 
+        reset_generated_bundles()
         st.success("Added to Enterprise Audit dataset.")
 
 
@@ -887,17 +4139,19 @@ with canvas_tab:
 with packs_tab:
     st.header("Industry Packs")
 
-    pack_name = st.selectbox("Choose pack", core.get_industry_packs(), key="industry_pack_select_v19")
+    pack_name = st.selectbox("Choose pack", core.get_industry_packs(), key="industry_pack_select_v191")
     pack = core.get_industry_pack(pack_name)
 
     st.info(pack.get("description", ""))
 
-    per_class = st.number_input("Samples per class", 10, 1000, 50, 10, key="industry_pack_samples_per_class_v19")
+    per_class = st.number_input("Samples per class", 10, 1000, 50, 10, key="industry_pack_samples_per_class_v191")
 
-    if st.button("Generate Industry Pack Dataset", type="primary", key="industry_pack_generate_v19"):
+    if st.button("Generate Industry Pack Dataset", type="primary", key="industry_pack_generate_v191"):
         with st.spinner("Generating industry pack..."):
             df, manifest = core.generate_industry_pack_dataset(pack_name, per_class)
             st.session_state.dataset = df
+            st.session_state.fusion_manifest = manifest
+            reset_generated_bundles()
 
         st.success("Industry pack generated and loaded into Enterprise Audit.")
 
@@ -909,7 +4163,7 @@ with packs_tab:
             st.session_state.dataset.to_csv(index=False),
             file_name=f"{pack_name.replace(' ', '_')}_dataset.csv",
             mime="text/csv",
-            key="industry_pack_download_dataset_v19",
+            key="industry_pack_download_dataset_v191",
         )
 
 
@@ -920,17 +4174,17 @@ with packs_tab:
 with hardware_tab:
     st.header("Hardware Architect")
 
-    target = st.radio("Optimization target", ["balanced", "low_power", "performance", "gateway"], horizontal=True, key="hardware_target_v19")
+    target = st.radio("Optimization target", ["balanced", "low_power", "performance", "gateway"], horizontal=True, key="hardware_target_v191")
 
     default_features = 8
 
     if isinstance(st.session_state.dataset, pd.DataFrame) and len(st.session_state.dataset.columns):
-        default_features = int(max(1, len(st.session_state.dataset.columns) - 1))
+        default_features = int(max(1, len([c for c in st.session_state.dataset.columns if c != "Label"])))
 
-    num_features = st.number_input("Number of features", 1, 100, default_features, key="hardware_num_features_v19")
-    hw_sr = st.number_input("Sample rate", 1000, 48000, int(st.session_state.sr), 1000, key="hardware_sample_rate_v19")
+    num_features = st.number_input("Number of features", 1, 100, default_features, key="hardware_num_features_v191")
+    hw_sr = st.number_input("Sample rate", 1000, 48000, int(st.session_state.sr), 1000, key="hardware_sample_rate_v191")
 
-    if st.button("Run Hardware Architect", type="primary", key="hardware_run_architect_v19"):
+    if st.button("Run Hardware Architect", type="primary", key="hardware_run_architect_v191"):
         st.session_state.hardware_result = core.hardware_auto_architect(num_features, hw_sr, target)
 
     if st.session_state.hardware_result:
