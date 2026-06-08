@@ -15131,3 +15131,1315 @@ def create_paid_pilot_launch_bundle(project_name, snapshot, dataset_df=None):
         if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
             zf.writestr("dataset_snapshot.csv", dataset_df.head(2000).to_csv(index=False))
     return zip_buf.getvalue()
+
+
+# ============================================================
+# V46 CUSTOMER PROPOSAL & STATEMENT OF WORK GENERATOR
+# ============================================================
+
+def _v46_score(snapshot, keys=None, default=0):
+    if not isinstance(snapshot, dict) or not snapshot:
+        return int(default)
+    keys = keys or [
+        "proposal_score", "offer_score", "paid_pilot_score", "delivery_score", "license_score",
+        "product_readiness_score", "security_score", "governance_score", "field_evidence_score",
+        "trust_score", "trust_score_v2", "score",
+    ]
+    if "scores" in snapshot and isinstance(snapshot.get("scores"), dict):
+        for key in keys:
+            val = snapshot["scores"].get(key)
+            if isinstance(val, (int, float)):
+                return int(np.clip(val, 0, 100))
+    for key in keys:
+        val = snapshot.get(key)
+        if isinstance(val, (int, float)):
+            return int(np.clip(val, 0, 100))
+    return int(default)
+
+
+def build_customer_proposal_sow(
+    project_name="EdgeTwin_Project",
+    customer_name="Beta Customer",
+    customer_organization="Customer Organization",
+    customer_email="customer@example.com",
+    use_case="Predictive Maintenance",
+    proposed_package="Professional Pilot Bundle",
+    selected_plan="Professional Pilot",
+    scope_mode="Fixed-scope paid pilot",
+    proposal_valid_days=14,
+    delivery_window="1 week",
+    dataset_df=None,
+    pricing_offer_snapshot=None,
+    paid_pilot_snapshot=None,
+    customer_delivery_snapshot=None,
+    commercial_license_certificate=None,
+    field_evidence_snapshot=None,
+    product_readiness_snapshot=None,
+    security_snapshot=None,
+    governance_snapshot=None,
+    assumptions="",
+    notes="",
+):
+    """Build a customer-ready proposal/SOW snapshot without pretending to be a legal contract."""
+    rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+    cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+    has_dataset = rows > 0
+    has_offer = isinstance(pricing_offer_snapshot, dict) and bool(pricing_offer_snapshot)
+    has_paid = isinstance(paid_pilot_snapshot, dict) and bool(paid_pilot_snapshot)
+    has_delivery = isinstance(customer_delivery_snapshot, dict) and bool(customer_delivery_snapshot)
+    has_license = isinstance(commercial_license_certificate, dict) and bool(commercial_license_certificate)
+    has_field = isinstance(field_evidence_snapshot, dict) and bool(field_evidence_snapshot)
+    has_product = isinstance(product_readiness_snapshot, dict) and bool(product_readiness_snapshot)
+    has_security = isinstance(security_snapshot, dict) and bool(security_snapshot)
+    has_governance = isinstance(governance_snapshot, dict) and bool(governance_snapshot)
+
+    offer_score = _v46_score(pricing_offer_snapshot, ["offer_score"], 0)
+    paid_score = _v46_score(paid_pilot_snapshot, ["paid_pilot_score"], 0)
+    delivery_score = _v46_score(customer_delivery_snapshot, ["delivery_score"], 0)
+    license_score = _v46_score(commercial_license_certificate, ["license_score"], 0)
+    product_score = _v46_score(product_readiness_snapshot, ["product_readiness_score", "readiness_score"], 0)
+    field_score = _v46_score(field_evidence_snapshot, ["field_evidence_score", "field_validation_score"], 0)
+    security_score = _v46_score(security_snapshot, ["security_score"], 0)
+    governance_score = _v46_score(governance_snapshot, ["governance_score", "assurance_score"], 0)
+
+    blockers = []
+    warnings_list = []
+    if not has_dataset:
+        blockers.append("No active dataset is available. Create or upload a dataset before sending a formal SOW.")
+    if not has_offer:
+        warnings_list.append("Pricing Offer V44 has not been generated yet. Price/scope may be weaker.")
+    if not has_license and proposed_package not in ["Starter Pilot Bundle"]:
+        warnings_list.append("Commercial License Certificate is recommended before paid delivery.")
+    if proposed_package in ["Real-Data Pilot Bundle", "Enterprise Custom Review"] and not has_governance:
+        blockers.append("Real-data/enterprise proposals require Customer Assurance / Data Governance language.")
+    if proposed_package in ["Real-Data Pilot Bundle", "Enterprise Custom Review"] and not has_field:
+        warnings_list.append("Real-data/enterprise proposal should include field evidence or clearly state that evidence collection is in scope.")
+    if has_paid and paid_score < 60:
+        warnings_list.append("Paid Pilot V45 score is weak. Keep the proposal conditional or reduce scope.")
+    if has_security and security_score < 60:
+        warnings_list.append("Security/access check is weak. Avoid customer data uploads until hardened.")
+
+    base = 38
+    base += 10 if has_dataset else 0
+    base += min(12, offer_score * 0.12) if offer_score else (3 if has_offer else 0)
+    base += min(14, paid_score * 0.14) if paid_score else (2 if has_paid else 0)
+    base += min(10, delivery_score * 0.10) if delivery_score else (2 if has_delivery else 0)
+    base += min(8, license_score * 0.08) if license_score else (2 if has_license else 0)
+    base += min(10, product_score * 0.10) if product_score else (2 if has_product else 0)
+    base += min(6, security_score * 0.06) if security_score else (1 if has_security else 0)
+    base += min(6, governance_score * 0.06) if governance_score else (1 if has_governance else 0)
+    base += min(6, field_score * 0.06) if field_score else (1 if has_field else 0)
+    score = int(np.clip(base - len(blockers) * 24 - len(warnings_list) * 4, 0, 100))
+    if score >= 82:
+        decision = "GO"
+        readiness = "Customer proposal ready"
+    elif score >= 62:
+        decision = "CONDITIONAL GO"
+        readiness = "Proposal usable with listed conditions"
+    else:
+        decision = "NO-GO"
+        readiness = "Do not send yet"
+
+    included_deliverables = [
+        {"deliverable": "Edge AI pilot-preparation proposal", "included": True, "notes": "Customer-facing summary and scope."},
+        {"deliverable": "Statement of Work", "included": True, "notes": "Scope, milestones, responsibilities and acceptance criteria."},
+        {"deliverable": "Dataset snapshot / training CSV", "included": has_dataset, "notes": "Limited to agreed pilot scope."},
+        {"deliverable": "Dataset Doctor / quality audit", "included": has_dataset, "notes": "Pilot-readiness evidence, not production certification."},
+        {"deliverable": "Reliability / Trust summary", "included": has_offer or has_product or has_paid, "notes": "Uses existing readiness gates where available."},
+        {"deliverable": "Hardware/deployment direction", "included": proposed_package in ["Professional Pilot Bundle", "Real-Data Mini Audit", "Real-Data Pilot Bundle", "Enterprise Custom Review"], "notes": "Guidance only unless separately contracted."},
+        {"deliverable": "Field evidence review", "included": proposed_package in ["Real-Data Pilot Bundle", "Enterprise Custom Review"] or has_field, "notes": "Only if real field data is available or collection is included."},
+        {"deliverable": "Commercial license certificate", "included": has_license or proposed_package != "Starter Pilot Bundle", "notes": "Defines permitted delivery scope."},
+    ]
+
+    excluded_deliverables = [
+        "Production guarantee or guaranteed model accuracy",
+        "Safety certification or regulatory certification",
+        "Autonomous production deployment without field validation",
+        "Unlimited revisions outside the agreed scope",
+        "Reuse of customer-uploaded data for other customers without explicit permission",
+    ]
+    if proposed_package not in ["Enterprise Custom Review"]:
+        excluded_deliverables.append("On-premise deployment, custom integrations or enterprise procurement support")
+
+    milestones = [
+        {"phase": "1. Scope confirmation", "owner": "Both", "output": "Confirmed use-case, sensors, labels/classes and deliverables", "target": "Before start"},
+        {"phase": "2. Pilot package generation", "owner": "EdgeTwin", "output": "Dataset/audit/report/export bundle within agreed scope", "target": delivery_window},
+        {"phase": "3. Review & limitations", "owner": "Both", "output": "Review findings, risks, weak labels and real-sample needs", "target": "Delivery review"},
+        {"phase": "4. Next-step plan", "owner": "Both", "output": "Field validation or next paid phase recommendation", "target": "After review"},
+    ]
+    if proposed_package in ["Real-Data Pilot Bundle", "Enterprise Custom Review"]:
+        milestones.insert(1, {"phase": "2. Customer data intake", "owner": "Customer", "output": "Real WAV/CSV files and context under agreed retention/reuse policy", "target": "Before analysis"})
+
+    responsibilities = [
+        {"party": "EdgeTwin Studio", "responsibility": "Generate agreed pilot-preparation deliverables and clearly state limitations."},
+        {"party": "Customer", "responsibility": "Provide accurate use-case context, sensor details, labels/classes and any real data needed."},
+        {"party": "Both", "responsibility": "Review whether the output is demo-ready, pilot-ready, or needs more field evidence."},
+    ]
+
+    acceptance_criteria = [
+        {"criterion": "Customer receives agreed ZIP/PDF/CSV/JSON deliverables", "required": True, "status": "ready" if decision in ["GO", "CONDITIONAL GO"] else "pending"},
+        {"criterion": "Report states reliability limitations and field validation requirement", "required": True, "status": "ready"},
+        {"criterion": "Scope excludes production guarantee and safety certification", "required": True, "status": "ready"},
+        {"criterion": "Customer confirms next-step validation requirements", "required": True, "status": "pending"},
+    ]
+
+    required_before_signature = []
+    if not has_offer:
+        required_before_signature.append("Generate V44 Pricing Offer before sending final proposal.")
+    if proposed_package in ["Real-Data Pilot Bundle", "Enterprise Custom Review"] and not has_governance:
+        required_before_signature.append("Add customer data ownership, retention and reuse terms before accepting real data.")
+    if not required_before_signature:
+        required_before_signature.append("Proposal can be sent as a scoped pilot-preparation offer.")
+
+    required_before_delivery = []
+    if not has_license and proposed_package != "Starter Pilot Bundle":
+        required_before_delivery.append("Generate Commercial License Certificate before delivery.")
+    if not has_delivery:
+        required_before_delivery.append("Run Customer Delivery Portal before final handoff.")
+    if not has_product:
+        required_before_delivery.append("Run V40 Product Readiness before paid delivery.")
+    if not required_before_delivery:
+        required_before_delivery.append("Delivery prerequisites look acceptable for controlled handoff.")
+
+    safe_claims = [
+        "EdgeTwin Studio provides Edge AI pilot-preparation deliverables, not production certification.",
+        "The proposal can include dataset, audit, reliability/risk language, hardware/deployment guidance and next-step field validation planning within the agreed scope.",
+        "Field validation remains required before production deployment or safety-critical use.",
+        "Customer data ownership, retention and reuse follow the agreed customer assurance policy.",
+    ]
+    claims_to_avoid = [
+        "Do not promise guaranteed accuracy, guaranteed ROI, production readiness or safety certification.",
+        "Do not imply synthetic data replaces real field validation.",
+        "Do not include unlimited support, revisions or integrations unless explicitly priced.",
+        "Do not reuse customer-uploaded data outside the agreed scope.",
+    ]
+
+    proposal_text = f"""EdgeTwin Studio Proposal & Statement of Work
+
+Customer: {customer_organization}
+Contact: {customer_name} <{customer_email}>
+Project: {project_name}
+Use-case: {use_case}
+Proposed package: {proposed_package}
+Scope mode: {scope_mode}
+Selected plan: {selected_plan}
+Proposal validity: {proposal_valid_days} days
+Target delivery window: {delivery_window}
+
+Summary:
+EdgeTwin Studio will provide a scoped Edge AI pilot-preparation package for the stated use-case. The package is intended to help the customer move from sensor idea/use-case to a structured pilot dataset, audit, reliability/risk summary, hardware/deployment guidance and next-step field validation plan where included.
+
+Important limitation:
+This proposal covers pilot preparation and decision support. It does not include production guarantee, safety certification, guaranteed model accuracy, or autonomous production deployment.
+
+Decision: {decision}
+Readiness: {readiness}
+"""
+
+    customer_email_draft = f"""Subject: EdgeTwin Studio proposal for {use_case}
+
+Hi {customer_name},
+
+Thanks for discussing the {use_case} pilot with us.
+
+Attached is a scoped EdgeTwin Studio proposal/SOW for: {proposed_package}.
+Current proposal status: {readiness} ({decision}).
+Target delivery window: {delivery_window}.
+
+The proposed work is focused on Edge AI pilot preparation: dataset/audit/reporting, reliability/risk language, hardware/deployment direction and next-step validation planning within the agreed scope.
+
+Important limitation: this is not a production guarantee or safety certification. Field validation remains required before production deployment.
+
+Kind regards,
+EdgeTwin Studio
+"""
+
+    safe_status_line = f"{readiness}: {proposed_package} for {customer_organization}. Proposal score {score}%. Decision: {decision}."
+    return {
+        "version": "V46 Customer Proposal & Statement of Work Generator",
+        "created_at": _now(),
+        "project_name": project_name,
+        "customer": {"name": customer_name, "organization": customer_organization, "email": customer_email},
+        "use_case": use_case,
+        "proposed_package": proposed_package,
+        "selected_plan": selected_plan,
+        "scope_mode": scope_mode,
+        "proposal_valid_days": int(proposal_valid_days),
+        "delivery_window": delivery_window,
+        "dataset_rows": rows,
+        "dataset_cols": cols,
+        "scores": {
+            "proposal_score": score,
+            "offer_score": offer_score,
+            "paid_pilot_score": paid_score,
+            "delivery_score": delivery_score,
+            "license_score": license_score,
+            "product_readiness_score": product_score,
+            "field_evidence_score": field_score,
+            "security_score": security_score,
+            "governance_score": governance_score,
+        },
+        "decision": decision,
+        "readiness_level": readiness,
+        "safe_status_line": safe_status_line,
+        "included_deliverables": included_deliverables,
+        "excluded_deliverables": excluded_deliverables,
+        "milestones": milestones,
+        "responsibilities": responsibilities,
+        "acceptance_criteria": acceptance_criteria,
+        "required_before_signature": required_before_signature,
+        "required_before_delivery": required_before_delivery,
+        "blockers": blockers,
+        "warnings": warnings_list,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "proposal_text": proposal_text,
+        "customer_email_draft": customer_email_draft,
+        "assumptions": str(assumptions or ""),
+        "internal_notes": str(notes or ""),
+        "disclaimer": "This SOW generator supports commercial scoping. It is not legal advice, a payment processor, production guarantee or safety certification.",
+    }
+
+
+def create_customer_proposal_sow_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    zip_buf = io.BytesIO()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 18)
+    pdf.cell(0, 10, txt="EdgeTwin Proposal & Statement of Work", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.ln(6)
+    safe_pdf_cell(pdf, "Proposal Decision", 8, True)
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('scores', {}).get('proposal_score', 0)}%")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Readiness: {snapshot.get('readiness_level', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Package: {snapshot.get('proposed_package', 'Unknown')}")
+    safe_pdf_multicell(pdf, snapshot.get("safe_status_line", ""))
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Customer", 8, True)
+    customer = snapshot.get("customer", {})
+    safe_pdf_cell(pdf, f"Name: {customer.get('name', '')}")
+    safe_pdf_cell(pdf, f"Organization: {customer.get('organization', '')}")
+    safe_pdf_cell(pdf, f"Email: {customer.get('email', '')}")
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Scope Summary", 8, True)
+    safe_pdf_multicell(pdf, snapshot.get("proposal_text", "")[:2500])
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Blockers / Warnings", 8, True)
+    for item in snapshot.get("blockers", []) or ["No hard blockers detected."]:
+        safe_pdf_multicell(pdf, f"- {item}")
+    for item in snapshot.get("warnings", []):
+        safe_pdf_multicell(pdf, f"- Warning: {item}")
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Required Before Signature", 8, True)
+    for item in snapshot.get("required_before_signature", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Required Before Delivery", 8, True)
+    for item in snapshot.get("required_before_delivery", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Safe Claims", 8, True)
+    for item in snapshot.get("safe_claims", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(3)
+    safe_pdf_cell(pdf, "Claims to Avoid", 8, True)
+    for item in snapshot.get("claims_to_avoid", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("proposal_sow_report.pdf", safe_pdf_output(pdf))
+        zf.writestr("proposal_sow_snapshot.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("proposal_text.txt", snapshot.get("proposal_text", ""))
+        zf.writestr("customer_email_draft.txt", snapshot.get("customer_email_draft", ""))
+        zf.writestr("included_deliverables.csv", pd.DataFrame(snapshot.get("included_deliverables", [])).to_csv(index=False))
+        zf.writestr("milestones.csv", pd.DataFrame(snapshot.get("milestones", [])).to_csv(index=False))
+        zf.writestr("responsibilities.csv", pd.DataFrame(snapshot.get("responsibilities", [])).to_csv(index=False))
+        zf.writestr("acceptance_criteria.csv", pd.DataFrame(snapshot.get("acceptance_criteria", [])).to_csv(index=False))
+        zf.writestr("required_before_signature.csv", pd.DataFrame({"required_before_signature": snapshot.get("required_before_signature", [])}).to_csv(index=False))
+        zf.writestr("required_before_delivery.csv", pd.DataFrame({"required_before_delivery": snapshot.get("required_before_delivery", [])}).to_csv(index=False))
+        zf.writestr("safe_claims.csv", pd.DataFrame({"safe_claim": snapshot.get("safe_claims", [])}).to_csv(index=False))
+        zf.writestr("claims_to_avoid.csv", pd.DataFrame({"claim_to_avoid": snapshot.get("claims_to_avoid", [])}).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V46 Proposal & SOW bundle. This is commercial scoping support, not legal advice, payment processing, production guarantee or safety certification.\n")
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr("dataset_snapshot.csv", dataset_df.head(2000).to_csv(index=False))
+    return zip_buf.getvalue()
+
+# ============================================================
+# V47 QUOTE-TO-CASH / INVOICE READINESS CENTER
+# ============================================================
+
+V47_CURRENCY_SYMBOLS = {"EUR": "€", "USD": "$", "GBP": "£", "HUF": "Ft"}
+
+
+def _safe_money(value, fallback=0.0):
+    try:
+        return float(value)
+    except Exception:
+        return float(fallback)
+
+
+def build_quote_to_cash_invoice_readiness(
+    customer_name="Beta Customer",
+    customer_org="Customer Organization",
+    customer_email="customer@example.com",
+    offer_tier="Professional Pilot Bundle",
+    currency="EUR",
+    quoted_price=499.0,
+    vat_rate=0.0,
+    payment_terms="Due on receipt",
+    payment_status="Quote requested",
+    invoice_details_status="Missing",
+    legal_scope_status="Draft scope",
+    delivery_status="Not delivered yet",
+    license_status="Not issued",
+    customer_po_required=False,
+    customer_po_status="Not required",
+    paid_pilot_snapshot=None,
+    proposal_sow_snapshot=None,
+    pricing_offer_snapshot=None,
+    delivery_snapshot=None,
+    license_certificate=None,
+):
+    """Create a practical quote-to-cash readiness snapshot.
+
+    This does not process payments or create legal/accounting advice. It is an operator gate
+    that helps decide whether a paid pilot is quote-ready, invoice-ready or delivery-ready.
+    """
+    paid_pilot_snapshot = paid_pilot_snapshot or {}
+    proposal_sow_snapshot = proposal_sow_snapshot or {}
+    pricing_offer_snapshot = pricing_offer_snapshot or {}
+    delivery_snapshot = delivery_snapshot or {}
+    license_certificate = license_certificate or {}
+
+    price = _safe_money(quoted_price, 0)
+    vat = max(0.0, _safe_money(vat_rate, 0.0))
+    vat_amount = round(price * (vat / 100.0), 2)
+    total = round(price + vat_amount, 2)
+    symbol = V47_CURRENCY_SYMBOLS.get(currency, currency + " ")
+
+    blockers = []
+    warnings = []
+    ready_checks = []
+
+    def check(name, ok, required=True, message_if_missing=""):
+        item = {"check": name, "status": "PASS" if ok else ("BLOCKER" if required else "WARNING"), "required": bool(required)}
+        ready_checks.append(item)
+        if not ok and required:
+            blockers.append(message_if_missing or name)
+        elif not ok:
+            warnings.append(message_if_missing or name)
+
+    has_pricing = bool(pricing_offer_snapshot) or price > 0
+    has_sow = bool(proposal_sow_snapshot) or legal_scope_status in {"Scope reviewed", "Scope accepted", "Signed / accepted"}
+    has_paid_gate = bool(paid_pilot_snapshot)
+    has_delivery = bool(delivery_snapshot)
+    has_license = bool(license_certificate) or license_status in {"Draft issued", "Issued", "Signed / accepted"}
+
+    check("Pricing offer exists", has_pricing, True, "Create or confirm a V44 pricing offer before invoicing.")
+    check("Proposal/SOW scope exists", has_sow, True, "Create or review the V46 Proposal/SOW before invoicing.")
+    check("Paid pilot gate exists", has_paid_gate or payment_status in {"Quote accepted", "Invoice sent", "Paid / invoice confirmed"}, False, "Run V45 Paid Pilot gate before delivery.")
+    check("Customer invoice details present", invoice_details_status in {"Received", "Verified"}, True, "Collect and verify customer invoice details before sending invoice.")
+    check("Legal/commercial scope accepted", legal_scope_status in {"Scope accepted", "Signed / accepted"}, True, "Get scope/SOW accepted before taking payment or delivery.")
+    check("License/certificate ready", has_license, False, "Issue commercial license certificate before final delivery.")
+    check("Delivery portal ready", has_delivery or delivery_status in {"Delivery bundle ready", "Delivered"}, False, "Build V42 Customer Delivery bundle before final hand-off.")
+    if customer_po_required:
+        check("Customer PO received", customer_po_status in {"Received", "Approved"}, True, "Customer requires a PO; receive/approve it before invoicing.")
+    else:
+        check("PO not required or waived", True, False, "")
+
+    if price <= 0:
+        blockers.append("Quoted price must be above zero for a paid pilot.")
+    if "enterprise" in offer_tier.lower() and legal_scope_status != "Signed / accepted":
+        warnings.append("Enterprise/custom offers should normally have signed scope and explicit acceptance criteria.")
+    if vat > 0 and invoice_details_status != "Verified":
+        warnings.append("VAT/tax fields should be verified before sending the invoice.")
+
+    score = 100
+    score -= len(blockers) * 18
+    score -= len(warnings) * 7
+    if payment_status == "Paid / invoice confirmed":
+        score += 8
+    elif payment_status == "Invoice sent":
+        score += 4
+    elif payment_status == "Not discussed":
+        score -= 8
+    score = int(np.clip(score, 0, 100))
+
+    if blockers:
+        decision = "NO-GO"
+        revenue_status = "Not invoice-ready"
+    elif score >= 85 and payment_status in {"Quote accepted", "Invoice sent", "Paid / invoice confirmed"}:
+        decision = "GO"
+        revenue_status = "Invoice/delivery-ready" if payment_status != "Paid / invoice confirmed" else "Paid delivery-ready"
+    elif score >= 70:
+        decision = "CONDITIONAL GO"
+        revenue_status = "Quote-ready; fix warnings before delivery"
+    else:
+        decision = "NO-GO"
+        revenue_status = "Commercial preparation required"
+
+    line_items = [
+        {
+            "item": offer_tier,
+            "description": "EdgeTwin Studio paid pilot package: dataset/audit/reliability/hardware/report delivery within agreed SOW scope.",
+            "quantity": 1,
+            "unit_price": round(price, 2),
+            "currency": currency,
+            "subtotal": round(price, 2),
+        },
+        {
+            "item": "VAT / tax",
+            "description": f"Tax estimate at {vat}% if applicable. Verify locally before issuing formal invoice.",
+            "quantity": 1,
+            "unit_price": vat_amount,
+            "currency": currency,
+            "subtotal": vat_amount,
+        },
+    ]
+
+    payment_checklist = [
+        "Confirm customer organization legal name, billing email and billing address.",
+        "Confirm offer tier, price, currency, VAT/tax handling and payment terms.",
+        "Attach Proposal/SOW or accepted scope reference to the payment request.",
+        "Send invoice/payment request only after invoice details and scope are accepted.",
+        "Do not deliver premium/final bundles before payment confirmation unless intentionally agreed.",
+        "Store delivery certificate, license certificate and acceptance criteria with the project.",
+    ]
+
+    quote_terms = [
+        "This quote covers Edge AI pilot preparation and decision-support deliverables only.",
+        "Production deployment, safety certification, on-site installation and legal compliance validation are excluded unless explicitly agreed.",
+        "Synthetic and real-data-derived outputs require field validation before production use.",
+        "Uploaded customer data remains customer-owned unless a separate written agreement states otherwise.",
+        "Any prices, VAT/tax treatment and payment terms should be verified before formal invoicing.",
+    ]
+
+    customer_email_draft = f"""Subject: EdgeTwin Studio paid pilot quote - {offer_tier}
+
+Hi {customer_name},
+
+Based on the current scope, the recommended paid pilot package is: {offer_tier}.
+
+Estimated pilot price: {symbol}{price:,.2f}
+Estimated VAT/tax: {symbol}{vat_amount:,.2f}
+Estimated total: {symbol}{total:,.2f}
+Payment terms: {payment_terms}
+
+The pilot includes Edge AI pilot-preparation outputs such as dataset/audit/reliability review, hardware/deployment direction and customer-ready reporting within the agreed scope. It does not certify production readiness; field validation remains required before production deployment.
+
+Before we invoice or deliver final bundles, we should confirm the billing details, accepted scope/SOW and any purchase order requirements.
+
+Best regards,
+EdgeTwin Studio
+"""
+
+    safe_claims = [
+        "We can prepare a paid Edge AI pilot package with clearly scoped deliverables.",
+        "We can provide dataset, reliability, hardware and reporting support for pilot decision-making.",
+        "Final delivery is gated by accepted scope, invoice details and safe-use conditions.",
+    ]
+    claims_to_avoid = [
+        "Do not claim payment guarantees production readiness.",
+        "Do not claim the invoice/certificate is legal or tax advice.",
+        "Do not deliver safety-critical or production claims without field validation and explicit agreement.",
+    ]
+
+    return {
+        "version": "V47 Quote-to-Cash & Invoice Readiness Center",
+        "created_at": _now(),
+        "customer": {"name": customer_name, "organization": customer_org, "email": customer_email},
+        "offer_tier": offer_tier,
+        "currency": currency,
+        "quoted_price": round(price, 2),
+        "vat_rate": vat,
+        "vat_amount": vat_amount,
+        "total_amount": total,
+        "payment_terms": payment_terms,
+        "payment_status": payment_status,
+        "invoice_details_status": invoice_details_status,
+        "legal_scope_status": legal_scope_status,
+        "delivery_status": delivery_status,
+        "license_status": license_status,
+        "customer_po_required": bool(customer_po_required),
+        "customer_po_status": customer_po_status,
+        "quote_to_cash_score": score,
+        "decision": decision,
+        "revenue_status": revenue_status,
+        "ready_checks": ready_checks,
+        "blockers": blockers,
+        "warnings": warnings,
+        "line_items": line_items,
+        "payment_checklist": payment_checklist,
+        "quote_terms": quote_terms,
+        "customer_email_draft": customer_email_draft,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "inputs_present": {
+            "pricing_offer_snapshot": bool(pricing_offer_snapshot),
+            "proposal_sow_snapshot": bool(proposal_sow_snapshot),
+            "paid_pilot_snapshot": bool(paid_pilot_snapshot),
+            "delivery_snapshot": bool(delivery_snapshot),
+            "license_certificate": bool(license_certificate),
+        },
+        "disclaimer": "V47 supports quote-to-cash readiness and commercial hygiene. It is not legal, tax, accounting or payment-processing advice.",
+    }
+
+
+def create_quote_to_cash_invoice_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 18)
+    pdf.cell(0, 10, txt="EdgeTwin Quote-to-Cash Readiness", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.cell(0, 8, txt=clean_pdf_text(snapshot.get("version", "V47")), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Revenue Decision", 8, True)
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('quote_to_cash_score', 0)}%")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Revenue status: {snapshot.get('revenue_status', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Offer tier: {snapshot.get('offer_tier', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Total: {snapshot.get('currency', 'EUR')} {snapshot.get('total_amount', 0)}")
+    pdf.ln(4)
+
+    cust = snapshot.get("customer", {})
+    safe_pdf_cell(pdf, "Customer", 8, True)
+    safe_pdf_cell(pdf, f"Name: {cust.get('name', '')}")
+    safe_pdf_cell(pdf, f"Organization: {cust.get('organization', '')}")
+    safe_pdf_cell(pdf, f"Email: {cust.get('email', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Line Items", 8, True)
+    for item in snapshot.get("line_items", []):
+        safe_pdf_multicell(pdf, f"- {item.get('item')}: {item.get('currency')} {item.get('subtotal')} | {item.get('description')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Blockers / Warnings", 8, True)
+    blockers = snapshot.get("blockers", [])
+    warnings = snapshot.get("warnings", [])
+    if blockers:
+        for item in blockers:
+            safe_pdf_multicell(pdf, f"[BLOCKER] {item}")
+    else:
+        safe_pdf_multicell(pdf, "No hard invoice blockers detected.")
+    for item in warnings:
+        safe_pdf_multicell(pdf, f"[WARNING] {item}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Payment Checklist", 8, True)
+    for item in snapshot.get("payment_checklist", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Safe Terms", 8, True)
+    for item in snapshot.get("quote_terms", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_multicell(pdf, snapshot.get("disclaimer", ""))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("quote_to_cash_readiness.pdf", safe_pdf_output(pdf))
+        zf.writestr("quote_to_cash_snapshot.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("invoice_line_items.csv", pd.DataFrame(snapshot.get("line_items", [])).to_csv(index=False))
+        zf.writestr("ready_checks.csv", pd.DataFrame(snapshot.get("ready_checks", [])).to_csv(index=False))
+        zf.writestr("payment_checklist.csv", pd.DataFrame({"item": snapshot.get("payment_checklist", [])}).to_csv(index=False))
+        zf.writestr("safe_quote_terms.csv", pd.DataFrame({"term": snapshot.get("quote_terms", [])}).to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr("dataset_snapshot.csv", dataset_df.head(1000).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V47 Quote-to-Cash bundle. This is commercial readiness support, not payment processing, legal, tax or accounting advice.\n")
+    return zip_buf.getvalue()
+
+
+
+# ============================================================
+# V48 CUSTOMER LEAD INTAKE / QUALIFICATION CENTER
+# ============================================================
+
+def _v48_score_value(value, table, default=0):
+    try:
+        return int(table.get(value, default))
+    except Exception:
+        return int(default)
+
+
+def build_customer_lead_intake_qualification(
+    customer_name="Beta Customer",
+    customer_org="Customer Organization",
+    customer_email="customer@example.com",
+    industry="Manufacturing",
+    use_case="Predictive maintenance",
+    urgency="Pilot in 1-3 months",
+    budget_range="€500-€1,500",
+    decision_status="Technical evaluator",
+    data_status="Can collect data",
+    sensor_status="Need hardware advice",
+    deployment_environment="Indoor machine",
+    technical_owner="Part-time technical owner",
+    requested_outcome="",
+    safety_critical=False,
+    regulated_context=False,
+    needs_installation=False,
+    wants_guaranteed_accuracy=False,
+    pricing_offer_snapshot=None,
+    proposal_sow_snapshot=None,
+    quote_to_cash_snapshot=None,
+    paid_pilot_snapshot=None,
+):
+    """Qualify an incoming lead and decide the safest next commercial/product step.
+
+    This is intentionally conservative: it rewards clear data, budget, decision access and technical owner,
+    while flagging safety-critical or guaranteed-accuracy expectations before a paid pilot is sold.
+    """
+    pricing_offer_snapshot = pricing_offer_snapshot or {}
+    proposal_sow_snapshot = proposal_sow_snapshot or {}
+    quote_to_cash_snapshot = quote_to_cash_snapshot or {}
+    paid_pilot_snapshot = paid_pilot_snapshot or {}
+
+    urgency_score = _v48_score_value(urgency, {
+        "Exploring only": 4,
+        "Pilot in 1-3 months": 12,
+        "Pilot this month": 16,
+        "Urgent operational pain": 14,
+    })
+    budget_score = _v48_score_value(budget_range, {
+        "Unknown": 3,
+        "Below €500": 4,
+        "€500-€1,500": 12,
+        "€1,500-€5,000": 16,
+        "€5,000+": 18,
+    })
+    decision_score = _v48_score_value(decision_status, {
+        "Just researching": 4,
+        "Technical evaluator": 10,
+        "Budget owner involved": 15,
+        "Decision maker involved": 18,
+    })
+    data_score = _v48_score_value(data_status, {
+        "No data yet": 3,
+        "Can collect data": 11,
+        "Sample data available": 16,
+        "Labeled dataset available": 20,
+    })
+    sensor_score = _v48_score_value(sensor_status, {
+        "Unknown": 3,
+        "Need hardware advice": 9,
+        "Sensors selected": 13,
+        "Hardware already installed": 16,
+    })
+    owner_score = _v48_score_value(technical_owner, {
+        "Unknown": 3,
+        "No technical owner": 2,
+        "Part-time technical owner": 10,
+        "Dedicated technical owner": 14,
+    })
+
+    use_case_bonus = 4 if use_case in {"Predictive maintenance", "Anomaly detection", "Machine health", "Tamper detection", "Security / intrusion"} else 2
+    environment_bonus = 4 if deployment_environment in {"Indoor machine", "Outdoor asset", "Remote/off-grid"} else 2
+
+    warnings = []
+    blockers = []
+
+    if safety_critical:
+        warnings.append("Safety-critical context detected: keep the offer as a pilot/decision-support package until field validation and responsibilities are explicit.")
+    if regulated_context:
+        warnings.append("Regulated/compliance-heavy context detected: require explicit scope, data handling and compliance owner before delivery.")
+    if needs_installation:
+        warnings.append("Customer expects on-site installation: keep installation outside scope unless you have a clear partner/process.")
+    if wants_guaranteed_accuracy:
+        blockers.append("Customer expects guaranteed accuracy/production certainty. Reframe before proposal; EdgeTwin should not sell guarantees without field validation.")
+    if budget_range in {"Unknown", "Below €500"} and urgency not in {"Exploring only"}:
+        warnings.append("Urgency exists but budget signal is weak. Qualify budget before spending founder time.")
+    if data_status == "No data yet" and sensor_status == "Unknown":
+        warnings.append("No data and unknown sensors: start with demo/hardware discovery, not a custom paid pilot yet.")
+    if technical_owner in {"Unknown", "No technical owner"}:
+        warnings.append("No clear technical owner: request a named contact before deeper pilot work.")
+
+    score = urgency_score + budget_score + decision_score + data_score + sensor_score + owner_score + use_case_bonus + environment_bonus
+    score -= len(warnings) * 5
+    score -= len(blockers) * 25
+    if pricing_offer_snapshot:
+        score += 3
+    if proposal_sow_snapshot:
+        score += 3
+    if paid_pilot_snapshot:
+        score += 3
+    score = int(np.clip(score, 0, 100))
+
+    if blockers:
+        fit_level = "Not ready / reframe first"
+        recommended_route = "Reframe expectations before proposal"
+        operator_verdict = "Do not move this lead into a paid pilot until the unsafe/guaranteed claims are corrected."
+    elif score >= 80:
+        fit_level = "High-fit paid pilot"
+        recommended_route = "Move to Proposal/SOW + Pricing Offer"
+        operator_verdict = "Strong lead. Prepare V46 Proposal/SOW and V44 Pricing Offer, then use V47 before invoicing."
+    elif score >= 65:
+        fit_level = "Good-fit pilot"
+        recommended_route = "Run demo + collect missing data"
+        operator_verdict = "Good lead, but qualify missing data/scope before invoice."
+    elif score >= 45:
+        fit_level = "Nurture / needs clarity"
+        recommended_route = "Send discovery questions and lightweight demo"
+        operator_verdict = "Do not spend heavy custom time yet. Use demo and discovery to improve the lead."
+    else:
+        fit_level = "Low-fit for now"
+        recommended_route = "Nurture or decline custom work"
+        operator_verdict = "This lead is not ready for a paid pilot without much clearer scope, data, owner or budget."
+
+    commercial_stage = "Lead qualified"
+    if quote_to_cash_snapshot and quote_to_cash_snapshot.get("decision") in {"GO", "CONDITIONAL GO"}:
+        commercial_stage = "Commercial handoff started"
+    elif proposal_sow_snapshot:
+        commercial_stage = "Proposal/SOW drafted"
+    elif pricing_offer_snapshot:
+        commercial_stage = "Pricing drafted"
+    elif paid_pilot_snapshot:
+        commercial_stage = "Paid pilot gate available"
+
+    discovery_questions = [
+        f"Which exact asset/process should the {use_case.lower()} pilot monitor first?",
+        "What does a normal condition look like, and what abnormal events matter most?",
+        "Do you already have CSV/WAV/sensor logs, and are they labeled?",
+        "Which sensors are already installed or approved for the pilot?",
+        "Who owns technical validation and who signs off on the pilot result?",
+        "What would make the pilot valuable enough to continue after the first delivery?",
+        "Are there safety, compliance, privacy or installation constraints we must exclude from scope?",
+    ]
+
+    customer_required_inputs = [
+        "One clear asset/process for the first pilot scope.",
+        "At least one example of normal and abnormal behavior, or permission to generate a synthetic pilot dataset.",
+        "Sensor/hardware constraints or permission to recommend hardware.",
+        "Named technical contact and decision/budget contact.",
+        "Acceptance criteria for what the pilot must prove.",
+    ]
+    if data_status in {"Sample data available", "Labeled dataset available"}:
+        customer_required_inputs.insert(0, "Upload representative CSV/WAV/sensor samples for real-data review.")
+    if needs_installation:
+        customer_required_inputs.append("Confirm whether installation is handled by customer/partner; default EdgeTwin scope excludes installation.")
+
+    next_actions = []
+    if fit_level == "High-fit paid pilot":
+        next_actions = [
+            "Create V46 Proposal/SOW with explicit included/excluded deliverables.",
+            "Create V44 Pricing Offer and confirm paid pilot tier.",
+            "Run V47 Quote-to-Cash before invoice or delivery.",
+        ]
+    elif fit_level == "Good-fit pilot":
+        next_actions = [
+            "Run self-selling demo or Use Case Wizard for this use case.",
+            "Collect missing data/sensor/owner details using the discovery questions.",
+            "Then create pricing/proposal only if scope and acceptance criteria are clear.",
+        ]
+    elif fit_level == "Nurture / needs clarity":
+        next_actions = [
+            "Send discovery email and ask for data/scope/owner details.",
+            "Avoid custom engineering until budget, data and decision access improve.",
+            "Offer a lightweight demo or Real-Data Mini Audit if suitable.",
+        ]
+    else:
+        next_actions = [
+            "Reframe unsafe/unclear expectations before any paid offer.",
+            "Decline guaranteed-production claims and keep pilot language honest.",
+            "Only continue if the customer accepts field-validation and scope boundaries.",
+        ]
+
+    sales_followup_checklist = [
+        "Log lead source, customer problem and requested outcome.",
+        "Confirm data availability and hardware status.",
+        "Confirm budget/decision status before custom work.",
+        "Choose route: demo, mini audit, paid pilot, or nurture.",
+        "Do not promise production accuracy, safety certification or legal compliance.",
+    ]
+
+    safe_claims = [
+        "We can assess whether your sensor idea is suitable for an Edge AI pilot.",
+        "We can generate pilot datasets, reliability checks, hardware direction and customer-ready reports.",
+        "We can define a paid pilot scope with clear acceptance criteria and exclusions.",
+    ]
+    claims_to_avoid = [
+        "Do not guarantee production accuracy or uptime from a pilot.",
+        "Do not claim certification, safety validation or regulatory compliance unless separately proven.",
+        "Do not include on-site installation, custom hardware manufacturing or legal/tax advice by default.",
+    ]
+
+    customer_email_draft = f"""Subject: EdgeTwin Studio pilot intake - next step for {customer_org}
+
+Hi {customer_name},
+
+Thanks for sharing the use case around {use_case.lower()} in {industry}.
+
+Based on the first intake, the recommended route is: {recommended_route}.
+Fit level: {fit_level}
+Qualification score: {score}%
+
+To keep the pilot useful and safe, I would first like to confirm:
+1. The exact asset/process for the first pilot scope
+2. Any available CSV/WAV/sensor samples or examples of normal vs abnormal behavior
+3. The sensors/hardware you already have or plan to use
+4. The technical owner and decision owner for the pilot
+5. The acceptance criteria for a successful first delivery
+
+Important: EdgeTwin Studio prepares pilot-ready decision-support deliverables. It does not certify production readiness or guarantee accuracy without field validation.
+
+Best regards,
+EdgeTwin Studio
+"""
+
+    routing = {
+        "recommended_route": recommended_route,
+        "open_next_in_app": "Proposal / SOW" if fit_level == "High-fit paid pilot" else ("Use Case Wizard" if fit_level == "Good-fit pilot" else "Self-Selling Demo"),
+        "pricing_allowed": fit_level in {"High-fit paid pilot", "Good-fit pilot"} and not blockers,
+        "invoice_allowed": bool(quote_to_cash_snapshot and quote_to_cash_snapshot.get("decision") == "GO"),
+        "custom_work_allowed": fit_level in {"High-fit paid pilot", "Good-fit pilot"} and budget_range not in {"Unknown", "Below €500"},
+    }
+
+    return {
+        "version": "V48 Customer Lead Intake & Qualification Center",
+        "created_at": _now(),
+        "customer": {"name": customer_name, "organization": customer_org, "email": customer_email},
+        "industry": industry,
+        "use_case": use_case,
+        "urgency": urgency,
+        "budget_range": budget_range,
+        "decision_status": decision_status,
+        "data_status": data_status,
+        "sensor_status": sensor_status,
+        "deployment_environment": deployment_environment,
+        "technical_owner": technical_owner,
+        "requested_outcome": requested_outcome,
+        "risk_flags": {
+            "safety_critical": bool(safety_critical),
+            "regulated_context": bool(regulated_context),
+            "needs_installation": bool(needs_installation),
+            "wants_guaranteed_accuracy": bool(wants_guaranteed_accuracy),
+        },
+        "qualification_score": score,
+        "fit_level": fit_level,
+        "recommended_route": recommended_route,
+        "commercial_stage": commercial_stage,
+        "operator_verdict": operator_verdict,
+        "blockers": blockers,
+        "warnings": warnings,
+        "discovery_questions": discovery_questions,
+        "customer_required_inputs": customer_required_inputs,
+        "next_actions": next_actions,
+        "sales_followup_checklist": sales_followup_checklist,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "customer_email_draft": customer_email_draft,
+        "routing": routing,
+        "connected_snapshots": {
+            "pricing_offer_snapshot": bool(pricing_offer_snapshot),
+            "proposal_sow_snapshot": bool(proposal_sow_snapshot),
+            "quote_to_cash_snapshot": bool(quote_to_cash_snapshot),
+            "paid_pilot_snapshot": bool(paid_pilot_snapshot),
+        },
+        "disclaimer": "V48 supports lead qualification and safe sales routing. It is not legal advice, not a guarantee of revenue, and not production validation.",
+    }
+
+
+def create_customer_lead_intake_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 18)
+    pdf.cell(0, 10, txt="EdgeTwin Lead Intake Qualification", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.cell(0, 8, txt=clean_pdf_text(snapshot.get("version", "V48")), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Qualification Result", 8, True)
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('qualification_score', 0)}%")
+    safe_pdf_cell(pdf, f"Fit level: {snapshot.get('fit_level', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Recommended route: {snapshot.get('recommended_route', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Verdict: {snapshot.get('operator_verdict', '')}")
+    pdf.ln(4)
+
+    customer = snapshot.get("customer", {})
+    safe_pdf_cell(pdf, "Customer", 8, True)
+    safe_pdf_cell(pdf, f"Name: {customer.get('name', '')}")
+    safe_pdf_cell(pdf, f"Organization: {customer.get('organization', '')}")
+    safe_pdf_cell(pdf, f"Email: {customer.get('email', '')}")
+    safe_pdf_cell(pdf, f"Industry: {snapshot.get('industry', '')}")
+    safe_pdf_cell(pdf, f"Use case: {snapshot.get('use_case', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Next Actions", 8, True)
+    for item in snapshot.get("next_actions", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Discovery Questions", 8, True)
+    for item in snapshot.get("discovery_questions", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Risks", 8, True)
+    blockers = snapshot.get("blockers", [])
+    warnings = snapshot.get("warnings", [])
+    if blockers:
+        for item in blockers:
+            safe_pdf_multicell(pdf, f"[BLOCKER] {item}")
+    else:
+        safe_pdf_multicell(pdf, "No hard lead blockers detected.")
+    for item in warnings:
+        safe_pdf_multicell(pdf, f"[WARNING] {item}")
+    pdf.ln(4)
+    safe_pdf_multicell(pdf, snapshot.get("disclaimer", ""))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("lead_intake_qualification.pdf", safe_pdf_output(pdf))
+        zf.writestr("lead_intake_snapshot.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("discovery_questions.csv", pd.DataFrame({"question": snapshot.get("discovery_questions", [])}).to_csv(index=False))
+        zf.writestr("next_actions.csv", pd.DataFrame({"action": snapshot.get("next_actions", [])}).to_csv(index=False))
+        zf.writestr("customer_required_inputs.csv", pd.DataFrame({"input": snapshot.get("customer_required_inputs", [])}).to_csv(index=False))
+        zf.writestr("sales_followup_checklist.csv", pd.DataFrame({"item": snapshot.get("sales_followup_checklist", [])}).to_csv(index=False))
+        zf.writestr("customer_email_draft.txt", snapshot.get("customer_email_draft", ""))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr("dataset_snapshot.csv", dataset_df.head(1000).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V48 Lead Intake bundle. Use this to qualify leads and route them safely before pricing/proposal/invoice steps. Not legal advice or production validation.\n")
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V49 FOUNDER OPS / FOLLOW-UP AUTOMATION CENTER
+# ============================================================
+
+def _v49_bool_score(value, points):
+    return points if bool(value) else 0
+
+
+def build_founder_ops_followup_center(
+    customer_name="Beta Customer",
+    customer_org="Customer Organization",
+    customer_email="customer@example.com",
+    current_stage="Discovery",
+    founder_hours_available=8,
+    max_customer_hours=3,
+    urgency="Normal",
+    customer_responsiveness="Normal",
+    payment_status="Not discussed",
+    data_status="Customer can collect",
+    next_deadline="None",
+    support_load="Normal",
+    waiting_on_customer=True,
+    needs_follow_up=True,
+    unclear_scope=False,
+    high_custom_work=False,
+    unsafe_expectation=False,
+    outstanding_customer_inputs=None,
+    internal_notes="",
+    lead_intake_snapshot=None,
+    pricing_offer_snapshot=None,
+    proposal_sow_snapshot=None,
+    quote_to_cash_snapshot=None,
+    paid_pilot_snapshot=None,
+    delivery_snapshot=None,
+    customer_success_snapshot=None,
+    observability_snapshot=None,
+):
+    """Build a founder-friendly operating plan for customer follow-up and workload control."""
+    outstanding_customer_inputs = outstanding_customer_inputs or []
+
+    stage_order = {
+        "New lead": 5,
+        "Discovery": 15,
+        "Pricing": 30,
+        "Proposal/SOW": 45,
+        "Quote sent": 60,
+        "Awaiting payment": 70,
+        "Paid pilot": 80,
+        "Delivery": 90,
+        "Post-delivery follow-up": 95,
+    }
+    urgency_load = {"Low": 0, "Normal": 5, "High": 12, "Critical": 20}.get(urgency, 5)
+    deadline_load = {"None": 0, "This week": 7, "48 hours": 14, "Today": 22}.get(next_deadline, 0)
+    support_load_score = {"Low": 0, "Normal": 6, "High": 14, "Too high": 24}.get(support_load, 6)
+    response_bonus = {"Unknown": 0, "Slow": -5, "Normal": 4, "Fast": 8}.get(customer_responsiveness, 0)
+
+    readiness_score = stage_order.get(current_stage, 15)
+    readiness_score += _v49_bool_score(lead_intake_snapshot, 8)
+    readiness_score += _v49_bool_score(pricing_offer_snapshot, 7)
+    readiness_score += _v49_bool_score(proposal_sow_snapshot, 7)
+    readiness_score += _v49_bool_score(quote_to_cash_snapshot, 7)
+    readiness_score += _v49_bool_score(paid_pilot_snapshot, 5)
+    readiness_score += _v49_bool_score(delivery_snapshot, 5)
+    readiness_score += _v49_bool_score(customer_success_snapshot, 4)
+    readiness_score += response_bonus
+
+    overload_points = urgency_load + deadline_load + support_load_score
+    if founder_hours_available <= 4:
+        overload_points += 22
+    elif founder_hours_available <= 8:
+        overload_points += 12
+    if max_customer_hours <= 2:
+        overload_points += 8
+    if high_custom_work:
+        overload_points += 18
+    if unclear_scope:
+        overload_points += 12
+    if len(outstanding_customer_inputs) >= 4:
+        overload_points += 8
+    if unsafe_expectation:
+        overload_points += 30
+
+    blockers = []
+    warnings = []
+    if unsafe_expectation:
+        blockers.append("Customer expects guarantees or production certainty. Reframe before spending more time.")
+    if high_custom_work and payment_status not in {"Invoice ready", "Awaiting payment", "Paid"}:
+        blockers.append("Customer is pulling toward custom work before payment/scope is controlled.")
+    if unclear_scope:
+        warnings.append("Scope is unclear. Do not create custom deliverables until the first pilot boundary is written down.")
+    if waiting_on_customer and outstanding_customer_inputs:
+        warnings.append("You are waiting on customer inputs. Send one clear request instead of doing more internal work.")
+    if support_load in {"High", "Too high"}:
+        warnings.append("Support load is high. Time-box support and convert repeated answers into templates.")
+    if payment_status in {"Invoice details missing", "Overdue"}:
+        warnings.append(f"Payment status needs attention: {payment_status}.")
+
+    ops_score = int(np.clip(readiness_score - overload_points - len(blockers) * 18 - len(warnings) * 4 + 35, 0, 100))
+
+    if blockers:
+        overload_risk = "High"
+        operator_mode = "Protect time / reframe"
+        founder_verdict = "Do not do more custom work yet. First reframe expectations, scope and payment boundaries."
+    elif overload_points >= 45 or ops_score < 45:
+        overload_risk = "High"
+        operator_mode = "Reduce workload"
+        founder_verdict = "Workload risk is high. Only do one next action and push missing work back to the customer."
+    elif overload_points >= 25 or ops_score < 70:
+        overload_risk = "Medium"
+        operator_mode = "Controlled follow-up"
+        founder_verdict = "This is manageable if you time-box it and avoid extra unpaid custom work."
+    else:
+        overload_risk = "Low"
+        operator_mode = "Proceed"
+        founder_verdict = "This workflow is under control. Continue with the next commercial or delivery step."
+
+    task_queue = []
+    def add_task(priority, task, owner="Founder", time_box="15 min", status="Open", gate=""):
+        task_queue.append({
+            "priority": priority,
+            "task": task,
+            "owner": owner,
+            "time_box": time_box,
+            "status": status,
+            "gate": gate,
+        })
+
+    if needs_follow_up or waiting_on_customer:
+        add_task("P0", "Send one clear customer follow-up with requested inputs and next deadline.", "Founder", "10 min", gate="Customer input")
+    if not lead_intake_snapshot:
+        add_task("P1", "Run Lead Intake V48 before deeper custom work.", "Founder", "10 min", gate="Qualification")
+    if current_stage in {"New lead", "Discovery"} and not pricing_offer_snapshot:
+        add_task("P1", "Qualify budget and create Pricing Offer only after scope/data are clear.", "Founder", "20 min", gate="Budget/scope")
+    if pricing_offer_snapshot and not proposal_sow_snapshot:
+        add_task("P1", "Create Proposal/SOW V46 with included and excluded deliverables.", "Founder", "25 min", gate="Scope")
+    if proposal_sow_snapshot and not quote_to_cash_snapshot:
+        add_task("P1", "Run Quote-to-Cash V47 before invoice/payment handoff.", "Founder", "15 min", gate="Invoice readiness")
+    if payment_status in {"Invoice details missing", "Quote requested"}:
+        add_task("P0", "Request invoice details, PO/procurement requirements and billing contact.", "Customer", "5 min", gate="Billing info")
+    if payment_status == "Awaiting payment":
+        add_task("P0", "Send polite payment reminder before releasing delivery package.", "Founder", "8 min", gate="Payment")
+    if payment_status == "Paid" and not delivery_snapshot:
+        add_task("P0", "Generate Delivery Portal bundle and send customer handoff.", "Founder", "20 min", gate="Delivery")
+    if data_status in {"No data", "Customer can collect"}:
+        add_task("P1", "Ask for sample data or confirm synthetic-pilot approach.", "Customer", "5 min", gate="Data")
+    if unsafe_expectation:
+        add_task("P0", "Reframe: pilot-ready is not production-certified or guaranteed accuracy.", "Founder", "10 min", gate="Safe claims")
+    if high_custom_work:
+        add_task("P0", "Move custom requests into paid scope or backlog, not free support.", "Founder", "10 min", gate="Scope control")
+
+    # Always include a founder-protection task.
+    add_task("P2", "Update project notes and save current app state after the next customer action.", "Founder", "5 min", gate="Admin hygiene")
+
+    priority_order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+    task_queue = sorted(task_queue, key=lambda x: (priority_order.get(x["priority"], 9), x["time_box"]))
+    do_now_queue = [t for t in task_queue if t["priority"] == "P0"][:4]
+    if not do_now_queue and task_queue:
+        do_now_queue = task_queue[:2]
+
+    weekly_plan = [
+        {"block": "Block 1", "focus": "One customer-facing follow-up", "max_time": "30 min", "rule": "Send, then wait. Do not build extra custom work."},
+        {"block": "Block 2", "focus": "Commercial gate", "max_time": "45 min", "rule": "Pricing/SOW/Quote only if scope and data are clear."},
+        {"block": "Block 3", "focus": "Delivery/admin", "max_time": "45 min", "rule": "Generate bundle, save project, log next action."},
+    ]
+    if founder_hours_available <= 4:
+        weekly_plan = weekly_plan[:1]
+        weekly_plan[0]["rule"] = "Only one next action this week. Customer must provide inputs before more work."
+
+    automation_opportunities = [
+        "Reuse customer email drafts from V48/V49 instead of writing every reply from scratch.",
+        "Use Proposal/SOW V46 and Quote-to-Cash V47 as gates before invoice or delivery.",
+        "Convert repeated customer questions into templates inside the Delivery Portal / Customer Success flow.",
+        "Batch admin work once per week instead of reacting all day.",
+    ]
+    if observability_snapshot:
+        automation_opportunities.append("Use Error Observatory signals to prioritize only product issues that affect customer delivery.")
+
+    stop_doing_list = [
+        "Do not perform unpaid custom engineering before scope, price and acceptance criteria are clear.",
+        "Do not chase unclear leads more than once without customer input.",
+        "Do not promise production accuracy, safety certification or uptime from a pilot.",
+        "Do not manually rewrite the same emails; use the generated drafts and adjust lightly.",
+    ]
+    if overload_risk == "High":
+        stop_doing_list.insert(0, "Stop adding new features for this customer until the next commercial/customer input gate is cleared.")
+
+    missing_inputs_text = "\n".join([f"- {x}" for x in outstanding_customer_inputs]) or "- No specific missing inputs listed."
+    customer_followup_email = f"""Subject: Next step for {customer_org} EdgeTwin pilot
+
+Hi {customer_name},
+
+To keep the EdgeTwin pilot efficient and clearly scoped, the best next step is to close the missing inputs below:
+
+{missing_inputs_text}
+
+Current stage: {current_stage}
+Recommended next action: {do_now_queue[0]['task'] if do_now_queue else 'Confirm the next pilot step'}
+
+Once these are confirmed, I can move the project through the correct gate: lead qualification, pricing, proposal/SOW, quote/payment readiness, or delivery.
+
+Important: EdgeTwin prepares pilot-ready decision-support deliverables. Production readiness, guaranteed accuracy, safety certification and regulatory compliance require separate field validation and are not promised by default.
+
+Best regards,
+EdgeTwin Studio
+"""
+
+    internal_operator_note = f"""Founder Ops V49 note
+Customer: {customer_org} / {customer_name}
+Stage: {current_stage}
+Operator mode: {operator_mode}
+Overload risk: {overload_risk}
+Ops score: {ops_score}%
+Founder rule: {founder_verdict}
+
+Internal notes:
+{internal_notes}
+"""
+
+    return {
+        "version": "V49 Founder Ops & Customer Follow-up Center",
+        "created_at": _now(),
+        "customer": {"name": customer_name, "organization": customer_org, "email": customer_email},
+        "current_stage": current_stage,
+        "founder_hours_available": founder_hours_available,
+        "max_customer_hours": max_customer_hours,
+        "urgency": urgency,
+        "customer_responsiveness": customer_responsiveness,
+        "payment_status": payment_status,
+        "data_status": data_status,
+        "next_deadline": next_deadline,
+        "support_load": support_load,
+        "risk_flags": {
+            "waiting_on_customer": bool(waiting_on_customer),
+            "needs_follow_up": bool(needs_follow_up),
+            "unclear_scope": bool(unclear_scope),
+            "high_custom_work": bool(high_custom_work),
+            "unsafe_expectation": bool(unsafe_expectation),
+        },
+        "ops_score": ops_score,
+        "operator_mode": operator_mode,
+        "overload_risk": overload_risk,
+        "founder_verdict": founder_verdict,
+        "blockers": blockers,
+        "warnings": warnings,
+        "outstanding_customer_inputs": outstanding_customer_inputs,
+        "do_now_queue": do_now_queue,
+        "task_queue": task_queue,
+        "weekly_plan": weekly_plan,
+        "automation_opportunities": automation_opportunities,
+        "stop_doing_list": stop_doing_list,
+        "customer_followup_email": customer_followup_email,
+        "internal_operator_note": internal_operator_note,
+        "connected_snapshots": {
+            "lead_intake_v48": bool(lead_intake_snapshot),
+            "pricing_offer": bool(pricing_offer_snapshot),
+            "proposal_sow": bool(proposal_sow_snapshot),
+            "quote_to_cash": bool(quote_to_cash_snapshot),
+            "paid_pilot": bool(paid_pilot_snapshot),
+            "delivery": bool(delivery_snapshot),
+            "customer_success": bool(customer_success_snapshot),
+            "observability": bool(observability_snapshot),
+        },
+        "disclaimer": "V49 is an operational planning aid for founder workload and follow-up. It is not legal, financial, tax or project-management advice.",
+    }
+
+
+def create_founder_ops_followup_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 18)
+    pdf.cell(0, 10, txt="EdgeTwin Founder Ops Plan", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align="C")
+    pdf.cell(0, 8, txt=clean_pdf_text(snapshot.get("version", "V49")), ln=True, align="C")
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, "Founder Ops Result", 8, True)
+    safe_pdf_cell(pdf, f"Ops score: {snapshot.get('ops_score', 0)}%")
+    safe_pdf_cell(pdf, f"Operator mode: {snapshot.get('operator_mode', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Overload risk: {snapshot.get('overload_risk', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Verdict: {snapshot.get('founder_verdict', '')}")
+    pdf.ln(4)
+
+    customer = snapshot.get("customer", {})
+    safe_pdf_cell(pdf, "Customer", 8, True)
+    safe_pdf_cell(pdf, f"Name: {customer.get('name', '')}")
+    safe_pdf_cell(pdf, f"Organization: {customer.get('organization', '')}")
+    safe_pdf_cell(pdf, f"Email: {customer.get('email', '')}")
+    safe_pdf_cell(pdf, f"Current stage: {snapshot.get('current_stage', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Do Now Queue", 8, True)
+    for item in snapshot.get("do_now_queue", []):
+        safe_pdf_multicell(pdf, f"- {item.get('priority', '')}: {item.get('task', '')} ({item.get('time_box', '')})")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Risks", 8, True)
+    if snapshot.get("blockers"):
+        for item in snapshot.get("blockers", []):
+            safe_pdf_multicell(pdf, f"[BLOCKER] {item}")
+    else:
+        safe_pdf_multicell(pdf, "No hard founder-ops blockers detected.")
+    for item in snapshot.get("warnings", []):
+        safe_pdf_multicell(pdf, f"[WARNING] {item}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, "Stop Doing", 8, True)
+    for item in snapshot.get("stop_doing_list", []):
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_multicell(pdf, snapshot.get("disclaimer", ""))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "a", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("founder_ops_plan.pdf", safe_pdf_output(pdf))
+        zf.writestr("founder_ops_snapshot.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("task_queue.csv", pd.DataFrame(snapshot.get("task_queue", [])).to_csv(index=False))
+        zf.writestr("do_now_queue.csv", pd.DataFrame(snapshot.get("do_now_queue", [])).to_csv(index=False))
+        zf.writestr("weekly_plan.csv", pd.DataFrame(snapshot.get("weekly_plan", [])).to_csv(index=False))
+        zf.writestr("automation_opportunities.csv", pd.DataFrame({"automation": snapshot.get("automation_opportunities", [])}).to_csv(index=False))
+        zf.writestr("stop_doing_list.csv", pd.DataFrame({"stop_doing": snapshot.get("stop_doing_list", [])}).to_csv(index=False))
+        zf.writestr("customer_followup_email.txt", snapshot.get("customer_followup_email", ""))
+        zf.writestr("internal_operator_note.txt", snapshot.get("internal_operator_note", ""))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr("dataset_snapshot.csv", dataset_df.head(1000).to_csv(index=False))
+        zf.writestr("README.txt", "EdgeTwin Studio V49 Founder Ops bundle. Use this to protect founder time, route customer follow-up and avoid unpaid custom chaos. Not legal/financial/tax advice.\n")
+    return zip_buf.getvalue()
+
