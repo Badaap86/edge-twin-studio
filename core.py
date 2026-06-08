@@ -17174,3 +17174,1405 @@ def create_privacy_safe_field_learning_v52_bundle(project_name, snapshot, datase
         zf.writestr('README.txt', 'EdgeTwin Studio V52 Privacy-Safe Field Learning bundle. This bundle contains consent, minimization and aggregate feature-learning outputs. It intentionally does not include raw customer data rows.\n')
     return zip_buf.getvalue()
 
+
+# ============================================================
+# V53 — Launch-Ready Customer Experience
+# ============================================================
+
+def _v53_dataset_status(dataset_df):
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns)) if rows or isinstance(dataset_df, pd.DataFrame) else 0
+    has_label = "Label" in dataset_df.columns if isinstance(dataset_df, pd.DataFrame) else False
+    numeric_cols = []
+    if isinstance(dataset_df, pd.DataFrame) and len(dataset_df.columns) > 0:
+        numeric_cols = [c for c in dataset_df.columns if c != "Label" and pd.api.types.is_numeric_dtype(dataset_df[c])]
+    return {
+        "rows": rows,
+        "cols": cols,
+        "has_label": bool(has_label),
+        "numeric_features": len(numeric_cols),
+        "status": "Pilot dataset loaded" if rows > 0 and has_label else ("Feature data loaded" if rows > 0 else "No dataset loaded"),
+    }
+
+
+def build_launch_ready_customer_experience_v53(
+    project_name,
+    dataset_df=None,
+    target_segment="Industrial maintenance team",
+    customer_problem="Turn a sensor idea into a pilot-ready Edge AI package.",
+    desired_outcome="Pilot package",
+    proof_level="Synthetic pilot",
+    cta_mode="Request proposal",
+    include_price_hint=True,
+    include_privacy_badge=True,
+    include_field_validation_notice=True,
+    customer_ui_snapshot=None,
+    field_learning_snapshot=None,
+    pricing_offer_snapshot=None,
+    proposal_sow_snapshot=None,
+):
+    """Create a launch-ready, customer-facing experience snapshot.
+
+    V53 does not weaken the engine; it translates the existing evidence into a
+    simpler buyer journey with safe claims, landing copy, demo script and CTA.
+    """
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    dataset_status = _v53_dataset_status(dataset_df)
+    customer_ui_snapshot = customer_ui_snapshot or {}
+    field_learning_snapshot = field_learning_snapshot or {}
+    pricing_offer_snapshot = pricing_offer_snapshot or {}
+    proposal_sow_snapshot = proposal_sow_snapshot or {}
+
+    score = 55
+    blockers = []
+    warnings = []
+    strengths = []
+
+    if dataset_status["rows"] > 0 and dataset_status["has_label"]:
+        score += 12
+        strengths.append("Pilot dataset is available and labelled.")
+    elif dataset_status["rows"] > 0:
+        score += 6
+        warnings.append("Dataset exists but should include a Label column for clear customer proof.")
+    else:
+        blockers.append("Generate or upload a pilot dataset before presenting a full launch-ready experience.")
+
+    if field_learning_snapshot:
+        score += 10
+        strengths.append("Privacy-safe field learning policy is prepared.")
+        if str(field_learning_snapshot.get("risk_level", "")).lower() == "high":
+            score -= 15
+            blockers.append("Privacy learning risk is high; keep customer data private until risks are reduced.")
+    elif include_privacy_badge:
+        warnings.append("Privacy-safe learning plan is not generated yet; use default private-only wording.")
+
+    if customer_ui_snapshot:
+        score += 8
+        strengths.append("Customer UI simplification snapshot is available.")
+    else:
+        warnings.append("Customer UI snapshot is missing; V53 will still generate clean launch copy.")
+
+    if pricing_offer_snapshot:
+        score += 8
+        strengths.append("Pricing offer evidence is available.")
+    elif include_price_hint:
+        warnings.append("Pricing offer not generated yet; use broad price positioning only.")
+
+    if proposal_sow_snapshot:
+        score += 7
+        strengths.append("Proposal/SOW scope evidence is available.")
+    else:
+        warnings.append("Proposal/SOW not generated yet; route serious leads to SOW before paid delivery.")
+
+    if proof_level == "Real data uploaded":
+        score += 7
+        strengths.append("Real data signal is available for stronger pilot confidence.")
+    elif proof_level == "Field evidence available":
+        score += 12
+        strengths.append("Field evidence is available; customer proof is stronger than synthetic-only.")
+    else:
+        warnings.append("Current proof level is synthetic-pilot. Keep claims honest and require field validation.")
+
+    score = int(np.clip(score, 0, 100))
+    if score >= 82 and not blockers:
+        decision = "GO"
+        launch_status = "Launch-ready for controlled customer demos"
+    elif score >= 65:
+        decision = "CONDITIONAL GO"
+        launch_status = "Good for guided demos; improve proof before paid delivery"
+    else:
+        decision = "NO-GO"
+        launch_status = "Internal polish needed before customer launch"
+
+    status_badges = []
+    status_badges.append("Pilot route ready" if score >= 65 else "Pilot route needs setup")
+    status_badges.append(dataset_status["status"])
+    if include_privacy_badge:
+        if field_learning_snapshot:
+            status_badges.append(f"Privacy: {field_learning_snapshot.get('risk_level', 'checked')}")
+        else:
+            status_badges.append("Privacy: private by default")
+    if include_field_validation_notice:
+        status_badges.append("Field validation required before production")
+    if pricing_offer_snapshot:
+        status_badges.append("Offer-ready")
+
+    headline = "Start your Edge AI sensor pilot automatically"
+    subheadline = (
+        "EdgeTwin Studio turns a vibration, acoustic or sensor-use-case into a pilot-ready package with dataset, "
+        "reliability checks, hardware guidance, privacy-safe learning options and customer-ready deliverables."
+    )
+    if target_segment:
+        segment_line = f"Built for {target_segment.lower()} that need a faster, safer route from sensor idea to pilot evidence."
+    else:
+        segment_line = "Built for teams that need a faster, safer route from sensor idea to pilot evidence."
+
+    customer_steps = [
+        {"step": "1", "title": "Choose the problem", "copy": "Select the use-case, sensors and data status without needing to understand every DSP detail."},
+        {"step": "2", "title": "Generate the pilot", "copy": "EdgeTwin creates the dataset, audit, reliability estimate, hardware direction and pilot bundle."},
+        {"step": "3", "title": "Review readiness", "copy": "The app shows what is ready, what is risky, what needs real data, and the safest next step."},
+    ]
+
+    value_drivers = [
+        "Reduce trial-and-error before an Edge AI pilot.",
+        "Make normal vs abnormal behaviour easier to explain.",
+        "Prepare Edge Impulse / TinyML export paths without manual consulting for every step.",
+        "Turn technical sensor data into customer-friendly reports and delivery packages.",
+        "Keep customer data private by default while allowing opt-in feature learning when agreed.",
+    ]
+
+    safe_claims = [
+        "EdgeTwin helps prepare pilot-ready sensor datasets and reports.",
+        "EdgeTwin provides reliability estimates and risk indicators for pilot planning.",
+        "Synthetic data can accelerate pilot preparation, but field validation remains required.",
+        "Customer data stays private by default; feature learning requires explicit opt-in.",
+    ]
+    claims_to_avoid = [
+        "Do not claim guaranteed production accuracy without field validation.",
+        "Do not claim raw customer data is globally reused or automatically anonymised.",
+        "Do not claim certified safety-critical deployment readiness.",
+        "Do not promise that synthetic data replaces real sensor validation.",
+    ]
+
+    if cta_mode == "Request proposal":
+        primary_cta = "Request a pilot proposal"
+        next_step = "Generate Pricing Offer and Proposal/SOW before paid delivery."
+    elif cta_mode == "Download pilot bundle":
+        primary_cta = "Download pilot bundle"
+        next_step = "Review the bundle and confirm whether real data is needed for stronger readiness."
+    elif cta_mode == "Book discovery":
+        primary_cta = "Book a discovery call"
+        next_step = "Qualify the lead and collect real-data availability, sensors and target labels."
+    else:
+        primary_cta = "Start pilot route"
+        next_step = "Create the pilot package and review the readiness result."
+
+    landing_copy = f"""{headline}
+
+{subheadline}
+
+{segment_line}
+
+Customer problem:
+{customer_problem}
+
+Desired outcome:
+{desired_outcome}
+
+Primary call to action:
+{primary_cta}
+
+Safe note:
+This is a pilot-preparation workflow. Production deployment requires field validation and customer-specific review.
+"""
+
+    demo_script = [
+        "Open Customer Mode and start with the problem/use-case, not the technical engine.",
+        "Show the customer how the pilot package is generated from their sensors, labels and data status.",
+        "Explain the readiness result: what is ready, what needs real data, and what is not production-ready yet.",
+        "Show privacy-safe learning: private by default, feature learning only with opt-in.",
+        "End with the safest next step: proposal, data upload, field validation or paid pilot readiness."
+    ]
+
+    faq = [
+        {"question": "Is this production-ready?", "answer": "No, not automatically. EdgeTwin prepares and audits a pilot package; production deployment needs field validation."},
+        {"question": "Can we use our own data?", "answer": "Yes. Customer data is private by default and can improve the customer-specific pilot."},
+        {"question": "Will our raw data train the global engine?", "answer": "No. Global feature learning only happens with explicit opt-in and should use minimized aggregate features, not raw files."},
+        {"question": "What do we receive?", "answer": "A pilot dataset, readiness/risk checks, report outputs, hardware/deployment guidance and a recommended next step."},
+    ]
+
+    return {
+        "version": "V53 Launch-Ready Customer Experience",
+        "project_name": project_name,
+        "target_segment": target_segment,
+        "customer_problem": customer_problem,
+        "desired_outcome": desired_outcome,
+        "proof_level": proof_level,
+        "cta_mode": cta_mode,
+        "launch_score": score,
+        "decision": decision,
+        "launch_status": launch_status,
+        "headline": headline,
+        "subheadline": subheadline,
+        "segment_line": segment_line,
+        "status_badges": status_badges,
+        "dataset_status": dataset_status,
+        "customer_steps": customer_steps,
+        "value_drivers": value_drivers,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "blockers": blockers,
+        "warnings": warnings,
+        "strengths": strengths,
+        "primary_cta": primary_cta,
+        "recommended_next_step": next_step,
+        "landing_copy": landing_copy,
+        "demo_script": demo_script,
+        "faq": faq,
+        "disclaimer": "V53 is a launch/customer-experience layer. It does not certify production performance. Field validation, customer-specific review and safe claims remain required.",
+    }
+
+
+def create_launch_ready_customer_experience_v53_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Launch-Ready Customer Experience V53', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f'Project: {project_name}'), ln=True, align='C')
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, 'Launch Result', 8, True)
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('launch_score', 0)}%")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Status: {snapshot.get('launch_status', '')}")
+    safe_pdf_multicell(pdf, f"Next step: {snapshot.get('recommended_next_step', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Customer Landing Copy', 8, True)
+    safe_pdf_multicell(pdf, snapshot.get('landing_copy', ''))
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Customer Steps', 8, True)
+    for step in snapshot.get('customer_steps', []):
+        safe_pdf_multicell(pdf, f"{step.get('step')}. {step.get('title')}: {step.get('copy')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Safe Claims', 8, True)
+    for item in snapshot.get('safe_claims', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Claims To Avoid', 8, True)
+    for item in snapshot.get('claims_to_avoid', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+    safe_pdf_multicell(pdf, snapshot.get('disclaimer', ''))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('launch_ready_customer_experience_v53.pdf', safe_pdf_output(pdf))
+        zf.writestr('launch_experience_snapshot.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('landing_copy.txt', snapshot.get('landing_copy', ''))
+        zf.writestr('demo_script.txt', '\n'.join(snapshot.get('demo_script', [])))
+        zf.writestr('status_badges.csv', pd.DataFrame({'badge': snapshot.get('status_badges', [])}).to_csv(index=False))
+        zf.writestr('customer_steps.csv', pd.DataFrame(snapshot.get('customer_steps', [])).to_csv(index=False))
+        zf.writestr('value_drivers.csv', pd.DataFrame({'value_driver': snapshot.get('value_drivers', [])}).to_csv(index=False))
+        zf.writestr('safe_claims.csv', pd.DataFrame({'safe_claim': snapshot.get('safe_claims', [])}).to_csv(index=False))
+        zf.writestr('claims_to_avoid.csv', pd.DataFrame({'claim_to_avoid': snapshot.get('claims_to_avoid', [])}).to_csv(index=False))
+        zf.writestr('faq.csv', pd.DataFrame(snapshot.get('faq', [])).to_csv(index=False))
+        zf.writestr('blockers.csv', pd.DataFrame({'blocker': snapshot.get('blockers', [])}).to_csv(index=False))
+        zf.writestr('warnings.csv', pd.DataFrame({'warning': snapshot.get('warnings', [])}).to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            schema = pd.DataFrame({'column': list(dataset_df.columns), 'dtype': [str(dataset_df[c].dtype) for c in dataset_df.columns]})
+            zf.writestr('dataset_schema_snapshot.csv', schema.to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V53 Launch-Ready Customer Experience bundle. Customer-facing copy, safe claims, demo script and launch-readiness evidence.\n')
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V54 — Public Launch Page & Sales Assets Generator
+# ============================================================
+
+def _v54_evidence_bool(snapshot, min_score_key=None, min_score=65):
+    if not snapshot:
+        return False
+    if min_score_key is None:
+        return True
+    try:
+        return float(snapshot.get(min_score_key, 0)) >= float(min_score)
+    except Exception:
+        return False
+
+
+def build_public_launch_assets_v54(
+    project_name,
+    dataset_df=None,
+    market_focus="Predictive maintenance / machine health",
+    buyer_persona="Maintenance manager / technical lead",
+    primary_offer="Professional Pilot Bundle",
+    price_anchor="€750 – €2,500 per pilot",
+    primary_cta="Request a pilot proposal",
+    launch_channel="Direct outreach / LinkedIn",
+    proof_level="Pilot package available",
+    include_pricing=True,
+    include_calendar_cta=True,
+    launch_experience_snapshot=None,
+    pricing_offer_snapshot=None,
+    proposal_sow_snapshot=None,
+    field_learning_snapshot=None,
+    product_readiness_snapshot=None,
+):
+    """Build customer-facing launch assets without overclaiming.
+
+    V54 is not another engineering feature. It turns the already-built product
+    evidence into a clean sales page, outreach copy, objection answers and
+    launch checklist so the founder does not need to explain everything by hand.
+    """
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    rows = int(len(dataset_df))
+    has_label = bool(isinstance(dataset_df, pd.DataFrame) and "Label" in dataset_df.columns)
+    numeric_features = 0
+    if isinstance(dataset_df, pd.DataFrame) and len(dataset_df.columns) > 0:
+        numeric_features = len([c for c in dataset_df.columns if c != "Label" and pd.api.types.is_numeric_dtype(dataset_df[c])])
+
+    launch_experience_snapshot = launch_experience_snapshot or {}
+    pricing_offer_snapshot = pricing_offer_snapshot or {}
+    proposal_sow_snapshot = proposal_sow_snapshot or {}
+    field_learning_snapshot = field_learning_snapshot or {}
+    product_readiness_snapshot = product_readiness_snapshot or {}
+
+    score = 50
+    blockers = []
+    warnings = []
+    strengths = []
+
+    if rows > 0 and has_label:
+        score += 12
+        strengths.append("A labelled pilot dataset is available for customer proof.")
+    elif rows > 0:
+        score += 6
+        warnings.append("A dataset exists, but a Label column improves sales proof and pilot clarity.")
+    else:
+        warnings.append("No active dataset is loaded; launch copy can be created, but proof is weaker.")
+
+    if launch_experience_snapshot:
+        score += 10
+        strengths.append("Launch-ready customer experience evidence is available.")
+    else:
+        warnings.append("V53 Launch Experience has not been generated yet.")
+
+    if pricing_offer_snapshot:
+        score += 9
+        strengths.append("Pricing offer evidence is available.")
+    elif include_pricing:
+        warnings.append("Pricing offer snapshot is missing; keep price ranges broad and non-binding.")
+
+    if proposal_sow_snapshot:
+        score += 8
+        strengths.append("Proposal/SOW scope is available for serious leads.")
+    else:
+        warnings.append("Proposal/SOW is not generated yet; route high-fit leads to SOW before paid delivery.")
+
+    if field_learning_snapshot:
+        score += 8
+        strengths.append("Privacy-safe field learning policy is available.")
+        if str(field_learning_snapshot.get("risk_level", "")).lower() == "high":
+            score -= 15
+            blockers.append("Privacy learning risk is high. Do not use customer data claims until risk is reduced.")
+    else:
+        warnings.append("Privacy learning snapshot is missing; use private-by-default wording only.")
+
+    if product_readiness_snapshot:
+        score += 8
+        strengths.append("Product readiness evidence exists.")
+    else:
+        warnings.append("Product readiness snapshot not found; use controlled-beta language.")
+
+    if proof_level == "Real field evidence available":
+        score += 8
+        strengths.append("Field evidence supports stronger launch proof.")
+    elif proof_level == "Real customer data uploaded":
+        score += 5
+        strengths.append("Real customer data improves credibility for a targeted pilot.")
+    else:
+        warnings.append("Use pilot-preparation language because current proof is not full production evidence.")
+
+    if "guarantee" in str(primary_cta).lower() or "production" in str(primary_offer).lower():
+        blockers.append("Avoid guaranteed production or certified-safety wording in launch offer.")
+        score -= 20
+
+    score = int(np.clip(score, 0, 100))
+    if score >= 82 and not blockers:
+        decision = "GO"
+        launch_status = "Ready for controlled customer outreach"
+    elif score >= 65:
+        decision = "CONDITIONAL GO"
+        launch_status = "Good for careful outreach; improve proof before aggressive sales"
+    else:
+        decision = "NO-GO"
+        launch_status = "Internal preparation recommended before public launch"
+
+    headline = "Turn sensor ideas into Edge AI pilot packages — automatically."
+    subheadline = (
+        "EdgeTwin Studio helps teams move from vibration, acoustic or sensor use-cases to pilot-ready datasets, "
+        "readiness checks, hardware guidance, privacy-safe learning options and customer-ready deliverables."
+    )
+    positioning = (
+        f"For {buyer_persona} in {market_focus}, EdgeTwin reduces the early uncertainty around data, labels, "
+        "normal-vs-abnormal behaviour, hardware direction and pilot reporting."
+    )
+
+    problem_solution_rows = [
+        {"customer_pain": "We do not have enough real sensor data.", "edgetwin_response": "Generate a pilot dataset, then improve confidence with real-data upload and privacy-safe feature learning."},
+        {"customer_pain": "We do not know what normal vs abnormal looks like.", "edgetwin_response": "Use the Normality Engine and readiness checks to explain baseline behaviour and deviations."},
+        {"customer_pain": "We are unsure which hardware fits.", "edgetwin_response": "Use the Hardware/Deployment Planner to recommend node, gateway, power and export direction."},
+        {"customer_pain": "We need management-friendly proof.", "edgetwin_response": "Generate reports, delivery bundles, proposal/SOW and safe claims."},
+        {"customer_pain": "We need privacy-safe handling of uploaded data.", "edgetwin_response": "Default to private-only data handling; feature learning requires explicit opt-in."},
+    ]
+
+    offer_cards = [
+        {
+            "offer": "Starter Pilot Bundle",
+            "best_for": "First technical exploration with synthetic pilot data.",
+            "includes": "Dataset, basic audit, hardware direction and report snapshot.",
+            "suggested_price": "€149 – €499",
+        },
+        {
+            "offer": "Professional Pilot Bundle",
+            "best_for": "Serious pilot preparation with readiness and export evidence.",
+            "includes": "Dataset, reliability/trust, normality, Edge Impulse export, report and deployment guidance.",
+            "suggested_price": "€750 – €2,500",
+        },
+        {
+            "offer": "Real-Data Pilot",
+            "best_for": "Customer has WAV/CSV field data and needs stronger pilot confidence.",
+            "includes": "Real-data analysis, privacy-safe learning plan, readiness report, gaps and SOW path.",
+            "suggested_price": "€1,500 – €5,000",
+        },
+    ]
+
+    if primary_offer not in [c["offer"] for c in offer_cards]:
+        offer_cards.append({
+            "offer": primary_offer,
+            "best_for": "Custom selected customer need.",
+            "includes": "Scope to be confirmed in proposal/SOW.",
+            "suggested_price": price_anchor if include_pricing else "Quote after discovery",
+        })
+
+    landing_page_sections = [
+        {"section": "Hero", "copy": f"{headline}\n\n{subheadline}"},
+        {"section": "Who it is for", "copy": positioning},
+        {"section": "What the customer receives", "copy": "Pilot dataset, readiness evidence, safe report outputs, hardware/deployment guidance and a clear next step."},
+        {"section": "Privacy-first note", "copy": "Customer data stays private by default. Cross-customer feature learning requires explicit opt-in and uses minimized derived features."},
+        {"section": "Important limitation", "copy": "EdgeTwin prepares pilots. It does not certify production accuracy without field validation."},
+        {"section": "CTA", "copy": primary_cta},
+    ]
+
+    outreach_email = f"""Subject: Faster Edge AI sensor pilot preparation for {market_focus}
+
+Hi {{First name}},
+
+Many teams want to test Edge AI with vibration, acoustic or sensor data, but get stuck on data quality, labels, hardware choices and pilot reporting.
+
+EdgeTwin Studio helps turn a sensor use-case into a pilot-ready package: dataset, readiness checks, normal-vs-abnormal analysis, hardware direction and customer-ready deliverables.
+
+For {market_focus}, the usual starting point is a {primary_offer}. {('Typical range: ' + price_anchor + '.') if include_pricing else 'Pricing depends on scope and data status.'}
+
+This is positioned as pilot preparation, not a production accuracy guarantee. Field validation remains required.
+
+Would it be useful to review one pilot scenario for your team?
+"""
+
+    linkedin_message = (
+        f"Hi {{First name}}, quick question: are you exploring Edge AI / sensor pilots for {market_focus}? "
+        "I am building EdgeTwin Studio to turn sensor use-cases into pilot packages with datasets, readiness checks, hardware direction and safe reports. "
+        "It is pilot-preparation focused, with field validation required before production. Open to a short review?"
+    )
+
+    demo_agenda = [
+        "Start with the customer's sensor problem and current data status.",
+        "Show the simple Customer Mode route, not the full founder cockpit.",
+        "Generate or load a pilot dataset and show readiness/risk result.",
+        "Show privacy-safe data handling: private by default, feature learning by opt-in.",
+        "End with the right commercial next step: discovery, proposal/SOW, real-data pilot or paid pilot readiness.",
+    ]
+
+    safe_claims = [
+        "EdgeTwin helps prepare Edge AI sensor pilot packages.",
+        "EdgeTwin provides readiness estimates, risk indicators and next-step guidance.",
+        "Synthetic data can reduce early trial-and-error, but real field validation remains required.",
+        "Customer data stays private by default; cross-customer learning requires explicit permission.",
+    ]
+    claims_to_avoid = [
+        "Guaranteed production accuracy.",
+        "Certified safety-critical deployment readiness.",
+        "Raw customer data automatically trains the global engine.",
+        "Synthetic data fully replaces real-world validation.",
+    ]
+
+    launch_checklist = [
+        {"item": "Customer Mode opens cleanly", "status": "ready"},
+        {"item": "V53 launch copy generated", "status": "ready" if launch_experience_snapshot else "missing"},
+        {"item": "Pricing range prepared", "status": "ready" if pricing_offer_snapshot or include_pricing else "missing"},
+        {"item": "Proposal/SOW path ready", "status": "ready" if proposal_sow_snapshot else "recommended"},
+        {"item": "Privacy-safe learning wording prepared", "status": "ready" if field_learning_snapshot else "recommended"},
+        {"item": "Production limitation visible", "status": "ready"},
+    ]
+
+    return {
+        "version": "V54 Public Launch Page & Sales Assets",
+        "project_name": project_name,
+        "market_focus": market_focus,
+        "buyer_persona": buyer_persona,
+        "primary_offer": primary_offer,
+        "price_anchor": price_anchor if include_pricing else "Quote after discovery",
+        "primary_cta": primary_cta,
+        "launch_channel": launch_channel,
+        "proof_level": proof_level,
+        "launch_asset_score": score,
+        "decision": decision,
+        "launch_status": launch_status,
+        "headline": headline,
+        "subheadline": subheadline,
+        "positioning": positioning,
+        "dataset_status": {"rows": rows, "has_label": has_label, "numeric_features": numeric_features},
+        "problem_solution_rows": problem_solution_rows,
+        "offer_cards": offer_cards,
+        "landing_page_sections": landing_page_sections,
+        "outreach_email": outreach_email,
+        "linkedin_message": linkedin_message,
+        "demo_agenda": demo_agenda,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "launch_checklist": launch_checklist,
+        "strengths": strengths,
+        "warnings": warnings,
+        "blockers": blockers,
+        "recommended_next_step": "Use Customer Mode for the first demo, then route high-fit leads to Lead Intake, Pricing Offer and Proposal/SOW.",
+        "disclaimer": "V54 creates launch and sales assets. It is not legal, financial or technical certification advice. Use safe pilot-preparation claims and require field validation before production deployment.",
+    }
+
+
+def create_public_launch_assets_v54_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Public Launch Assets V54', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f'Project: {project_name}'), ln=True, align='C')
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, 'Launch Asset Result', 8, True)
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('launch_asset_score', 0)}%")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Status: {snapshot.get('launch_status', '')}")
+    safe_pdf_multicell(pdf, f"Next step: {snapshot.get('recommended_next_step', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Headline', 8, True)
+    safe_pdf_multicell(pdf, snapshot.get('headline', ''))
+    safe_pdf_multicell(pdf, snapshot.get('subheadline', ''))
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Landing Page Sections', 8, True)
+    for row in snapshot.get('landing_page_sections', []):
+        safe_pdf_multicell(pdf, f"{row.get('section')}: {row.get('copy')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Offer Cards', 8, True)
+    for row in snapshot.get('offer_cards', []):
+        safe_pdf_multicell(pdf, f"{row.get('offer')} - {row.get('suggested_price')}: {row.get('best_for')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Safe Claims', 8, True)
+    for item in snapshot.get('safe_claims', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Claims To Avoid', 8, True)
+    for item in snapshot.get('claims_to_avoid', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+    safe_pdf_multicell(pdf, snapshot.get('disclaimer', ''))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('public_launch_assets_v54.pdf', safe_pdf_output(pdf))
+        zf.writestr('launch_assets_snapshot.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('landing_page_sections.csv', pd.DataFrame(snapshot.get('landing_page_sections', [])).to_csv(index=False))
+        zf.writestr('problem_solution_matrix.csv', pd.DataFrame(snapshot.get('problem_solution_rows', [])).to_csv(index=False))
+        zf.writestr('offer_cards.csv', pd.DataFrame(snapshot.get('offer_cards', [])).to_csv(index=False))
+        zf.writestr('launch_checklist.csv', pd.DataFrame(snapshot.get('launch_checklist', [])).to_csv(index=False))
+        zf.writestr('safe_claims.csv', pd.DataFrame({'safe_claim': snapshot.get('safe_claims', [])}).to_csv(index=False))
+        zf.writestr('claims_to_avoid.csv', pd.DataFrame({'claim_to_avoid': snapshot.get('claims_to_avoid', [])}).to_csv(index=False))
+        zf.writestr('outreach_email.txt', snapshot.get('outreach_email', ''))
+        zf.writestr('linkedin_message.txt', snapshot.get('linkedin_message', ''))
+        zf.writestr('demo_agenda.txt', '\n'.join(snapshot.get('demo_agenda', [])))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            schema = pd.DataFrame({'column': list(dataset_df.columns), 'dtype': [str(dataset_df[c].dtype) for c in dataset_df.columns]})
+            zf.writestr('dataset_schema_snapshot.csv', schema.to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V54 Public Launch Page & Sales Assets bundle. Use for controlled outreach, website copy and safe first customer conversations.\n')
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V55 — First Customer Beta Script / Test Run Planner
+# ============================================================
+
+def build_first_customer_beta_script_v55(
+    project_name,
+    dataset_df=None,
+    target_segment="Predictive maintenance / machine health",
+    beta_goal="Validate customer understanding",
+    customer_data_status="No data yet",
+    demo_duration=45,
+    technical_maturity="Mixed business/engineering",
+    commercial_stage="First conversation",
+    include_follow_up=True,
+    strict_scope_control=True,
+    launch_assets_snapshot=None,
+    launch_experience_snapshot=None,
+    field_learning_snapshot=None,
+    pricing_offer_snapshot=None,
+    proposal_sow_snapshot=None,
+    product_readiness_snapshot=None,
+):
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns)) if rows > 0 else 0
+    has_label = bool(rows > 0 and "Label" in dataset_df.columns)
+    numeric_features = int(len(dataset_df.select_dtypes(include=[np.number]).columns)) if rows > 0 else 0
+
+    launch_assets_snapshot = launch_assets_snapshot or {}
+    launch_experience_snapshot = launch_experience_snapshot or {}
+    field_learning_snapshot = field_learning_snapshot or {}
+    pricing_offer_snapshot = pricing_offer_snapshot or {}
+    proposal_sow_snapshot = proposal_sow_snapshot or {}
+    product_readiness_snapshot = product_readiness_snapshot or {}
+
+    score = 50
+    strengths = []
+    warnings = []
+    blockers = []
+
+    if rows >= 100 and has_label:
+        score += 12
+        strengths.append("A labelled pilot dataset is available for the beta conversation.")
+    elif rows > 0:
+        score += 6
+        warnings.append("Dataset exists but label/evidence may be incomplete.")
+    else:
+        warnings.append("No active dataset is loaded; use the call primarily as discovery/demo, not evidence delivery.")
+
+    if numeric_features >= 3:
+        score += 6
+        strengths.append("Numeric signal features are available for readiness/audit discussion.")
+
+    if launch_assets_snapshot:
+        score += 8
+        strengths.append("Launch assets are available for consistent product positioning.")
+    else:
+        warnings.append("Launch assets have not been generated yet; message consistency may be weaker.")
+
+    if launch_experience_snapshot:
+        score += 6
+        strengths.append("Customer-facing launch experience has been prepared.")
+
+    if field_learning_snapshot:
+        score += 8
+        strengths.append("Privacy-safe learning language is available for real-data conversations.")
+    else:
+        warnings.append("Privacy-safe learning plan is not generated yet. Be careful with real-data questions.")
+
+    if pricing_offer_snapshot:
+        score += 6
+        strengths.append("Pricing offer context is available if the customer asks about cost.")
+    elif commercial_stage in {"Pricing discussion", "Proposal/SOW stage", "Paid pilot candidate"}:
+        blockers.append("Pricing discussion selected, but no pricing offer snapshot exists yet.")
+        score -= 15
+
+    if proposal_sow_snapshot:
+        score += 6
+        strengths.append("Proposal/SOW scope context is available for next-step handoff.")
+
+    pr_score = int(product_readiness_snapshot.get("product_readiness_score", 0) or product_readiness_snapshot.get("score", 0) or 0)
+    if product_readiness_snapshot and pr_score >= 70:
+        score += 6
+        strengths.append("Product readiness evidence is available.")
+    elif commercial_stage in {"Proposal/SOW stage", "Paid pilot candidate"}:
+        warnings.append("Product readiness gate was not generated or is weak; keep paid-pilot claims cautious.")
+
+    if strict_scope_control:
+        score += 4
+        strengths.append("Strict scope control is enabled to prevent unpaid custom work.")
+
+    if customer_data_status in {"Has example CSV/WAV", "Has real field dataset"} and not field_learning_snapshot:
+        blockers.append("Customer has/needs real data, but Privacy Learning V52 has not been generated.")
+        score -= 12
+
+    if "guarantee" in str(beta_goal).lower():
+        blockers.append("Beta goal should not imply guaranteed production accuracy.")
+        score -= 20
+
+    score = int(np.clip(score, 0, 100))
+    if blockers or score < 60:
+        decision = "NO-GO"
+        beta_status = "Do not run this as a paid/serious beta yet. Fix blockers first or keep it as internal discovery."
+    elif score < 80:
+        decision = "CONDITIONAL GO"
+        beta_status = "Ready for a controlled beta/demo call with careful pilot-only positioning."
+    else:
+        decision = "GO"
+        beta_status = "Ready for a structured first-customer beta call."
+
+    call_agenda = [
+        {"minute": "0-5", "section": "Context", "goal": "Confirm the customer's sensor problem, environment and desired business outcome."},
+        {"minute": "5-12", "section": "Pain mapping", "goal": "Map their pain to EdgeTwin outputs: dataset, reliability, hardware advice and report."},
+        {"minute": "12-25", "section": "Product walkthrough", "goal": "Show Customer Mode: choose problem, generate pilot, review readiness and outputs."},
+        {"minute": "25-33", "section": "Evidence", "goal": "Show readiness, privacy-safe learning, limitations and next required real data."},
+        {"minute": "33-40", "section": "Commercial fit", "goal": "Discuss starter/pro/real-data pilot fit without forcing a close."},
+        {"minute": "40-45", "section": "Next step", "goal": "Agree on customer inputs, decision owner and whether to prepare a proposal/SOW."},
+    ]
+
+    if int(demo_duration) >= 60:
+        call_agenda.append({"minute": "45-60+", "section": "Technical Q&A", "goal": "Open advanced details only if the customer asks technical questions."})
+
+    demo_steps = [
+        {
+            "step": 1,
+            "title": "Start in Customer Mode",
+            "customer_message": "We start with the customer route, not the internal engineering cockpit.",
+            "operator_note": "Keep the first 10 minutes non-technical unless the customer is an engineering team.",
+        },
+        {
+            "step": 2,
+            "title": "Choose the use-case",
+            "customer_message": "EdgeTwin turns a sensor problem into a pilot package: dataset, readiness, hardware direction and report.",
+            "operator_note": "Use their words, not internal feature names.",
+        },
+        {
+            "step": 3,
+            "title": "Generate / show pilot output",
+            "customer_message": "This is a pilot preparation package, not a production guarantee.",
+            "operator_note": "Always mention field validation before production deployment.",
+        },
+        {
+            "step": 4,
+            "title": "Review readiness and risks",
+            "customer_message": "The system shows what is strong, what is weak, and what real data is still needed.",
+            "operator_note": "Trust increases when you are honest about limitations.",
+        },
+        {
+            "step": 5,
+            "title": "Route to next step",
+            "customer_message": "If this fits, the next safe step is a scoped pilot proposal or real-data pilot.",
+            "operator_note": "Do not accept unlimited custom work without SOW/pricing.",
+        },
+    ]
+
+    feedback_questions = [
+        "Was the problem-to-pilot route clear without deep AI knowledge?",
+        "Which output felt most valuable: dataset, readiness score, hardware advice, report or Edge Impulse export?",
+        "What would you need before approving a paid pilot?",
+        "Do you already have real WAV/CSV/sensor data we can use privately for your project?",
+        "Which claim or term felt unclear or too technical?",
+        "What would make the report/proposal easier to share internally?",
+    ]
+
+    success_metrics = [
+        "Customer understands that EdgeTwin prepares pilot packages, not production certification.",
+        "Customer can name the next data/input they need to provide.",
+        "Customer sees at least one clear business value driver.",
+        "No unsafe claims were made during the call.",
+        "There is a clear next step: no-fit, nurture, proposal, or paid pilot.",
+    ]
+
+    customer_required_inputs = [
+        {"input": "Use-case description", "needed_for": "Pilot scope and labels/classes", "required": "yes"},
+        {"input": "Available sensors / planned hardware", "needed_for": "Hardware and feature plan", "required": "yes"},
+        {"input": "Example real data", "needed_for": "Real-data bridge and stronger readiness", "required": "recommended"},
+        {"input": "Decision owner and budget range", "needed_for": "Proposal/SOW and paid pilot", "required": "recommended"},
+        {"input": "Privacy/data-use preference", "needed_for": "V52 privacy-safe learning mode", "required": "yes if data upload"},
+    ]
+
+    founder_checklist = [
+        {"task": "Open Customer Mode before the call", "status": "required"},
+        {"task": "Prepare one relevant demo scenario", "status": "required"},
+        {"task": "Keep advanced tabs hidden unless asked", "status": "recommended"},
+        {"task": "Use pilot-only language", "status": "required"},
+        {"task": "Record objections and feature requests", "status": "required"},
+        {"task": "Do not promise custom work without SOW", "status": "required" if strict_scope_control else "recommended"},
+    ]
+
+    safe_claims = [
+        "EdgeTwin helps companies prepare Edge AI sensor pilot packages faster.",
+        "The output includes dataset, readiness checks, hardware direction and report assets.",
+        "Real field validation is required before production deployment.",
+        "Customer data stays private by default; any wider learning requires explicit permission.",
+    ]
+    claims_to_avoid = [
+        "Guaranteed accuracy or production performance.",
+        "Certified safety-critical deployment readiness.",
+        "Synthetic data fully replaces real field data.",
+        "Raw customer data will be reused globally by default.",
+        "Unlimited custom support is included in a starter package.",
+    ]
+
+    follow_up_email = ""
+    if include_follow_up:
+        follow_up_email = f"""Subject: EdgeTwin Studio pilot follow-up
+
+Hi [Name],
+
+Thanks for taking the time to review EdgeTwin Studio for {target_segment}.
+
+Based on the discussion, the safest next step is to define a controlled pilot package: use-case, available sensors, labels/classes, any example real data, and the expected pilot outcome.
+
+Important note: EdgeTwin prepares pilot-ready datasets, readiness analysis, hardware direction and reports. It does not claim production certification; real field validation remains required before deployment.
+
+Suggested next step:
+{ 'Prepare a scoped Proposal / SOW for a paid pilot.' if commercial_stage in ['Proposal/SOW stage', 'Paid pilot candidate', 'Pricing discussion'] else 'Share the minimum customer inputs so we can prepare a pilot recommendation.' }
+
+Kind regards,
+EdgeTwin Studio
+"""
+
+    return {
+        "version": "V55 First Customer Beta Script",
+        "project_name": project_name,
+        "target_segment": target_segment,
+        "beta_goal": beta_goal,
+        "customer_data_status": customer_data_status,
+        "demo_duration": int(demo_duration),
+        "technical_maturity": technical_maturity,
+        "commercial_stage": commercial_stage,
+        "beta_script_score": score,
+        "decision": decision,
+        "beta_status": beta_status,
+        "dataset_status": {"rows": rows, "cols": cols, "has_label": has_label, "numeric_features": numeric_features},
+        "call_agenda": call_agenda,
+        "demo_steps": demo_steps,
+        "feedback_questions": feedback_questions,
+        "success_metrics": success_metrics,
+        "customer_required_inputs": customer_required_inputs,
+        "founder_checklist": founder_checklist,
+        "safe_claims": safe_claims,
+        "claims_to_avoid": claims_to_avoid,
+        "strengths": strengths,
+        "warnings": warnings,
+        "blockers": blockers,
+        "follow_up_email": follow_up_email,
+        "recommended_next_step": "Run one controlled beta call, capture objections, then route the lead to Lead Intake, Pricing Offer or Proposal/SOW depending on fit.",
+        "disclaimer": "V55 is a beta/demo execution guide. It is not a guarantee of production readiness or a substitute for field validation, legal review or customer-specific SOW terms.",
+    }
+
+
+def create_first_customer_beta_script_v55_bundle(project_name, snapshot, dataset_df=None):
+    snapshot = snapshot or {}
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin First Customer Beta Script V55', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f'Project: {project_name}'), ln=True, align='C')
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, 'Beta Script Result', 8, True)
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('beta_script_score', 0)}%")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision', 'Unknown')}")
+    safe_pdf_multicell(pdf, f"Status: {snapshot.get('beta_status', '')}")
+    safe_pdf_multicell(pdf, f"Next step: {snapshot.get('recommended_next_step', '')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Call Agenda', 8, True)
+    for row in snapshot.get('call_agenda', []):
+        safe_pdf_multicell(pdf, f"{row.get('minute')} min - {row.get('section')}: {row.get('goal')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Demo Steps', 8, True)
+    for row in snapshot.get('demo_steps', []):
+        safe_pdf_multicell(pdf, f"{row.get('step')}. {row.get('title')}: {row.get('customer_message')}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Feedback Questions', 8, True)
+    for item in snapshot.get('feedback_questions', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Safe Claims', 8, True)
+    for item in snapshot.get('safe_claims', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Claims To Avoid', 8, True)
+    for item in snapshot.get('claims_to_avoid', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+    safe_pdf_multicell(pdf, snapshot.get('disclaimer', ''))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('first_customer_beta_script_v55.pdf', safe_pdf_output(pdf))
+        zf.writestr('beta_script_snapshot.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('call_agenda.csv', pd.DataFrame(snapshot.get('call_agenda', [])).to_csv(index=False))
+        zf.writestr('demo_steps.csv', pd.DataFrame(snapshot.get('demo_steps', [])).to_csv(index=False))
+        zf.writestr('feedback_questions.csv', pd.DataFrame({'question': snapshot.get('feedback_questions', [])}).to_csv(index=False))
+        zf.writestr('success_metrics.csv', pd.DataFrame({'metric': snapshot.get('success_metrics', [])}).to_csv(index=False))
+        zf.writestr('customer_required_inputs.csv', pd.DataFrame(snapshot.get('customer_required_inputs', [])).to_csv(index=False))
+        zf.writestr('founder_checklist.csv', pd.DataFrame(snapshot.get('founder_checklist', [])).to_csv(index=False))
+        zf.writestr('safe_claims.csv', pd.DataFrame({'safe_claim': snapshot.get('safe_claims', [])}).to_csv(index=False))
+        zf.writestr('claims_to_avoid.csv', pd.DataFrame({'claim_to_avoid': snapshot.get('claims_to_avoid', [])}).to_csv(index=False))
+        zf.writestr('follow_up_email.txt', snapshot.get('follow_up_email', ''))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            schema = pd.DataFrame({'column': list(dataset_df.columns), 'dtype': [str(dataset_df[c].dtype) for c in dataset_df.columns]})
+            zf.writestr('dataset_schema_snapshot.csv', schema.to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V55 First Customer Beta Script bundle. Use this to run controlled first beta/demo conversations and capture structured feedback.\n')
+    return zip_buf.getvalue()
+
+# ============================================================
+# V56 — Real Upload Experience 2.0 / Customer Data Intake
+# ============================================================
+
+def _v56_status(score):
+    score = int(score or 0)
+    if score >= 85:
+        return "GO", "Upload experience looks ready for a controlled customer pilot."
+    if score >= 65:
+        return "CONDITIONAL GO", "Usable for beta, but review warnings before customer handoff."
+    return "NO-GO", "Do not use this upload package for a customer until blockers are resolved."
+
+
+def inspect_real_upload_records_v56(upload_records=None, dataset_df=None, use_case="General sensor pilot", learning_mode="Private only", expected_labels=None):
+    """Build a customer-safe real upload inspection snapshot.
+
+    upload_records is a list of dicts from the Streamlit UI with fields such as
+    filename, size_bytes, file_type, label, features/error. The function avoids
+    storing raw file contents in the bundle and focuses on metadata, feature
+    readiness, privacy posture and next actions.
+    """
+    upload_records = upload_records or []
+    expected_labels = [str(x).strip().replace(" ", "_") for x in (expected_labels or []) if str(x).strip()]
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+
+    rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+    cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+    has_label = isinstance(dataset_df, pd.DataFrame) and "Label" in dataset_df.columns
+    dataset_labels = []
+    if has_label:
+        try:
+            dataset_labels = sorted([str(x) for x in dataset_df["Label"].dropna().unique().tolist()])
+        except Exception:
+            dataset_labels = []
+
+    inspected = []
+    feature_rows = []
+    blockers = []
+    warnings_list = []
+    strengths = []
+
+    allowed_types = {"csv", "wav"}
+    total_bytes = 0
+    error_count = 0
+    unlabeled_count = 0
+    privacy_flags = []
+
+    for rec in upload_records:
+        rec = rec or {}
+        filename = str(rec.get("filename", "unknown"))
+        file_type = str(rec.get("file_type", filename.split(".")[-1] if "." in filename else "unknown")).lower().strip(".")
+        size_bytes = int(rec.get("size_bytes", 0) or 0)
+        label = str(rec.get("label", "")).strip().replace(" ", "_")
+        features = rec.get("features") or {}
+        error = rec.get("error") or features.get("error") if isinstance(features, dict) else None
+        total_bytes += size_bytes
+        if not label:
+            unlabeled_count += 1
+        if file_type not in allowed_types:
+            error = error or f"Unsupported file type: {file_type}"
+        if error:
+            error_count += 1
+        if file_type == "wav":
+            privacy_flags.append("Audio upload detected: raw audio may contain voices or site-identifying sounds. Keep private unless explicit permission is given.")
+        if any(tok in filename.lower() for tok in ["gps", "location", "client", "customer", "phone", "voice", "camera"]):
+            privacy_flags.append(f"Filename may contain sensitive context: {filename}")
+
+        safe_features = {}
+        if isinstance(features, dict) and not error:
+            for k, v in features.items():
+                if k == "error":
+                    continue
+                try:
+                    if isinstance(v, (int, float, np.integer, np.floating)) and np.isfinite(float(v)):
+                        safe_features[k] = float(v)
+                    elif isinstance(v, str):
+                        safe_features[k] = v[:120]
+                except Exception:
+                    pass
+            if safe_features:
+                row = {"Label": label or "Unlabeled", "Filename": filename, "FileType": file_type, **safe_features}
+                feature_rows.append(row)
+
+        inspected.append({
+            "filename": filename,
+            "file_type": file_type,
+            "size_mb": round(size_bytes / (1024 * 1024), 3),
+            "label": label or "Unlabeled",
+            "status": "ERROR" if error else "OK",
+            "message": str(error or "Feature inspection completed."),
+            "safe_feature_count": len(safe_features),
+        })
+
+    labels_from_uploads = sorted({r.get("label", "Unlabeled") for r in inspected if r.get("label") and r.get("label") != "Unlabeled"})
+    available_labels = sorted(set(dataset_labels + labels_from_uploads))
+    missing_expected = sorted(set(expected_labels) - set(available_labels)) if expected_labels else []
+
+    if len(upload_records) == 0 and rows == 0:
+        blockers.append("No uploaded files and no active dataset. Upload WAV/CSV files or generate a pilot dataset first.")
+    if error_count > 0:
+        blockers.append(f"{error_count} uploaded file(s) could not be inspected. Fix file format or schema before using this as evidence.")
+    if unlabeled_count > 0 and len(upload_records) > 0:
+        warnings_list.append(f"{unlabeled_count} upload(s) are unlabeled. Add labels/classes for classifier workflows or baseline status for anomaly workflows.")
+    if missing_expected:
+        warnings_list.append("Expected labels/classes are missing: " + ", ".join(missing_expected[:8]))
+    if len(available_labels) < 2 and (len(upload_records) > 0 or rows > 0):
+        warnings_list.append("Only one or zero labels/classes detected. This can still support anomaly baseline, but supervised classification needs more labels.")
+    if total_bytes > 150 * 1024 * 1024:
+        warnings_list.append("Large upload set detected. Use storage/object storage and avoid full in-memory processing for public SaaS.")
+    if learning_mode == "Raw data permission":
+        warnings_list.append("Raw data permission selected. This should require explicit written consent and should not be the default.")
+    if learning_mode == "Feature learning allowed":
+        strengths.append("Feature-only learning can improve templates without reusing raw customer data.")
+    if learning_mode == "Private only":
+        strengths.append("Private-only mode is the safest default for customer trust.")
+    if len(feature_rows) > 0:
+        strengths.append("Uploaded files produced safe feature rows that can be loaded into the active dataset or used for Real Bridge analysis.")
+    if rows > 0:
+        strengths.append("An active dataset is already available for downstream readiness, trust and export flows.")
+
+    score = 100
+    score -= 35 * len(blockers)
+    score -= 10 * min(4, len(warnings_list))
+    if len(upload_records) > 0 and len(feature_rows) == 0:
+        score -= 20
+    if len(upload_records) == 0 and rows == 0:
+        score -= 20
+    if learning_mode == "Raw data permission":
+        score -= 10
+    score = int(np.clip(score, 0, 100))
+    decision, status_text = _v56_status(score)
+
+    privacy_policy = {
+        "default": "Customer uploads remain project-private by default.",
+        "feature_learning": "Only derived non-identifying features may be reused for aggregate template improvement when opt-in is enabled.",
+        "raw_data": "Raw files are not reused globally unless explicit written permission exists and retention/deletion rules are documented.",
+        "deletion": "Customer can request deletion/export of project data and derived project artifacts.",
+    }
+
+    next_actions = []
+    if blockers:
+        next_actions.append("Fix upload blockers before using this dataset in a customer report.")
+    if unlabeled_count:
+        next_actions.append("Ask the customer to label each file or choose baseline/event grouping.")
+    if missing_expected:
+        next_actions.append("Request more files for missing classes before classifier export.")
+    if len(feature_rows) > 0:
+        next_actions.append("Load extracted feature rows into Enterprise Audit or run Real Bridge / Normality Engine.")
+    if not next_actions:
+        next_actions.append("Continue to Reliability/Trust, Normality Engine and customer-safe report generation.")
+
+    feature_df = pd.DataFrame(feature_rows)
+    return {
+        "version": "V56",
+        "created_at": _now(),
+        "use_case": use_case,
+        "learning_mode": learning_mode,
+        "upload_score": score,
+        "decision": decision,
+        "status_text": status_text,
+        "uploaded_file_count": len(upload_records),
+        "total_upload_mb": round(total_bytes / (1024 * 1024), 3),
+        "inspected_files": inspected,
+        "feature_rows_count": len(feature_rows),
+        "feature_columns": list(feature_df.columns) if len(feature_df) else [],
+        "dataset_status": {"rows": rows, "cols": cols, "has_label": has_label, "labels": dataset_labels},
+        "available_labels": available_labels,
+        "expected_labels": expected_labels,
+        "missing_expected_labels": missing_expected,
+        "privacy_flags": sorted(list(set(privacy_flags)))[:12],
+        "privacy_policy": privacy_policy,
+        "allowed_actions": [
+            "Project-private analysis",
+            "Feature extraction",
+            "Dataset audit / readiness scoring",
+            "Real Bridge and Normality analysis",
+            "Feature-only aggregate learning when explicitly enabled",
+        ],
+        "blocked_actions": [
+            "Global reuse of raw customer files without explicit permission",
+            "Using raw audio/GPS/location data for public templates by default",
+            "Promising production accuracy from uploaded pilot files alone",
+        ],
+        "strengths": strengths,
+        "warnings": warnings_list,
+        "blockers": blockers,
+        "next_actions": next_actions,
+        "safe_claims": [
+            "EdgeTwin can inspect WAV/CSV uploads and convert them into safer feature-level evidence.",
+            "Customer data remains private by default, with opt-in required for feature learning.",
+            "Uploaded real data can improve pilot confidence, but field validation remains required before production deployment.",
+        ],
+        "claims_to_avoid": [
+            "We reuse all customer data to train our global engine.",
+            "Uploaded pilot data guarantees production accuracy.",
+            "Raw audio/GPS/location data is anonymous by default.",
+        ],
+        "disclaimer": "V56 is an upload intake and privacy/readiness layer. It does not replace legal review, customer consent, field validation or production safety testing.",
+    }
+
+
+def create_real_upload_experience_v56_bundle(project_name, snapshot, feature_df=None, dataset_df=None):
+    snapshot = snapshot or {}
+    feature_df = feature_df if isinstance(feature_df, pd.DataFrame) else pd.DataFrame()
+    dataset_df = dataset_df if isinstance(dataset_df, pd.DataFrame) else pd.DataFrame()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Real Upload Experience V56', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 8, txt=clean_pdf_text(f'Project: {project_name}'), ln=True, align='C')
+    pdf.ln(6)
+
+    safe_pdf_cell(pdf, 'Upload Intake Result', 8, True)
+    safe_pdf_cell(pdf, f"Score: {snapshot.get('upload_score', 0)}%")
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Learning mode: {snapshot.get('learning_mode', 'Unknown')}")
+    safe_pdf_cell(pdf, f"Uploaded files: {snapshot.get('uploaded_file_count', 0)}")
+    safe_pdf_cell(pdf, f"Feature rows: {snapshot.get('feature_rows_count', 0)}")
+    safe_pdf_multicell(pdf, snapshot.get('status_text', ''))
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Privacy Policy', 8, True)
+    for k, v in (snapshot.get('privacy_policy') or {}).items():
+        safe_pdf_multicell(pdf, f"- {k}: {v}")
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Warnings / Blockers', 8, True)
+    for item in snapshot.get('blockers', []):
+        safe_pdf_multicell(pdf, f"[BLOCKER] {item}")
+    for item in snapshot.get('warnings', []):
+        safe_pdf_multicell(pdf, f"[WARNING] {item}")
+    if not snapshot.get('blockers') and not snapshot.get('warnings'):
+        safe_pdf_multicell(pdf, 'No major blockers or warnings detected.')
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Next Actions', 8, True)
+    for item in snapshot.get('next_actions', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+
+    safe_pdf_cell(pdf, 'Safe Claims', 8, True)
+    for item in snapshot.get('safe_claims', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Claims To Avoid', 8, True)
+    for item in snapshot.get('claims_to_avoid', []):
+        safe_pdf_multicell(pdf, f'- {item}')
+    pdf.ln(4)
+    safe_pdf_multicell(pdf, snapshot.get('disclaimer', ''))
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('real_upload_experience_v56.pdf', safe_pdf_output(pdf))
+        zf.writestr('upload_intake_snapshot.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('inspected_files.csv', pd.DataFrame(snapshot.get('inspected_files', [])).to_csv(index=False))
+        zf.writestr('privacy_flags.csv', pd.DataFrame({'privacy_flag': snapshot.get('privacy_flags', [])}).to_csv(index=False))
+        zf.writestr('next_actions.csv', pd.DataFrame({'next_action': snapshot.get('next_actions', [])}).to_csv(index=False))
+        zf.writestr('safe_claims.csv', pd.DataFrame({'safe_claim': snapshot.get('safe_claims', [])}).to_csv(index=False))
+        zf.writestr('claims_to_avoid.csv', pd.DataFrame({'claim_to_avoid': snapshot.get('claims_to_avoid', [])}).to_csv(index=False))
+        if isinstance(feature_df, pd.DataFrame) and len(feature_df) > 0:
+            zf.writestr('extracted_safe_feature_rows.csv', feature_df.to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            schema = pd.DataFrame({'column': list(dataset_df.columns), 'dtype': [str(dataset_df[c].dtype) for c in dataset_df.columns]})
+            zf.writestr('active_dataset_schema.csv', schema.to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V56 Real Upload Experience bundle. Raw uploaded files are intentionally not included; this bundle contains metadata, feature-level evidence and privacy/readiness guidance.\n')
+    return zip_buf.getvalue()
+
+
+# ============================================================
+# V57 — Checkout & Paid Download Readiness / Payment Prep
+# ============================================================
+
+CHECKOUT_PACKAGE_DEFAULTS_V57 = {
+    "Starter Pilot Bundle": {"price": 299, "currency": "EUR", "deliverables": ["pilot_dataset_csv", "basic_readiness_report", "hardware_direction"], "unlock_level": "starter"},
+    "Professional Pilot Bundle": {"price": 1490, "currency": "EUR", "deliverables": ["pilot_dataset_csv", "professional_report", "edge_impulse_exports", "hardware_deployment_plan", "license_certificate"], "unlock_level": "professional"},
+    "Real-Data Pilot Bundle": {"price": 3490, "currency": "EUR", "deliverables": ["real_upload_review", "synthetic_to_real_bridge", "privacy_safe_learning_plan", "field_evidence_plan", "professional_report", "license_certificate"], "unlock_level": "real_data"},
+    "Enterprise Custom Pilot": {"price": 9500, "currency": "EUR", "deliverables": ["custom_scope", "enterprise_report", "deployment_plan", "customer_delivery_bundle", "sow", "license_certificate"], "unlock_level": "enterprise"},
+}
+
+
+def get_checkout_packages_v57():
+    return list(CHECKOUT_PACKAGE_DEFAULTS_V57.keys())
+
+
+def build_checkout_readiness_v57(
+    project_name="EdgeTwin Pilot",
+    customer_name="Customer",
+    customer_email="",
+    package_name="Professional Pilot Bundle",
+    payment_method="Manual invoice / bank transfer",
+    invoice_details_complete=False,
+    sow_scope_accepted=False,
+    license_certificate_ready=False,
+    delivery_bundle_ready=False,
+    privacy_notice_ready=True,
+    refund_policy_acknowledged=False,
+    tax_mode="EU B2B reverse charge / manual review",
+    payment_provider="Manual invoice first",
+    selected_plan="Founder Test Mode",
+    pricing_offer_snapshot=None,
+    paid_pilot_snapshot=None,
+    delivery_snapshot=None,
+):
+    package = CHECKOUT_PACKAGE_DEFAULTS_V57.get(package_name, CHECKOUT_PACKAGE_DEFAULTS_V57["Professional Pilot Bundle"])
+    price = float(package.get("price", 0))
+    currency = package.get("currency", "EUR")
+    blockers = []
+    warnings = []
+
+    if not customer_name or str(customer_name).strip().lower() in {"customer", "unknown"}:
+        warnings.append("Customer name is still generic. Replace it before sending a checkout or invoice link.")
+    if not customer_email or "@" not in str(customer_email):
+        blockers.append("Customer email is missing or invalid.")
+    if not invoice_details_complete:
+        blockers.append("Invoice details are not complete yet.")
+    if not sow_scope_accepted and package_name in ["Professional Pilot Bundle", "Real-Data Pilot Bundle", "Enterprise Custom Pilot"]:
+        blockers.append("SOW/scope should be accepted before paid delivery.")
+    if not license_certificate_ready:
+        warnings.append("License/certificate is not marked ready yet.")
+    if not delivery_bundle_ready:
+        warnings.append("Delivery bundle is not marked ready yet.")
+    if not privacy_notice_ready:
+        blockers.append("Customer data/privacy notice must be ready before taking uploads/payment.")
+    if not refund_policy_acknowledged:
+        warnings.append("Refund/cancellation policy is not acknowledged yet.")
+    if payment_provider == "Stripe/live checkout" and package_name == "Enterprise Custom Pilot":
+        warnings.append("Enterprise/custom pilots should usually use manual quote/invoice until scope is approved.")
+
+    evidence = {
+        "pricing_offer_present": bool(pricing_offer_snapshot),
+        "paid_pilot_present": bool(paid_pilot_snapshot),
+        "delivery_snapshot_present": bool(delivery_snapshot),
+        "privacy_notice_ready": bool(privacy_notice_ready),
+        "license_certificate_ready": bool(license_certificate_ready),
+        "delivery_bundle_ready": bool(delivery_bundle_ready),
+    }
+    evidence_points = sum(1 for v in evidence.values() if v)
+
+    score = 100
+    score -= len(blockers) * 28
+    score -= len(warnings) * 8
+    score += min(12, evidence_points * 2)
+    score = int(np.clip(score, 0, 100))
+
+    if blockers:
+        decision = "NO-GO"
+        checkout_status = "Not ready for checkout"
+    elif score >= 85:
+        decision = "GO"
+        checkout_status = "Checkout/invoice-ready"
+    elif score >= 65:
+        decision = "CONDITIONAL GO"
+        checkout_status = "Ready after minor commercial cleanup"
+    else:
+        decision = "NO-GO"
+        checkout_status = "Needs preparation before payment"
+
+    line_items = [
+        {"item": package_name, "qty": 1, "unit_price": price, "currency": currency, "description": "EdgeTwin pilot preparation and delivery bundle"},
+    ]
+    if package_name in ["Real-Data Pilot Bundle", "Enterprise Custom Pilot"]:
+        line_items.append({"item": "Field-data review & privacy-safe intake", "qty": 1, "unit_price": 0, "currency": currency, "description": "Included in selected package scope"})
+
+    customer_checkout_copy = (
+        f"Your {package_name} for {project_name} is prepared as a controlled Edge AI pilot package. "
+        "The payment/checkout step unlocks the agreed deliverables only within the accepted scope. "
+        "The package supports pilot preparation and decision-making; field validation remains required before production deployment."
+    )
+    internal_next_actions = []
+    if blockers:
+        internal_next_actions.extend(blockers)
+    if warnings:
+        internal_next_actions.extend(warnings[:3])
+    if not internal_next_actions:
+        internal_next_actions = ["Send checkout/invoice link", "After payment confirmation, deliver the signed bundle", "Schedule follow-up review call"]
+
+    return {
+        "version": "V57",
+        "project_name": project_name,
+        "customer_name": customer_name,
+        "customer_email": customer_email,
+        "package_name": package_name,
+        "selected_plan": selected_plan,
+        "payment_method": payment_method,
+        "payment_provider": payment_provider,
+        "tax_mode": tax_mode,
+        "price": price,
+        "currency": currency,
+        "checkout_score": score,
+        "decision": decision,
+        "checkout_status": checkout_status,
+        "blockers": blockers,
+        "warnings": warnings,
+        "line_items": line_items,
+        "deliverables": package.get("deliverables", []),
+        "unlock_level": package.get("unlock_level"),
+        "evidence": evidence,
+        "customer_checkout_copy": customer_checkout_copy,
+        "internal_next_actions": internal_next_actions,
+        "safe_claims": [
+            "This checkout unlocks the agreed pilot deliverables within the selected scope.",
+            "The report and bundles support pilot preparation, not production certification.",
+            "Customer data remains governed by the selected privacy/retention mode.",
+        ],
+        "claims_to_avoid": [
+            "Do not claim guaranteed model accuracy.",
+            "Do not claim production deployment approval without field validation.",
+            "Do not imply raw customer data will be reused globally unless explicit permission exists.",
+        ],
+        "created_at": _now(),
+    }
+
+
+def create_checkout_readiness_v57_bundle(project_name, snapshot, dataset_df=None):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('Arial', 'B', 18)
+    pdf.cell(0, 10, txt='EdgeTwin Checkout Readiness V57', ln=True, align='C')
+    pdf.set_font('Arial', 'I', 10)
+    pdf.cell(0, 7, txt=clean_pdf_text(f"Project: {project_name}"), ln=True, align='C')
+    pdf.ln(6)
+    safe_pdf_cell(pdf, 'Checkout Summary', 8, True)
+    safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+    safe_pdf_cell(pdf, f"Checkout score: {snapshot.get('checkout_score')}%")
+    safe_pdf_cell(pdf, f"Package: {snapshot.get('package_name')}")
+    safe_pdf_cell(pdf, f"Price: {snapshot.get('currency')} {snapshot.get('price')}")
+    safe_pdf_cell(pdf, f"Payment method: {snapshot.get('payment_method')}")
+    safe_pdf_cell(pdf, f"Status: {snapshot.get('checkout_status')}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Customer Copy', 8, True)
+    safe_pdf_multicell(pdf, snapshot.get('customer_checkout_copy', ''))
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Blockers', 8, True)
+    for item in snapshot.get('blockers', []) or ['No hard blockers recorded.']:
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Warnings', 8, True)
+    for item in snapshot.get('warnings', []) or ['No warnings recorded.']:
+        safe_pdf_multicell(pdf, f"- {item}")
+    pdf.ln(4)
+    safe_pdf_cell(pdf, 'Deliverables', 8, True)
+    for item in snapshot.get('deliverables', []):
+        safe_pdf_multicell(pdf, f"- {item}")
+
+    line_items_df = pd.DataFrame(snapshot.get('line_items', []))
+    evidence_df = pd.DataFrame([{"control": k, "ready": v} for k, v in (snapshot.get('evidence', {}) or {}).items()])
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'a', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('checkout_readiness_v57.pdf', safe_pdf_output(pdf))
+        zf.writestr('checkout_readiness_v57.json', json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr('invoice_line_items_v57.csv', line_items_df.to_csv(index=False))
+        zf.writestr('checkout_evidence_v57.csv', evidence_df.to_csv(index=False))
+        if isinstance(dataset_df, pd.DataFrame) and len(dataset_df) > 0:
+            zf.writestr('dataset_snapshot.csv', dataset_df.head(500).to_csv(index=False))
+        zf.writestr('README.txt', 'EdgeTwin Studio V57 Checkout Readiness bundle. This prepares manual/Stripe-style checkout gating but does not process payments by itself.\n')
+    return zip_buf.getvalue()
