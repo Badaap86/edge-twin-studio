@@ -11,10 +11,11 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_predict
 
 import core
+import state_registry
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V80.1", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio V90", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -190,6 +191,10 @@ def init_state():
         "pilot_factory_v79_bundle": None,
         "trust_ledger_v80_snapshot": None,
         "trust_ledger_v80_bundle": None,
+        "autonomy_controller_v82_snapshot": None,
+        "autonomy_controller_v82_bundle": None,
+        "release_guard_v83_snapshot": None,
+        "release_guard_v83_bundle": None,
         "workspace_mode_v50": "Customer Mode",
         "field_evidence_v2_snapshot": None,
         "field_evidence_v2_bundle": None,
@@ -209,32 +214,8 @@ def init_state():
 
 init_state()
 
-PERSISTED_EXTRA_SESSION_KEYS = [
-    "admin_usage_snapshot",
-    "api_automation_snapshot",
-    "beta_launch_snapshot",
-    "checkout_v57_snapshot",
-    "cloud_architecture_v58_snapshot",
-    "commercial_license_certificate",
-    "commercial_release_v60_snapshot",
-    "edge_impulse_classifier_snapshot",
-    "edge_impulse_snapshot",
-    "first_customer_beta_v55_snapshot",
-    "golden_demo_result",
-    "hardening_snapshot",
-    "hardware_reference_v59_snapshot",
-    "launch_assets_v54_snapshot",
-    "launch_experience_v53_snapshot",
-    "normality_result",
-    "onboarding_snapshot",
-    "operational_control_snapshot",
-    "pack_marketplace_snapshot",
-    "professional_report_snapshot",
-    "real_upload_v56_snapshot",
-    "scalability_snapshot",
-    "security_hardening_v41_snapshot",
-    "security_v41_snapshot",
-]
+PERSISTED_EXTRA_SESSION_KEYS = state_registry.PERSISTED_EXTRA_SESSION_KEYS
+
 
 
 # ============================================================
@@ -338,6 +319,8 @@ def reset_generated_bundles():
     st.session_state.one_click_pilot_v78_bundle = None
     st.session_state.pilot_factory_v79_bundle = None
     st.session_state.trust_ledger_v80_bundle = None
+    st.session_state.autonomy_controller_v82_bundle = None
+    st.session_state.release_guard_v83_bundle = None
 
 
 def run_demo(demo_name):
@@ -539,11 +522,18 @@ if st.sidebar.button("Save project", use_container_width=True, key="sidebar_save
         "one_click_pilot_v78_snapshot": st.session_state.one_click_pilot_v78_snapshot,
         "pilot_factory_v79_snapshot": st.session_state.pilot_factory_v79_snapshot,
         "trust_ledger_v80_snapshot": st.session_state.trust_ledger_v80_snapshot,
+        "autonomy_controller_v82_snapshot": st.session_state.autonomy_controller_v82_snapshot,
+        "release_guard_v83_snapshot": st.session_state.release_guard_v83_snapshot,
     }
 
-    for key in PERSISTED_EXTRA_SESSION_KEYS:
-        if key in st.session_state:
-            settings[key] = st.session_state.get(key)
+    # V81: central state registry prevents important gates/snapshots from being forgotten.
+    settings.update(
+        state_registry.collect_persisted_settings(
+            st.session_state,
+            compact_bridge_summary_fn=core.compact_bridge_summary,
+        )
+    )
+    settings["state_registry_status_v81"] = state_registry.get_registry_status(st.session_state, settings)
 
     core.save_project(
         st.session_state.project_id,
@@ -630,9 +620,10 @@ if len(projects) > 0:
             st.session_state.one_click_pilot_v78_snapshot = settings.get("one_click_pilot_v78_snapshot")
             st.session_state.pilot_factory_v79_snapshot = settings.get("pilot_factory_v79_snapshot")
             st.session_state.trust_ledger_v80_snapshot = settings.get("trust_ledger_v80_snapshot")
-            for key in PERSISTED_EXTRA_SESSION_KEYS:
-                if key in settings:
-                    st.session_state[key] = settings.get(key, st.session_state.get(key))
+            st.session_state.autonomy_controller_v82_snapshot = settings.get("autonomy_controller_v82_snapshot")
+            restored_keys_v81 = state_registry.restore_persisted_settings(st.session_state, settings)
+            st.session_state.state_registry_status_v81 = state_registry.get_registry_status(st.session_state, settings)
+            st.session_state.state_registry_status_v81["restored_key_count"] = len(restored_keys_v81)
 
             st.session_state.sr = int(settings.get("sr", st.session_state.sr))
             st.session_state.fusion_df = pd.DataFrame()
@@ -713,7 +704,7 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER / ORGANIZED NAVIGATION V45.2
 # ============================================================
 
-st.title("EdgeTwin Studio V80")
+st.title("EdgeTwin Studio V90")
 st.caption(
     "Commercial Release Candidate: simple customer mode, full founder control, privacy-safe learning, real upload intake, checkout readiness, cloud migration planning and hardware reference proof. "
     "V80 adds Trust Ledger and Decision Traceability: one evidence receipt explaining what data, gates, risks, approvals and claims support each customer deliverable."
@@ -787,10 +778,22 @@ def _v80_add_nav(group_name, page_key, position=0):
         pass
 
 NAV_LABELS["trust_ledger_v80_tab"] = "📒 Trust Ledger V80"
-_v80_add_nav("1. Start", "trust_ledger_v80_tab", 0)
-_v80_add_nav("4. Download / handoff", "trust_ledger_v80_tab", 0)
+NAV_LABELS["autonomy_controller_v82_tab"] = "🧠 Autonomy Controller V82"
+NAV_LABELS["release_guard_v83_tab"] = "🧪 Release Guard V83"
+NAV_LABELS["ultimate_product_v90_tab"] = "👑 Ultimate Product Brain V90"
+_v80_add_nav("1. Start", "autonomy_controller_v82_tab", 0)
+_v80_add_nav("4. Download / handoff", "autonomy_controller_v82_tab", 0)
+_v80_add_nav("6. Operator & Admin", "autonomy_controller_v82_tab", 0)
+_v80_add_nav("1. Start", "ultimate_product_v90_tab", 0)
+_v80_add_nav("4. Download / handoff", "ultimate_product_v90_tab", 0)
+_v80_add_nav("6. Operator & Admin", "ultimate_product_v90_tab", 0)
+_v80_add_nav("1. Start", "release_guard_v83_tab", 1)
+_v80_add_nav("4. Download / handoff", "release_guard_v83_tab", 1)
+_v80_add_nav("6. Operator & Admin", "release_guard_v83_tab", 1)
+_v80_add_nav("1. Start", "trust_ledger_v80_tab", 1)
+_v80_add_nav("4. Download / handoff", "trust_ledger_v80_tab", 1)
 _v80_add_nav("5. Sell & Deliver", "trust_ledger_v80_tab", 0)
-_v80_add_nav("6. Operator & Admin", "trust_ledger_v80_tab", 0)
+_v80_add_nav("6. Operator & Admin", "trust_ledger_v80_tab", 1)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Workspace navigation")
@@ -11747,7 +11750,398 @@ def render_trust_ledger_v80_tab():
 
     st.caption("V80 does not promise guaranteed accuracy. It makes the reasoning, gates, data status and allowed claims traceable before customer handoff or paid delivery.")
 
+
+# ============================================================
+# V82 — Autonomy Controller & Reliability Brain
+# ============================================================
+
+def _v82_snapshot_map():
+    return {
+        "fusion_doctor": st.session_state.get("fusion_doctor"),
+        "trust_gate": st.session_state.get("trust_gate"),
+        "reliability_calibration_v67": st.session_state.get("reliability_calibration_v67_snapshot"),
+        "automation_orchestrator_v68": st.session_state.get("automation_orchestrator_v68_snapshot"),
+        "zero_touch_v69": st.session_state.get("zero_touch_v69_snapshot"),
+        "outcome_assurance_v70": st.session_state.get("outcome_assurance_v70_snapshot"),
+        "customer_support_v71": st.session_state.get("customer_support_v71_snapshot"),
+        "customer_status_v72": st.session_state.get("customer_status_v72_snapshot"),
+        "customer_journey_v73": st.session_state.get("customer_journey_v73_snapshot"),
+        "quality_guardian_v74": st.session_state.get("quality_guardian_v74_snapshot"),
+        "deliverable_qa_v75": st.session_state.get("deliverable_qa_v75_snapshot"),
+        "product_consolidation_v76": st.session_state.get("product_consolidation_v76_snapshot"),
+        "smart_intake_v77": st.session_state.get("smart_intake_v77_snapshot"),
+        "one_click_pilot_v78": st.session_state.get("one_click_pilot_v78_snapshot"),
+        "pilot_factory_v79": st.session_state.get("pilot_factory_v79_snapshot"),
+        "trust_ledger_v80": st.session_state.get("trust_ledger_v80_snapshot"),
+        "state_registry_status_v81": st.session_state.get("state_registry_status_v81"),
+    }
+
+
+def render_autonomy_controller_v82_tab():
+    st.header("Autonomy Controller & Reliability Brain V82")
+    st.write(
+        "V82 is the safety brain for making EdgeTwin as automatic as possible without becoming reckless. "
+        "It checks the current project, decides what EdgeTwin may do automatically, what needs founder approval, "
+        "and what must be blocked until evidence improves."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        target_mode = st.selectbox(
+            "Autonomy target",
+            ["Private beta", "Paid pilot", "Customer self-service", "Production handoff"],
+            index=1,
+            key="v82_target_mode",
+        )
+    with c2:
+        founder_policy = st.selectbox(
+            "Founder approval policy",
+            ["Strict", "Balanced", "Aggressive but safe"],
+            index=0,
+            key="v82_founder_policy",
+        )
+    with c3:
+        auto_repair = st.checkbox("Allow safe auto-repair recommendations", value=True, key="v82_auto_repair")
+        block_paid_delivery = st.checkbox("Block paid delivery below trust threshold", value=True, key="v82_block_paid_delivery")
+
+    context = {
+        "project_name": st.session_state.project_name,
+        "dataset_df": st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        "storage_status": core.get_storage_status(),
+        "settings": state_registry.collect_persisted_settings(
+            st.session_state,
+            compact_bridge_summary_fn=core.compact_bridge_summary,
+        ),
+        "registry_status": state_registry.get_registry_status(st.session_state, st.session_state.get("state_registry_status_v81", {})),
+        "snapshots": _v82_snapshot_map(),
+        "target_mode": target_mode,
+        "founder_policy": founder_policy,
+        "auto_repair_enabled": auto_repair,
+        "block_paid_delivery_below_threshold": block_paid_delivery,
+    }
+
+    if st.button("Run Autonomy Controller V82", type="primary", use_container_width=True, key="v82_run_controller"):
+        snapshot = core.build_autonomy_controller_v82_snapshot(context)
+        st.session_state.autonomy_controller_v82_snapshot = snapshot
+        st.session_state.autonomy_controller_v82_bundle = core.create_autonomy_controller_v82_bundle(st.session_state.project_name, snapshot)
+        st.success("Autonomy Controller V82 completed.")
+
+    snapshot = st.session_state.get("autonomy_controller_v82_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Autonomy", f"{snapshot.get('autonomy_score', 0)}%")
+        m2.metric("Reliability", f"{snapshot.get('reliability_score', 0)}%")
+        m3.metric("Safety", f"{snapshot.get('safety_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        st.markdown("### EdgeTwin may do automatically")
+        allowed = snapshot.get("allowed_automations", [])
+        if allowed:
+            st.dataframe(pd.DataFrame(allowed), use_container_width=True)
+        else:
+            st.info("No safe automations are available yet.")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### Founder approval required")
+            approvals = snapshot.get("founder_approval_required", [])
+            if approvals:
+                st.dataframe(pd.DataFrame(approvals), use_container_width=True)
+            else:
+                st.success("No founder approvals required for the current safe automation scope.")
+        with c2:
+            st.markdown("### Blockers")
+            blockers = snapshot.get("hard_blockers", [])
+            if blockers:
+                st.dataframe(pd.DataFrame(blockers), use_container_width=True)
+            else:
+                st.success("No hard blockers detected.")
+
+        st.markdown("### Next best action")
+        st.info(snapshot.get("next_best_action", ""))
+
+        with st.expander("Self-healing recommendations", expanded=True):
+            repairs = snapshot.get("self_healing_recommendations", [])
+            if repairs:
+                st.dataframe(pd.DataFrame(repairs), use_container_width=True)
+            else:
+                st.success("Nothing obvious to repair in the current context.")
+
+        with st.expander("Automation runbook", expanded=False):
+            for item in snapshot.get("automation_runbook", []):
+                st.write(f"- {item}")
+
+        with st.expander("Claims to avoid", expanded=False):
+            for item in snapshot.get("claims_to_avoid", []):
+                st.error(item)
+
+        with st.expander("Advanced — raw V82 JSON", expanded=False):
+            st.json(snapshot)
+
+        if st.session_state.get("autonomy_controller_v82_bundle"):
+            st.download_button(
+                "Download Autonomy Controller Bundle V82",
+                st.session_state.autonomy_controller_v82_bundle,
+                file_name=f"{st.session_state.project_name}_autonomy_controller_v82.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v82_download_autonomy_controller_bundle",
+            )
+
+    st.caption("V82 maximizes safe automation, but it deliberately blocks legal/payment/production claims and unsafe customer handoff until the evidence is strong enough.")
+
+
+
+def _v83_snapshot_map():
+    snapshots = _v82_snapshot_map()
+    snapshots.update({
+        "autonomy_controller_v82": st.session_state.get("autonomy_controller_v82_snapshot"),
+        "release_guard_v83": st.session_state.get("release_guard_v83_snapshot"),
+    })
+    return snapshots
+
+
+def render_release_guard_v83_tab():
+    st.header("Release Guard & Regression Pack V83")
+    st.write(
+        "V83 is the automatic release safety layer. It checks whether the current build has enough proof, "
+        "whether core storage/state/autonomy gates are present, and whether customer or paid delivery should be allowed."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        release_target = st.selectbox(
+            "Release target",
+            ["Internal build", "Private beta", "Paid pilot", "Customer self-service", "Production handoff"],
+            index=2,
+            key="v83_release_target",
+        )
+    with c2:
+        release_channel = st.selectbox(
+            "Release channel",
+            ["Founder only", "Closed beta customer", "Paid pilot customer", "Public self-service", "Enterprise handoff"],
+            index=2,
+            key="v83_release_channel",
+        )
+    with c3:
+        strict_mode = st.checkbox("Strict release blocking", value=True, key="v83_strict_mode")
+        include_customer_bundle = st.checkbox("Prepare customer-safe release bundle", value=True, key="v83_customer_bundle")
+
+    checks = core.run_release_regression_checks_v83({
+        "dataset_df": st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+        "storage_status": core.get_storage_status(),
+        "registry_status": state_registry.get_registry_status(st.session_state, st.session_state.get("state_registry_status_v81", {})),
+        "settings": state_registry.collect_persisted_settings(
+            st.session_state,
+            compact_bridge_summary_fn=core.compact_bridge_summary,
+        ),
+        "snapshots": _v83_snapshot_map(),
+    })
+
+    if st.button("Run Release Guard V83", type="primary", use_container_width=True, key="v83_run_release_guard"):
+        snapshot = core.build_release_guard_v83_snapshot({
+            "project_name": st.session_state.project_name,
+            "dataset_df": st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
+            "storage_status": core.get_storage_status(),
+            "registry_status": state_registry.get_registry_status(st.session_state, st.session_state.get("state_registry_status_v81", {})),
+            "settings": state_registry.collect_persisted_settings(
+                st.session_state,
+                compact_bridge_summary_fn=core.compact_bridge_summary,
+            ),
+            "snapshots": _v83_snapshot_map(),
+            "regression_checks": checks,
+            "release_target": release_target,
+            "release_channel": release_channel,
+            "strict_mode": strict_mode,
+            "include_customer_bundle": include_customer_bundle,
+        })
+        st.session_state.release_guard_v83_snapshot = snapshot
+        st.session_state.release_guard_v83_bundle = core.create_release_guard_v83_bundle(st.session_state.project_name, snapshot)
+        st.success("Release Guard V83 completed.")
+
+    snapshot = st.session_state.get("release_guard_v83_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Release score", f"{snapshot.get('release_score', 0)}%")
+        m2.metric("Regression", f"{snapshot.get('regression_score', 0)}%")
+        m3.metric("Safety", f"{snapshot.get('release_safety_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        st.markdown("### Regression checks")
+        checks_df = pd.DataFrame(snapshot.get("regression_checks", []))
+        if not checks_df.empty:
+            st.dataframe(checks_df, use_container_width=True)
+        else:
+            st.info("No regression checks were recorded.")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### Release blockers")
+            blockers = snapshot.get("release_blockers", [])
+            if blockers:
+                st.dataframe(pd.DataFrame(blockers), use_container_width=True)
+            else:
+                st.success("No release blockers detected.")
+        with c2:
+            st.markdown("### Auto-fix queue")
+            fixes = snapshot.get("auto_fix_queue", [])
+            if fixes:
+                st.dataframe(pd.DataFrame(fixes), use_container_width=True)
+            else:
+                st.success("No safe auto-fixes needed.")
+
+        st.markdown("### Next best action")
+        st.info(snapshot.get("next_best_action", ""))
+
+        with st.expander("Release policy", expanded=False):
+            for item in snapshot.get("release_policy", []):
+                st.write(f"- {item}")
+
+        with st.expander("Customer-safe summary", expanded=False):
+            st.json(snapshot.get("customer_safe_summary", {}))
+
+        with st.expander("Advanced — raw V83 JSON", expanded=False):
+            st.json(snapshot)
+
+        if st.session_state.get("release_guard_v83_bundle"):
+            st.download_button(
+                "Download Release Guard Bundle V83",
+                st.session_state.release_guard_v83_bundle,
+                file_name=f"{st.session_state.project_name}_release_guard_v83.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v83_download_release_guard_bundle",
+            )
+
+    st.caption("V83 is designed to block unsafe releases automatically while still letting low-risk evidence and customer-status work continue.")
+
+
+# V90 — Ultimate Product Brain / Product Machine
+
+def _v90_snapshot_map():
+    snapshots = _v83_snapshot_map()
+    snapshots.update({
+        "release_guard_v83": st.session_state.get("release_guard_v83_snapshot"),
+        "ultimate_product_v90": st.session_state.get("ultimate_product_v90_snapshot"),
+    })
+    return snapshots
+
+
+def render_ultimate_product_v90_tab():
+    st.header("Ultimate Product Brain V90")
+    st.write(
+        "V90 combines the engine, Trust Ledger, State Registry, Autonomy Controller, Release Guard and a safe self-healing executor. "
+        "It is designed to automate repeatable work while blocking money/legal/privacy/production-risk actions until founder approval."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        target = st.selectbox(
+            "Product target",
+            ["Internal build", "Private beta", "Paid pilot", "Customer self-service", "Production handoff"],
+            index=2,
+            key="v90_target",
+        )
+    with c2:
+        maximum_automation = st.checkbox("Maximum safe automation", value=True, key="v90_maximum_automation")
+    with c3:
+        strict_policy = st.checkbox("Strict truth/safety policy", value=True, key="v90_strict_policy")
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    settings = state_registry.collect_persisted_settings(
+        st.session_state,
+        compact_bridge_summary_fn=core.compact_bridge_summary,
+    )
+    registry_status = state_registry.get_registry_status(st.session_state, settings)
+    snapshots = _v90_snapshot_map()
+
+    checks = core.run_release_regression_checks_v83({
+        "dataset_df": dataset_df,
+        "storage_status": core.get_storage_status(),
+        "registry_status": registry_status,
+        "settings": settings,
+        "snapshots": snapshots,
+    })
+
+    if st.button("Run Ultimate Product Brain V90", type="primary", use_container_width=True, key="v90_run_brain"):
+        snapshot = core.build_ultimate_product_brain_v90_snapshot({
+            "project_name": st.session_state.project_name,
+            "dataset_df": dataset_df,
+            "storage_status": core.get_storage_status(),
+            "registry_status": registry_status,
+            "settings": settings,
+            "snapshots": snapshots,
+            "regression_checks": checks,
+            "target": target,
+            "maximum_automation": maximum_automation,
+            "strict_policy": strict_policy,
+        })
+        st.session_state.ultimate_product_v90_snapshot = snapshot
+        st.session_state.ultimate_product_v90_bundle = core.create_ultimate_product_v90_bundle(st.session_state.project_name, snapshot)
+        st.success("Ultimate Product Brain V90 completed.")
+
+    snapshot = st.session_state.get("ultimate_product_v90_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Ultimate score", f"{snapshot.get('ultimate_score', 0)}%")
+        m2.metric("Engine", f"{snapshot.get('engine_score', 0)}%")
+        m3.metric("Autonomous workload", f"{snapshot.get('autonomous_workload_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        st.markdown("### Core product stack")
+        stack = snapshot.get("core_stack", {})
+        if isinstance(stack, dict) and stack:
+            st.dataframe(pd.DataFrame([{"area": k, "score": v} for k, v in stack.items()]), use_container_width=True)
+
+        st.markdown("### Self-healing executor")
+        healing = snapshot.get("self_healing_executor", {}) if isinstance(snapshot.get("self_healing_executor"), dict) else {}
+        actions = healing.get("actions", [])
+        if actions:
+            st.dataframe(pd.DataFrame(actions), use_container_width=True)
+        else:
+            st.success("No self-healing actions needed.")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### Allowed automation")
+            for item in snapshot.get("automation_allowed", []):
+                st.write(f"- {item}")
+        with c2:
+            st.markdown("### Founder approval required")
+            for item in snapshot.get("founder_approval_required", []):
+                st.write(f"- {item}")
+
+        blockers = snapshot.get("blockers", [])
+        if blockers:
+            st.warning("V90 found blockers before this should be released further.")
+            st.dataframe(pd.DataFrame(blockers), use_container_width=True)
+        else:
+            st.success("No V90 blockers detected for the selected target.")
+
+        st.markdown("### Next best action")
+        st.info(snapshot.get("next_best_action", ""))
+
+        with st.expander("Customer-safe status", expanded=False):
+            st.json(snapshot.get("customer_safe_status", {}))
+        with st.expander("Advanced — raw V90 JSON", expanded=False):
+            st.json(snapshot)
+
+        if st.session_state.get("ultimate_product_v90_bundle"):
+            st.download_button(
+                "Download Ultimate Product Bundle V90",
+                st.session_state.ultimate_product_v90_bundle,
+                file_name=f"{st.session_state.project_name}_ultimate_product_v90.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v90_download_ultimate_product_bundle",
+            )
+
+    st.caption("V90 is not a fake 100% claim. It is a stronger product-control layer: automate safe work, block risky work, and preserve honest readiness.")
+
 _PAGE_RENDERERS = {
+    'ultimate_product_v90_tab': render_ultimate_product_v90_tab,
+    'release_guard_v83_tab': render_release_guard_v83_tab,
+    'autonomy_controller_v82_tab': render_autonomy_controller_v82_tab,
     'trust_ledger_v80_tab': render_trust_ledger_v80_tab,
     'pilot_factory_v79_tab': render_pilot_factory_v79_tab,
     'one_click_pilot_v78_tab': render_one_click_pilot_v78_tab,
