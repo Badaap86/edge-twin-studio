@@ -30538,7 +30538,7 @@ def build_customer_portal_lite_v103_snapshot(
         {"guardrail": "No production/accuracy/legal guarantees", "status": "enforced", "detail": "Delivery remains pilot/evidence/decision-support unless separately validated."},
     ]
 
-    customer_portal_markdown = f"""# EdgeTwin Customer Portal Lite — V103
+    customer_portal_markdown = f"""# EdgeTwin Customer Portal
 
 Hello {customer_name},
 
@@ -30617,7 +30617,7 @@ def create_customer_portal_lite_v103_bundle(project_name, snapshot):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 14)
-        safe_pdf_cell(pdf, "EdgeTwin Studio V103 - Customer Portal Lite")
+        safe_pdf_cell(pdf, "EdgeTwin Studio - Customer Portal")
         pdf.set_font("Arial", size=10)
         safe_pdf_cell(pdf, f"Project: {project_name}")
         safe_pdf_cell(pdf, f"Customer: {snapshot.get('customer_name')}")
@@ -30832,7 +30832,7 @@ def build_secure_download_links_v104_snapshot(
         {"guardrail": "Set EDGETWIN_DOWNLOAD_SECRET before live public hosting", "status": "warning" if dev_warning else "active"},
     ]
 
-    customer_access_markdown = f"""# Secure Customer Access — V104
+    customer_access_markdown = f"""# Secure Customer Access
 
 **Project:** {project_name}  
 **Order:** {order_id}  
@@ -30913,7 +30913,7 @@ def create_secure_download_links_v104_bundle(project_name, snapshot):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "EdgeTwin Secure Download Links V104", ln=True)
+        pdf.cell(0, 10, "EdgeTwin Secure Download Links", ln=True)
         pdf.set_font("Arial", "", 10)
         pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('download_decision')}\nAccess: {snapshot.get('access_state')}\nTokens: {snapshot.get('token_count')}\n\nSigned expiring token manifests are prepared. Live hosting must validate tokens server-side before serving private files.")
         zf.writestr("secure_download_links_v104.pdf", safe_pdf_output(pdf))
@@ -31207,7 +31207,7 @@ def _v106_access_for_state(state):
 
 def _v106_next_action(state):
     return {
-        "created": "Complete quote/order details.", "quoted": "Ask customer to acknowledge scope before payment.", "awaiting_payment": "Send checkout/payment link or wait for webhook confirmation.", "deposit_paid": "Unlock intake/upload, but keep final delivery locked.", "paid": "Start intake/data validation or generation flow.", "intake_unlocked": "Wait for customer input or uploaded data.", "data_received": "Run Data Quality Gate and build the pack.", "generating": "Generate report/bundle and run release guards.", "ready": "Create secure V104 link and serve through V105 endpoint.", "delivered": "Keep audit record and prepare follow-up/upsell.", "archived": "No active customer action.", "blocked_review": "Founder review required before continuing.", "refunded": "Keep locked; archive after refund process is complete.", "disputed": "Keep locked; review dispute before any access.", "cancelled": "Keep locked; archive if no further action.",
+        "created": "Complete quote/order details.", "quoted": "Ask customer to acknowledge scope before payment.", "awaiting_payment": "Send checkout/payment link or wait for webhook confirmation.", "deposit_paid": "Unlock intake/upload, but keep final delivery locked.", "paid": "Start intake/data validation or generation flow.", "intake_unlocked": "Wait for customer input or uploaded data.", "data_received": "Run Data Quality Gate and build the pack.", "generating": "Generate report/bundle and run release guards.", "ready": "Create secure access link and serve through private delivery endpoint.", "delivered": "Keep audit record and prepare follow-up/upsell.", "archived": "No active customer action.", "blocked_review": "Founder review required before continuing.", "refunded": "Keep locked; archive after refund process is complete.", "disputed": "Keep locked; review dispute before any access.", "cancelled": "Keep locked; archive if no further action.",
     }.get(_v106_norm(state), "Review order state.")
 
 
@@ -31356,7 +31356,7 @@ def build_ai_copilot_adapter_snapshot(project_name="EdgeTwin Project", customer_
     missing_inputs = _v107_missing_inputs(redacted_message + " " + str(desired_outcome or ""))
     risk_flags = _v107_risk_flags(redacted_message, include_customer_data=include_customer_data, allow_external_api=allow_external_api, store_prompts=store_prompts)
     blocked_actions = [
-        {"action": "approve payment", "blocked": True, "reason": "Only V102/V99/V106 may trust provider webhook/manual payment truth."},
+        {"action": "approve payment", "blocked": True, "reason": "Only the payment, unlock and order-state layers may trust provider webhook/manual payment truth."},
         {"action": "guarantee accuracy", "blocked": True, "reason": "Requires representative labelled field validation and customer approval."},
         {"action": "make legal/compliance certification claim", "blocked": True, "reason": "Needs external legal/compliance review."},
         {"action": "delete customer data", "blocked": True, "reason": "Requires explicit retention/delete workflow and audit."},
@@ -31386,7 +31386,7 @@ def build_ai_copilot_adapter_snapshot(project_name="EdgeTwin Project", customer_
         "missing_inputs": missing_inputs,
         "risk_flags": risk_flags,
         "safe_customer_claim": safe_claim,
-        "next_best_action": "Generate V98 quote from this recommendation" if not missing_inputs else "Ask the missing-input questions before final quote",
+        "next_best_action": "Generate quote from this recommendation" if not missing_inputs else "Ask the missing-input questions before final quote",
         "founder_review_required": bool(high_risk),
     }
     integration_contract = {
