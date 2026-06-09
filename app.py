@@ -25,6 +25,7 @@ import golden_dataset_library as golden_dataset
 import data_quality_gate_pro as data_quality
 import first_customer_intake_pack as first_intake
 import buyer_data_room_pro as buyer_dataroom
+import custom_pack_checkout
 
 warnings.filterwarnings("ignore")
 
@@ -317,6 +318,8 @@ def init_state():
         "customer_facing_landing_portal_bundle": None,
         "product_release_candidate_snapshot": None,
         "product_release_candidate_bundle": None,
+        "custom_pack_checkout_snapshot": None,
+        "custom_pack_checkout_bundle": None,
         "synthetic_calibration_dataset": pd.DataFrame(),
     }
 
@@ -930,6 +933,7 @@ NAV_LABELS["dataset_to_synthetic_tab"] = "🔁 Synthetic Calibration Loop"
 NAV_LABELS["self_selling_tab"] = "🧲 Self-Selling Conversion"
 NAV_LABELS["one_perfect_customer_flow_tab"] = "🛣️ One Perfect Customer Flow"
 NAV_LABELS["guided_custom_customer_builder_tab"] = "🧭 Guided Custom Builder"
+NAV_LABELS["custom_pack_checkout_tab"] = "💶 Custom Pack Checkout"
 NAV_LABELS["customer_facing_landing_portal_tab"] = "🌍 Customer Landing Portal"
 NAV_LABELS["product_release_candidate_tab"] = "🚀 Product Release Candidate"
 NAV_LABELS["golden_dataset_library_tab"] = "🏆 Golden Dataset Library"
@@ -1072,6 +1076,7 @@ CUSTOMER_LAUNCH_FLOW = {
     ],
     "2. Choose / build pack": [
         "guided_custom_customer_builder_tab",
+        "custom_pack_checkout_tab",
         "first_customer_intake_pack_tab",
     ],
     "3. Check data readiness": [
@@ -1089,6 +1094,7 @@ FOUNDER_FOCUS_FLOW = [
     "customer_facing_landing_portal_tab",
     "one_perfect_customer_flow_tab",
     "guided_custom_customer_builder_tab",
+    "custom_pack_checkout_tab",
     "data_quality_gate_pro_tab",
     "buyer_data_room_pro_tab",
     "product_release_candidate_tab",
@@ -15901,7 +15907,18 @@ def render_clean_quote_delivery_tab():
     )
 
 
+
+def render_custom_pack_checkout_tab():
+    """Customer-facing automated custom-pack pricing and payment handoff."""
+    snapshot, bundle = custom_pack_checkout.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.custom_pack_checkout_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.custom_pack_checkout_bundle = bundle
+
+
 _PAGE_RENDERERS = {
+    'custom_pack_checkout_tab': render_custom_pack_checkout_tab,
     'clean_quote_delivery_tab': render_clean_quote_delivery_tab,
     'buyer_data_room_pro_tab': render_buyer_data_room_pro_tab,
     'first_customer_intake_pack_tab': render_first_customer_intake_pack_tab,
