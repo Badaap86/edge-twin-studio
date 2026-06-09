@@ -156,7 +156,7 @@ def _score(v97: Dict[str, Any], blockers: List[str], review_flags: List[str], se
     return int(max(0, min(100, base)))
 
 
-def build_guided_custom_customer_builder_v118_snapshot(
+def build_guided_custom_customer_builder_snapshot(
     project_name: str = "EdgeTwin Project",
     company: str = "Customer",
     industry: str = "Industrial / maintenance",
@@ -313,11 +313,11 @@ def build_v118_question_table(snapshot: Dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame(snapshot.get("customer_questions", []))
 
 
-def create_guided_custom_customer_builder_v118_bundle(snapshot: Dict[str, Any]) -> bytes:
+def create_guided_custom_customer_builder_bundle(snapshot: Dict[str, Any]) -> bytes:
     snapshot = snapshot or {}
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("guided_custom_customer_builder_v118.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("guided_custom_customer_builder.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("customer_custom_pack_summary_v118.md", "\n".join([
             f"# {snapshot.get('pack_name', 'EdgeTwin Custom Pack')} — {snapshot.get('company', 'Customer')}",
             "",
@@ -370,6 +370,6 @@ def create_guided_custom_customer_builder_v118_bundle(snapshot: Dict[str, Any]) 
         pdf.set_font("Arial", size=9)
         pdf.set_x(10)
         pdf.multi_cell(190, 5, _safe_pdf_text(SAFE_BOUNDARY))
-        zf.writestr("guided_custom_customer_builder_v118.pdf", _pdf_bytes(pdf))
+        zf.writestr("guided_custom_customer_builder.pdf", _pdf_bytes(pdf))
     mem.seek(0)
     return mem.getvalue()
