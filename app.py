@@ -5,7 +5,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import confusion_matrix
@@ -13,25 +12,25 @@ from sklearn.model_selection import cross_val_predict
 
 import core
 import state_registry
-
-import public_benchmark_dataset_adapter as public_benchmark_v113
-import dataset_library_import_wizard as dataset_import_v114
-import dataset_to_synthetic as synthetic_calibration_v115
-import self_selling as self_selling_v116
-import customer_flow as customer_flow_v117
-import guided_custom_customer_builder as custom_customer_v118
-import customer_facing_landing_portal as landing_portal_v119
-import product_release_candidate as release_candidate_v120
+import public_benchmark_dataset_adapter as public_benchmark
+import dataset_library_import_wizard as dataset_import
+import dataset_to_synthetic as synthetic_calibration
+import self_selling as self_selling_module
+import customer_flow as customer_flow
+import guided_custom_customer_builder as custom_customer
+import customer_facing_landing_portal as landing_portal
+import product_release_candidate as release_candidate
+import golden_dataset_library as golden_dataset
+import data_quality_gate_pro as data_quality
+import first_customer_intake_pack as first_intake
+import buyer_data_room_pro as buyer_dataroom
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(
-    page_title="EdgeTwin Studio V120",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="EdgeTwin Studio V124", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
+
 
 # ============================================================
 # STATE
@@ -131,8 +130,8 @@ def init_state():
         "pricing_offer_bundle": None,
         "paid_pilot_v45_snapshot": None,
         "paid_pilot_v45_bundle": None,
-        "ai_copilot_adapter_v107_snapshot": None,
-        "ai_copilot_adapter_v107_bundle": None,
+        "ai_copilot_adapter_snapshot": None,
+        "ai_copilot_adapter_bundle": None,
         "claim_safety_prompt_policy_v108_snapshot": None,
         "claim_safety_prompt_policy_v108_bundle": None,
         "proposal_sow_snapshot": None,
@@ -222,23 +221,23 @@ def init_state():
         "last_admin_export_event": None,
         "last_operator_note_event": None,
         "selected_plan": "Founder Test Mode",
-        "public_benchmark_v113_snapshot": None,
-        "public_benchmark_v113_bundle": None,
-        "dataset_import_v114_manifest": None,
-        "dataset_import_v114_bundle": None,
-        "synthetic_calibration_v115_snapshot": None,
-        "synthetic_calibration_v115_bundle": None,
-        "self_selling_conversion_v116_snapshot": None,
-        "self_selling_conversion_v116_bundle": None,
-        "one_perfect_customer_flow_v117_snapshot": None,
-        "one_perfect_customer_flow_v117_bundle": None,
-        "guided_custom_customer_builder_v118_snapshot": None,
-        "guided_custom_customer_builder_v118_bundle": None,
-        "customer_facing_landing_portal_v119_snapshot": None,
-        "customer_facing_landing_portal_v119_bundle": None,
-        "product_release_candidate_v120_snapshot": None,
-        "product_release_candidate_v120_bundle": None,
-        "synthetic_calibration_v115_dataset": pd.DataFrame(),
+        "public_benchmark_snapshot": None,
+        "public_benchmark_bundle": None,
+        "dataset_import_manifest": None,
+        "dataset_import_bundle": None,
+        "synthetic_calibration_snapshot": None,
+        "synthetic_calibration_bundle": None,
+        "self_selling_snapshot": None,
+        "self_selling_bundle": None,
+        "one_perfect_customer_flow_snapshot": None,
+        "one_perfect_customer_flow_bundle": None,
+        "guided_custom_customer_builder_snapshot": None,
+        "guided_custom_customer_builder_bundle": None,
+        "customer_facing_landing_portal_snapshot": None,
+        "customer_facing_landing_portal_bundle": None,
+        "product_release_candidate_snapshot": None,
+        "product_release_candidate_bundle": None,
+        "synthetic_calibration_dataset": pd.DataFrame(),
     }
 
     for key, val in defaults.items():
@@ -829,78 +828,94 @@ NAV_LABELS["public_hosting_v101_tab"] = "🌐 Public Hosting Kit V101"
 NAV_LABELS["payment_provider_adapter_v102_tab"] = "💳 Payment Provider Adapter V102"
 NAV_LABELS["customer_portal_lite_v103_tab"] = "🧑‍💼 Customer Portal Lite V103"
 NAV_LABELS["secure_download_links_v104_tab"] = "🔐 Secure Download Links V104"
-NAV_LABELS["private_delivery_endpoint_v105_tab"] = "🛡️ Private Delivery Endpoint V105"
+NAV_LABELS["delivery_endpoint_tab"] = "🛡️ Private Delivery Endpoint V105"
 NAV_LABELS["order_fulfillment_v106_tab"] = "📚 Order Fulfillment V106"
-NAV_LABELS["ai_copilot_adapter_v107_tab"] = "🤖 AI Copilot Adapter V107"
+NAV_LABELS["ai_copilot_adapter_tab"] = "🤖 AI Copilot Adapter V107"
 NAV_LABELS["claim_safety_prompt_policy_v108_tab"] = "🧯 Claim Safety Policy V108"
-NAV_LABELS["synthetic_data_optimizer_v109_tab"] = "🧬 Synthetic Data Optimizer V109"
-NAV_LABELS["synthetic_real_bridge_v110_tab"] = "🌉 Synthetic→Real Bridge V110"
-NAV_LABELS["synthetic_reliability_lab_v111_tab"] = "🧪 Synthetic Reliability Lab V111"
-NAV_LABELS["dataset_benchmark_harness_v112_tab"] = "📏 Dataset Benchmark Harness V112"
+NAV_LABELS["synthetic_data_optimizer_tab"] = "🧬 Synthetic Data Optimizer V109"
+NAV_LABELS["synthetic_real_bridge_tab"] = "🌉 Synthetic→Real Bridge V110"
+NAV_LABELS["synthetic_reliability_lab_tab"] = "🧪 Synthetic Reliability Lab V111"
+NAV_LABELS["dataset_benchmark_harness_tab"] = "📏 Dataset Benchmark Harness V112"
 NAV_LABELS["public_benchmark_dataset_v113_tab"] = "🎧 Public Benchmark Dataset Adapter V113"
 NAV_LABELS["dataset_import_wizard_v114_tab"] = "🗂️ Dataset Import Wizard V114"
-NAV_LABELS["synthetic_calibration_loop_v115_tab"] = "🔁 Synthetic Calibration Loop V115"
-NAV_LABELS["self_selling_conversion_v116_tab"] = "🧲 Self-Selling Conversion V116"
-NAV_LABELS["one_perfect_customer_flow_v117_tab"] = "🛣️ One Perfect Customer Flow V117"
-NAV_LABELS["guided_custom_customer_builder_v118_tab"] = "🧭 Guided Custom Builder V118"
-NAV_LABELS["customer_facing_landing_portal_v119_tab"] = "🌍 Customer Landing Portal V119"
-NAV_LABELS["product_release_candidate_v120_tab"] = "🚀 Product RC V120"
+NAV_LABELS["dataset_to_synthetic_tab"] = "🔁 Synthetic Calibration Loop V115"
+NAV_LABELS["self_selling_tab"] = "🧲 Self-Selling Conversion V116"
+NAV_LABELS["one_perfect_customer_flow_tab"] = "🛣️ One Perfect Customer Flow V117"
+NAV_LABELS["guided_custom_customer_builder_tab"] = "🧭 Guided Custom Builder V118"
+NAV_LABELS["customer_facing_landing_portal_tab"] = "🌍 Customer Landing Portal V119"
+NAV_LABELS["product_release_candidate_tab"] = "🚀 Product RC V120"
+NAV_LABELS["golden_dataset_library_tab"] = "🏆 Golden Dataset Library V121"
+NAV_LABELS["data_quality_gate_pro_tab"] = "🚦 Data Quality Gate Pro V122"
+NAV_LABELS["first_customer_intake_pack_tab"] = "🧾 First Customer Intake Pack V123"
+NAV_LABELS["buyer_data_room_pro_tab"] = "🏢 Buyer Data Room Pro V124"
 _v80_add_nav("6. Operator & Admin", "public_hosting_v101_tab", 0)
 _v80_add_nav("6. Operator & Admin", "payment_provider_adapter_v102_tab", 0)
 _v80_add_nav("6. Operator & Admin", "customer_portal_lite_v103_tab", 0)
 _v80_add_nav("5. Sell & Deliver", "customer_portal_lite_v103_tab", 0)
-_v80_add_nav("5. Sell & Deliver", "private_delivery_endpoint_v105_tab", 0)
-_v80_add_nav("4. Download / handoff", "private_delivery_endpoint_v105_tab", 0)
-_v80_add_nav("6. Operator & Admin", "private_delivery_endpoint_v105_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "delivery_endpoint_tab", 0)
+_v80_add_nav("4. Download / handoff", "delivery_endpoint_tab", 0)
+_v80_add_nav("6. Operator & Admin", "delivery_endpoint_tab", 0)
 _v80_add_nav("5. Sell & Deliver", "order_fulfillment_v106_tab", 0)
 _v80_add_nav("4. Download / handoff", "order_fulfillment_v106_tab", 0)
 _v80_add_nav("6. Operator & Admin", "order_fulfillment_v106_tab", 0)
-_v80_add_nav("5. Sell & Deliver", "ai_copilot_adapter_v107_tab", 0)
-_v80_add_nav("6. Operator & Admin", "ai_copilot_adapter_v107_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "ai_copilot_adapter_tab", 0)
+_v80_add_nav("6. Operator & Admin", "ai_copilot_adapter_tab", 0)
 _v80_add_nav("5. Sell & Deliver", "claim_safety_prompt_policy_v108_tab", 0)
 _v80_add_nav("6. Operator & Admin", "claim_safety_prompt_policy_v108_tab", 0)
 _v80_add_nav("1. Start", "claim_safety_prompt_policy_v108_tab", 1)
-_v80_add_nav("2. Build Pilot", "synthetic_calibration_loop_v115_tab", 0)
-_v80_add_nav("3. Review readiness", "synthetic_calibration_loop_v115_tab", 0)
-_v80_add_nav("1. Start", "product_release_candidate_v120_tab", 0)
-_v80_add_nav("1. Start", "customer_facing_landing_portal_v119_tab", 0)
-_v80_add_nav("1. Start", "one_perfect_customer_flow_v117_tab", 1)
-_v80_add_nav("1. Start", "guided_custom_customer_builder_v118_tab", 1)
-_v80_add_nav("1. Start", "self_selling_conversion_v116_tab", 1)
-_v80_add_nav("5. Sell & Deliver", "product_release_candidate_v120_tab", 0)
-_v80_add_nav("5. Sell & Deliver", "customer_facing_landing_portal_v119_tab", 0)
-_v80_add_nav("5. Sell & Deliver", "one_perfect_customer_flow_v117_tab", 1)
-_v80_add_nav("5. Sell & Deliver", "guided_custom_customer_builder_v118_tab", 1)
-_v80_add_nav("5. Sell & Deliver", "self_selling_conversion_v116_tab", 1)
-_v80_add_nav("5. Request proposal", "product_release_candidate_v120_tab", 0)
-_v80_add_nav("5. Request proposal", "customer_facing_landing_portal_v119_tab", 0)
-_v80_add_nav("5. Request proposal", "one_perfect_customer_flow_v117_tab", 1)
-_v80_add_nav("5. Request proposal", "guided_custom_customer_builder_v118_tab", 1)
-_v80_add_nav("5. Request proposal", "self_selling_conversion_v116_tab", 1)
-_v80_add_nav("6. Operator & Admin", "product_release_candidate_v120_tab", 0)
-_v80_add_nav("6. Operator & Admin", "customer_facing_landing_portal_v119_tab", 0)
-_v80_add_nav("6. Operator & Admin", "one_perfect_customer_flow_v117_tab", 1)
-_v80_add_nav("6. Operator & Admin", "guided_custom_customer_builder_v118_tab", 1)
-_v80_add_nav("6. Operator & Admin", "self_selling_conversion_v116_tab", 1)
-_v80_add_nav("6. Operator & Admin", "synthetic_calibration_loop_v115_tab", 0)
+_v80_add_nav("2. Build Pilot", "dataset_to_synthetic_tab", 0)
+_v80_add_nav("3. Review readiness", "dataset_to_synthetic_tab", 0)
+_v80_add_nav("1. Start", "product_release_candidate_tab", 0)
+_v80_add_nav("1. Start", "customer_facing_landing_portal_tab", 0)
+_v80_add_nav("1. Start", "one_perfect_customer_flow_tab", 1)
+_v80_add_nav("1. Start", "guided_custom_customer_builder_tab", 1)
+_v80_add_nav("1. Start", "self_selling_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "product_release_candidate_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "customer_facing_landing_portal_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "one_perfect_customer_flow_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "guided_custom_customer_builder_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "self_selling_tab", 1)
+_v80_add_nav("5. Request proposal", "product_release_candidate_tab", 0)
+_v80_add_nav("5. Request proposal", "customer_facing_landing_portal_tab", 0)
+_v80_add_nav("5. Request proposal", "one_perfect_customer_flow_tab", 1)
+_v80_add_nav("5. Request proposal", "guided_custom_customer_builder_tab", 1)
+_v80_add_nav("5. Request proposal", "self_selling_tab", 1)
+_v80_add_nav("6. Operator & Admin", "product_release_candidate_tab", 0)
+_v80_add_nav("1. Start", "buyer_data_room_pro_tab", 0)
+_v80_add_nav("1. Start", "first_customer_intake_pack_tab", 0)
+_v80_add_nav("3. Review readiness", "data_quality_gate_pro_tab", 0)
+_v80_add_nav("3. Review readiness", "golden_dataset_library_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "buyer_data_room_pro_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "first_customer_intake_pack_tab", 0)
+_v80_add_nav("5. Request proposal", "buyer_data_room_pro_tab", 0)
+_v80_add_nav("5. Request proposal", "first_customer_intake_pack_tab", 0)
+_v80_add_nav("6. Operator & Admin", "buyer_data_room_pro_tab", 0)
+_v80_add_nav("6. Operator & Admin", "first_customer_intake_pack_tab", 0)
+_v80_add_nav("6. Operator & Admin", "data_quality_gate_pro_tab", 0)
+_v80_add_nav("6. Operator & Admin", "golden_dataset_library_tab", 0)
+_v80_add_nav("6. Operator & Admin", "customer_facing_landing_portal_tab", 0)
+_v80_add_nav("6. Operator & Admin", "one_perfect_customer_flow_tab", 1)
+_v80_add_nav("6. Operator & Admin", "guided_custom_customer_builder_tab", 1)
+_v80_add_nav("6. Operator & Admin", "self_selling_tab", 1)
+_v80_add_nav("6. Operator & Admin", "dataset_to_synthetic_tab", 0)
 _v80_add_nav("2. Build Pilot", "dataset_import_wizard_v114_tab", 0)
-_v80_add_nav("2. Build Pilot", "synthetic_data_optimizer_v109_tab", 0)
-_v80_add_nav("3. Review readiness", "synthetic_data_optimizer_v109_tab", 0)
-_v80_add_nav("6. Operator & Admin", "synthetic_data_optimizer_v109_tab", 0)
-_v80_add_nav("2. Build Pilot", "synthetic_real_bridge_v110_tab", 0)
-_v80_add_nav("3. Review readiness", "synthetic_real_bridge_v110_tab", 0)
-_v80_add_nav("6. Operator & Admin", "synthetic_real_bridge_v110_tab", 0)
-_v80_add_nav("2. Build Pilot", "synthetic_reliability_lab_v111_tab", 0)
-_v80_add_nav("3. Review readiness", "synthetic_reliability_lab_v111_tab", 0)
-_v80_add_nav("6. Operator & Admin", "synthetic_reliability_lab_v111_tab", 0)
-_v80_add_nav("2. Build Pilot", "dataset_benchmark_harness_v112_tab", 0)
-_v80_add_nav("3. Review readiness", "dataset_benchmark_harness_v112_tab", 0)
-_v80_add_nav("6. Operator & Admin", "dataset_benchmark_harness_v112_tab", 0)
+_v80_add_nav("2. Build Pilot", "synthetic_data_optimizer_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_data_optimizer_tab", 0)
+_v80_add_nav("6. Operator & Admin", "synthetic_data_optimizer_tab", 0)
+_v80_add_nav("2. Build Pilot", "synthetic_real_bridge_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_real_bridge_tab", 0)
+_v80_add_nav("6. Operator & Admin", "synthetic_real_bridge_tab", 0)
+_v80_add_nav("2. Build Pilot", "synthetic_reliability_lab_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_reliability_lab_tab", 0)
+_v80_add_nav("6. Operator & Admin", "synthetic_reliability_lab_tab", 0)
+_v80_add_nav("2. Build Pilot", "dataset_benchmark_harness_tab", 0)
+_v80_add_nav("3. Review readiness", "dataset_benchmark_harness_tab", 0)
+_v80_add_nav("6. Operator & Admin", "dataset_benchmark_harness_tab", 0)
 _v80_add_nav("2. Build Pilot", "public_benchmark_dataset_v113_tab", 0)
 _v80_add_nav("3. Review readiness", "public_benchmark_dataset_v113_tab", 0)
 _v80_add_nav("6. Operator & Admin", "public_benchmark_dataset_v113_tab", 0)
 
-_v80_add_nav("1. Start", "ai_copilot_adapter_v107_tab", 1)
+_v80_add_nav("1. Start", "ai_copilot_adapter_tab", 1)
 
 _v80_add_nav("5. Sell & Deliver", "secure_download_links_v104_tab", 0)
 _v80_add_nav("4. Download / handoff", "secure_download_links_v104_tab", 0)
@@ -13988,7 +14003,7 @@ def render_secure_download_links_v104_tab():
 
 
 
-def render_private_delivery_endpoint_v105_tab():
+def render_delivery_endpoint_tab():
     st.header("🛡️ Private Delivery Endpoint V105")
     st.caption("Prepare the real server-side layer behind V104 signed links: validate token, re-check payment/delivery status, audit the request, then stream a private file only when safe.")
 
@@ -14015,7 +14030,7 @@ def render_private_delivery_endpoint_v105_tab():
         private_storage_only = st.checkbox("Private storage only", value=True, key="v105_private_storage")
         rate_limit_enabled = st.checkbox("Rate limit endpoint", value=True, key="v105_rate_limit")
 
-    snapshot = core.build_private_delivery_endpoint_v105_snapshot(
+    snapshot = core.build_delivery_endpoint_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
         customer_email=customer_email,
         order_id=order_id,
@@ -14029,7 +14044,7 @@ def render_private_delivery_endpoint_v105_tab():
         private_storage_only=private_storage_only,
         rate_limit_enabled=rate_limit_enabled,
     )
-    st.session_state.private_delivery_endpoint_v105_snapshot = snapshot
+    st.session_state.delivery_endpoint_snapshot = snapshot
 
     a, b, c, d = st.columns(4)
     a.metric("Endpoint decision", snapshot.get("endpoint_decision", "unknown"))
@@ -14058,10 +14073,10 @@ def render_private_delivery_endpoint_v105_tab():
         st.json(snapshot)
 
     if st.button("Create V105 private delivery endpoint bundle", use_container_width=True, key="v105_create_bundle"):
-        st.session_state.private_delivery_endpoint_v105_bundle = core.create_private_delivery_endpoint_v105_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
+        st.session_state.delivery_endpoint_bundle = core.create_delivery_endpoint_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
 
-    if st.session_state.get("private_delivery_endpoint_v105_bundle"):
-        st.download_button("Download Private Delivery Endpoint Bundle V105", st.session_state.private_delivery_endpoint_v105_bundle, file_name=f"{st.session_state.project_name}_private_delivery_endpoint_v105.zip", mime="application/zip", use_container_width=True, key="v105_download_private_delivery_endpoint_bundle")
+    if st.session_state.get("delivery_endpoint_bundle"):
+        st.download_button("Download Private Delivery Endpoint Bundle V105", st.session_state.delivery_endpoint_bundle, file_name=f"{st.session_state.project_name}_delivery_endpoint.zip", mime="application/zip", use_container_width=True, key="v105_download_private_delivery_endpoint_bundle")
 
     st.caption("V105 closes the loop after V104: token manifest → private endpoint validation → payment/delivery re-check → audit log → private file stream.")
 
@@ -14074,7 +14089,7 @@ def render_order_fulfillment_v106_tab():
     quote_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
     payment_snapshot = st.session_state.get("payment_provider_adapter_v102_snapshot") or st.session_state.get("payment_unlock_delivery_v99_snapshot") or {}
     portal_snapshot = st.session_state.get("customer_portal_lite_v103_snapshot") or {}
-    endpoint_snapshot = st.session_state.get("private_delivery_endpoint_v105_snapshot") or {}
+    endpoint_snapshot = st.session_state.get("delivery_endpoint_snapshot") or {}
 
     default_email = quote_snapshot.get("customer_email") or payment_snapshot.get("customer_email") or portal_snapshot.get("customer_email") or endpoint_snapshot.get("customer_email") or "customer@example.com"
     default_order = quote_snapshot.get("order_id") or payment_snapshot.get("order_id") or portal_snapshot.get("order_id") or endpoint_snapshot.get("order_id") or "ORDER-DEMO-V106"
@@ -14139,7 +14154,7 @@ def render_order_fulfillment_v106_tab():
 
 
 
-def render_ai_copilot_adapter_v107_tab():
+def render_ai_copilot_adapter_tab():
     st.header("🤖 AI Copilot Adapter V107")
     st.caption("Controlled AI layer for summaries, pack suggestions, safe customer copy and founder-review notes. No blind approvals, no card data, no legal/accuracy guarantees.")
 
@@ -14170,7 +14185,7 @@ def render_ai_copilot_adapter_v107_tab():
         key="v107_allowed_tasks",
     )
 
-    snapshot = core.build_ai_copilot_adapter_v107_snapshot(
+    snapshot = core.build_ai_copilot_adapter_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
         customer_message=customer_message,
         desired_outcome=desired_outcome,
@@ -14186,7 +14201,7 @@ def render_ai_copilot_adapter_v107_tab():
         fulfillment_snapshot=fulfillment_snapshot,
         allowed_tasks=allowed_tasks,
     )
-    st.session_state.ai_copilot_adapter_v107_snapshot = snapshot
+    st.session_state.ai_copilot_adapter_snapshot = snapshot
 
     a, b, c, d = st.columns(4)
     a.metric("Copilot decision", snapshot.get("decision", "unknown"))
@@ -14214,10 +14229,10 @@ def render_ai_copilot_adapter_v107_tab():
         st.json(snapshot)
 
     if st.button("Create V107 AI Copilot bundle", use_container_width=True, key="v107_create_bundle"):
-        st.session_state.ai_copilot_adapter_v107_bundle = core.create_ai_copilot_adapter_v107_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
+        st.session_state.ai_copilot_adapter_bundle = core.create_ai_copilot_adapter_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
 
-    if st.session_state.get("ai_copilot_adapter_v107_bundle"):
-        st.download_button("Download AI Copilot Adapter Bundle V107", st.session_state.ai_copilot_adapter_v107_bundle, file_name=f"{st.session_state.project_name}_ai_copilot_adapter_v107.zip", mime="application/zip", use_container_width=True, key="v107_download_ai_copilot_bundle")
+    if st.session_state.get("ai_copilot_adapter_bundle"):
+        st.download_button("Download AI Copilot Adapter Bundle V107", st.session_state.ai_copilot_adapter_bundle, file_name=f"{st.session_state.project_name}_ai_copilot_adapter.zip", mime="application/zip", use_container_width=True, key="v107_download_ai_copilot_bundle")
 
     st.caption("V107 adds a controlled AI assistant layer: helpful for language and recommendations, never a replacement for payment webhooks, policy approval, legal review or production validation.")
 
@@ -14226,7 +14241,7 @@ def render_claim_safety_prompt_policy_v108_tab():
     st.header("🧯 Claim Safety & Prompt Policy Pack V108")
     st.caption("A conservative safety gate for customer claims, AI prompts, sales copy and report text. It blocks hard production/accuracy/legal/compliance promises unless validated and approved.")
 
-    copilot_snapshot = st.session_state.get("ai_copilot_adapter_v107_snapshot") or {}
+    copilot_snapshot = st.session_state.get("ai_copilot_adapter_snapshot") or {}
     structured = copilot_snapshot.get("structured_output", {}) if isinstance(copilot_snapshot, dict) else {}
     default_claim = structured.get("safe_customer_claim") or "EdgeTwin prepares a controlled pilot/evidence pack with data-quality checks, trust notes, assumptions, limitations and concrete next steps."
     default_context = st.session_state.get("v107_customer_message", "") or "Customer wants to understand whether their data is ready for a pilot/evidence pack."
@@ -14293,12 +14308,12 @@ def render_claim_safety_prompt_policy_v108_tab():
     st.caption("V108 keeps AI and sales copy useful but bounded: pilot/evidence language is allowed; production/accuracy/legal/compliance guarantees are blocked unless separately validated and approved.")
 
 
-def render_synthetic_data_optimizer_v109_tab():
+def render_synthetic_data_optimizer_tab():
     st.header("🧬 Synthetic Data Optimizer V109")
     st.caption("Build scenario-based golden synthetic data for demos, regression tests and Data Quality Gates. This improves synthetic data without pretending it replaces real customer field validation.")
 
     try:
-        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY, generate_scenario_dataset
+        from synthetic_data_optimizer import SCENARIO_LIBRARY, generate_scenario_dataset
     except Exception as exc:
         st.error(f"V109 module could not load: {exc}")
         return
@@ -14320,7 +14335,7 @@ def render_synthetic_data_optimizer_v109_tab():
         imbalance_factor = st.slider("Anomaly imbalance factor", min_value=0.5, max_value=2.5, value=1.0, step=0.1, key="v109_imbalance")
         include_edge_cases = st.checkbox("Include marked edge cases/outliers", value=True, key="v109_edge_cases")
 
-    snapshot = core.build_synthetic_data_optimizer_v109_snapshot(
+    snapshot = core.build_synthetic_data_optimizer_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
         pack_key=pack_key,
         rows=int(rows),
@@ -14341,8 +14356,8 @@ def render_synthetic_data_optimizer_v109_tab():
         imbalance_factor=float(imbalance_factor),
         include_edge_cases=bool(include_edge_cases),
     )
-    st.session_state.synthetic_data_optimizer_v109_snapshot = snapshot
-    st.session_state.synthetic_data_optimizer_v109_dataset = dataset_df
+    st.session_state.synthetic_data_optimizer_snapshot = snapshot
+    st.session_state.synthetic_data_optimizer_dataset = dataset_df
 
     a, b, c, d = st.columns(4)
     a.metric("Decision", snapshot.get("decision", "unknown"))
@@ -14376,20 +14391,20 @@ def render_synthetic_data_optimizer_v109_tab():
         st.json(snapshot)
 
     if st.button("Create V109 Synthetic Data bundle", use_container_width=True, key="v109_create_bundle"):
-        st.session_state.synthetic_data_optimizer_v109_bundle = core.create_synthetic_data_optimizer_v109_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, dataset_df)
+        st.session_state.synthetic_data_optimizer_bundle = core.create_synthetic_data_optimizer_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, dataset_df)
 
-    if st.session_state.get("synthetic_data_optimizer_v109_bundle"):
-        st.download_button("Download Synthetic Data Optimizer Bundle V109", st.session_state.synthetic_data_optimizer_v109_bundle, file_name=f"{st.session_state.project_name}_synthetic_data_optimizer_v109.zip", mime="application/zip", use_container_width=True, key="v109_download_bundle")
+    if st.session_state.get("synthetic_data_optimizer_bundle"):
+        st.download_button("Download Synthetic Data Optimizer Bundle V109", st.session_state.synthetic_data_optimizer_bundle, file_name=f"{st.session_state.project_name}_synthetic_data_optimizer.zip", mime="application/zip", use_container_width=True, key="v109_download_bundle")
 
     st.caption("V109 makes synthetic testdata better and more honest: scenario-based, labeled, noisy, drifted, partially missing and ready for regression/data-quality gates — but still not a substitute for real customer validation.")
 
 
-def render_synthetic_real_bridge_v110_tab():
+def render_synthetic_real_bridge_tab():
     st.header("🌉 Synthetic→Real Bridge V110")
     st.caption("Make synthetic data more like real customer data, without mixing raw customer data into EdgeTwin unless explicit permission and policy allow it.")
 
     try:
-        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
+        from synthetic_data_optimizer import SCENARIO_LIBRARY
     except Exception:
         SCENARIO_LIBRARY = {"rotating_machinery": {"title": "Rotating Machinery Pack"}}
 
@@ -14426,7 +14441,7 @@ def render_synthetic_real_bridge_v110_tab():
         st.info(upload_note)
 
     effective_real_df = real_df if include_customer_profile else None
-    snapshot, calibrated_df = core.build_synthetic_real_bridge_v110_snapshot(
+    snapshot, calibrated_df = core.build_synthetic_real_bridge_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
         pack_key=pack_key,
         rows=rows,
@@ -14435,8 +14450,8 @@ def render_synthetic_real_bridge_v110_tab():
         purpose=purpose,
         real_df=effective_real_df,
     )
-    st.session_state.synthetic_real_bridge_v110_snapshot = snapshot
-    st.session_state.synthetic_real_bridge_v110_dataset = calibrated_df
+    st.session_state.synthetic_real_bridge_snapshot = snapshot
+    st.session_state.synthetic_real_bridge_dataset = calibrated_df
 
     score = int(snapshot.get("realism_score", 0))
     st.metric("Synthetic-realism score", score, snapshot.get("decision"))
@@ -14461,15 +14476,15 @@ def render_synthetic_real_bridge_v110_tab():
         st.json(snapshot)
 
     if st.button("Create V110 Synthetic→Real Bridge bundle", use_container_width=True, key="v110_create_bundle"):
-        st.session_state.synthetic_real_bridge_v110_bundle = core.create_synthetic_real_bridge_v110_bundle(
+        st.session_state.synthetic_real_bridge_bundle = core.create_synthetic_real_bridge_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, calibrated_df
         )
 
-    if st.session_state.get("synthetic_real_bridge_v110_bundle"):
+    if st.session_state.get("synthetic_real_bridge_bundle"):
         st.download_button(
             "Download Synthetic→Real Bridge Bundle V110",
-            st.session_state.synthetic_real_bridge_v110_bundle,
-            file_name=f"{st.session_state.project_name}_synthetic_real_bridge_v110.zip",
+            st.session_state.synthetic_real_bridge_bundle,
+            file_name=f"{st.session_state.project_name}_synthetic_real_bridge.zip",
             mime="application/zip",
             use_container_width=True,
             key="v110_download_bundle",
@@ -14478,13 +14493,13 @@ def render_synthetic_real_bridge_v110_tab():
     st.caption("V110 bridges synthetic and real-world behavior using profiles, calibration and consent-controlled learning. It still does not claim production accuracy without real validation.")
 
 
-def render_synthetic_reliability_lab_v111_tab():
+def render_synthetic_reliability_lab_tab():
     st.header("🧪 Synthetic Reliability Lab V111")
     st.caption("Make synthetic testdata measurable: stress coverage, label coverage, timestamp health, correlation stability, real-profile fidelity and privacy/similarity red flags.")
 
     try:
-        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
-        from synthetic_reliability_lab_v111 import STRESS_PROFILES
+        from synthetic_data_optimizer import SCENARIO_LIBRARY
+        from synthetic_reliability_lab import STRESS_PROFILES
     except Exception:
         SCENARIO_LIBRARY = {"rotating_machinery": {"title": "Rotating Machinery Pack"}}
         STRESS_PROFILES = {"realistic_messy": {"label": "Realistic messy"}}
@@ -14517,7 +14532,7 @@ def render_synthetic_reliability_lab_v111_tab():
     else:
         st.info("No customer CSV uploaded. V111 will evaluate synthetic reliability without real-fidelity checks.")
 
-    snapshot, datasets = core.build_synthetic_reliability_lab_v111_snapshot(
+    snapshot, datasets = core.build_synthetic_reliability_lab_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
         pack_key=pack_key,
         rows=int(rows),
@@ -14526,8 +14541,8 @@ def render_synthetic_reliability_lab_v111_tab():
         use_real_profile=bool(use_real_profile),
         stress_profile_keys=selected_stress,
     )
-    st.session_state.synthetic_reliability_lab_v111_snapshot = snapshot
-    st.session_state.synthetic_reliability_lab_v111_dataset = datasets.get("realistic_messy") if isinstance(datasets.get("realistic_messy"), pd.DataFrame) else next(iter(datasets.values()))
+    st.session_state.synthetic_reliability_lab_snapshot = snapshot
+    st.session_state.synthetic_reliability_lab_dataset = datasets.get("realistic_messy") if isinstance(datasets.get("realistic_messy"), pd.DataFrame) else next(iter(datasets.values()))
 
     st.metric("Synthetic reliability score", int(snapshot.get("synthetic_reliability_score", 0)), snapshot.get("decision"))
     st.metric("Stress profiles", len(snapshot.get("stress_profiles", [])))
@@ -14541,7 +14556,7 @@ def render_synthetic_reliability_lab_v111_tab():
         st.dataframe(pd.DataFrame(snapshot.get("stress_profiles", [])), use_container_width=True)
         st.json(snapshot.get("correlation_stability", {}))
     with tabs[2]:
-        df = st.session_state.synthetic_reliability_lab_v111_dataset
+        df = st.session_state.synthetic_reliability_lab_dataset
         if isinstance(df, pd.DataFrame):
             st.dataframe(df.head(120), use_container_width=True)
         st.caption("Preview is synthetic scenario data; not customer raw data.")
@@ -14559,15 +14574,15 @@ def render_synthetic_reliability_lab_v111_tab():
         st.json(snapshot)
 
     if st.button("Create V111 Synthetic Reliability Lab bundle", use_container_width=True, key="v111_create_bundle"):
-        st.session_state.synthetic_reliability_lab_v111_bundle = core.create_synthetic_reliability_lab_v111_bundle(
+        st.session_state.synthetic_reliability_lab_bundle = core.create_synthetic_reliability_lab_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, datasets
         )
 
-    if st.session_state.get("synthetic_reliability_lab_v111_bundle"):
+    if st.session_state.get("synthetic_reliability_lab_bundle"):
         st.download_button(
             "Download Synthetic Reliability Lab Bundle V111",
-            st.session_state.synthetic_reliability_lab_v111_bundle,
-            file_name=f"{st.session_state.project_name}_synthetic_reliability_lab_v111.zip",
+            st.session_state.synthetic_reliability_lab_bundle,
+            file_name=f"{st.session_state.project_name}_synthetic_reliability_lab.zip",
             mime="application/zip",
             use_container_width=True,
             key="v111_download_bundle",
@@ -14576,13 +14591,13 @@ def render_synthetic_reliability_lab_v111_tab():
     st.caption("V111 makes synthetic data trustworthy for regression, demos and gate testing. It still does not replace representative labelled customer data for production accuracy claims.")
 
 
-def render_dataset_benchmark_harness_v112_tab():
+def render_dataset_benchmark_harness_tab():
     st.header("📏 Dataset Benchmark Harness V112")
     st.caption("Validate synthetic and customer-sample datasets through one repeatable benchmark gate: schema, timestamps, labels, missingness, numeric health, leakage probes and V111 reliability.")
 
     try:
-        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
-        from dataset_benchmark_harness_v112 import BENCHMARK_PROFILES, build_v112_summary_table
+        from synthetic_data_optimizer import SCENARIO_LIBRARY
+        from dataset_benchmark_harness import BENCHMARK_PROFILES, build_v112_summary_table
     except Exception:
         SCENARIO_LIBRARY = {"rotating_machinery": {"title": "Rotating Machinery Pack"}}
         BENCHMARK_PROFILES = {"pilot_evidence_ready": {"label": "Pilot evidence ready"}}
@@ -14612,7 +14627,7 @@ def render_dataset_benchmark_harness_v112_tab():
     else:
         st.info("No customer sample uploaded. V112 will benchmark synthetic/golden datasets only.")
 
-    snapshot, datasets = core.build_dataset_benchmark_harness_v112_snapshot(
+    snapshot, datasets = core.build_dataset_benchmark_harness_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
         pack_key=pack_key,
         rows=int(rows),
@@ -14621,8 +14636,8 @@ def render_dataset_benchmark_harness_v112_tab():
         real_df=real_df,
         include_v111_stress=bool(include_v111_stress),
     )
-    st.session_state.dataset_benchmark_harness_v112_snapshot = snapshot
-    st.session_state.dataset_benchmark_harness_v112_dataset = datasets.get("golden_synthetic") if isinstance(datasets.get("golden_synthetic"), pd.DataFrame) else next(iter(datasets.values()))
+    st.session_state.dataset_benchmark_harness_snapshot = snapshot
+    st.session_state.dataset_benchmark_harness_dataset = datasets.get("golden_synthetic") if isinstance(datasets.get("golden_synthetic"), pd.DataFrame) else next(iter(datasets.values()))
 
     st.metric("Benchmark harness score", int(snapshot.get("benchmark_harness_score", 0)), snapshot.get("decision"))
     st.metric("Dataset validations", int(snapshot.get("dataset_count", 0)))
@@ -14639,7 +14654,7 @@ def render_dataset_benchmark_harness_v112_tab():
         else:
             st.dataframe(pd.DataFrame(snapshot.get("validations", [])), use_container_width=True)
     with tabs[2]:
-        df = st.session_state.dataset_benchmark_harness_v112_dataset
+        df = st.session_state.dataset_benchmark_harness_dataset
         if isinstance(df, pd.DataFrame):
             st.dataframe(df.head(150), use_container_width=True)
         st.caption("Preview is benchmark data. Customer samples are used only with permission and should not be reused across customers without explicit consent.")
@@ -14654,15 +14669,15 @@ def render_dataset_benchmark_harness_v112_tab():
         st.json(snapshot)
 
     if st.button("Create V112 Dataset Benchmark Harness bundle", use_container_width=True, key="v112_create_bundle"):
-        st.session_state.dataset_benchmark_harness_v112_bundle = core.create_dataset_benchmark_harness_v112_bundle(
+        st.session_state.dataset_benchmark_harness_bundle = core.create_dataset_benchmark_harness_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, datasets
         )
 
-    if st.session_state.get("dataset_benchmark_harness_v112_bundle"):
+    if st.session_state.get("dataset_benchmark_harness_bundle"):
         st.download_button(
             "Download Dataset Benchmark Harness Bundle V112",
-            st.session_state.dataset_benchmark_harness_v112_bundle,
-            file_name=f"{st.session_state.project_name}_dataset_benchmark_harness_v112.zip",
+            st.session_state.dataset_benchmark_harness_bundle,
+            file_name=f"{st.session_state.project_name}_dataset_benchmark_harness.zip",
             mime="application/zip",
             use_container_width=True,
             key="v112_download_bundle",
@@ -14675,7 +14690,7 @@ def render_public_benchmark_dataset_v113_tab():
     st.header("🎧 Public Benchmark Dataset Adapter V113")
     st.caption("Use public/open datasets such as ESC-50 as benchmark/demo/reference assets without confusing them with customer production validation.")
 
-    catalog = public_benchmark_v113.get_public_benchmark_catalog_v113()
+    catalog = public_benchmark.get_public_benchmark_catalog_v113()
     dataset_names = {spec["display_name"]: dataset_id for dataset_id, spec in catalog.items()}
 
     c1, c2 = st.columns(2)
@@ -14706,19 +14721,19 @@ def render_public_benchmark_dataset_v113_tab():
             st.error(f"Could not read metadata CSV: {exc}")
 
     if st.button("Build V113 Public Benchmark Dataset Card", use_container_width=True, key="v113_build_card"):
-        snapshot = public_benchmark_v113.build_public_benchmark_v113_snapshot(
+        snapshot = public_benchmark.build_public_benchmark_snapshot(
             dataset_id=dataset_id,
             metadata_df=metadata_df,
             intended_use=intended_use,
             project_id=st.session_state.project_id,
         )
-        st.session_state.public_benchmark_v113_snapshot = snapshot
-        st.session_state.public_benchmark_v113_bundle = public_benchmark_v113.create_public_benchmark_v113_bundle(
+        st.session_state.public_benchmark_snapshot = snapshot
+        st.session_state.public_benchmark_bundle = public_benchmark.create_public_benchmark_bundle(
             snapshot,
             project_name=st.session_state.project_name,
         )
 
-    snap = st.session_state.get("public_benchmark_v113_snapshot")
+    snap = st.session_state.get("public_benchmark_snapshot")
     if snap:
         scoring = snap.get("scoring", {})
         profile = snap.get("metadata_profile", {})
@@ -14749,10 +14764,10 @@ def render_public_benchmark_dataset_v113_tab():
         for item in snap.get("next_steps", []):
             st.write(f"- {item}")
 
-        if st.session_state.get("public_benchmark_v113_bundle"):
+        if st.session_state.get("public_benchmark_bundle"):
             st.download_button(
                 "Download Public Benchmark Dataset Bundle V113",
-                st.session_state.public_benchmark_v113_bundle,
+                st.session_state.public_benchmark_bundle,
                 file_name=f"{st.session_state.project_name}_public_benchmark_dataset_v113.zip",
                 mime="application/zip",
                 use_container_width=True,
@@ -14766,7 +14781,7 @@ def render_dataset_import_wizard_v114_tab():
     st.header("🗂️ Dataset Library Import Wizard V114")
     st.caption("Register ESC-50/public datasets, golden synthetic sets and customer-consented samples without mixing raw data into SQLite or paid bundles.")
 
-    dirs = dataset_import_v114.ensure_dataset_library_dirs()
+    dirs = dataset_import.ensure_dataset_library_dirs()
     with st.expander("Recommended dataset library folders", expanded=True):
         st.json(dirs)
         st.code("""storage/dataset_library/
@@ -14776,8 +14791,8 @@ def render_dataset_import_wizard_v114_tab():
   customer_consent/<customer_or_order_id>/
   manifests/""")
 
-    known = dataset_import_v114.get_known_dataset_profiles_v114()
-    policies = dataset_import_v114.get_dataset_source_policies_v114()
+    known = dataset_import.get_known_dataset_profiles_v114()
+    policies = dataset_import.get_dataset_source_policies_v114()
     dataset_options = {f"{v['display_name']} ({k})": k for k, v in known.items()}
 
     c1, c2 = st.columns(2)
@@ -14802,7 +14817,7 @@ def render_dataset_import_wizard_v114_tab():
         st.json(policies[source_type])
 
     if st.button("Register dataset in V114 library", use_container_width=True, key="v114_register_dataset"):
-        manifest = dataset_import_v114.build_dataset_import_manifest_v114(
+        manifest = dataset_import.build_dataset_import_manifest_v114(
             dataset_name=dataset_name,
             known_dataset_id=known_dataset_id,
             dataset_path=dataset_path,
@@ -14812,11 +14827,11 @@ def render_dataset_import_wizard_v114_tab():
             customer_consent_reference=customer_consent_reference,
             project_id=st.session_state.project_id,
         )
-        saved = dataset_import_v114.save_dataset_manifest_v114(manifest)
-        st.session_state.dataset_import_v114_manifest = saved
-        st.session_state.dataset_import_v114_bundle = dataset_import_v114.create_dataset_import_v114_bundle(saved, st.session_state.project_name)
+        saved = dataset_import.save_dataset_manifest_v114(manifest)
+        st.session_state.dataset_import_manifest = saved
+        st.session_state.dataset_import_bundle = dataset_import.create_dataset_import_bundle(saved, st.session_state.project_name)
 
-    manifest = st.session_state.get("dataset_import_v114_manifest")
+    manifest = st.session_state.get("dataset_import_manifest")
     if manifest:
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Import score", f"{manifest.get('score', 0)}%")
@@ -14844,11 +14859,11 @@ def render_dataset_import_wizard_v114_tab():
             for step in manifest.get("recommended_next_steps", []):
                 st.write(f"- {step}")
         with tabs[4]:
-            if st.session_state.get("dataset_import_v114_bundle"):
+            if st.session_state.get("dataset_import_bundle"):
                 st.download_button(
                     "Download Dataset Import Bundle V114",
-                    st.session_state.dataset_import_v114_bundle,
-                    file_name=f"{st.session_state.project_name}_dataset_import_v114.zip",
+                    st.session_state.dataset_import_bundle,
+                    file_name=f"{st.session_state.project_name}_dataset_import.zip",
                     mime="application/zip",
                     use_container_width=True,
                     key="v114_download_bundle",
@@ -14857,12 +14872,12 @@ def render_dataset_import_wizard_v114_tab():
     st.caption("V114 registers datasets and policies. It does not auto-download datasets, store raw data in SQLite or turn benchmarks into production accuracy proof.")
 
 
-def render_synthetic_calibration_loop_v115_tab():
+def render_dataset_to_synthetic_tab():
     st.header("🔁 Dataset-to-Synthetic Calibration Loop V115")
     st.caption("Turn imported/public/customer-approved dataset profiles into stronger synthetic candidates for demo, regression and pilot-readiness. No production accuracy claims.")
 
-    from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
-    from dataset_benchmark_harness_v112 import BENCHMARK_PROFILES
+    from synthetic_data_optimizer import SCENARIO_LIBRARY
+    from dataset_benchmark_harness import BENCHMARK_PROFILES
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -14870,7 +14885,7 @@ def render_synthetic_calibration_loop_v115_tab():
         rows = st.slider("Rows per candidate", 300, 12000, 2500, 100, key="v115_rows")
         seed = st.number_input("Seed", min_value=1, max_value=2000000000, value=115, step=1, key="v115_seed")
     with c2:
-        consent_mode = st.selectbox("Reference/consent mode", list(synthetic_calibration_v115.CONSENT_MODES.keys()), index=list(synthetic_calibration_v115.CONSENT_MODES.keys()).index("benchmark_only"), key="v115_consent_mode")
+        consent_mode = st.selectbox("Reference/consent mode", list(synthetic_calibration.CONSENT_MODES.keys()), index=list(synthetic_calibration.CONSENT_MODES.keys()).index("benchmark_only"), key="v115_consent_mode")
         benchmark_profile = st.selectbox("Benchmark profile", list(BENCHMARK_PROFILES.keys()), index=list(BENCHMARK_PROFILES.keys()).index("pilot_evidence_ready") if "pilot_evidence_ready" in BENCHMARK_PROFILES else 0, key="v115_benchmark_profile")
         max_candidates = st.slider("Calibration candidates", 2, 10, 6, 1, key="v115_max_candidates")
     with c3:
@@ -14890,10 +14905,10 @@ def render_synthetic_calibration_loop_v115_tab():
             st.error(f"Could not read reference CSV: {exc}")
 
     with st.expander("Selected consent policy", expanded=False):
-        st.json(synthetic_calibration_v115.CONSENT_MODES.get(consent_mode, {}))
+        st.json(synthetic_calibration.CONSENT_MODES.get(consent_mode, {}))
 
     if st.button("Run V115 calibration loop", use_container_width=True, key="v115_run_loop"):
-        snapshot, datasets = synthetic_calibration_v115.build_dataset_to_synthetic_calibration_v115_snapshot(
+        snapshot, datasets = synthetic_calibration.build_dataset_to_synthetic_calibration_snapshot(
             project_name=st.session_state.project_name,
             pack_key=pack_key,
             rows=int(rows),
@@ -14907,11 +14922,11 @@ def render_synthetic_calibration_loop_v115_tab():
             base_drift=float(base_drift),
             base_imbalance=float(base_imbalance),
         )
-        st.session_state.synthetic_calibration_v115_snapshot = snapshot
-        st.session_state.synthetic_calibration_v115_dataset = datasets.get("best_calibrated_synthetic_v115", pd.DataFrame())
-        st.session_state.synthetic_calibration_v115_bundle = synthetic_calibration_v115.create_synthetic_calibration_v115_bundle(snapshot, datasets, st.session_state.project_name)
+        st.session_state.synthetic_calibration_snapshot = snapshot
+        st.session_state.synthetic_calibration_dataset = datasets.get("best_calibrated_synthetic_v115", pd.DataFrame())
+        st.session_state.synthetic_calibration_bundle = synthetic_calibration.create_synthetic_calibration_bundle(snapshot, datasets, st.session_state.project_name)
 
-    snap = st.session_state.get("synthetic_calibration_v115_snapshot")
+    snap = st.session_state.get("synthetic_calibration_snapshot")
     if snap:
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Calibration score", f"{snap.get('calibration_score', 0)}%")
@@ -14939,21 +14954,21 @@ def render_synthetic_calibration_loop_v115_tab():
                 "recommendations": snap.get("recommendations"),
             })
         with tabs[1]:
-            st.dataframe(synthetic_calibration_v115.build_v115_candidate_table(snap), use_container_width=True)
+            st.dataframe(synthetic_calibration.build_v115_candidate_table(snap), use_container_width=True)
         with tabs[2]:
             st.json(snap.get("best_validation", {}))
             st.write("V111 reliability signal:", snap.get("v111_synthetic_reliability_score"), snap.get("v111_decision"))
         with tabs[3]:
-            df = st.session_state.get("synthetic_calibration_v115_dataset", pd.DataFrame())
+            df = st.session_state.get("synthetic_calibration_dataset", pd.DataFrame())
             if isinstance(df, pd.DataFrame) and not df.empty:
                 st.dataframe(df.head(80), use_container_width=True)
                 st.download_button("Download best calibrated synthetic CSV", df.to_csv(index=False), file_name="best_calibrated_synthetic_v115.csv", mime="text/csv", use_container_width=True, key="v115_download_csv")
         with tabs[4]:
-            if st.session_state.get("synthetic_calibration_v115_bundle"):
+            if st.session_state.get("synthetic_calibration_bundle"):
                 st.download_button(
                     "Download Synthetic Calibration Loop Bundle V115",
-                    st.session_state.synthetic_calibration_v115_bundle,
-                    file_name=f"{st.session_state.project_name}_synthetic_calibration_loop_v115.zip",
+                    st.session_state.synthetic_calibration_bundle,
+                    file_name=f"{st.session_state.project_name}_dataset_to_synthetic.zip",
                     mime="application/zip",
                     use_container_width=True,
                     key="v115_download_bundle",
@@ -14965,7 +14980,7 @@ def render_synthetic_calibration_loop_v115_tab():
 
 
 
-def render_product_release_candidate_v120_tab():
+def render_product_release_candidate_tab():
     st.header("🚀 Product Release Candidate V120")
     st.caption("One controlled customer-test release candidate: landing → custom → quote/payment handoff → delivery, with safe claims and data trust checks.")
 
@@ -14993,7 +15008,7 @@ def render_product_release_candidate_v120_tab():
         submitted = st.form_submit_button("Build Product RC V120", use_container_width=True)
 
     if submitted:
-        snapshot = release_candidate_v120.build_product_release_candidate_v120_snapshot(
+        snapshot = release_candidate.build_product_release_candidate_snapshot(
             project_name=project_name,
             company=company,
             industry=industry,
@@ -15008,10 +15023,10 @@ def render_product_release_candidate_v120_tab():
             payment_ready=bool(payment_ready),
             hosted_ready=bool(hosted_ready),
         )
-        st.session_state.product_release_candidate_v120_snapshot = snapshot
-        st.session_state.product_release_candidate_v120_bundle = release_candidate_v120.create_product_release_candidate_v120_bundle(snapshot)
+        st.session_state.product_release_candidate_snapshot = snapshot
+        st.session_state.product_release_candidate_bundle = release_candidate.create_product_release_candidate_bundle(snapshot)
 
-    snap = st.session_state.get("product_release_candidate_v120_snapshot")
+    snap = st.session_state.get("product_release_candidate_snapshot")
     if snap:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("RC score", snap.get("release_candidate_score"))
@@ -15026,23 +15041,23 @@ def render_product_release_candidate_v120_tab():
         st.caption(offer.get("not_included", ""))
 
         st.subheader("Release readiness areas")
-        st.dataframe(release_candidate_v120.build_v120_area_table(snap), use_container_width=True)
+        st.dataframe(release_candidate.build_v120_area_table(snap), use_container_width=True)
 
         st.subheader("Customer journey")
-        st.dataframe(release_candidate_v120.build_v120_customer_steps_table(snap), use_container_width=True)
+        st.dataframe(release_candidate.build_v120_customer_steps_table(snap), use_container_width=True)
 
         st.subheader("Blockers / review flags")
-        flags_df = release_candidate_v120.build_v120_flags_table(snap)
+        flags_df = release_candidate.build_v120_flags_table(snap)
         st.dataframe(flags_df, use_container_width=True)
 
         with st.expander("Launch checklist", expanded=False):
             for item in snap.get("launch_checklist", []):
                 st.write("- " + item)
 
-        if st.session_state.get("product_release_candidate_v120_bundle"):
+        if st.session_state.get("product_release_candidate_bundle"):
             st.download_button(
                 "Download V120 Release Candidate Bundle",
-                st.session_state.product_release_candidate_v120_bundle,
+                st.session_state.product_release_candidate_bundle,
                 file_name="edgetwin_v120_release_candidate_bundle.zip",
                 mime="application/zip",
                 use_container_width=True,
@@ -15050,7 +15065,7 @@ def render_product_release_candidate_v120_tab():
 
     st.caption("V120 is a founder-led pack product release candidate. It is not full SaaS and does not make production/accuracy/legal/compliance guarantees.")
 
-def render_customer_facing_landing_portal_v119_tab():
+def render_customer_facing_landing_portal_tab():
     st.header("🌍 Customer-Facing Landing Portal V119")
     st.caption("One clean public/private customer front door: packs, guided custom route, proof, quote/payment handoff and safe claims without exposing the technical cockpit.")
 
@@ -15074,7 +15089,7 @@ def render_customer_facing_landing_portal_v119_tab():
         submitted = st.form_submit_button("Build Customer Landing Portal V119", use_container_width=True)
 
     if submitted:
-        snapshot = landing_portal_v119.build_customer_facing_landing_portal_v119_snapshot(
+        snapshot = landing_portal.build_customer_facing_landing_portal_snapshot(
             project_name=st.session_state.project_name,
             company=company,
             industry=industry,
@@ -15090,10 +15105,10 @@ def render_customer_facing_landing_portal_v119_tab():
             public_mode=public_mode,
             payment_mode=payment_mode,
         )
-        st.session_state.customer_facing_landing_portal_v119_snapshot = snapshot
-        st.session_state.customer_facing_landing_portal_v119_bundle = landing_portal_v119.create_customer_facing_landing_portal_v119_bundle(snapshot)
+        st.session_state.customer_facing_landing_portal_snapshot = snapshot
+        st.session_state.customer_facing_landing_portal_bundle = landing_portal.create_customer_facing_landing_portal_bundle(snapshot)
 
-    snap = st.session_state.get("customer_facing_landing_portal_v119_snapshot")
+    snap = st.session_state.get("customer_facing_landing_portal_snapshot")
     if snap:
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Portal score", f"{snap.get('portal_score', 0)}%")
@@ -15116,12 +15131,12 @@ def render_customer_facing_landing_portal_v119_tab():
             st.info(hero.get("trust_line"))
             st.json({"primary_cta": hero.get("primary_cta"), "secondary_cta": hero.get("secondary_cta"), "recommended_offer": hero.get("recommended_offer")})
         with tabs[1]:
-            st.dataframe(landing_portal_v119.build_v119_pack_card_table(snap), use_container_width=True)
+            st.dataframe(landing_portal.build_v119_pack_card_table(snap), use_container_width=True)
         with tabs[2]:
             st.json(snap.get("custom_builder_handoff", {}))
         with tabs[3]:
-            st.dataframe(landing_portal_v119.build_v119_proof_table(snap), use_container_width=True)
-            st.dataframe(landing_portal_v119.build_v119_portal_section_table(snap), use_container_width=True)
+            st.dataframe(landing_portal.build_v119_proof_table(snap), use_container_width=True)
+            st.dataframe(landing_portal.build_v119_portal_section_table(snap), use_container_width=True)
         with tabs[4]:
             st.json(snap.get("quote_payment_handoff", {}))
         with tabs[5]:
@@ -15129,11 +15144,11 @@ def render_customer_facing_landing_portal_v119_tab():
             st.warning(snap.get("customer_safe_copy", {}).get("boundary"))
             st.json({"blockers": snap.get("blockers", []), "review_flags": snap.get("review_flags", []), "hidden_from_customer": snap.get("hidden_from_customer", [])})
         with tabs[6]:
-            if st.session_state.get("customer_facing_landing_portal_v119_bundle"):
+            if st.session_state.get("customer_facing_landing_portal_bundle"):
                 st.download_button(
                     "Download Customer Landing Portal Bundle V119",
-                    st.session_state.customer_facing_landing_portal_v119_bundle,
-                    file_name=f"{st.session_state.project_name}_customer_landing_portal_v119.zip",
+                    st.session_state.customer_facing_landing_portal_bundle,
+                    file_name=f"{st.session_state.project_name}_customer_landing_portal.zip",
                     mime="application/zip",
                     use_container_width=True,
                     key="v119_download_bundle",
@@ -15142,7 +15157,7 @@ def render_customer_facing_landing_portal_v119_tab():
     st.caption("V119 is a customer-facing portal/front-door layer. It is not full SaaS, does not process payments directly and does not make production/accuracy/legal/compliance guarantees.")
 
 
-def render_guided_custom_customer_builder_v118_tab():
+def render_guided_custom_customer_builder_tab():
     st.header("🧭 Guided Custom Customer Builder V118")
     st.caption("Customer-facing custom route: the customer chooses what they need, EdgeTwin recommends modules, calculates price/scope/risk and only escalates exceptions.")
 
@@ -15150,19 +15165,19 @@ def render_guided_custom_customer_builder_v118_tab():
         c1, c2 = st.columns(2)
         with c1:
             company = st.text_input("Customer / company", "Demo Industrial Customer", key="v118_company")
-            industry = st.selectbox("Industry", custom_customer_v118.INDUSTRIES, index=0, key="v118_industry")
-            desired_outcome = st.selectbox("Desired outcome", custom_customer_v118.OUTCOMES, index=0, key="v118_outcome")
+            industry = st.selectbox("Industry", custom_customer.INDUSTRIES, index=0, key="v118_industry")
+            desired_outcome = st.selectbox("Desired outcome", custom_customer.OUTCOMES, index=0, key="v118_outcome")
             customer_problem = st.text_area("Customer problem in normal language", "We have machine vibration and maintenance data and want to know whether it is ready for a predictive maintenance pilot.", height=110, key="v118_problem")
         with c2:
-            data_readiness = st.selectbox("Data readiness", custom_customer_v118.DATA_READINESS, index=2, key="v118_data_readiness")
-            budget_mode = st.selectbox("Budget comfort", custom_customer_v118.BUDGET_MODES, index=2, key="v118_budget_mode")
-            urgency = st.selectbox("Delivery urgency", custom_customer_v118.URGENCIES, index=1, key="v118_urgency")
+            data_readiness = st.selectbox("Data readiness", custom_customer.DATA_READINESS, index=2, key="v118_data_readiness")
+            budget_mode = st.selectbox("Budget comfort", custom_customer.BUDGET_MODES, index=2, key="v118_budget_mode")
+            urgency = st.selectbox("Delivery urgency", custom_customer.URGENCIES, index=1, key="v118_urgency")
             allow_auto_approval = st.checkbox("Allow auto-approval inside safe policy", value=True, key="v118_auto")
 
         st.markdown("**Customer-selected modules**")
         selected = []
         cols = st.columns(2)
-        for idx, mod in enumerate(custom_customer_v118.MODULES):
+        for idx, mod in enumerate(custom_customer.MODULES):
             default = bool(mod.get("default_selected"))
             label = f"{mod.get('label')} — €{mod.get('price_eur')}"
             with cols[idx % 2]:
@@ -15180,7 +15195,7 @@ def render_guided_custom_customer_builder_v118_tab():
         submitted = st.form_submit_button("Build Guided Custom Pack V118", use_container_width=True)
 
     if submitted:
-        snapshot = custom_customer_v118.build_guided_custom_customer_builder_v118_snapshot(
+        snapshot = custom_customer.build_guided_custom_customer_builder_snapshot(
             project_name=st.session_state.project_name,
             company=company,
             industry=industry,
@@ -15195,10 +15210,10 @@ def render_guided_custom_customer_builder_v118_tab():
             wants_reusable_template=wants_reusable_template,
             allow_auto_approval=allow_auto_approval,
         )
-        st.session_state.guided_custom_customer_builder_v118_snapshot = snapshot
-        st.session_state.guided_custom_customer_builder_v118_bundle = custom_customer_v118.create_guided_custom_customer_builder_v118_bundle(snapshot)
+        st.session_state.guided_custom_customer_builder_snapshot = snapshot
+        st.session_state.guided_custom_customer_builder_bundle = custom_customer.create_guided_custom_customer_builder_bundle(snapshot)
 
-    snap = st.session_state.get("guided_custom_customer_builder_v118_snapshot")
+    snap = st.session_state.get("guided_custom_customer_builder_snapshot")
     if snap:
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Custom readiness", f"{snap.get('custom_customer_score', 0)}%")
@@ -15219,22 +15234,22 @@ def render_guided_custom_customer_builder_v118_tab():
             st.info(snap.get("customer_page", {}).get("safe_boundary"))
             st.json({"primary_cta": snap.get("customer_page", {}).get("primary_cta"), "secondary_cta": snap.get("customer_page", {}).get("secondary_cta")})
         with tabs[1]:
-            st.dataframe(custom_customer_v118.build_v118_module_table(snap), use_container_width=True)
+            st.dataframe(custom_customer.build_v118_module_table(snap), use_container_width=True)
         with tabs[2]:
-            st.dataframe(custom_customer_v118.build_v118_pricing_table(snap), use_container_width=True)
+            st.dataframe(custom_customer.build_v118_pricing_table(snap), use_container_width=True)
             st.json(snap.get("scope_lock", {}))
         with tabs[3]:
-            st.dataframe(custom_customer_v118.build_v118_question_table(snap), use_container_width=True)
+            st.dataframe(custom_customer.build_v118_question_table(snap), use_container_width=True)
         with tabs[4]:
             st.json({"review_flags": snap.get("review_flags"), "blockers": snap.get("blockers"), "auto_approval_boundary": snap.get("auto_approval_boundary")})
         with tabs[5]:
             st.json(snap.get("reusable_template", {}))
             st.write(snap.get("customer_copy", {}).get("safe_summary"))
         with tabs[6]:
-            if st.session_state.get("guided_custom_customer_builder_v118_bundle"):
+            if st.session_state.get("guided_custom_customer_builder_bundle"):
                 st.download_button(
                     "Download Guided Custom Builder Bundle V118",
-                    st.session_state.guided_custom_customer_builder_v118_bundle,
+                    st.session_state.guided_custom_customer_builder_bundle,
                     file_name=f"{st.session_state.project_name}_guided_custom_builder_v118.zip",
                     mime="application/zip",
                     use_container_width=True,
@@ -15243,7 +15258,7 @@ def render_guided_custom_customer_builder_v118_tab():
 
     st.caption("V118 lets customers self-configure custom packs inside safety policy. It does not promise production accuracy, compliance certification or unreviewed high-risk custom work.")
 
-def render_one_perfect_customer_flow_v117_tab():
+def render_one_perfect_customer_flow_tab():
     st.header("🛣️ One Perfect Customer Flow V117")
     st.caption("One calm customer route: problem → pack → data readiness → proof → quote/payment → delivery. No production/accuracy/legal/compliance guarantees.")
 
@@ -15252,7 +15267,7 @@ def render_one_perfect_customer_flow_v117_tab():
         with c1:
             customer_segment = st.text_input("Customer segment", "industrial maintenance / machine operations teams", key="v117_segment")
             customer_problem = st.text_area("Customer problem", "We have machine or sensor data but do not know if it is ready for a predictive maintenance pilot.", height=100, key="v117_problem")
-            selected_pack_key = st.selectbox("Recommended pack", ["auto"] + list(customer_flow_v117.v116.PACK_LIBRARY.keys()), index=0, key="v117_pack")
+            selected_pack_key = st.selectbox("Recommended pack", ["auto"] + list(customer_flow.v116.PACK_LIBRARY.keys()), index=0, key="v117_pack")
             budget_eur = st.number_input("Budget / price anchor EUR", 0, 25000, 2500, 250, key="v117_budget")
         with c2:
             data_readiness_score = st.slider("Data readiness", 0, 100, 82, key="v117_data")
@@ -15264,14 +15279,14 @@ def render_one_perfect_customer_flow_v117_tab():
             wants_custom = st.checkbox("Customer wants custom", value=False, key="v117_custom")
             needs_real_data = st.checkbox("Needs real-data evidence", value=False, key="v117_real")
         with g2:
-            payment_status = st.selectbox("Payment status", customer_flow_v117.PAYMENT_STATUSES, index=2, key="v117_payment")
-            upload_status = st.selectbox("Upload/intake status", customer_flow_v117.UPLOAD_STATUSES, index=2, key="v117_upload")
+            payment_status = st.selectbox("Payment status", customer_flow.PAYMENT_STATUSES, index=2, key="v117_payment")
+            upload_status = st.selectbox("Upload/intake status", customer_flow.UPLOAD_STATUSES, index=2, key="v117_upload")
         with g3:
-            delivery_status = st.selectbox("Delivery status", customer_flow_v117.DELIVERY_STATUSES, index=0, key="v117_delivery")
+            delivery_status = st.selectbox("Delivery status", customer_flow.DELIVERY_STATUSES, index=0, key="v117_delivery")
         submitted = st.form_submit_button("Build One Perfect Customer Flow V117", use_container_width=True)
 
     if submitted:
-        snapshot = customer_flow_v117.build_one_perfect_customer_flow_v117_snapshot(
+        snapshot = customer_flow.build_one_perfect_customer_flow_snapshot(
             project_name=st.session_state.project_name,
             customer_segment=customer_segment,
             customer_problem=customer_problem,
@@ -15287,10 +15302,10 @@ def render_one_perfect_customer_flow_v117_tab():
             upload_status=upload_status,
             delivery_status=delivery_status,
         )
-        st.session_state.one_perfect_customer_flow_v117_snapshot = snapshot
-        st.session_state.one_perfect_customer_flow_v117_bundle = customer_flow_v117.create_one_perfect_customer_flow_v117_bundle(snapshot)
+        st.session_state.one_perfect_customer_flow_snapshot = snapshot
+        st.session_state.one_perfect_customer_flow_bundle = customer_flow.create_one_perfect_customer_flow_bundle(snapshot)
 
-    snap = st.session_state.get("one_perfect_customer_flow_v117_snapshot")
+    snap = st.session_state.get("one_perfect_customer_flow_snapshot")
     if snap:
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Flow score", f"{snap.get('customer_flow_score', 0)}%")
@@ -15313,7 +15328,7 @@ def render_one_perfect_customer_flow_v117_tab():
             st.info(page.get("safe_boundary"))
             st.json({"primary_cta": page.get("primary_cta"), "secondary_cta": page.get("secondary_cta"), "price_range_eur": page.get("price_range_eur")})
         with tabs[1]:
-            st.dataframe(customer_flow_v117.build_v117_flow_table(snap), use_container_width=True)
+            st.dataframe(customer_flow.build_v117_flow_table(snap), use_container_width=True)
         with tabs[2]:
             for card in snap.get("proof_cards", []):
                 st.markdown(f"**{card.get('title')}**")
@@ -15327,11 +15342,11 @@ def render_one_perfect_customer_flow_v117_tab():
             st.write(snap.get("safe_customer_claim"))
             st.json({"recommended_next_actions": snap.get("recommended_next_actions"), "hidden_internal_complexity": snap.get("hidden_internal_complexity")})
         with tabs[6]:
-            if st.session_state.get("one_perfect_customer_flow_v117_bundle"):
+            if st.session_state.get("one_perfect_customer_flow_bundle"):
                 st.download_button(
                     "Download One Perfect Customer Flow Bundle V117",
-                    st.session_state.one_perfect_customer_flow_v117_bundle,
-                    file_name=f"{st.session_state.project_name}_one_perfect_customer_flow_v117.zip",
+                    st.session_state.one_perfect_customer_flow_bundle,
+                    file_name=f"{st.session_state.project_name}_one_perfect_customer_flow.zip",
                     mime="application/zip",
                     use_container_width=True,
                     key="v117_download_bundle",
@@ -15340,7 +15355,7 @@ def render_one_perfect_customer_flow_v117_tab():
     st.caption("V117 is the simplified customer route. It prepares conversion, quote/payment handoff and delivery status, but does not process payments or guarantee production accuracy.")
 
 
-def render_self_selling_conversion_v116_tab():
+def render_self_selling_tab():
     st.header("🧲 Self-Selling Conversion Engine V116")
     st.caption("Make EdgeTwin explain its value, justify the price, handle objections and guide customers toward payment without unsafe guarantees.")
 
@@ -15349,7 +15364,7 @@ def render_self_selling_conversion_v116_tab():
         with c1:
             customer_segment = st.text_input("Customer segment", "industrial maintenance / machine operations teams")
             customer_problem = st.text_area("Customer problem", "We have machine or sensor data but do not know if it is ready for a predictive maintenance pilot.", height=100)
-            selected_pack_key = st.selectbox("Pack", ["auto"] + list(self_selling_v116.PACK_LIBRARY.keys()), index=0)
+            selected_pack_key = st.selectbox("Pack", ["auto"] + list(self_selling_module.PACK_LIBRARY.keys()), index=0)
             budget_eur = st.number_input("Budget / price anchor EUR", 0, 25000, 2500, 250)
         with c2:
             data_readiness_score = st.slider("Data readiness signal", 0, 100, 76)
@@ -15370,7 +15385,7 @@ def render_self_selling_conversion_v116_tab():
         submitted = st.form_submit_button("Build Self-Selling Conversion Pack V116", use_container_width=True)
 
     if submitted:
-        snapshot = self_selling_v116.build_self_selling_conversion_v116_snapshot(
+        snapshot = self_selling_module.build_self_selling_snapshot(
             project_name=st.session_state.project_name,
             customer_segment=customer_segment,
             customer_problem=customer_problem,
@@ -15388,10 +15403,10 @@ def render_self_selling_conversion_v116_tab():
             payment_ready=bool(payment_ready),
             download_ready=bool(download_ready),
         )
-        st.session_state.self_selling_conversion_v116_snapshot = snapshot
-        st.session_state.self_selling_conversion_v116_bundle = self_selling_v116.create_self_selling_conversion_v116_bundle(snapshot)
+        st.session_state.self_selling_snapshot = snapshot
+        st.session_state.self_selling_bundle = self_selling_module.create_self_selling_bundle(snapshot)
 
-    snap = st.session_state.get("self_selling_conversion_v116_snapshot")
+    snap = st.session_state.get("self_selling_snapshot")
     if snap:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Conversion score", f"{snap.get('conversion_score', 0)}%")
@@ -15409,7 +15424,7 @@ def render_self_selling_conversion_v116_tab():
         tabs = st.tabs(["Landing page", "Proof", "Price", "Objections", "Journey", "Claims", "Download"])
         with tabs[0]:
             st.write(snap.get("customer_copy", {}).get("one_line_pitch"))
-            st.dataframe(self_selling_v116.build_v116_homepage_table(snap), use_container_width=True)
+            st.dataframe(self_selling_module.build_v116_homepage_table(snap), use_container_width=True)
         with tabs[1]:
             for card in snap.get("proof_cards", []):
                 st.markdown(f"**{card.get('title')}**")
@@ -15418,7 +15433,7 @@ def render_self_selling_conversion_v116_tab():
         with tabs[2]:
             st.json(snap.get("pricing_justification", {}))
         with tabs[3]:
-            st.dataframe(self_selling_v116.build_v116_objection_table(snap), use_container_width=True)
+            st.dataframe(self_selling_module.build_v116_objection_table(snap), use_container_width=True)
         with tabs[4]:
             st.json(snap.get("buyer_journey", []))
         with tabs[5]:
@@ -15428,11 +15443,11 @@ def render_self_selling_conversion_v116_tab():
                 st.json(snap.get("claim_findings"))
             st.json({"blockers": snap.get("blockers", []), "review_flags": snap.get("review_flags", []), "allowed_and_blocked": snap.get("sales_boundary", {})})
         with tabs[6]:
-            if st.session_state.get("self_selling_conversion_v116_bundle"):
+            if st.session_state.get("self_selling_bundle"):
                 st.download_button(
                     "Download Self-Selling Conversion Bundle V116",
-                    st.session_state.self_selling_conversion_v116_bundle,
-                    file_name=f"{st.session_state.project_name}_self_selling_conversion_v116.zip",
+                    st.session_state.self_selling_bundle,
+                    file_name=f"{st.session_state.project_name}_self_selling.zip",
                     mime="application/zip",
                     use_container_width=True,
                     key="v116_download_bundle",
@@ -15441,23 +15456,213 @@ def render_self_selling_conversion_v116_tab():
     st.caption("V116 helps EdgeTwin sell pilot/evidence packs. It does not execute payments, sign contracts, certify compliance or guarantee production accuracy.")
 
 
+def render_buyer_data_room_pro_tab():
+    st.header("🏢 Buyer Data Room Pro V124")
+    st.caption("Assemble a manager-friendly buyer room with quote, evidence, data-quality status, safe claims and delivery manifest.")
+    with st.form("v124_buyer_room_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            company = st.text_input("Company", "Example Industrial Customer", key="v124_company")
+            contact_email = st.text_input("Contact email", "customer@example.com", key="v124_email")
+            industry = st.text_input("Industry", "industrial maintenance", key="v124_industry")
+            problem = st.text_area("Customer problem", "We have machine sensor data and want to know if it is ready for predictive maintenance.", height=100, key="v124_problem")
+        with c2:
+            budget_eur = st.number_input("Budget / price anchor EUR", 0, 50000, 2500, 250, key="v124_budget")
+            has_sample_data = st.checkbox("Sample data available", value=True, key="v124_sample")
+            wants_custom = st.checkbox("Customer wants guided custom", value=False, key="v124_custom")
+            payment_status = st.selectbox("Payment status", ["quote_ready", "deposit_paid", "paid", "manual_paid_confirmed", "unpaid", "failed", "refunded", "disputed"], index=0, key="v124_payment")
+            delivery_status = st.selectbox("Delivery status", ["intake_ready", "generating", "ready", "delivered", "locked", "waiting_for_data"], index=0, key="v124_delivery")
+        submitted = st.form_submit_button("Build Buyer Data Room V124", use_container_width=True)
+    if submitted:
+        snapshot = buyer_dataroom.build_buyer_data_room_pro_snapshot(
+            company=company,
+            contact_email=contact_email,
+            project_name=st.session_state.project_name,
+            industry=industry,
+            problem=problem,
+            budget_eur=int(budget_eur),
+            has_sample_data=bool(has_sample_data),
+            wants_custom=bool(wants_custom),
+            payment_status=payment_status,
+            delivery_status=delivery_status,
+        )
+        st.session_state.buyer_data_room_pro_snapshot = snapshot
+        st.session_state.buyer_data_room_pro_bundle = buyer_dataroom.create_buyer_data_room_pro_bundle(snapshot)
+    snap = st.session_state.get("buyer_data_room_pro_snapshot")
+    if snap:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Evidence score", f"{snap.get('evidence_score', 0)}%")
+        m2.metric("Pack", snap.get("quote", {}).get("recommended_pack", "n/a"))
+        m3.metric("Payment", snap.get("quote", {}).get("payment_status", "n/a"))
+        m4.metric("Blockers", len(snap.get("blockers", [])))
+        if snap.get("blockers"):
+            st.error(snap.get("decision"))
+        else:
+            st.success(snap.get("decision"))
+        tabs = st.tabs(["Room", "Quote", "Safe claims", "Manifest", "Download"])
+        with tabs[0]:
+            st.dataframe(buyer_dataroom.build_v124_room_items_table(snap), use_container_width=True)
+            st.json({"review_flags": snap.get("review_flags", []), "blockers": snap.get("blockers", [])})
+        with tabs[1]:
+            st.json(snap.get("quote", {}))
+        with tabs[2]:
+            for claim in snap.get("safe_claims", []):
+                st.write("- " + claim)
+            st.caption(snap.get("safe_boundary"))
+        with tabs[3]:
+            st.json(snap.get("download_manifest", {}))
+        with tabs[4]:
+            if st.session_state.get("buyer_data_room_pro_bundle"):
+                st.download_button("Download Buyer Data Room Bundle V124", st.session_state.buyer_data_room_pro_bundle, file_name=f"{st.session_state.project_name}_buyer_data_room_v124.zip", mime="application/zip", use_container_width=True, key="v124_download")
+
+
+def render_first_customer_intake_pack_tab():
+    st.header("🧾 First Customer Intake Pack V123")
+    st.caption("Collect just enough customer input to recommend a pack, request the right upload/sample and avoid over-scoping.")
+    with st.form("v123_intake_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            company = st.text_input("Company", "Example Industrial Customer", key="v123_company")
+            contact_email = st.text_input("Contact email", "customer@example.com", key="v123_email")
+            industry = st.text_input("Industry", "industrial maintenance", key="v123_industry")
+            problem = st.text_area("Problem", "We have machine sensor data and want to know if it is ready for predictive maintenance.", height=100, key="v123_problem")
+        with c2:
+            desired_outcome = st.text_input("Desired outcome", "pilot/evidence pack", key="v123_outcome")
+            budget_eur = st.number_input("Budget / price anchor EUR", 0, 50000, 2500, 250, key="v123_budget")
+            urgency = st.selectbox("Urgency", ["low", "normal", "high", "urgent"], index=1, key="v123_urgency")
+            has_sample_data = st.checkbox("Has sample data", value=True, key="v123_sample")
+            wants_custom = st.checkbox("Wants guided custom", value=False, key="v123_custom")
+            consent_mode = st.selectbox("Consent mode", ["customer_profile_only", "customer_no_learning", "customer_synthetic_calibration", "customer_reusable_template_consent"], index=0, key="v123_consent")
+        submitted = st.form_submit_button("Build First Customer Intake V123", use_container_width=True)
+    if submitted:
+        snapshot = first_intake.build_first_customer_intake_pack_snapshot(
+            company=company,
+            contact_email=contact_email,
+            industry=industry,
+            problem=problem,
+            desired_outcome=desired_outcome,
+            budget_eur=int(budget_eur),
+            urgency=urgency,
+            has_sample_data=bool(has_sample_data),
+            wants_custom=bool(wants_custom),
+            consent_mode=consent_mode,
+        )
+        st.session_state.first_customer_intake_pack_snapshot = snapshot
+        st.session_state.first_customer_intake_pack_bundle = first_intake.create_first_customer_intake_pack_bundle(snapshot)
+    snap = st.session_state.get("first_customer_intake_pack_snapshot")
+    if snap:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Recommended pack", snap.get("recommended_pack", {}).get("pack", "n/a"))
+        c2.metric("Data score", f"{snap.get('data_quality_snapshot', {}).get('quality', {}).get('quality_score', 0)}%")
+        c3.metric("Missing questions", len(snap.get("missing_questions", [])))
+        st.success(snap.get("decision")) if not snap.get("blockers") else st.error(snap.get("decision"))
+        tabs = st.tabs(["Recommendation", "Questions", "Uploads", "Data gate", "Download"])
+        with tabs[0]: st.json(snap.get("recommended_pack", {}))
+        with tabs[1]: st.write(snap.get("missing_questions", []))
+        with tabs[2]: st.write(snap.get("required_uploads", []))
+        with tabs[3]: st.json(snap.get("data_quality_snapshot", {}))
+        with tabs[4]:
+            if st.session_state.get("first_customer_intake_pack_bundle"):
+                st.download_button("Download First Customer Intake Bundle V123", st.session_state.first_customer_intake_pack_bundle, file_name=f"{st.session_state.project_name}_first_customer_intake_v123.zip", mime="application/zip", use_container_width=True, key="v123_download")
+
+
+def render_data_quality_gate_pro_tab():
+    st.header("🚦 Data Quality Gate Pro V122")
+    st.caption("Automatically decide whether data is good enough for demo, Starter, Professional Pilot, Real-Data Evidence, or blocked bad input.")
+    with st.form("v122_quality_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            use_case = st.selectbox("Use case", ["predictive_maintenance", "audio_event", "energy_operations", "generic_tabular"], index=0, key="v122_use_case")
+            source_type = st.selectbox("Source type", ["golden_synthetic", "public_benchmark", "customer_sample", "customer_real_data"], index=0, key="v122_source")
+            consent_mode = st.selectbox("Consent mode", ["benchmark_or_profile_only", "customer_profile_only", "customer_no_learning", "customer_synthetic_calibration", "customer_reusable_template_consent"], index=0, key="v122_consent")
+        with c2:
+            target_pack = st.selectbox("Target pack", ["Starter Diagnostic Pack", "Professional Pilot Pack", "Real-Data Evidence Pack", "Guided Custom Pack"], index=1, key="v122_pack")
+            customer_claim_request = st.text_area("Customer claim request to check", "pilot/evidence readiness only", height=80, key="v122_claim")
+        submitted = st.form_submit_button("Run Data Quality Gate V122", use_container_width=True)
+    if submitted:
+        snapshot = data_quality.build_data_quality_gate_pro_snapshot(
+            use_case=use_case,
+            source_type=source_type,
+            consent_mode=consent_mode,
+            target_pack=target_pack,
+            customer_claim_request=customer_claim_request,
+        )
+        st.session_state.data_quality_gate_pro_snapshot = snapshot
+        st.session_state.data_quality_gate_pro_bundle = data_quality.create_data_quality_gate_pro_bundle(snapshot)
+    snap = st.session_state.get("data_quality_gate_pro_snapshot")
+    if snap:
+        q = snap.get("quality", {})
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Quality score", f"{q.get('quality_score', 0)}%")
+        c2.metric("Readiness", q.get("readiness_level", "n/a"))
+        c3.metric("Rows", q.get("rows", 0))
+        c4.metric("Blockers", len(snap.get("blockers", [])))
+        st.success(snap.get("decision")) if not snap.get("blockers") else st.error(snap.get("decision"))
+        st.json(q)
+        st.info(snap.get("safe_boundary"))
+        if st.session_state.get("data_quality_gate_pro_bundle"):
+            st.download_button("Download Data Quality Gate Bundle V122", st.session_state.data_quality_gate_pro_bundle, file_name=f"{st.session_state.project_name}_data_quality_gate_v122.zip", mime="application/zip", use_container_width=True, key="v122_download")
+
+
+def render_golden_dataset_library_tab():
+    st.header("🏆 Golden Dataset Library + Version Lock V121")
+    st.caption("Lock approved golden datasets with version, hash, profile and expected benchmark contract for regression safety.")
+    with st.form("v121_golden_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            dataset_name = st.text_input("Dataset name", "EdgeTwin golden rotating machinery v1", key="v121_name")
+            scenario = st.selectbox("Scenario", list(golden_dataset.SCENARIOS.keys()), index=0, key="v121_scenario")
+            dataset_version = st.text_input("Dataset version", "1.0.0", key="v121_version")
+        with c2:
+            source_type = st.selectbox("Source type", ["golden_synthetic", "public_benchmark", "customer_profile_calibrated"], index=0, key="v121_source")
+            license_or_consent = st.text_input("License/consent", "internal synthetic benchmark - reusable", key="v121_license")
+            expected_benchmark_score = st.slider("Expected benchmark minimum", 0, 100, 90, key="v121_expected")
+        submitted = st.form_submit_button("Lock Golden Dataset V121", use_container_width=True)
+    if submitted:
+        snapshot = golden_dataset.build_golden_dataset_library_snapshot(
+            dataset_name=dataset_name,
+            scenario=scenario,
+            dataset_version=dataset_version,
+            source_type=source_type,
+            license_or_consent=license_or_consent,
+            expected_benchmark_score=int(expected_benchmark_score),
+        )
+        st.session_state.golden_dataset_library_snapshot = snapshot
+        st.session_state.golden_dataset_library_bundle = golden_dataset.create_golden_dataset_library_bundle(snapshot)
+    snap = st.session_state.get("golden_dataset_library_snapshot")
+    if snap:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Library score", f"{snap.get('library_score', 0)}%")
+        c2.metric("Scenario", snap.get("scenario", "n/a"))
+        c3.metric("Version", snap.get("dataset_version", "n/a"))
+        st.success(snap.get("decision")) if not snap.get("missing_required_columns") else st.warning(snap.get("decision"))
+        st.json({"profile": snap.get("profile"), "version_lock_contract": snap.get("version_lock_contract"), "review_flags": snap.get("review_flags")})
+        st.info(snap.get("safe_boundary"))
+        if st.session_state.get("golden_dataset_library_bundle"):
+            st.download_button("Download Golden Dataset Bundle V121", st.session_state.golden_dataset_library_bundle, file_name=f"{st.session_state.project_name}_golden_dataset.zip", mime="application/zip", use_container_width=True, key="v121_download")
+
+
 _PAGE_RENDERERS = {
-    'product_release_candidate_v120_tab': render_product_release_candidate_v120_tab,
-    'customer_facing_landing_portal_v119_tab': render_customer_facing_landing_portal_v119_tab,
-    'guided_custom_customer_builder_v118_tab': render_guided_custom_customer_builder_v118_tab,
-    'one_perfect_customer_flow_v117_tab': render_one_perfect_customer_flow_v117_tab,
-    'self_selling_conversion_v116_tab': render_self_selling_conversion_v116_tab,
-    'synthetic_calibration_loop_v115_tab': render_synthetic_calibration_loop_v115_tab,
+    'buyer_data_room_pro_tab': render_buyer_data_room_pro_tab,
+    'first_customer_intake_pack_tab': render_first_customer_intake_pack_tab,
+    'data_quality_gate_pro_tab': render_data_quality_gate_pro_tab,
+    'golden_dataset_library_tab': render_golden_dataset_library_tab,
+    'product_release_candidate_tab': render_product_release_candidate_tab,
+    'customer_facing_landing_portal_tab': render_customer_facing_landing_portal_tab,
+    'guided_custom_customer_builder_tab': render_guided_custom_customer_builder_tab,
+    'one_perfect_customer_flow_tab': render_one_perfect_customer_flow_tab,
+    'self_selling_tab': render_self_selling_tab,
+    'dataset_to_synthetic_tab': render_dataset_to_synthetic_tab,
     'dataset_import_wizard_v114_tab': render_dataset_import_wizard_v114_tab,
     'public_benchmark_dataset_v113_tab': render_public_benchmark_dataset_v113_tab,
-    'dataset_benchmark_harness_v112_tab': render_dataset_benchmark_harness_v112_tab,
-    'synthetic_reliability_lab_v111_tab': render_synthetic_reliability_lab_v111_tab,
-    'synthetic_real_bridge_v110_tab': render_synthetic_real_bridge_v110_tab,
-    'synthetic_data_optimizer_v109_tab': render_synthetic_data_optimizer_v109_tab,
+    'dataset_benchmark_harness_tab': render_dataset_benchmark_harness_tab,
+    'synthetic_reliability_lab_tab': render_synthetic_reliability_lab_tab,
+    'synthetic_real_bridge_tab': render_synthetic_real_bridge_tab,
+    'synthetic_data_optimizer_tab': render_synthetic_data_optimizer_tab,
     'claim_safety_prompt_policy_v108_tab': render_claim_safety_prompt_policy_v108_tab,
-    'ai_copilot_adapter_v107_tab': render_ai_copilot_adapter_v107_tab,
+    'ai_copilot_adapter_tab': render_ai_copilot_adapter_tab,
     'order_fulfillment_v106_tab': render_order_fulfillment_v106_tab,
-    'private_delivery_endpoint_v105_tab': render_private_delivery_endpoint_v105_tab,
+    'delivery_endpoint_tab': render_delivery_endpoint_tab,
     'secure_download_links_v104_tab': render_secure_download_links_v104_tab,
     'customer_portal_lite_v103_tab': render_customer_portal_lite_v103_tab,
     'payment_provider_adapter_v102_tab': render_payment_provider_adapter_v102_tab,
