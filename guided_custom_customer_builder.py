@@ -2,7 +2,7 @@
 
 Purpose:
 - Put the Custom Pack Builder inside the customer-facing flow.
-- Let customers configure what they need without turning custom work into founder chaos.
+- Let customers configure what they need without turning custom work into manual custom chaos.
 - Reuse the V97 custom-pack calculation, then add customer-facing questions, scope lock,
   price explanation, self-service/approval decisions and reusable-template guidance.
 
@@ -28,10 +28,10 @@ MODULE = "Guided Custom Customer Builder"
 
 SAFE_BOUNDARY = (
     "EdgeTwin custom packs are pilot/evidence and decision-support deliverables. They do not guarantee "
-    "production accuracy, legal/compliance certification, safety certification, or replacement of human review."
+    "production accuracy, legal/compliance certification, safety certification, or removal of responsible human oversight for high-risk decisions."
 )
 
-# Mirror the V97 commercial module language so the customer-facing route stays consistent.
+# Customer-facing commercial module language. Review/call add-ons are excluded for now.
 MODULES = [
     {"module_id": "intake_scope", "label": "Use-case intake + scope lock", "category": "foundation", "price_eur": 350, "complexity": 1, "default_selected": True, "auto_approvable": True, "deliverable": "Structured intake summary, scope boundary and next-step map."},
     {"module_id": "data_quality_gate", "label": "Data quality gate", "category": "assurance", "price_eur": 650, "complexity": 2, "default_selected": True, "auto_approvable": True, "deliverable": "Data readiness score, missing inputs and limits before strong claims."},
@@ -43,7 +43,6 @@ MODULES = [
     {"module_id": "branding_language", "label": "Branding/language pack", "category": "delivery", "price_eur": 450, "complexity": 1, "default_selected": False, "auto_approvable": True, "deliverable": "Customer name/branding and selected language/tone for report outputs."},
     {"module_id": "hardware_bom_reference", "label": "Hardware/BOM reference module", "category": "hardware", "price_eur": 1250, "complexity": 4, "default_selected": False, "auto_approvable": False, "deliverable": "Sensor/gateway/BOM reference guidance with deployment cautions."},
     {"module_id": "extra_use_case_variant", "label": "Extra use-case variant", "category": "custom", "price_eur": 1400, "complexity": 4, "default_selected": False, "auto_approvable": False, "deliverable": "Adds one additional use-case route with its own risks and acceptance criteria."},
-    {"module_id": "founder_review_call", "label": "Founder review call", "category": "service", "price_eur": 500, "complexity": 1, "default_selected": False, "auto_approvable": False, "deliverable": "Founder/operator review call with action list and upgrade recommendation."},
     {"module_id": "reusable_custom_template", "label": "Reusable custom pack template", "category": "productization", "price_eur": 2500, "complexity": 5, "default_selected": False, "auto_approvable": False, "deliverable": "Turns the custom configuration into a reusable future pack recipe."},
 ]
 
@@ -203,7 +202,7 @@ def build_guided_custom_customer_builder_snapshot(
     selected_modules = list(v97.get("selected_modules") or [])
     risky = _risk_terms(customer_problem)
     blockers: List[str] = []
-    review_flags: List[str] = list(v97.get("founder_review_items") or [])
+    review_flags: List[str] = list(v97.get("exception_review_items") or v97.get("founder_review_items") or [])
     if risky:
         blockers.append("Customer wording contains risky guarantee/compliance/production language that must be rewritten before quote/send.")
     if v97.get("data_readiness_score", 0) < 55:
@@ -221,7 +220,7 @@ def build_guided_custom_customer_builder_snapshot(
         customer_visible_decision = "Your request is useful, but it needs a safety/data fix before EdgeTwin can prepare the quote automatically."
     else:
         decision = "GUIDED CUSTOM PACK READY - EXCEPTION REVIEW ONLY"
-        customer_visible_decision = "Your custom pack is prepared; only the highlighted exceptions need founder/operator review."
+        customer_visible_decision = "Your custom pack is prepared automatically; only highlighted high-risk exceptions need operator review."
 
     scope_lock = {
         "included": [m.get("label") for m in selected_modules],
@@ -253,7 +252,7 @@ def build_guided_custom_customer_builder_snapshot(
         "price_display": v97.get("price_display"),
         "min_price_eur": v97.get("min_price_eur"),
         "max_price_eur": v97.get("max_price_eur"),
-        "founder_work_minutes": v97.get("founder_work_minutes"),
+        "automation_support_minutes": v97.get("founder_work_minutes"),
         "pack_name": v97.get("pack_name"),
         "data_readiness": data_readiness,
         "data_readiness_score": v97.get("data_readiness_score"),
@@ -272,7 +271,7 @@ def build_guided_custom_customer_builder_snapshot(
         "risky_terms_found": risky,
         "auto_approval_boundary": {
             "allowed": "standard modules, safe claims, data readiness >= 55, policy score strong, quote under cap, no blockers",
-            "review_only": "hardware/BOM, extra use-case, reusable template, founder call, high complexity, budget mismatch",
+            "review_only": "hardware/BOM, extra use-case, reusable template, high complexity, budget mismatch",
             "blocked": "production/accuracy/legal/compliance guarantees, low data readiness, unsafe customer wording",
         },
         "customer_page": {
@@ -323,7 +322,7 @@ def create_guided_custom_customer_builder_bundle(snapshot: Dict[str, Any]) -> by
             "",
             f"**Decision:** {snapshot.get('decision')}",
             f"**Price:** {snapshot.get('price_display')}",
-            f"**Founder work:** {snapshot.get('founder_work_minutes')} minutes",
+            f"**Automation support estimate:** {snapshot.get('automation_support_minutes')} minutes",
             "",
             "## What is included",
             *[f"- {m.get('label')}: {m.get('deliverable')}" for m in snapshot.get('selected_modules', [])],
@@ -354,7 +353,7 @@ def create_guided_custom_customer_builder_bundle(snapshot: Dict[str, Any]) -> by
             f"Pack: {snapshot.get('pack_name')}",
             f"Decision: {snapshot.get('decision')}",
             f"Price: {snapshot.get('price_display')}",
-            f"Founder work: {snapshot.get('founder_work_minutes')} minutes",
+            f"Automation support estimate: {snapshot.get('automation_support_minutes')} minutes",
         ]:
             pdf.cell(0, 6, _safe_pdf_text(line), ln=True)
         pdf.ln(3)
