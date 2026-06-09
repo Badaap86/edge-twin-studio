@@ -19,8 +19,13 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY, generate_scenario_dataset, score_synthetic_dataset
-from synthetic_reliability_lab_v111 import build_synthetic_reliability_lab_v111_snapshot
+from synthetic_data_optimizer import (
+    SCENARIO_LIBRARY,
+    generate_scenario_dataset,
+    score_synthetic_dataset,
+)
+
+from synthetic_reliability_lab import build_synthetic_reliability_lab_v111_snapshot
 
 VERSION = "V112"
 MODULE = "Dataset Validation & Benchmark Harness"
