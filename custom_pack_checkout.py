@@ -21,6 +21,8 @@ from typing import Any, Dict, List, Tuple
 import pandas as pd
 from fpdf import FPDF
 
+from no_gezeik_policy import evaluate_simple_risk_policy, get_customer_plain_rules
+
 MODULE = "Custom Pack Checkout Autopilot"
 
 SAFE_BOUNDARY = (
@@ -214,26 +216,20 @@ def build_custom_pack_checkout_snapshot(
     foundation_credit = 1750 if base_pack != "Premium Custom Pack" else 2500
     subtotal = max(base_price, base_price + max(0, module_total - foundation_credit))
 
-    blocked = []
-    risky_terms = _blocked_terms(problem + " " + desired_outcome)
-    if risky_terms:
-        blocked.append({
-            "reason": "Unsafe customer claim wording detected",
-            "terms": risky_terms,
-            "action": "Rewrite before payment/delivery. Do not promise production accuracy, certification or liability coverage.",
-        })
+    policy = evaluate_simple_risk_policy(problem + " " + desired_outcome)
+    blocked = policy.get("matched_rules", [])
 
-    review_flags = []
+    safe_notes = []
     for m in selected_modules:
         automation = str(m.get("automation", "automatic"))
         if automation in {"automatic_when_non_safety_critical", "automatic_as_reference_only"}:
-            review_flags.append({
+            safe_notes.append({
                 "module": m["label"],
-                "reason": "Prepared automatically inside safe boundaries; blocked only if customer asks for safety/compliance/certified deployment promises.",
+                "note": "Automatic as reference/decision-support only. No certification, production guarantee or safety-critical promise is included.",
             })
 
-    automatic_modules = [m for m in selected_modules if not str(m.get("automation", "")).startswith("optional_human")]
-    auto_ready = not blocked
+    automatic_modules = list(selected_modules)
+    auto_ready = not policy.get("blocked", False)
     deposit_pct = float(BASE_PACKS[base_pack]["deposit_pct"])
     if payment_mode == "deposit":
         amount_due_now = int(round(subtotal * deposit_pct))
@@ -287,7 +283,9 @@ def build_custom_pack_checkout_snapshot(
         "provider": provider,
         "checkout_status": checkout_status,
         "auto_ready": auto_ready,
-        "review_flags": review_flags,
+        "safe_notes": safe_notes,
+        "simple_policy": policy,
+        "plain_rules": get_customer_plain_rules(),
         "blockers": blocked,
         "delivery_unlock": delivery_unlock,
         "safe_boundary": SAFE_BOUNDARY,
@@ -333,7 +331,7 @@ def create_custom_pack_checkout_bundle(snapshot: Dict[str, Any]) -> bytes:
         z.writestr("custom_pack_checkout_snapshot.json", json.dumps(snapshot, indent=2, ensure_ascii=False, default=str))
         z.writestr("custom_pack_checkout_summary.md", _markdown(snapshot))
         z.writestr("selected_modules.csv", pd.DataFrame(snapshot.get("selected_modules", [])).to_csv(index=False))
-        z.writestr("review_flags.csv", pd.DataFrame(snapshot.get("review_flags", [])).to_csv(index=False))
+        z.writestr("safe_notes.csv", pd.DataFrame(snapshot.get("safe_notes", [])).to_csv(index=False))
         z.writestr("blockers.csv", pd.DataFrame(snapshot.get("blockers", [])).to_csv(index=False))
         z.writestr("custom_pack_checkout_summary.pdf", _pdf_bytes(snapshot))
     return buf.getvalue()
@@ -429,9 +427,13 @@ def render_streamlit_tab(st) -> Tuple[Dict[str, Any] | None, bytes | None]:
         st.error("Checkout blocked until unsafe claims/scope are fixed.")
         st.dataframe(pd.DataFrame(snapshot.get("blockers", [])), use_container_width=True)
 
-    if snapshot.get("review_flags"):
-        st.info("Some selected modules are automatically prepared with guardrails. They are only blocked if the customer asks for unsafe guarantees or certified/safety-critical promises.")
-        st.dataframe(pd.DataFrame(snapshot["review_flags"]), use_container_width=True)
+    if snapshot.get("safe_notes"):
+        st.info("Some modules include safe boundaries. They stay automatic, but they do not include certification, production guarantees or safety-critical promises.")
+        st.dataframe(pd.DataFrame(snapshot["safe_notes"]), use_container_width=True)
+
+    with st.expander("Simple rules", expanded=False):
+        for rule in snapshot.get("plain_rules", []):
+            st.write(f"- {rule}")
 
     st.markdown("### Customer value")
     st.write(snapshot["value_summary"])
