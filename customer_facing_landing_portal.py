@@ -24,9 +24,9 @@ from typing import Any, Dict, List
 import pandas as pd
 from fpdf import FPDF
 
-import self_selling_conversion_v116 as v116
-import customer_flow_v117 as v117
-import guided_custom_customer_builder_v118 as v118
+import self_selling as v116
+import customer_flow as v117
+import guided_custom_customer_builder as v118
 
 VERSION = "119.0"
 MODULE = "Customer-Facing Landing Portal"
@@ -185,7 +185,7 @@ def _proof_cards(has_real_data: bool) -> List[Dict[str, str]]:
     return cards
 
 
-def build_customer_facing_landing_portal_v119_snapshot(
+def build_customer_facing_landing_portal_snapshot(
     project_name: str = "EdgeTwin Project",
     customer_segment: str = "industrial maintenance / machine operations teams",
     company: str = "Customer",
@@ -205,7 +205,7 @@ def build_customer_facing_landing_portal_v119_snapshot(
     route = _route_from_problem(customer_problem, wants_custom, has_real_data, int(budget_eur))
     recommended_route = route["recommended_route"]
 
-    conversion = v116.build_self_selling_conversion_v116_snapshot(
+    conversion = v116.build_self_selling_snapshot(
         project_name=project_name,
         customer_segment=customer_segment,
         customer_problem=customer_problem,
@@ -220,7 +220,7 @@ def build_customer_facing_landing_portal_v119_snapshot(
         download_ready=payment_mode in {"paid", "confirmed"},
     )
 
-    flow = v117.build_one_perfect_customer_flow_v117_snapshot(
+    flow = v117.build_one_perfect_customer_flow_snapshot(
         project_name=project_name,
         customer_segment=customer_segment,
         customer_problem=customer_problem,
@@ -236,7 +236,7 @@ def build_customer_facing_landing_portal_v119_snapshot(
         delivery_status="locked",
     )
 
-    custom = v118.build_guided_custom_customer_builder_v118_snapshot(
+    custom = v118.build_guided_custom_customer_builder_snapshot(
         project_name=project_name,
         company=company,
         industry=industry,
@@ -437,11 +437,11 @@ def _markdown(snapshot: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def create_customer_facing_landing_portal_v119_bundle(snapshot: Dict[str, Any]) -> bytes:
+def create_customer_facing_landing_portal_bundle(snapshot: Dict[str, Any]) -> bytes:
     snapshot = snapshot or {}
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("customer_facing_landing_portal_v119.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_facing_landing_portal.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("customer_landing_page_copy_v119.md", _markdown(snapshot))
         zf.writestr("customer_landing_page_summary_v119.pdf", _pdf_bytes(snapshot))
         tables = {
