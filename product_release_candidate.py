@@ -23,7 +23,7 @@ from typing import Any, Dict, List
 import pandas as pd
 from fpdf import FPDF
 
-import customer_facing_landing_portal_v119 as v119
+import customer_facing_landing_portal as v119
 
 VERSION = "120.0"
 MODULE = "Pack Product Release Candidate"
@@ -149,7 +149,7 @@ def _decision(score: int, blockers: List[str], hosted_ready: bool, payment_ready
     return "INTERNAL REVIEW ONLY"
 
 
-def build_product_release_candidate_v120_snapshot(
+def build_product_release_candidate_snapshot(
     project_name: str = "EdgeTwin Studio",
     company: str = "Customer",
     industry: str = "Industrial / maintenance",
@@ -168,7 +168,7 @@ def build_product_release_candidate_v120_snapshot(
 ) -> Dict[str, Any]:
     """Build a complete V120 release-candidate view from the customer-facing stack."""
     payment_mode = "payment_link_ready" if payment_ready else "manual_quote_ready"
-    portal = v119.build_customer_facing_landing_portal_v119_snapshot(
+    portal = v119.build_customer_facing_landing_portal_snapshot(
         project_name=project_name,
         customer_segment=customer_segment,
         company=company,
@@ -343,7 +343,7 @@ def _pdf(snapshot: Dict[str, Any]) -> bytes:
     return bytes(pdf.output(dest="S"))
 
 
-def create_product_release_candidate_v120_bundle(snapshot: Dict[str, Any]) -> bytes:
+def create_product_release_candidate_bundle(snapshot: Dict[str, Any]) -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("v120_release_candidate_snapshot.json", json.dumps(snapshot, indent=2, ensure_ascii=False, default=str))
