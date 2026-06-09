@@ -1,4 +1,4 @@
-"""EdgeTwin Studio V120 Product Release Candidate.
+"""EdgeTwin Studio Product Release Candidate.
 
 Purpose:
 - Combine the customer-facing landing portal, guided custom builder, conversion copy,
@@ -7,7 +7,7 @@ Purpose:
 - Keep boundaries honest: no production accuracy, legal/compliance certification or safety guarantees.
 
 Boundary:
-- V120 is a founder-led pack product release candidate, not full SaaS.
+- Founder-led pack product release candidate, not full SaaS.
 - Payment providers, private delivery endpoints and hosted deployment can be connected later.
 - Live customer data still requires consent, privacy review and secure upload/storage policy.
 """
@@ -80,7 +80,7 @@ RC_READINESS_AREAS = [
 ]
 
 LAUNCH_CHECKLIST = [
-    "Use the V119 landing portal as the default customer front door.",
+    "Use the landing portal as the default customer front door.",
     "Offer only three visible routes first: Starter, Professional and Guided Custom.",
     "Keep Real-Data Evidence behind data-readiness and consent checks.",
     "Use payment links/manual confirmation before connecting live Stripe/Paddle webhooks.",
@@ -166,7 +166,7 @@ def build_product_release_candidate_snapshot(
     hosted_ready: bool = False,
     public_mode: str = "private_demo_link",
 ) -> Dict[str, Any]:
-    """Build a complete V120 release-candidate view from the customer-facing stack."""
+    """Build a complete release-candidate view from the customer-facing stack."""
     payment_mode = "payment_link_ready" if payment_ready else "manual_quote_ready"
     portal = v119.build_customer_facing_landing_portal_snapshot(
         project_name=project_name,
@@ -217,12 +217,12 @@ def build_product_release_candidate_snapshot(
     rc_status = _decision(rc_score, blockers, hosted_ready=hosted_ready, payment_ready=payment_ready)
 
     customer_steps = [
-        {"step": 1, "name": "Open landing portal", "customer_view": "Problem, proof and pack choices", "system_layer": "V119"},
-        {"step": 2, "name": "Choose standard or guided custom", "customer_view": "Pack cards or module builder", "system_layer": "V118/V119"},
+        {"step": 1, "name": "Open landing portal", "customer_view": "Problem, proof and pack choices", "system_layer": "Landing portal"},
+        {"step": 2, "name": "Choose standard or guided custom", "customer_view": "Pack cards or module builder", "system_layer": "Guided custom builder + landing portal"},
         {"step": 3, "name": "See scope and value", "customer_view": "Deliverables, limits, proof cards and price logic", "system_layer": "V116/V117"},
-        {"step": 4, "name": "Quote/payment handoff", "customer_view": "Manual quote/payment link now; webhook later", "system_layer": "V98/V102"},
-        {"step": 5, "name": "Intake or upload", "customer_view": "Only after proper unlock/consent", "system_layer": "V99/V103/V106"},
-        {"step": 6, "name": "Evidence bundle delivery", "customer_view": "PDF/ZIP/manifest through secure delivery path", "system_layer": "V104/V105"},
+        {"step": 4, "name": "Quote/payment handoff", "customer_view": "Manual quote/payment link now; webhook later", "system_layer": "Quote + payment adapter"},
+        {"step": 5, "name": "Intake or upload", "customer_view": "Only after proper unlock/consent", "system_layer": "Payment unlock + customer portal + order state"},
+        {"step": 6, "name": "Evidence bundle delivery", "customer_view": "PDF/ZIP/manifest through secure delivery path", "system_layer": "Secure links + private delivery endpoint"},
     ]
 
     return {
@@ -312,7 +312,7 @@ def _pdf(snapshot: Dict[str, Any]) -> bytes:
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "EdgeTwin V120 Product Release Candidate", ln=True)
+    pdf.cell(0, 10, "EdgeTwin Product Release Candidate", ln=True)
     pdf.set_font("Arial", "", 10)
     pdf.multi_cell(190, 6, _pdf_safe(f"Project: {snapshot.get('project_name')} | Score: {snapshot.get('release_candidate_score')} | Decision: {snapshot.get('decision')}"))
     pdf.ln(2)
