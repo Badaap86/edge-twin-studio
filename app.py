@@ -684,40 +684,48 @@ if is_founder_mode:
         key="sidebar_dataset_label",
     )
 
-    st.session_state.base_f = st.sidebar.slider(
+    st.session_state.base_f = st.sidebar.number_input(
         "Base frequency",
-        0.0,
-        1000.0,
-        float(st.session_state.base_f),
-        5.0,
-        key="sidebar_base_frequency",
+        min_value=0.0,
+        max_value=1000.0,
+        value=float(st.session_state.base_f),
+        step=5.0,
+        format="%.2f",
+        key="sidebar_base_frequency_number",
+        help="Type an exact value or use the step buttons.",
     )
 
-    st.session_state.harm_r = st.sidebar.slider(
+    st.session_state.harm_r = st.sidebar.number_input(
         "Harmonics",
-        0.0,
-        2.0,
-        float(st.session_state.harm_r),
-        0.05,
-        key="sidebar_harmonics",
+        min_value=0.0,
+        max_value=2.0,
+        value=float(st.session_state.harm_r),
+        step=0.05,
+        format="%.2f",
+        key="sidebar_harmonics_number",
+        help="Type an exact value or use the step buttons.",
     )
 
-    st.session_state.imp_r = st.sidebar.slider(
+    st.session_state.imp_r = st.sidebar.number_input(
         "Impact rate",
-        0.0,
-        50.0,
-        float(st.session_state.imp_r),
-        0.5,
-        key="sidebar_impact_rate",
+        min_value=0.0,
+        max_value=50.0,
+        value=float(st.session_state.imp_r),
+        step=0.5,
+        format="%.2f",
+        key="sidebar_impact_rate_number",
+        help="Type an exact value or use the step buttons.",
     )
 
-    st.session_state.noise_l = st.sidebar.slider(
+    st.session_state.noise_l = st.sidebar.number_input(
         "Noise",
-        0.0,
-        1.0,
-        float(st.session_state.noise_l),
-        0.02,
-        key="sidebar_noise",
+        min_value=0.0,
+        max_value=1.0,
+        value=float(st.session_state.noise_l),
+        step=0.02,
+        format="%.2f",
+        key="sidebar_noise_number",
+        help="Type an exact value or use the step buttons.",
     )
 else:
     st.sidebar.markdown("---")
@@ -740,8 +748,8 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 
 st.title("EdgeTwin Studio")
 st.caption(
-    "Pack Commerce Release Candidate: no SaaS required, sell downloadable/custom packs first, keep full founder control, privacy-safe learning, real upload intake and checkout readiness. "
-    "V80 adds Trust Ledger and Decision Traceability: one evidence receipt explaining what data, gates, risks, approvals and claims support each customer deliverable."
+    "Customer-ready pack commerce for industrial AI: sell downloadable/custom pilot evidence packs first, "
+    "keep founder control, protect privacy, and guide customers from intake to quote, delivery and evidence."
 )
 
 st.markdown("""
@@ -989,17 +997,12 @@ CUSTOMER_LAUNCH_FLOW = {
     ],
     "3. Check data readiness": [
         "data_quality_gate_pro_tab",
-        "dataset_to_synthetic_tab",
-        "synthetic_reliability_lab_tab",
     ],
     "4. Evidence room": [
         "buyer_data_room_pro_tab",
-        "product_release_candidate_tab",
     ],
     "5. Quote / delivery": [
-        "customer_portal_lite_v103_tab",
-        "payment_unlock_delivery_v99_tab",
-        "secure_download_links_v104_tab",
+        "clean_quote_delivery_tab",
     ],
 }
 
@@ -1030,7 +1033,7 @@ NAV_HINTS.update({
 })
 
 # Remove development version numbers from user-facing labels. Internal keys/function names keep
-# their version history, but customers see product names instead of V109/V120-style labels.
+# their version history, but customers see product names instead of development-version labels.
 def _clean_nav_label(label: str) -> str:
     label = str(label)
     label = re.sub(r"\s+V\d+(?:\.\d+)?\b", "", label)
@@ -15024,12 +15027,12 @@ def render_dataset_to_synthetic_tab():
             st.dataframe(synthetic_calibration.build_v115_candidate_table(snap), use_container_width=True)
         with tabs[2]:
             st.json(snap.get("best_validation", {}))
-            st.write("V111 reliability signal:", snap.get("v111_synthetic_reliability_score"), snap.get("v111_decision"))
+            st.write("Synthetic reliability signal:", snap.get("v111_synthetic_reliability_score"), snap.get("v111_decision"))
         with tabs[3]:
             df = st.session_state.get("synthetic_calibration_dataset", pd.DataFrame())
             if isinstance(df, pd.DataFrame) and not df.empty:
                 st.dataframe(df.head(80), use_container_width=True)
-                st.download_button("Download best calibrated synthetic CSV", df.to_csv(index=False), file_name="best_calibrated_synthetic_v115.csv", mime="text/csv", use_container_width=True, key="v115_download_csv")
+                st.download_button("Download best calibrated synthetic CSV", df.to_csv(index=False), file_name="best_calibrated_synthetic.csv", mime="text/csv", use_container_width=True, key="v115_download_csv")
         with tabs[4]:
             if st.session_state.get("synthetic_calibration_bundle"):
                 st.download_button(
@@ -15041,7 +15044,7 @@ def render_dataset_to_synthetic_tab():
                     key="v115_download_bundle",
                 )
 
-    st.caption("V115 improves synthetic data for demo/regression/pilot-preparation. It does not prove production accuracy or compliance readiness.")
+    st.caption("This improves synthetic data for demo, regression and pilot preparation. It does not prove production accuracy or compliance readiness.")
 
 
 
@@ -15125,12 +15128,12 @@ def render_product_release_candidate_tab():
             st.download_button(
                 "Download Release Candidate Bundle",
                 st.session_state.product_release_candidate_bundle,
-                file_name="edgetwin_v120_release_candidate_bundle.zip",
+                file_name="edgetwin_release_candidate_bundle.zip",
                 mime="application/zip",
                 use_container_width=True,
             )
 
-    st.caption("V120 is a founder-led pack product release candidate. It is not full SaaS and does not make production/accuracy/legal/compliance guarantees.")
+    st.caption("This is a founder-led pack product release candidate. It is not full SaaS and does not make production/accuracy/legal/compliance guarantees.")
 
 def render_customer_facing_landing_portal_tab():
     st.header("🌍 Customer-Facing Landing Portal")
@@ -15317,13 +15320,13 @@ def render_guided_custom_customer_builder_tab():
                 st.download_button(
                     "Download Guided Custom Builder Bundle",
                     st.session_state.guided_custom_customer_builder_bundle,
-                    file_name=f"{st.session_state.project_name}_guided_custom_builder_v118.zip",
+                    file_name=f"{st.session_state.project_name}_guided_custom_builder.zip",
                     mime="application/zip",
                     use_container_width=True,
                     key="v118_download_bundle",
                 )
 
-    st.caption("V118 lets customers self-configure custom packs inside safety policy. It does not promise production accuracy, compliance certification or unreviewed high-risk custom work.")
+    st.caption("Customers can self-configure custom packs inside the safety policy. EdgeTwin does not promise production accuracy, compliance certification or unreviewed high-risk custom work.")
 
 def render_one_perfect_customer_flow_tab():
     st.header("🛣️ One Perfect Customer Flow")
@@ -15413,13 +15416,13 @@ def render_one_perfect_customer_flow_tab():
                 st.download_button(
                     "Download One Perfect Customer Flow Bundle",
                     st.session_state.one_perfect_customer_flow_bundle,
-                    file_name=f"{st.session_state.project_name}_one_perfect_customer_flow.zip",
+                    file_name=f"{st.session_state.project_name}_customer_flow.zip",
                     mime="application/zip",
                     use_container_width=True,
                     key="v117_download_bundle",
                 )
 
-    st.caption("V117 is the simplified customer route. It prepares conversion, quote/payment handoff and delivery status, but does not process payments or guarantee production accuracy.")
+    st.caption("This is the simplified customer route. It prepares conversion, quote/payment handoff and delivery status, but does not process payments or guarantee production accuracy.")
 
 
 def render_self_selling_tab():
@@ -15709,7 +15712,118 @@ def render_golden_dataset_library_tab():
             st.download_button("Download Golden Dataset Bundle", st.session_state.golden_dataset_library_bundle, file_name=f"{st.session_state.project_name}_golden_dataset.zip", mime="application/zip", use_container_width=True, key="v121_download")
 
 
+def render_clean_quote_delivery_tab():
+    """Customer-safe delivery summary without internal version labels."""
+    st.header("Quote / delivery")
+    st.caption("A calm customer view for quote status, payment confirmation, intake access and secure delivery readiness.")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        customer = st.text_input("Customer / company", "Demo Customer", key="clean_delivery_customer")
+        customer_email = st.text_input("Customer email", "customer@example.com", key="clean_delivery_email")
+        selected_pack = st.selectbox(
+            "Selected pack",
+            ["Starter Diagnostic Pack", "Professional Pilot Pack", "Real-Data Evidence Pack", "Premium Custom Pack"],
+            index=1,
+            key="clean_delivery_pack",
+        )
+        price_range = st.selectbox(
+            "Price range",
+            ["€499–€950", "€1.500–€3.500", "€3.500–€7.500", "€7.500+"],
+            index=1,
+            key="clean_delivery_price",
+        )
+    with c2:
+        payment_status = st.selectbox(
+            "Payment status",
+            ["unpaid", "quote_ready", "payment_link_ready", "deposit_paid", "paid", "confirmed", "failed", "refunded", "disputed"],
+            index=2,
+            key="clean_delivery_payment",
+        )
+        intake_status = st.selectbox(
+            "Intake / upload status",
+            ["locked", "intake_unlocked", "requested", "received", "validated", "blocked"],
+            index=0,
+            key="clean_delivery_intake",
+        )
+        delivery_status = st.selectbox(
+            "Delivery status",
+            ["locked", "generating", "ready", "delivered", "blocked"],
+            index=0,
+            key="clean_delivery_status",
+        )
+        expiry_days = st.number_input("Download/access expiry days", min_value=1, max_value=30, value=7, step=1, key="clean_delivery_expiry")
+
+    paid = payment_status in {"paid", "confirmed"}
+    deposit = payment_status == "deposit_paid"
+    delivery_ready = delivery_status in {"ready", "delivered"}
+    blocked_payment = payment_status in {"failed", "refunded", "disputed"}
+
+    if blocked_payment:
+        decision = "Locked — payment review required"
+        access = "No download or intake access"
+        st.error(decision)
+    elif paid and delivery_ready:
+        decision = "Delivery ready"
+        access = "Secure download can be unlocked"
+        st.success(decision)
+    elif deposit:
+        decision = "Intake unlocked"
+        access = "Customer can provide intake/upload input; final delivery remains locked"
+        st.info(decision)
+    elif payment_status in {"quote_ready", "payment_link_ready"}:
+        decision = "Awaiting payment confirmation"
+        access = "Show quote/payment step, keep delivery locked"
+        st.warning(decision)
+    else:
+        decision = "Locked"
+        access = "Customer can view offer only"
+        st.warning(decision)
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Decision", decision)
+    m2.metric("Access", access)
+    m3.metric("Risk", "low" if paid and delivery_ready else "controlled")
+
+    st.subheader("What the customer sees")
+    st.write(f"**Customer:** {customer}")
+    st.write(f"**Selected pack:** {selected_pack}")
+    st.write(f"**Price range:** {price_range}")
+    st.write(f"**Payment status:** {payment_status}")
+    st.write(f"**Delivery status:** {delivery_status}")
+    st.write(f"**Next step:** {access}")
+
+    st.subheader("Guardrails")
+    st.write("- Payment card details are handled by the payment provider, not EdgeTwin.")
+    st.write("- Failed, refunded or disputed payments keep delivery locked.")
+    st.write("- Final downloads require safe payment status and delivery readiness.")
+    st.write("- This flow does not create production accuracy, legal, safety or compliance guarantees.")
+
+    manifest = {
+        "customer": customer,
+        "customer_email": customer_email,
+        "selected_pack": selected_pack,
+        "price_range": price_range,
+        "payment_status": payment_status,
+        "intake_status": intake_status,
+        "delivery_status": delivery_status,
+        "decision": decision,
+        "access": access,
+        "download_expiry_days": int(expiry_days),
+        "safe_boundary": "Pilot/evidence delivery only; no production accuracy or compliance guarantee.",
+    }
+    st.download_button(
+        "Download customer delivery manifest",
+        data=pd.Series(manifest).to_json(force_ascii=False, indent=2),
+        file_name="edgetwin_customer_delivery_manifest.json",
+        mime="application/json",
+        use_container_width=True,
+        key="clean_delivery_manifest_download",
+    )
+
+
 _PAGE_RENDERERS = {
+    'clean_quote_delivery_tab': render_clean_quote_delivery_tab,
     'buyer_data_room_pro_tab': render_buyer_data_room_pro_tab,
     'first_customer_intake_pack_tab': render_first_customer_intake_pack_tab,
     'data_quality_gate_pro_tab': render_data_quality_gate_pro_tab,
