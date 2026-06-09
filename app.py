@@ -34,6 +34,85 @@ core.init_db()
 
 
 # ============================================================
+# CUSTOMER UI TEXT CLEANER
+# ============================================================
+# Keep internal function/session names intact, but remove development-version
+# labels from visible Streamlit text so customers see product language, not build history.
+def _clean_visible_text(value):
+    if not isinstance(value, str):
+        return value
+    text = value
+
+    # Remove labels such as V77, V103, v120, V60.1 and ranges like V80-V116.
+    text = re.sub(r"\b[Vv]\d+(?:\.\d+)?\s*(?:[-–—/]\s*[Vv]?\d+(?:\.\d+)?)*\b", "", text)
+
+    # Clean common leftovers after removing version labels.
+    text = text.replace("turns/ into", "turns into")
+    text = text.replace("/server-side", "server-side")
+    text = text.replace("→/webhook", "→ webhook")
+    text = text.replace("our- commerce", "our commerce")
+    text = text.replace("EdgeTwin Studio -", "EdgeTwin Studio")
+    text = text.replace("EdgeTwin Studio —", "EdgeTwin Studio")
+    text = text.replace("Customer Portal Lite", "Customer Portal")
+    text = text.replace("Secure Download Links Bundle", "Secure Access Bundle")
+
+    # Remove dangling punctuation at line ends caused by version cleanup.
+    text = re.sub(r"[ \t]*[—-][ \t]*(?=\n|$)", "", text)
+    text = re.sub(r" {2,}", " ", text)
+    return text.strip() if text.strip() else text
+
+def _clean_visible_value(value):
+    if isinstance(value, str):
+        return _clean_visible_text(value)
+    if isinstance(value, dict):
+        return {k: _clean_visible_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_clean_visible_value(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_clean_visible_value(v) for v in value)
+    if isinstance(value, set):
+        return {_clean_visible_value(v) for v in value}
+    if isinstance(value, pd.Series):
+        return value.map(lambda x: _clean_visible_text(x) if isinstance(x, str) else x)
+    if isinstance(value, pd.DataFrame):
+        df = value.copy()
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].map(lambda x: _clean_visible_text(x) if isinstance(x, str) else x)
+        return df
+    return value
+
+def _install_customer_text_cleaner():
+    if getattr(st, "_edgetwin_customer_text_cleaner_installed", False):
+        return
+
+    text_methods = [
+        "title", "header", "subheader", "caption", "write", "markdown",
+        "info", "success", "warning", "error", "button", "download_button",
+        "metric", "tabs", "radio", "selectbox", "multiselect", "checkbox",
+        "text_input", "text_area", "number_input", "slider",
+        "dataframe", "table", "json",
+    ]
+
+    for name in text_methods:
+        if not hasattr(st, name):
+            continue
+        original = getattr(st, name)
+
+        def _make_wrapper(func):
+            def _wrapped(*args, **kwargs):
+                cleaned_args = tuple(_clean_visible_value(a) for a in args)
+                cleaned_kwargs = {k: _clean_visible_value(v) for k, v in kwargs.items()}
+                return func(*cleaned_args, **cleaned_kwargs)
+            return _wrapped
+
+        setattr(st, name, _make_wrapper(original))
+
+    st._edgetwin_customer_text_cleaner_installed = True
+
+_install_customer_text_cleaner()
+
+# ============================================================
 # STATE
 # ============================================================
 
@@ -11384,7 +11463,7 @@ def render_product_consolidation_v76_tab():
 def render_smart_intake_v77_tab():
     st.header("Smart Intake Router")
     st.write(
-        "V77 reduces customer friction: the customer gives a small amount of information, "
+        "Smart Intake reduces customer friction: the customer gives a small amount of information, "
         "and EdgeTwin recommends the safest route, required data, package level and founder approval gates."
     )
 
@@ -11551,7 +11630,7 @@ def render_smart_intake_v77_tab():
                 key="v77_download_smart_intake_bundle",
             )
 
-    st.caption("V77 asks less from the customer while keeping reliability, privacy, payment and delivery gates active behind the scenes.")
+    st.caption("Smart Intake asks less from the customer while keeping reliability, privacy, payment and delivery gates active behind the scenes.")
 
 
 # ============================================================
@@ -11561,7 +11640,7 @@ def render_smart_intake_v77_tab():
 def render_one_click_pilot_v78_tab():
     st.header("One-Click Pilot Assembler")
     st.write(
-        "V78 turns the simplified intake route into one customer-ready pilot package. "
+        "One-Click Pilot turns the simplified intake route into one customer-ready pilot package. "
         "The customer sees one clear outcome; EdgeTwin quietly checks data, privacy, reliability, value, proposal and delivery gates."
     )
 
@@ -11715,7 +11794,7 @@ def render_one_click_pilot_v78_tab():
                 key="v78_download_one_click_pilot_bundle",
             )
 
-    st.caption("V78 keeps the customer experience simple while preserving the deep EdgeTwin quality, privacy, reliability and delivery gates behind the scenes.")
+    st.caption("One-Click Pilot keeps the customer experience simple while preserving the deep EdgeTwin quality, privacy, reliability and delivery gates behind the scenes.")
 
 
 
@@ -11726,7 +11805,7 @@ def render_one_click_pilot_v78_tab():
 def render_pilot_factory_v79_tab():
     st.header("Pilot Factory Control Tower")
     st.write(
-        "V79 keeps the whole EdgeTwin journey aligned as one lifecycle: intake, data, readiness, privacy, proposal, checkout, delivery and support. "
+        "Pilot Factory keeps the whole EdgeTwin journey aligned as one lifecycle: intake, data, readiness, privacy, proposal, checkout, delivery and support. "
         "The customer sees one simple status and next step; Founder Mode keeps the approval gates visible."
     )
 
@@ -11867,7 +11946,7 @@ def render_pilot_factory_v79_tab():
                 key="v79_download_factory_bundle",
             )
 
-    st.caption("V79 does not remove the deep engine. It turns it into a controlled lifecycle so customers see clarity and you only approve high-risk gates.")
+    st.caption("Pilot Factory does not remove the deep engine. It turns it into a controlled lifecycle so customers see clarity and you only approve high-risk gates.")
 
 
 # ============================================================
@@ -11877,7 +11956,7 @@ def render_pilot_factory_v79_tab():
 def render_trust_ledger_v80_tab():
     st.header("Trust Ledger & Decision Traceability")
     st.write(
-        "V80 creates one customer-safe evidence receipt for the whole pilot: what data was used, "
+        "Trust Ledger creates one customer-safe evidence receipt for the whole pilot: what data was used, "
         "which gates passed, what is still blocked, what can be claimed safely and where founder approval is required."
     )
 
@@ -11994,7 +12073,7 @@ def render_trust_ledger_v80_tab():
                 key="v80_download_trust_ledger_bundle",
             )
 
-    st.caption("V80 does not promise guaranteed accuracy. It makes the reasoning, gates, data status and allowed claims traceable before customer handoff or paid delivery.")
+    st.caption("Trust Ledger does not promise guaranteed accuracy. It makes the reasoning, gates, data status and allowed claims traceable before customer handoff or paid delivery.")
 
 
 # ============================================================
@@ -13349,7 +13428,7 @@ def render_custom_pack_builder_v97_tab():
 def render_marketplace_entitlement_v100_tab():
     st.header("Marketplace Entitlement OS")
     st.info(
-        "Doel: Gemini's goede marketplace-idee samenbrengen met onze-V99 commerce/autopilot laag: curated industry packs, custom packs, plan/payment unlock, one-click pilot material en Buyer Data Room in één klantflow."
+        "Doel: marketplace, custom packs, plan/payment unlock, one-click pilot material en Buyer Data Room samenbrengen in één klantflow."
     )
 
     catalog = core.get_marketplace_entitlement_v100_catalog()
@@ -13387,11 +13466,11 @@ def render_marketplace_entitlement_v100_tab():
         auto_unlock_policy = st.checkbox("Auto-unlock when paid + safe", value=True, key="v100_auto_unlock_policy")
 
     if v99_snapshot:
-        st.success(f"V99 payment/unlock snapshot gevonden: {v99_snapshot.get('decision', 'status onbekend')} — {v99_snapshot.get('unlock_level', 'locked')}")
+        st.success(f"Payment/unlock snapshot gevonden: {v99_snapshot.get('decision', 'status onbekend')} — {v99_snapshot.get('unlock_level', 'locked')}")
     elif v98_snapshot:
-        st.warning("V98 quote is aanwezig, maar payment unlock is nog niet opgebouwd. kan entitlement simuleren, maar live unlock hoort later via/webhook.")
+        st.warning("Quote is aanwezig, maar payment unlock is nog niet opgebouwd. EdgeTwin kan entitlement simuleren, maar live unlock hoort later via webhook.")
     else:
-        st.caption("Tip:→V98→V99 maakt de commerciële flow sterker, maar kan ook direct een marketplace entitlement blueprint maken.")
+        st.caption("Tip: quote → payment unlock maakt de commerciële flow sterker, maar EdgeTwin kan ook direct een marketplace entitlement blueprint maken.")
 
     if st.button("Build Marketplace Entitlement", type="primary", use_container_width=True, key="v100_build_marketplace_entitlement"):
         snapshot = core.build_marketplace_entitlement_v100_snapshot({
@@ -13478,9 +13557,9 @@ def render_payment_unlock_delivery_v99_tab():
     v98_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
 
     if not v98_snapshot:
-        st.warning("V98 quote/order snapshot is nog niet aanwezig. Run eerst voor de beste automatische betaling→unlock flow.")
+        st.warning("Quote/order snapshot is nog niet aanwezig. Run eerst de automatische betaling→unlock flow.")
     else:
-        st.success(f"V98 quote gevonden: {v98_snapshot.get('quote_id', 'quote')} — {v98_snapshot.get('price_display', 'prijs onbekend')} — {v98_snapshot.get('quote_status', 'status onbekend')}")
+        st.success(f"Quote gevonden: {v98_snapshot.get('quote_id', 'quote')} — {v98_snapshot.get('price_display', 'prijs onbekend')} — {v98_snapshot.get('quote_status', 'status onbekend')}")
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -13579,7 +13658,7 @@ def render_payment_unlock_delivery_v99_tab():
                 key="v99_download_payment_unlock_bundle",
             )
 
-    st.caption("V99 maakt de MP3-achtige serviceflow mogelijk: betaalstatus bevestigd → intake/download/delivery vrijgeven. Live betalingen koppel je later via Stripe/Paddle webhooks.")
+    st.caption("Deze flow maakt de MP3-achtige service mogelijk: betaalstatus bevestigd → intake/download/delivery vrijgeven. Live betalingen koppel je later via Stripe/Paddle webhooks.")
 
 
 # — Order Intake + Quote Builder / Pack-to-Quote Automation
@@ -13691,7 +13770,7 @@ def render_order_quote_builder_v98_tab():
                 key="v98_download_order_quote_bundle",
             )
 
-    st.caption("V98 turns customer self-configured packs into quote/order-ready material while keeping payments, invoice sending and contracts manual until a later safe commerce layer.")
+    st.caption("The quote builder turns customer self-configured packs into quote/order-ready material while keeping payments, invoice sending and contracts manual until a later safe commerce layer.")
 
 
 def render_public_hosting_v101_tab():
@@ -13942,7 +14021,7 @@ def render_customer_portal_lite_v103_tab():
         st.info("In live mode these download URLs should be signed/expiring links. prepares the manifest only; it does not expose real private files.")
     with tabs[4]:
         st.table(guardrail_df)
-        st.warning("V103 is portal-lite, not full SaaS. It does not replace proper auth, legal review, privacy review or production validation.")
+        st.warning("Customer Portal is a lightweight access/status layer, not full SaaS. It does not replace proper auth, legal review, privacy review or production validation.")
     with tabs[5]:
         st.json(snapshot)
 
@@ -13961,7 +14040,7 @@ def render_customer_portal_lite_v103_tab():
             key="v103_download_customer_portal_lite_bundle",
         )
 
-    st.caption("V103 is the customer-facing layer after marketplace/quote/payment unlock: simple status, next action and delivery visibility without building full SaaS yet.")
+    st.caption("Customer Portal is the customer-facing layer after marketplace/quote/payment unlock: simple status, next action and delivery visibility without building full SaaS yet.")
 
 
 
@@ -14045,7 +14124,7 @@ def render_secure_download_links_v104_tab():
         st.markdown(snapshot.get("customer_access_markdown", ""))
     with tabs[1]:
         st.table(pd.DataFrame(snapshot.get("secure_links", [])))
-        st.info("V104 creates token manifests. In real public hosting, the actual file-serving endpoint must validate the token server-side before sending a private file.")
+        st.info("Secure Access creates token manifests. In real public hosting, the actual file-serving endpoint must validate the token server-side before sending a private file.")
     with tabs[2]:
         st.table(pd.DataFrame(snapshot.get("validation_checks", [])))
     with tabs[3]:
@@ -14069,7 +14148,7 @@ def render_secure_download_links_v104_tab():
             key="v104_download_secure_links_bundle",
         )
 
-    st.caption("V104 turns/V102/V103 into a safer digital-product style delivery flow: paid → signed expiring token → private download/intake access.")
+    st.caption("Secure Access turns payment and customer portal status into a safer digital-product style delivery flow: paid → signed expiring token → private download/intake access.")
 
 
 
@@ -15224,7 +15303,7 @@ def render_customer_facing_landing_portal_tab():
                     key="v119_download_bundle",
                 )
 
-    st.caption("V119 is a customer-facing portal/front-door layer. It is not full SaaS, does not process payments directly and does not make production/accuracy/legal/compliance guarantees.")
+    st.caption("This customer-facing portal is the front-door layer. It is not full SaaS, does not process payments directly and does not make production/accuracy/legal/compliance guarantees.")
 
 
 def render_guided_custom_customer_builder_tab():
