@@ -19,8 +19,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from synthetic_data_optimizer_v109 import generate_scenario_dataset, score_synthetic_dataset, SCENARIO_LIBRARY
-from synthetic_real_bridge_v110 import build_real_data_profile, calibrate_synthetic_to_profile
+from synthetic_data_optimizer import generate_scenario_dataset, score_synthetic_dataset, SCENARIO_LIBRARY
+from synthetic_real_bridge import build_real_data_profile, calibrate_synthetic_to_profile
 
 VERSION = "V111"
 MODULE = "Synthetic Reliability Lab"
@@ -311,7 +311,7 @@ def _red_team_checks(df: pd.DataFrame) -> List[Dict[str, Any]]:
     return checks
 
 
-def build_synthetic_reliability_lab_v111_snapshot(
+def build_synthetic_reliability_lab_snapshot(
     project_name: str = "EdgeTwin Project",
     pack_key: str = "rotating_machinery",
     rows: int = 2500,
