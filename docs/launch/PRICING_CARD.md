@@ -46,6 +46,14 @@ For custom modules, reusable templates, additional data sources, hardware/BOM no
 
 ## Add-ons
 
+## Value Guarantee
+
+EdgeTwin is designed to give value even when the answer is “not ready yet.”
+
+If the provided data is not ready for a controlled pilot, the customer receives a clear explanation of why, what is missing, what must be improved, and which lower-risk next step is recommended.
+
+EdgeTwin does not sell production accuracy guarantees. It sells structured pilot-readiness evidence, data-quality insight and decision support.
+
 - Extra data source/file type: EUR 500
 - Branding/language pack: EUR 450
 - Extra use-case variant: EUR 1,500
