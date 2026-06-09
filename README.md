@@ -21,6 +21,12 @@ EdgeTwin Studio is currently designed for founder-led paid pilots and productize
 - Private delivery/download flow
 - Buyer data room and trust/customer readiness layer
 
+## Commercial positioning
+
+EdgeTwin prepares controlled pilot/evidence packs with data-quality checks, trust notes, assumptions, limitations and concrete next steps.
+
+It does not provide production accuracy guarantees, legal approval, compliance certification or safety certification without additional validation and formal review.
+
 ## Run locally
 
 ```bash
