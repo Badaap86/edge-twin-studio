@@ -1,7 +1,7 @@
 """EdgeTwin Studio V117 One Perfect Customer Flow.
 
 Purpose:
-- Collapse the powerful V80-V116 stack into one calm customer journey.
+- Collapse the powerful internal stack into one calm customer journey.
 - Make the product self-selling without exposing the customer to 30+ founder tabs.
 - Guide a lead from problem -> pack -> proof -> quote/payment -> delivery/download.
 - Keep dangerous production/accuracy/legal/compliance guarantees blocked.
@@ -310,7 +310,7 @@ def _next_actions(decision: str, payment_gate: Dict[str, Any], data_gate: Dict[s
     ]
     unlock = payment_gate.get("unlock_decision")
     if unlock in {"checkout_ready", "quote_only"}:
-        actions.append("Connect the CTA to V98 quote and V102/V99 payment-unlock logic.")
+        actions.append("Connect the CTA to quote, payment and unlock logic.")
     if data_gate.get("level") in {"starter_only", "professional_pilot_candidate"}:
         actions.append("Use limitation notes and missing-input checklist in the bundle.")
     if pack.get("name") in {"Real-Data Evidence Pack", "Premium Custom Pack"}:
