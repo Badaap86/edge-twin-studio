@@ -12,11 +12,13 @@ Boundary:
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+import datetime as _dt
+import hashlib
+import io
 import json
+import zipfile
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 
@@ -25,19 +27,9 @@ from synthetic_data_optimizer import (
     generate_scenario_dataset,
     score_synthetic_dataset,
 )
-
-from synthetic_real_bridge import (
-    build_real_data_profile,
-    calibrate_synthetic_to_profile,
-    build_learning_policy,
-)
-
-from synthetic_reliability_lab import build_synthetic_reliability_lab_v111_snapshot
-
-from dataset_benchmark_harness import (
-    validate_dataset_v112,
-    BENCHMARK_PROFILES,
-)
+from synthetic_real_bridge import build_real_data_profile, calibrate_synthetic_to_profile, build_learning_policy
+from synthetic_reliability_lab import build_synthetic_reliability_lab_snapshot
+from dataset_benchmark_harness import validate_dataset_v112, BENCHMARK_PROFILES
 
 VERSION = "V115"
 MODULE = "Dataset-to-Synthetic Calibration Loop"
@@ -349,7 +341,7 @@ def build_dataset_to_synthetic_calibration_v115_snapshot(
     best_privacy = _row_similarity_privacy_check(best_df, reference_df if reference_available else None)
 
     try:
-        v111_snapshot, _ = build_synthetic_reliability_lab_v111_snapshot(
+        v111_snapshot, _ = build_synthetic_reliability_lab_snapshot(
             project_name=project_name,
             pack_key=pack_key,
             rows=min(max(rows, 500), 4000),
@@ -486,7 +478,7 @@ def create_synthetic_calibration_v115_bundle(snapshot: Dict[str, Any], datasets:
     bio = io.BytesIO()
     datasets = datasets or {}
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("synthetic_calibration_loop_v115.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("dataset_to_synthetic.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("candidate_scores_v115.csv", build_v115_candidate_table(snapshot).to_csv(index=False))
         zf.writestr("recommendations_v115.csv", pd.DataFrame(snapshot.get("recommendations", [])).to_csv(index=False))
         zf.writestr("validation_contract_v115.json", json.dumps(_json_safe(snapshot.get("validation_contract", {})), indent=2, ensure_ascii=False))
