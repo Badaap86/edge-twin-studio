@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import confusion_matrix
@@ -12,21 +13,26 @@ from sklearn.model_selection import cross_val_predict
 
 import core
 import state_registry
-import public_benchmark_dataset_adapter_v113 as public_benchmark_v113
-import dataset_library_import_wizard_v114 as dataset_import_v114
-import synthetic_calibration_loop_v115 as synthetic_calibration_v115
-import self_selling_conversion_v116 as self_selling_v116
-import customer_flow_v117 as customer_flow_v117
-import guided_custom_customer_builder_v118 as custom_customer_v118
-import customer_facing_landing_portal_v119 as landing_portal_v119
-import product_release_candidate_v120 as release_candidate_v120
+
+# Clean snake_case module imports after repository cleanup.
+import public_benchmark_dataset_adapter as public_benchmark_v113
+import dataset_library_import_wizard as dataset_import_v114
+import dataset_to_synthetic as synthetic_calibration_v115
+import self_selling as self_selling_v116
+import customer_flow as customer_flow_v117
+import guided_custom_customer_builder as custom_customer_v118
+import customer_facing_landing_portal as landing_portal_v119
+import product_release_candidate as release_candidate_v120
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V120", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="EdgeTwin Studio V120",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 core.init_db()
-
 
 # ============================================================
 # STATE
