@@ -1,4 +1,4 @@
-"""EdgeTwin Studio V119 Customer-Facing Landing Portal.
+"""EdgeTwin Studio Customer-Facing Landing Portal.
 
 Purpose:
 - Turn the strong internal EdgeTwin stack into one customer-facing homepage / pack page.
@@ -7,7 +7,7 @@ Purpose:
 - Keep claims safe: no production accuracy, legal/compliance certification or safety guarantees.
 
 Boundary:
-- V119 prepares customer-facing page sections, pack cards, custom-builder handoff,
+- Prepares customer-facing page sections, pack cards, custom-builder handoff,
   quote/payment CTA copy, trust cards and download/portal handoff manifests.
 - It does not process payments, host a public website by itself, sign contracts,
   store payment-card data, certify compliance, or guarantee production accuracy.
@@ -254,7 +254,7 @@ def build_customer_facing_landing_portal_snapshot(
     blockers: List[str] = []
     review_flags: List[Any] = []
 
-    # V119 is the public/private front door. The landing page itself should not be blocked
+    # This is the public/private front door. The landing page itself should not be blocked
     # just because a deeper custom-pack workflow needs review. Only unsafe public copy,
     # risky guarantees, payment disputes or public raw-upload risks block the portal.
     for source in [conversion, flow]:
@@ -263,7 +263,7 @@ def build_customer_facing_landing_portal_snapshot(
     if custom.get("blockers"):
         review_flags.append({
             "item": "Custom builder has deeper review/blocker items",
-            "reason": "The landing page may still show the custom route, but quote/delivery must resolve V118 items first.",
+            "reason": "The landing page may still show the custom route, but quote/delivery must resolve custom-pack review items first.",
             "v118_blockers": custom.get("blockers"),
         })
     review_flags.extend(custom.get("review_flags") or [])
@@ -333,7 +333,7 @@ def build_customer_facing_landing_portal_snapshot(
         },
         "custom_builder_handoff": {
             "enabled": True,
-            "source": "V118 Guided Custom Builder",
+            "source": "Guided Custom Builder",
             "pack_name": custom.get("pack_name"),
             "price_display": custom.get("price_display"),
             "auto_send_allowed": custom.get("auto_send_allowed"),
@@ -341,7 +341,7 @@ def build_customer_facing_landing_portal_snapshot(
             "review_flags": custom.get("review_flags") or [],
         },
         "quote_payment_handoff": {
-            "source": "V98/V99/V102/V106 layers",
+            "source": "Quote, payment, unlock and order layers",
             "payment_mode": payment_mode,
             "customer_message": "Choose a pack, approve scope, then use the configured payment/deposit route. EdgeTwin does not store card data.",
             "unlock_rule": "Download/intake/delivery unlocks only after payment/deposit status is confirmed by the payment layer.",
@@ -388,7 +388,7 @@ def _pdf_bytes(snapshot: Dict[str, Any]) -> bytes:
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 8, _safe_text("EdgeTwin Studio V119 - Customer-Facing Landing Portal"), ln=True)
+    pdf.cell(0, 8, _safe_text("EdgeTwin Studio - Customer-Facing Landing Portal"), ln=True)
     pdf.set_font("Arial", size=10)
     for line in [
         f"Decision: {snapshot.get('decision')}",
