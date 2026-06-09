@@ -12,10 +12,18 @@ from sklearn.model_selection import cross_val_predict
 
 import core
 import state_registry
+import public_benchmark_dataset_adapter_v113 as public_benchmark_v113
+import dataset_library_import_wizard_v114 as dataset_import_v114
+import synthetic_calibration_loop_v115 as synthetic_calibration_v115
+import self_selling_conversion_v116 as self_selling_v116
+import customer_flow_v117 as customer_flow_v117
+import guided_custom_customer_builder_v118 as custom_customer_v118
+import customer_facing_landing_portal_v119 as landing_portal_v119
+import product_release_candidate_v120 as release_candidate_v120
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V90", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio V120", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -118,6 +126,10 @@ def init_state():
         "pricing_offer_bundle": None,
         "paid_pilot_v45_snapshot": None,
         "paid_pilot_v45_bundle": None,
+        "ai_copilot_adapter_v107_snapshot": None,
+        "ai_copilot_adapter_v107_bundle": None,
+        "claim_safety_prompt_policy_v108_snapshot": None,
+        "claim_safety_prompt_policy_v108_bundle": None,
         "proposal_sow_snapshot": None,
         "proposal_sow_bundle": None,
         "quote_to_cash_snapshot": None,
@@ -205,6 +217,23 @@ def init_state():
         "last_admin_export_event": None,
         "last_operator_note_event": None,
         "selected_plan": "Founder Test Mode",
+        "public_benchmark_v113_snapshot": None,
+        "public_benchmark_v113_bundle": None,
+        "dataset_import_v114_manifest": None,
+        "dataset_import_v114_bundle": None,
+        "synthetic_calibration_v115_snapshot": None,
+        "synthetic_calibration_v115_bundle": None,
+        "self_selling_conversion_v116_snapshot": None,
+        "self_selling_conversion_v116_bundle": None,
+        "one_perfect_customer_flow_v117_snapshot": None,
+        "one_perfect_customer_flow_v117_bundle": None,
+        "guided_custom_customer_builder_v118_snapshot": None,
+        "guided_custom_customer_builder_v118_bundle": None,
+        "customer_facing_landing_portal_v119_snapshot": None,
+        "customer_facing_landing_portal_v119_bundle": None,
+        "product_release_candidate_v120_snapshot": None,
+        "product_release_candidate_v120_bundle": None,
+        "synthetic_calibration_v115_dataset": pd.DataFrame(),
     }
 
     for key, val in defaults.items():
@@ -704,9 +733,9 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # HEADER / ORGANIZED NAVIGATION V45.2
 # ============================================================
 
-st.title("EdgeTwin Studio V90")
+st.title("EdgeTwin Studio V99")
 st.caption(
-    "Commercial Release Candidate: simple customer mode, full founder control, privacy-safe learning, real upload intake, checkout readiness, cloud migration planning and hardware reference proof. "
+    "Pack Commerce Release Candidate: no SaaS required, sell downloadable/custom packs first, keep full founder control, privacy-safe learning, real upload intake and checkout readiness. "
     "V80 adds Trust Ledger and Decision Traceability: one evidence receipt explaining what data, gates, risks, approvals and claims support each customer deliverable."
 )
 
@@ -781,18 +810,145 @@ NAV_LABELS["trust_ledger_v80_tab"] = "📒 Trust Ledger V80"
 NAV_LABELS["autonomy_controller_v82_tab"] = "🧠 Autonomy Controller V82"
 NAV_LABELS["release_guard_v83_tab"] = "🧪 Release Guard V83"
 NAV_LABELS["ultimate_product_v90_tab"] = "👑 Ultimate Product Brain V90"
+NAV_LABELS["pilot_launch_os_v91_tab"] = "🚦 Pilot Launch OS V91"
+NAV_LABELS["customer_demo_os_v92_tab"] = "🎬 Customer Demo OS V92"
+NAV_LABELS["pack_commerce_os_v93_tab"] = "📦 Pack Commerce OS V93"
+NAV_LABELS["client_input_autopilot_v94_tab"] = "🤖 Client Input Autopilot V94"
+NAV_LABELS["policy_approval_engine_v95_tab"] = "✅ Policy Approval Engine V95"
+NAV_LABELS["pricing_assurance_os_v96_tab"] = "💶 Pricing & Assurance OS V96"
+NAV_LABELS["custom_pack_builder_v97_tab"] = "🧩 Custom Pack Builder V97"
+NAV_LABELS["order_quote_builder_v98_tab"] = "🧾 Order Quote Builder V98"
+NAV_LABELS["payment_unlock_delivery_v99_tab"] = "🔓 Payment Unlock + Delivery V99"
+NAV_LABELS["marketplace_entitlement_v100_tab"] = "🛒 Marketplace Entitlement V100"
+NAV_LABELS["public_hosting_v101_tab"] = "🌐 Public Hosting Kit V101"
+NAV_LABELS["payment_provider_adapter_v102_tab"] = "💳 Payment Provider Adapter V102"
+NAV_LABELS["customer_portal_lite_v103_tab"] = "🧑‍💼 Customer Portal Lite V103"
+NAV_LABELS["secure_download_links_v104_tab"] = "🔐 Secure Download Links V104"
+NAV_LABELS["private_delivery_endpoint_v105_tab"] = "🛡️ Private Delivery Endpoint V105"
+NAV_LABELS["order_fulfillment_v106_tab"] = "📚 Order Fulfillment V106"
+NAV_LABELS["ai_copilot_adapter_v107_tab"] = "🤖 AI Copilot Adapter V107"
+NAV_LABELS["claim_safety_prompt_policy_v108_tab"] = "🧯 Claim Safety Policy V108"
+NAV_LABELS["synthetic_data_optimizer_v109_tab"] = "🧬 Synthetic Data Optimizer V109"
+NAV_LABELS["synthetic_real_bridge_v110_tab"] = "🌉 Synthetic→Real Bridge V110"
+NAV_LABELS["synthetic_reliability_lab_v111_tab"] = "🧪 Synthetic Reliability Lab V111"
+NAV_LABELS["dataset_benchmark_harness_v112_tab"] = "📏 Dataset Benchmark Harness V112"
+NAV_LABELS["public_benchmark_dataset_v113_tab"] = "🎧 Public Benchmark Dataset Adapter V113"
+NAV_LABELS["dataset_import_wizard_v114_tab"] = "🗂️ Dataset Import Wizard V114"
+NAV_LABELS["synthetic_calibration_loop_v115_tab"] = "🔁 Synthetic Calibration Loop V115"
+NAV_LABELS["self_selling_conversion_v116_tab"] = "🧲 Self-Selling Conversion V116"
+NAV_LABELS["one_perfect_customer_flow_v117_tab"] = "🛣️ One Perfect Customer Flow V117"
+NAV_LABELS["guided_custom_customer_builder_v118_tab"] = "🧭 Guided Custom Builder V118"
+NAV_LABELS["customer_facing_landing_portal_v119_tab"] = "🌍 Customer Landing Portal V119"
+NAV_LABELS["product_release_candidate_v120_tab"] = "🚀 Product RC V120"
+_v80_add_nav("6. Operator & Admin", "public_hosting_v101_tab", 0)
+_v80_add_nav("6. Operator & Admin", "payment_provider_adapter_v102_tab", 0)
+_v80_add_nav("6. Operator & Admin", "customer_portal_lite_v103_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "customer_portal_lite_v103_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "private_delivery_endpoint_v105_tab", 0)
+_v80_add_nav("4. Download / handoff", "private_delivery_endpoint_v105_tab", 0)
+_v80_add_nav("6. Operator & Admin", "private_delivery_endpoint_v105_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "order_fulfillment_v106_tab", 0)
+_v80_add_nav("4. Download / handoff", "order_fulfillment_v106_tab", 0)
+_v80_add_nav("6. Operator & Admin", "order_fulfillment_v106_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "ai_copilot_adapter_v107_tab", 0)
+_v80_add_nav("6. Operator & Admin", "ai_copilot_adapter_v107_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "claim_safety_prompt_policy_v108_tab", 0)
+_v80_add_nav("6. Operator & Admin", "claim_safety_prompt_policy_v108_tab", 0)
+_v80_add_nav("1. Start", "claim_safety_prompt_policy_v108_tab", 1)
+_v80_add_nav("2. Build Pilot", "synthetic_calibration_loop_v115_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_calibration_loop_v115_tab", 0)
+_v80_add_nav("1. Start", "product_release_candidate_v120_tab", 0)
+_v80_add_nav("1. Start", "customer_facing_landing_portal_v119_tab", 0)
+_v80_add_nav("1. Start", "one_perfect_customer_flow_v117_tab", 1)
+_v80_add_nav("1. Start", "guided_custom_customer_builder_v118_tab", 1)
+_v80_add_nav("1. Start", "self_selling_conversion_v116_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "product_release_candidate_v120_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "customer_facing_landing_portal_v119_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "one_perfect_customer_flow_v117_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "guided_custom_customer_builder_v118_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "self_selling_conversion_v116_tab", 1)
+_v80_add_nav("5. Request proposal", "product_release_candidate_v120_tab", 0)
+_v80_add_nav("5. Request proposal", "customer_facing_landing_portal_v119_tab", 0)
+_v80_add_nav("5. Request proposal", "one_perfect_customer_flow_v117_tab", 1)
+_v80_add_nav("5. Request proposal", "guided_custom_customer_builder_v118_tab", 1)
+_v80_add_nav("5. Request proposal", "self_selling_conversion_v116_tab", 1)
+_v80_add_nav("6. Operator & Admin", "product_release_candidate_v120_tab", 0)
+_v80_add_nav("6. Operator & Admin", "customer_facing_landing_portal_v119_tab", 0)
+_v80_add_nav("6. Operator & Admin", "one_perfect_customer_flow_v117_tab", 1)
+_v80_add_nav("6. Operator & Admin", "guided_custom_customer_builder_v118_tab", 1)
+_v80_add_nav("6. Operator & Admin", "self_selling_conversion_v116_tab", 1)
+_v80_add_nav("6. Operator & Admin", "synthetic_calibration_loop_v115_tab", 0)
+_v80_add_nav("2. Build Pilot", "dataset_import_wizard_v114_tab", 0)
+_v80_add_nav("2. Build Pilot", "synthetic_data_optimizer_v109_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_data_optimizer_v109_tab", 0)
+_v80_add_nav("6. Operator & Admin", "synthetic_data_optimizer_v109_tab", 0)
+_v80_add_nav("2. Build Pilot", "synthetic_real_bridge_v110_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_real_bridge_v110_tab", 0)
+_v80_add_nav("6. Operator & Admin", "synthetic_real_bridge_v110_tab", 0)
+_v80_add_nav("2. Build Pilot", "synthetic_reliability_lab_v111_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_reliability_lab_v111_tab", 0)
+_v80_add_nav("6. Operator & Admin", "synthetic_reliability_lab_v111_tab", 0)
+_v80_add_nav("2. Build Pilot", "dataset_benchmark_harness_v112_tab", 0)
+_v80_add_nav("3. Review readiness", "dataset_benchmark_harness_v112_tab", 0)
+_v80_add_nav("6. Operator & Admin", "dataset_benchmark_harness_v112_tab", 0)
+_v80_add_nav("2. Build Pilot", "public_benchmark_dataset_v113_tab", 0)
+_v80_add_nav("3. Review readiness", "public_benchmark_dataset_v113_tab", 0)
+_v80_add_nav("6. Operator & Admin", "public_benchmark_dataset_v113_tab", 0)
+
+_v80_add_nav("1. Start", "ai_copilot_adapter_v107_tab", 1)
+
+_v80_add_nav("5. Sell & Deliver", "secure_download_links_v104_tab", 0)
+_v80_add_nav("4. Download / handoff", "secure_download_links_v104_tab", 0)
+_v80_add_nav("4. Download / handoff", "customer_portal_lite_v103_tab", 0)
+_v80_add_nav("1. Start", "customer_portal_lite_v103_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "public_hosting_v101_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "payment_provider_adapter_v102_tab", 0)
+_v80_add_nav("1. Start", "payment_provider_adapter_v102_tab", 0)
+_v80_add_nav("4. Download / handoff", "payment_provider_adapter_v102_tab", 0)
 _v80_add_nav("1. Start", "autonomy_controller_v82_tab", 0)
 _v80_add_nav("4. Download / handoff", "autonomy_controller_v82_tab", 0)
 _v80_add_nav("6. Operator & Admin", "autonomy_controller_v82_tab", 0)
-_v80_add_nav("1. Start", "ultimate_product_v90_tab", 0)
-_v80_add_nav("4. Download / handoff", "ultimate_product_v90_tab", 0)
-_v80_add_nav("6. Operator & Admin", "ultimate_product_v90_tab", 0)
+_v80_add_nav("1. Start", "customer_demo_os_v92_tab", 0)
+_v80_add_nav("1. Start", "pricing_assurance_os_v96_tab", 0)
+_v80_add_nav("1. Start", "marketplace_entitlement_v100_tab", 0)
+_v80_add_nav("1. Start", "payment_unlock_delivery_v99_tab", 0)
+_v80_add_nav("1. Start", "order_quote_builder_v98_tab", 0)
+_v80_add_nav("1. Start", "custom_pack_builder_v97_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "marketplace_entitlement_v100_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "payment_unlock_delivery_v99_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "order_quote_builder_v98_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "custom_pack_builder_v97_tab", 0)
+_v80_add_nav("6. Operator & Admin", "marketplace_entitlement_v100_tab", 0)
+_v80_add_nav("6. Operator & Admin", "payment_unlock_delivery_v99_tab", 0)
+_v80_add_nav("6. Operator & Admin", "order_quote_builder_v98_tab", 0)
+_v80_add_nav("6. Operator & Admin", "custom_pack_builder_v97_tab", 0)
+_v80_add_nav("5. Request proposal", "marketplace_entitlement_v100_tab", 0)
+_v80_add_nav("5. Request proposal", "payment_unlock_delivery_v99_tab", 0)
+_v80_add_nav("5. Request proposal", "order_quote_builder_v98_tab", 0)
+_v80_add_nav("5. Request proposal", "custom_pack_builder_v97_tab", 0)
+_v80_add_nav("1. Start", "client_input_autopilot_v94_tab", 1)
+_v80_add_nav("1. Start", "pack_commerce_os_v93_tab", 1)
+_v80_add_nav("1. Start", "pilot_launch_os_v91_tab", 1)
+_v80_add_nav("1. Start", "ultimate_product_v90_tab", 1)
+_v80_add_nav("4. Download / handoff", "customer_demo_os_v92_tab", 0)
+_v80_add_nav("4. Download / handoff", "pilot_launch_os_v91_tab", 1)
+_v80_add_nav("4. Download / handoff", "ultimate_product_v90_tab", 1)
+_v80_add_nav("6. Operator & Admin", "customer_demo_os_v92_tab", 0)
+_v80_add_nav("6. Operator & Admin", "policy_approval_engine_v95_tab", 0)
+_v80_add_nav("6. Operator & Admin", "client_input_autopilot_v94_tab", 1)
+_v80_add_nav("6. Operator & Admin", "pack_commerce_os_v93_tab", 1)
+_v80_add_nav("6. Operator & Admin", "pilot_launch_os_v91_tab", 1)
+_v80_add_nav("6. Operator & Admin", "ultimate_product_v90_tab", 1)
 _v80_add_nav("1. Start", "release_guard_v83_tab", 1)
 _v80_add_nav("4. Download / handoff", "release_guard_v83_tab", 1)
 _v80_add_nav("6. Operator & Admin", "release_guard_v83_tab", 1)
 _v80_add_nav("1. Start", "trust_ledger_v80_tab", 1)
 _v80_add_nav("4. Download / handoff", "trust_ledger_v80_tab", 1)
-_v80_add_nav("5. Sell & Deliver", "trust_ledger_v80_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "customer_demo_os_v92_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "policy_approval_engine_v95_tab", 0)
+_v80_add_nav("5. Sell & Deliver", "client_input_autopilot_v94_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "pack_commerce_os_v93_tab", 1)
+_v80_add_nav("5. Sell & Deliver", "trust_ledger_v80_tab", 1)
 _v80_add_nav("6. Operator & Admin", "trust_ledger_v80_tab", 1)
 
 st.sidebar.markdown("---")
@@ -12138,7 +12294,3179 @@ def render_ultimate_product_v90_tab():
 
     st.caption("V90 is not a fake 100% claim. It is a stronger product-control layer: automate safe work, block risky work, and preserve honest readiness.")
 
+
+
+# V91 — Pilot Launch OS / Founder-to-Customer Execution Layer
+
+def _v91_snapshot_map():
+    snapshots = _v90_snapshot_map()
+    snapshots.update({
+        "ultimate_product_v90": st.session_state.get("ultimate_product_v90_snapshot"),
+        "pilot_launch_os_v91": st.session_state.get("pilot_launch_os_v91_snapshot"),
+    })
+    return snapshots
+
+
+def render_pilot_launch_os_v91_tab():
+    st.header("Pilot Launch OS V91")
+    st.write(
+        "V91 answers the real next question: not more features, but how EdgeTwin becomes a sellable, founder-safe paid pilot. "
+        "The analysis engine stays powerful; this layer controls the customer route, claims, demo flow and first paid-pilot operating plan."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_type = st.selectbox(
+            "Customer route",
+            ["First serious paid pilot", "Internal demo", "Private beta customer", "Existing customer expansion", "Enterprise procurement"],
+            index=0,
+            key="v91_customer_type",
+        )
+    with c2:
+        target_days = st.number_input("Pilot preparation days", min_value=1, max_value=60, value=14, step=1, key="v91_target_days")
+    with c3:
+        founder_hours = st.number_input("Founder hours/week available", min_value=1, max_value=40, value=6, step=1, key="v91_founder_hours")
+
+    c4, c5, c6 = st.columns(3)
+    with c4:
+        pilot_price_mode = st.selectbox(
+            "Payment mode",
+            ["Founder-approved manual invoice", "Payment link after approval", "Free private beta", "Enterprise PO/manual procurement"],
+            index=0,
+            key="v91_pilot_price_mode",
+        )
+    with c5:
+        use_real_customer_data = st.checkbox("Will use real customer data", value=False, key="v91_use_real_customer_data")
+    with c6:
+        customer_self_service = st.checkbox("Request self-service mode", value=False, key="v91_customer_self_service")
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    settings = state_registry.collect_persisted_settings(
+        st.session_state,
+        compact_bridge_summary_fn=core.compact_bridge_summary,
+    )
+    registry_status = state_registry.get_registry_status(st.session_state, settings)
+    snapshots = _v91_snapshot_map()
+
+    if st.button("Build Pilot Launch OS V91", type="primary", use_container_width=True, key="v91_run_launch_os"):
+        snapshot = core.build_pilot_launch_os_v91_snapshot({
+            "project_name": st.session_state.project_name,
+            "dataset_df": dataset_df,
+            "settings": settings,
+            "registry_status": registry_status,
+            "snapshots": snapshots,
+            "customer_type": customer_type,
+            "pilot_price_mode": pilot_price_mode,
+            "target_days": target_days,
+            "founder_hours_per_week": founder_hours,
+            "use_real_customer_data": use_real_customer_data,
+            "customer_self_service": customer_self_service,
+        })
+        st.session_state.pilot_launch_os_v91_snapshot = snapshot
+        st.session_state.pilot_launch_os_v91_bundle = core.create_pilot_launch_os_v91_bundle(st.session_state.project_name, snapshot)
+        st.success("Pilot Launch OS V91 completed.")
+
+    snapshot = st.session_state.get("pilot_launch_os_v91_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Launch score", f"{snapshot.get('pilot_launch_score', 0)}%")
+        m2.metric("V90", f"{snapshot.get('v90_score', 0)}%")
+        m3.metric("Engine", f"{snapshot.get('engine_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        if snapshot.get("engine_power_preserved"):
+            st.success(snapshot.get("engine_note", "Engine preserved."))
+        else:
+            st.warning(snapshot.get("engine_note", "Engine proof needs strengthening."))
+
+        blockers = snapshot.get("blockers", [])
+        if blockers:
+            st.warning("V91 found launch blockers or founder-control warnings.")
+            st.dataframe(pd.DataFrame(blockers), use_container_width=True)
+        else:
+            st.success("No V91 launch blockers detected for the selected route.")
+
+        tabs = st.tabs(["Next 24h", "Customer flow", "Launch week", "Offer guardrails", "Full snapshot"])
+        with tabs[0]:
+            for item in snapshot.get("next_24h", []):
+                st.info(item)
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("customer_flow", [])), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("launch_week_plan", [])), use_container_width=True)
+        with tabs[3]:
+            st.json(snapshot.get("offer_guardrails", {}))
+        with tabs[4]:
+            st.json(snapshot)
+
+        if st.session_state.get("pilot_launch_os_v91_bundle"):
+            st.download_button(
+                "Download Pilot Launch OS Bundle V91",
+                st.session_state.pilot_launch_os_v91_bundle,
+                file_name=f"{st.session_state.project_name}_pilot_launch_os_v91.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v91_download_pilot_launch_bundle",
+            )
+
+    st.caption("V91 is the practical launch layer: founder-led paid pilot first, self-service later, no fake production claims.")
+
+
+
+# V92 — Customer Demo OS / One-Click Proof Flow
+
+def _v92_snapshot_map():
+    snapshots = _v91_snapshot_map()
+    snapshots.update({
+        "pilot_launch_os_v91": st.session_state.get("pilot_launch_os_v91_snapshot"),
+        "customer_demo_os_v92": st.session_state.get("customer_demo_os_v92_snapshot"),
+    })
+    return snapshots
+
+
+def render_customer_demo_os_v92_tab():
+    st.header("Customer Demo OS V92")
+    st.write(
+        "V92 turns the powerful engine and product brain into one tight customer-safe proof flow. "
+        "This is the demo route: one use case, one result, one evidence bundle and one controlled paid-pilot ask."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        audience = st.selectbox(
+            "Audience",
+            ["Technical buyer", "Executive buyer", "Operations manager", "Maintenance lead", "Investor/advisor"],
+            index=0,
+            key="v92_audience",
+        )
+    with c2:
+        demo_use_case = st.selectbox(
+            "Demo use case",
+            [
+                "Predictive maintenance / anomaly readiness",
+                "Sensor anomaly pilot",
+                "Operations quality evidence",
+                "Energy/load monitoring pilot",
+                "Smart forestry / remote asset pilot",
+            ],
+            index=0,
+            key="v92_demo_use_case",
+        )
+    with c3:
+        demo_minutes = st.number_input("Demo minutes", min_value=5, max_value=30, value=15, step=1, key="v92_demo_minutes")
+
+    c4, c5, c6 = st.columns(3)
+    with c4:
+        use_synthetic_demo = st.checkbox("Allow synthetic/demo data", value=True, key="v92_use_synthetic_demo")
+    with c5:
+        ask_for_paid_pilot = st.checkbox("Include paid-pilot ask", value=True, key="v92_ask_for_paid_pilot")
+    with c6:
+        show_technical_depth = st.checkbox("Show technical depth", value=False, key="v92_show_technical_depth")
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    snapshots = _v92_snapshot_map()
+
+    if st.button("Build Customer Demo OS V92", type="primary", use_container_width=True, key="v92_run_customer_demo_os"):
+        snapshot = core.build_customer_demo_os_v92_snapshot({
+            "project_name": st.session_state.project_name,
+            "dataset_df": dataset_df,
+            "snapshots": snapshots,
+            "audience": audience,
+            "demo_use_case": demo_use_case,
+            "demo_minutes": demo_minutes,
+            "use_synthetic_demo": use_synthetic_demo,
+            "ask_for_paid_pilot": ask_for_paid_pilot,
+            "show_technical_depth": show_technical_depth,
+        })
+        st.session_state.customer_demo_os_v92_snapshot = snapshot
+        st.session_state.customer_demo_os_v92_bundle = core.create_customer_demo_os_v92_bundle(st.session_state.project_name, snapshot)
+        st.success("Customer Demo OS V92 completed.")
+
+    snapshot = st.session_state.get("customer_demo_os_v92_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Demo score", f"{snapshot.get('customer_demo_score', 0)}%")
+        m2.metric("V91", f"{snapshot.get('v91_score', 0)}%")
+        m3.metric("Engine", f"{snapshot.get('engine_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        if snapshot.get("engine_power_preserved"):
+            st.success(snapshot.get("engine_note", "Engine preserved."))
+
+        blockers = snapshot.get("blockers", [])
+        if blockers:
+            st.warning("V92 found demo blockers or control warnings.")
+            st.dataframe(pd.DataFrame(blockers), use_container_width=True)
+        else:
+            st.success("No V92 blockers detected for a controlled customer demo.")
+
+        tabs = st.tabs(["Demo script", "Proof cards", "Acceptance criteria", "Objections", "One pager", "Full snapshot"])
+        with tabs[0]:
+            st.dataframe(pd.DataFrame(snapshot.get("demo_script", [])), use_container_width=True)
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("proof_cards", [])), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("acceptance_criteria", [])), use_container_width=True)
+        with tabs[3]:
+            st.dataframe(pd.DataFrame(snapshot.get("objection_responses", [])), use_container_width=True)
+        with tabs[4]:
+            st.json(snapshot.get("customer_safe_one_pager", {}))
+        with tabs[5]:
+            st.json(snapshot)
+
+        if st.session_state.get("customer_demo_os_v92_bundle"):
+            st.download_button(
+                "Download Customer Demo OS Bundle V92",
+                st.session_state.customer_demo_os_v92_bundle,
+                file_name=f"{st.session_state.project_name}_customer_demo_os_v92.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v92_download_customer_demo_bundle",
+            )
+
+    st.caption("V92 is the buyer-facing proof flow: simple demo, honest claims, one controlled paid-pilot next step.")
+
+
+# V93 — Pack Commerce OS / Sell Packs Before SaaS
+
+def _v93_snapshot_map():
+    snapshots = _v92_snapshot_map()
+    snapshots.update({
+        "customer_demo_os_v92": st.session_state.get("customer_demo_os_v92_snapshot"),
+        "pack_commerce_os_v93": st.session_state.get("pack_commerce_os_v93_snapshot"),
+    })
+    return snapshots
+
+
+def render_pack_commerce_os_v93_tab():
+    st.header("Pack Commerce OS V93")
+    st.write(
+        "V93 turns EdgeTwin into a pack-first business: sell downloadable packs and founder-approved custom packs now, "
+        "keep SaaS for later, and let customers configure scope without giving up your control."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        buyer_type = st.selectbox(
+            "Buyer type",
+            ["SMB operations", "Maintenance company", "Factory/industrial", "Agriculture/remote assets", "Consultant/integrator", "Internal innovation team"],
+            index=0,
+            key="v93_buyer_type",
+        )
+    with c2:
+        primary_pack = st.selectbox(
+            "Primary pack",
+            ["Starter Diagnostic Pack", "Predictive Maintenance Pack", "Sensor Anomaly Pack", "Operations Evidence Pack", "Smart Field Asset Pack", "Custom Pack Builder"],
+            index=1,
+            key="v93_primary_pack",
+        )
+    with c3:
+        delivery_model = st.selectbox(
+            "Delivery model",
+            ["Downloadable pack", "Founder-assisted pack", "Custom pack", "Premium implementation pack"],
+            index=1,
+            key="v93_delivery_model",
+        )
+
+    st.markdown("#### Customer-selected custom pack modules")
+    available_modules = [
+        "Use-case intake", "Synthetic demo dataset", "Customer data import checklist", "Signal feature extraction", "Trust ledger", "Release guard", "Autonomy controller", "Customer demo script", "One-page pilot report", "PDF/ZIP export bundle", "Acceptance criteria", "Founder review", "Hardware reference notes", "Training handoff", "Support checklist",
+    ]
+    selected_modules = st.multiselect(
+        "Modules the customer wants in the pack",
+        available_modules,
+        default=["Use-case intake", "Signal feature extraction", "Trust ledger", "Customer demo script", "One-page pilot report", "PDF/ZIP export bundle", "Acceptance criteria", "Founder review"],
+        key="v93_selected_modules",
+    )
+
+    c4, c5, c6 = st.columns(3)
+    with c4:
+        customer_can_configure = st.checkbox("Customer may self-configure pack", value=True, key="v93_customer_can_configure")
+    with c5:
+        founder_final_approval = st.checkbox("Founder final approval required", value=True, key="v93_founder_final_approval")
+    with c6:
+        include_price_ladder = st.checkbox("Include price ladder", value=True, key="v93_include_price_ladder")
+
+    c7, c8, c9 = st.columns(3)
+    with c7:
+        require_saas = st.checkbox("Require SaaS account", value=False, key="v93_require_saas")
+    with c8:
+        allow_custom_claims = st.checkbox("Allow customer-specific performance claims", value=False, key="v93_allow_custom_claims")
+    with c9:
+        target_delivery_days = st.number_input("Target delivery days", min_value=1, max_value=30, value=5, step=1, key="v93_target_delivery_days")
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    snapshots = _v93_snapshot_map()
+
+    if st.button("Build Pack Commerce OS V93", type="primary", use_container_width=True, key="v93_run_pack_commerce_os"):
+        snapshot = core.build_pack_commerce_os_v93_snapshot({
+            "project_name": st.session_state.project_name,
+            "dataset_df": dataset_df,
+            "snapshots": snapshots,
+            "buyer_type": buyer_type,
+            "primary_pack": primary_pack,
+            "delivery_model": delivery_model,
+            "selected_modules": selected_modules,
+            "customer_can_configure": customer_can_configure,
+            "founder_final_approval": founder_final_approval,
+            "include_price_ladder": include_price_ladder,
+            "require_saas": require_saas,
+            "allow_custom_claims": allow_custom_claims,
+            "target_delivery_days": target_delivery_days,
+        })
+        st.session_state.pack_commerce_os_v93_snapshot = snapshot
+        st.session_state.pack_commerce_os_v93_bundle = core.create_pack_commerce_os_v93_bundle(st.session_state.project_name, snapshot)
+        st.success("Pack Commerce OS V93 completed.")
+
+    snapshot = st.session_state.get("pack_commerce_os_v93_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Pack score", f"{snapshot.get('pack_commerce_score', 0)}%")
+        m2.metric("Demo score", f"{snapshot.get('v92_score', 0)}%")
+        m3.metric("Engine", f"{snapshot.get('engine_score', 0)}%")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        if snapshot.get("saas_not_required"):
+            st.success("V93 is pack-first: SaaS can wait. Customers can buy packs or custom packs now.")
+        else:
+            st.warning("This configuration depends too much on SaaS. For your current strategy, keep it pack-first.")
+
+        blockers = snapshot.get("blockers", [])
+        if blockers:
+            st.warning("V93 found pack-commerce blockers or founder-control warnings.")
+            st.dataframe(pd.DataFrame(blockers), use_container_width=True)
+        else:
+            st.success("No V93 blockers detected for pack-first selling.")
+
+        tabs = st.tabs(["Pack menu", "Custom builder", "Price ladder", "Delivery checklist", "Claims", "Customer copy", "Full snapshot"])
+        with tabs[0]:
+            st.dataframe(pd.DataFrame(snapshot.get("pack_menu", [])), use_container_width=True)
+        with tabs[1]:
+            st.json(snapshot.get("custom_pack_manifest", {}))
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("price_ladder", [])), use_container_width=True)
+        with tabs[3]:
+            st.dataframe(pd.DataFrame(snapshot.get("delivery_checklist", [])), use_container_width=True)
+        with tabs[4]:
+            st.json(snapshot.get("claim_policy", {}))
+        with tabs[5]:
+            st.markdown(snapshot.get("customer_pack_copy_md", ""))
+        with tabs[6]:
+            st.json(snapshot)
+
+        if st.session_state.get("pack_commerce_os_v93_bundle"):
+            st.download_button(
+                "Download Pack Commerce OS Bundle V93",
+                st.session_state.pack_commerce_os_v93_bundle,
+                file_name=f"{st.session_state.project_name}_pack_commerce_os_v93.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v93_download_pack_commerce_bundle",
+            )
+
+    st.caption("V93 is the pack-first business layer: sell packs and custom packs before building SaaS.")
+
+
+
+# V94 — Client Input Autopilot / customer-input-to-pack automation
+
+def _v94_snapshot_map():
+    snapshots = _v93_snapshot_map()
+    snapshots.update({
+        "pack_commerce_os_v93": st.session_state.get("pack_commerce_os_v93_snapshot"),
+        "client_input_autopilot_v94": st.session_state.get("client_input_autopilot_v94_snapshot"),
+    })
+    return snapshots
+
+
+def render_client_input_autopilot_v94_tab():
+    st.header("Client Input Autopilot V94")
+    st.write(
+        "V94 is built for your current reality: customers provide input, EdgeTwin automatically recommends the right pack, "
+        "builds the scope, prepares the quote range and creates the handoff bundle. You only approve price, scope and claims."
+    )
+
+    st.markdown("#### Customer intake")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        company = st.text_input("Company / project", value="Example customer", key="v94_company")
+    with c2:
+        customer_name = st.text_input("Customer contact name", value="Customer", key="v94_customer_name")
+    with c3:
+        industry = st.selectbox(
+            "Industry / area",
+            ["Industrial / factory", "Maintenance", "Agriculture / remote assets", "Construction / security", "Operations / back office", "Consultant / integrator", "Other"],
+            index=1,
+            key="v94_industry",
+        )
+
+    problem = st.text_area(
+        "Customer problem / request",
+        value="We want to detect early machine or sensor anomalies and receive a clear pilot report with evidence.",
+        height=90,
+        key="v94_problem",
+    )
+    c4, c5 = st.columns(2)
+    with c4:
+        target_outcome = st.text_area(
+            "Target outcome",
+            value="A PDF/ZIP pilot pack with anomaly checks, trust score, assumptions, limitations and next-step recommendation.",
+            height=80,
+            key="v94_target_outcome",
+        )
+    with c5:
+        constraints = st.text_area(
+            "Constraints / notes",
+            value="No SaaS yet. Keep delivery as pack/custom pack. Founder approves final claims.",
+            height=80,
+            key="v94_constraints",
+        )
+
+    c6, c7, c8 = st.columns(3)
+    with c6:
+        data_type = st.selectbox(
+            "Available data type",
+            ["CSV / spreadsheet", "Vibration / machine data", "Sensor stream", "Maintenance logs", "Operations workflow notes", "No data yet / needs template", "Other"],
+            index=1,
+            key="v94_data_type",
+        )
+    with c7:
+        urgency = st.selectbox("Urgency", ["Low", "Normal", "High", "Urgent"], index=1, key="v94_urgency")
+    with c8:
+        budget_band = st.selectbox(
+            "Budget band",
+            ["Starter €299-€750", "Pilot €750-€2.500", "Custom €2.500-€6.500", "Premium €6.500-€12.000+", "Unknown"],
+            index=1,
+            key="v94_budget_band",
+        )
+
+    c9, c10, c11 = st.columns(3)
+    with c9:
+        data_available = st.checkbox("Customer has data/sample", value=True, key="v94_data_available")
+    with c10:
+        sample_data_confirmed = st.checkbox("Sample/example confirmed", value=False, key="v94_sample_data_confirmed")
+    with c11:
+        customer_can_upload = st.checkbox("Customer can upload/share safely", value=True, key="v94_customer_can_upload")
+
+    requested_output = st.selectbox(
+        "Requested output",
+        ["PDF/ZIP pilot pack", "Starter diagnostic", "Custom pack", "Premium implementation", "Dashboard/API later", "Other"],
+        index=0,
+        key="v94_requested_output",
+    )
+
+    available_modules = [
+        "Use-case intake", "Customer data import checklist", "Synthetic demo dataset", "Signal feature extraction", "Workflow evidence mapping", "Trust ledger", "Release guard", "Autonomy controller", "Customer demo script", "One-page pilot report", "PDF/ZIP export bundle", "Acceptance criteria", "Founder review", "Hardware reference notes", "Training handoff", "Support checklist", "ROI/value estimate", "Objection handling", "Implementation checklist",
+    ]
+    self_config_modules = st.multiselect(
+        "Customer-selected custom modules",
+        available_modules,
+        default=["Use-case intake", "Customer data import checklist", "Signal feature extraction", "Trust ledger", "One-page pilot report", "PDF/ZIP export bundle", "Acceptance criteria", "Founder review"],
+        key="v94_self_config_modules",
+    )
+
+    dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
+    snapshots = _v94_snapshot_map()
+
+    if st.button("Run Client Input Autopilot V94", type="primary", use_container_width=True, key="v94_run_client_input_autopilot"):
+        customer_inputs = {
+            "customer_name": customer_name,
+            "company": company,
+            "industry": industry,
+            "problem": problem,
+            "target_outcome": target_outcome,
+            "data_type": data_type,
+            "urgency": urgency,
+            "budget_band": budget_band,
+            "constraints": constraints,
+            "requested_output": requested_output,
+            "data_available": data_available,
+            "sample_data_confirmed": sample_data_confirmed,
+            "customer_can_upload": customer_can_upload,
+            "self_config_modules": self_config_modules,
+        }
+        snapshot = core.build_client_input_autopilot_v94_snapshot({
+            "project_name": st.session_state.project_name,
+            "dataset_df": dataset_df,
+            "snapshots": snapshots,
+            "customer_inputs": customer_inputs,
+        })
+        st.session_state.client_input_autopilot_v94_snapshot = snapshot
+        st.session_state.client_input_autopilot_v94_bundle = core.create_client_input_autopilot_v94_bundle(st.session_state.project_name, snapshot)
+        st.success("Client Input Autopilot V94 completed.")
+
+    snapshot = st.session_state.get("client_input_autopilot_v94_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Autopilot", f"{snapshot.get('client_input_autopilot_score', 0)}%")
+        m2.metric("Input complete", f"{snapshot.get('intake_completeness_score', 0)}%")
+        m3.metric("Pack", snapshot.get("recommended_pack", "Unknown"))
+        m4.metric("Quote", snapshot.get("quote_range", {}).get("display", "Unknown"))
+
+        decision = snapshot.get("decision", "Unknown")
+        if "READY" in decision:
+            st.success(decision)
+        elif "APPROVAL" in decision:
+            st.warning(decision)
+        else:
+            st.info(decision)
+
+        blockers = snapshot.get("blockers", [])
+        warnings = snapshot.get("warnings", [])
+        if blockers:
+            st.error("Founder review required before customer send.")
+            st.dataframe(pd.DataFrame(blockers), use_container_width=True)
+        if warnings:
+            st.warning("V94 found warnings to resolve or mention clearly.")
+            st.dataframe(pd.DataFrame(warnings), use_container_width=True)
+
+        tabs = st.tabs(["Recommendation", "Missing input", "Approval queue", "Delivery plan", "Customer summary", "Auto rules", "Form schema", "Full snapshot"])
+        with tabs[0]:
+            st.subheader(snapshot.get("recommended_pack", "Recommended pack"))
+            st.write(snapshot.get("recommendation_reason", ""))
+            st.json(snapshot.get("pack_config_for_v93", {}))
+        with tabs[1]:
+            missing = snapshot.get("missing_inputs", [])
+            if missing:
+                st.dataframe(pd.DataFrame(missing), use_container_width=True)
+            else:
+                st.success("No critical missing intake fields.")
+            st.dataframe(pd.DataFrame(snapshot.get("required_inputs", [])), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("founder_approval_queue", [])), use_container_width=True)
+        with tabs[3]:
+            st.dataframe(pd.DataFrame(snapshot.get("delivery_plan", [])), use_container_width=True)
+        with tabs[4]:
+            st.markdown(snapshot.get("customer_safe_summary_md", ""))
+        with tabs[5]:
+            cc1, cc2 = st.columns(2)
+            with cc1:
+                st.markdown("**Safe automatic actions**")
+                st.write(snapshot.get("safe_auto_actions", []))
+            with cc2:
+                st.markdown("**Blocked without approval**")
+                st.write(snapshot.get("blocked_auto_actions", []))
+        with tabs[6]:
+            st.dataframe(pd.DataFrame(snapshot.get("customer_form_schema", [])), use_container_width=True)
+        with tabs[7]:
+            st.json(snapshot)
+
+        if st.session_state.get("client_input_autopilot_v94_bundle"):
+            st.download_button(
+                "Download Client Input Autopilot Bundle V94",
+                st.session_state.client_input_autopilot_v94_bundle,
+                file_name=f"{st.session_state.project_name}_client_input_autopilot_v94.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v94_download_client_input_autopilot_bundle",
+            )
+
+    st.caption("V94 saves founder time: customers provide input, EdgeTwin prepares the pack automatically, and you approve only the high-risk decisions.")
+
+
+# ============================================================
+# V95 — Policy Approval Engine
+# ============================================================
+
+def _v95_snapshot_map():
+    snapshots = _v94_snapshot_map()
+    snapshots.update({
+        "policy_approval_engine_v95": st.session_state.get("policy_approval_engine_v95_snapshot"),
+    })
+    return snapshots
+
+
+def render_policy_approval_engine_v95_tab():
+    st.header("Policy Approval Engine V95")
+    st.write(
+        "V95 reduces founder approvals by using pre-approved pricing, scope and claim policies. "
+        "EdgeTwin may auto-approve safe standard packs, while exceptions stay blocked or founder-reviewed."
+    )
+
+    v94_snapshot = st.session_state.get("client_input_autopilot_v94_snapshot") or {}
+    if not v94_snapshot:
+        st.info("Tip: run Client Input Autopilot V94 first. V95 can still run with safe defaults, but it becomes stronger with real customer intake.")
+
+    st.markdown("#### Approval policy settings")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        auto_price_cap = st.number_input("Auto-approval price cap (€)", min_value=100, max_value=25000, value=2500, step=100, key="v95_auto_price_cap")
+        min_margin_percent = st.number_input("Minimum margin policy (%)", min_value=0, max_value=95, value=55, step=5, key="v95_min_margin")
+    with c2:
+        max_auto_modules = st.number_input("Max auto-approved modules", min_value=1, max_value=30, value=12, step=1, key="v95_max_auto_modules")
+        allow_standard_custom_pack = st.checkbox("Allow standard custom-pack auto-scope", value=False, key="v95_allow_standard_custom")
+    with c3:
+        require_data_sample_for_auto = st.checkbox("Require data/sample for auto-approval", value=True, key="v95_require_data_sample")
+        allow_auto_customer_summary = st.checkbox("Auto-approve safe customer summary", value=True, key="v95_allow_auto_customer_summary")
+
+    safe_claim_templates = st.multiselect(
+        "Pre-approved claim templates",
+        [
+            "pilot evidence, not production guarantee",
+            "local-first pack delivery",
+            "trust score with assumptions and limitations",
+            "anomaly screening for decision support",
+            "founder-reviewed custom work only when outside policy",
+            "no guaranteed accuracy before field validation",
+        ],
+        default=[
+            "pilot evidence, not production guarantee",
+            "local-first pack delivery",
+            "trust score with assumptions and limitations",
+            "anomaly screening for decision support",
+            "no guaranteed accuracy before field validation",
+        ],
+        key="v95_safe_claim_templates",
+    )
+
+    if st.button("Run Policy Approval Engine V95", type="primary", use_container_width=True, key="v95_run_policy_approval"):
+        snapshot = core.build_policy_approval_engine_v95_snapshot({
+            "project_name": st.session_state.project_name,
+            "snapshots": _v95_snapshot_map(),
+            "client_input_autopilot_v94": v94_snapshot,
+            "policy": {
+                "auto_price_cap_eur": int(auto_price_cap),
+                "min_margin_percent": int(min_margin_percent),
+                "max_auto_modules": int(max_auto_modules),
+                "allow_standard_custom_pack": bool(allow_standard_custom_pack),
+                "require_data_sample_for_auto": bool(require_data_sample_for_auto),
+                "allow_auto_customer_summary": bool(allow_auto_customer_summary),
+                "safe_claim_templates": safe_claim_templates,
+            },
+        })
+        st.session_state.policy_approval_engine_v95_snapshot = snapshot
+        st.session_state.policy_approval_engine_v95_bundle = core.create_policy_approval_engine_v95_bundle(st.session_state.project_name, snapshot)
+        st.success("Policy Approval Engine V95 completed.")
+
+    snapshot = st.session_state.get("policy_approval_engine_v95_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Policy score", f"{snapshot.get('policy_approval_score', 0)}%")
+        m2.metric("Auto-approved", snapshot.get("auto_approved_count", 0))
+        m3.metric("Review needed", snapshot.get("founder_review_count", 0))
+        m4.metric("Hard blocks", snapshot.get("hard_block_count", 0))
+
+        decision = snapshot.get("decision", "Unknown")
+        if "AUTO-APPROVED" in decision or "READY" in decision:
+            st.success(decision)
+        elif "REVIEW" in decision:
+            st.warning(decision)
+        elif "BLOCK" in decision:
+            st.error(decision)
+        else:
+            st.info(decision)
+
+        tabs = st.tabs(["Decision", "Price", "Scope", "Claims", "Exceptions", "Approval matrix", "Customer summary", "Full snapshot"])
+        with tabs[0]:
+            st.subheader(snapshot.get("decision", "Decision"))
+            st.write(snapshot.get("next_best_action", ""))
+            st.json(snapshot.get("automation_policy", {}))
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("price_policy_result", [])), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("scope_policy_result", [])), use_container_width=True)
+        with tabs[3]:
+            st.dataframe(pd.DataFrame(snapshot.get("claim_policy_result", [])), use_container_width=True)
+            st.markdown("#### Approved safe claims")
+            st.write(snapshot.get("approved_safe_claims", []))
+        with tabs[4]:
+            exceptions = snapshot.get("exceptions", [])
+            if exceptions:
+                st.dataframe(pd.DataFrame(exceptions), use_container_width=True)
+            else:
+                st.success("No exceptions found.")
+        with tabs[5]:
+            st.dataframe(pd.DataFrame(snapshot.get("approval_matrix", [])), use_container_width=True)
+        with tabs[6]:
+            st.markdown(snapshot.get("customer_safe_policy_summary_md", ""))
+        with tabs[7]:
+            st.json(snapshot)
+
+        if st.session_state.get("policy_approval_engine_v95_bundle"):
+            st.download_button(
+                "Download Policy Approval Engine Bundle V95",
+                st.session_state.policy_approval_engine_v95_bundle,
+                file_name=f"{st.session_state.project_name}_policy_approval_engine_v95.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v95_download_policy_approval_bundle",
+            )
+
+    st.caption("V95 makes approval mostly automatic through guardrails: standard price + standard scope + safe claims can pass without manual founder review.")
+
+
+# ============================================================
+# V96 — Pricing & Assurance OS
+# ============================================================
+
+def _v96_snapshot_map():
+    snapshots = _v95_snapshot_map()
+    snapshots.update({
+        "pricing_assurance_os_v96": st.session_state.get("pricing_assurance_os_v96_snapshot"),
+    })
+    return snapshots
+
+
+def render_pricing_assurance_os_v96_tab():
+    st.header("Pricing & Assurance OS V96")
+    st.write(
+        "V96 turns EdgeTwin into a pack-first commercial product: standard prices, clear deliverables, "
+        "reliability boundaries and safe customer claims. SaaS can come later."
+    )
+
+    v94_snapshot = st.session_state.get("client_input_autopilot_v94_snapshot") or {}
+    v95_snapshot = st.session_state.get("policy_approval_engine_v95_snapshot") or {}
+    if not v94_snapshot:
+        st.info("Run V94 first for customer input. V96 can still show the default price catalog.")
+    if not v95_snapshot:
+        st.info("Run V95 first for policy auto-approval. V96 will still use safe defaults.")
+
+    pack_options = {
+        "Auto-pick from customer input": None,
+        "Free Discovery Demo": "free_discovery_demo",
+        "Starter Diagnostic Pack": "starter_diagnostic_pack",
+        "Professional Pilot Pack": "professional_pilot_pack",
+        "Real-Data Evidence Pack": "real_data_evidence_pack",
+        "Premium Custom Pack": "premium_custom_pack",
+    }
+    selected_label = st.selectbox("Pricing pack mode", list(pack_options.keys()), index=0, key="v96_selected_pack_label")
+    selected_pack_id = pack_options[selected_label]
+
+    if st.button("Run Pricing & Assurance OS V96", type="primary", use_container_width=True, key="v96_run_pricing_assurance"):
+        snapshot = core.build_pricing_assurance_os_v96_snapshot({
+            "project_name": st.session_state.project_name,
+            "snapshots": _v96_snapshot_map(),
+            "client_input_autopilot_v94": v94_snapshot,
+            "policy_approval_engine_v95": v95_snapshot,
+            "selected_pack_id": selected_pack_id,
+        })
+        st.session_state.pricing_assurance_os_v96_snapshot = snapshot
+        st.session_state.pricing_assurance_os_v96_bundle = core.create_pricing_assurance_os_v96_bundle(st.session_state.project_name, snapshot)
+        st.success("Pricing & Assurance OS V96 completed.")
+
+    snapshot = st.session_state.get("pricing_assurance_os_v96_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Reliability", f"{snapshot.get('reliability_score', 0)}%")
+        m2.metric("Data quality", f"{snapshot.get('data_quality_score', 0)}%")
+        m3.metric("Pack", (snapshot.get("recommended_pack") or {}).get("pack_name", "Unknown"))
+        m4.metric("Price", (snapshot.get("recommended_pack") or {}).get("price_range_eur", "Unknown"))
+
+        decision = snapshot.get("assurance_decision", "Unknown")
+        if "READY" in decision or "CANDIDATE" in decision:
+            st.success(decision)
+        elif "STARTER" in decision:
+            st.warning(decision)
+        else:
+            st.info(decision)
+
+        tabs = st.tabs(["Decision", "Prices", "Customer gets", "Reliability", "Claims", "Add-ons", "Roadmap", "Customer summary", "Full snapshot"])
+        with tabs[0]:
+            st.subheader(snapshot.get("assurance_level", "Assurance"))
+            st.write(snapshot.get("next_best_action", ""))
+            st.json(snapshot.get("price_policy", {}))
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("standard_price_catalog", [])), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("customer_receives", [])), use_container_width=True)
+            st.markdown("#### Acceptance criteria")
+            st.dataframe(pd.DataFrame(snapshot.get("acceptance_criteria", [])), use_container_width=True)
+        with tabs[3]:
+            st.dataframe(pd.DataFrame(snapshot.get("reliability_ladder", [])), use_container_width=True)
+            st.markdown("#### Data quality reasons")
+            st.write(snapshot.get("data_quality_reasons", []))
+        with tabs[4]:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("#### Allowed claims")
+                st.write(snapshot.get("allowed_claims", []))
+            with c2:
+                st.markdown("#### Blocked claims")
+                st.write(snapshot.get("blocked_claims", []))
+            st.warning(snapshot.get("customer_safe_disclaimer", ""))
+        with tabs[5]:
+            st.dataframe(pd.DataFrame(snapshot.get("add_on_catalog", [])), use_container_width=True)
+        with tabs[6]:
+            st.dataframe(pd.DataFrame(snapshot.get("improvement_roadmap", [])), use_container_width=True)
+        with tabs[7]:
+            st.markdown(snapshot.get("customer_summary_md", ""))
+        with tabs[8]:
+            st.json(snapshot)
+
+        if st.session_state.get("pricing_assurance_os_v96_bundle"):
+            st.download_button(
+                "Download Pricing & Assurance Bundle V96",
+                st.session_state.pricing_assurance_os_v96_bundle,
+                file_name=f"{st.session_state.project_name}_pricing_assurance_os_v96.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v96_download_pricing_assurance_bundle",
+            )
+
+    st.caption("V96 is pack-first: sell standard packs now, keep SaaS for later, and block unsafe guarantees until data/field/security/legal proof exists.")
+
+
+# ============================================================
+# V97 — Custom Pack Builder / Client Self-Configuration
+# ============================================================
+
+def _v97_snapshot_map():
+    return {
+        "client_input_autopilot_v94": st.session_state.get("client_input_autopilot_v94_snapshot"),
+        "policy_approval_engine_v95": st.session_state.get("policy_approval_engine_v95_snapshot"),
+        "pricing_assurance_os_v96": st.session_state.get("pricing_assurance_os_v96_snapshot"),
+        "pack_commerce_os_v93": st.session_state.get("pack_commerce_os_v93_snapshot"),
+    }
+
+
+def render_custom_pack_builder_v97_tab():
+    st.header("Custom Pack Builder V97")
+    st.write(
+        "V97 lets the customer configure their own custom pack from safe building blocks. "
+        "EdgeTwin calculates scope, price, delivery risk, auto-approval status and what still needs founder review."
+    )
+
+    st.info(
+        "Doel: maatwerk wordt geen handwerk. De klant kiest modules; EdgeTwin maakt automatisch prijs, scope, deliverables, add-ons, safe claims en een bundle."
+    )
+
+    catalog = core.get_custom_pack_builder_v97_catalog()
+    modules = catalog.get("modules", [])
+    module_labels = {m.get("label"): m.get("module_id") for m in modules}
+    default_labels = [m.get("label") for m in modules if m.get("default_selected")]
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        company = st.text_input("Customer / company", value="Demo Customer", key="v97_company")
+        industry = st.selectbox("Industry", catalog.get("industries", ["Industrial / maintenance"]), index=0, key="v97_industry")
+    with c2:
+        desired_outcome = st.selectbox("Desired outcome", catalog.get("outcomes", ["Predictive maintenance pilot"]), index=0, key="v97_outcome")
+        data_readiness = st.selectbox("Data readiness", catalog.get("data_readiness", ["Sample available"]), index=1, key="v97_data_readiness")
+    with c3:
+        budget_mode = st.selectbox("Budget mode", catalog.get("budget_modes", ["Auto"]), index=0, key="v97_budget_mode")
+        urgency = st.selectbox("Urgency", ["Normal", "Fast", "Very urgent"], index=0, key="v97_urgency")
+
+    selected_labels = st.multiselect(
+        "Customer chooses modules",
+        list(module_labels.keys()),
+        default=default_labels,
+        key="v97_selected_modules",
+    )
+    selected_module_ids = [module_labels[x] for x in selected_labels if x in module_labels]
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        wants_branding = st.checkbox("Customer wants branding/language add-on", value=True, key="v97_branding")
+        wants_hardware = st.checkbox("Customer wants hardware/BOM reference", value=False, key="v97_hardware")
+    with col_b:
+        wants_reusable_template = st.checkbox("Make this reusable as a future pack template", value=True, key="v97_reusable_template")
+        allow_auto_approval = st.checkbox("Allow auto-approval inside policy limits", value=True, key="v97_allow_auto_approval")
+
+    customer_note = st.text_area(
+        "Customer note / problem statement",
+        value="We want to understand whether our machine/sensor data is good enough for a controlled pilot and what package fits best.",
+        height=100,
+        key="v97_customer_note",
+    )
+
+    if st.button("Build Custom Pack V97", type="primary", use_container_width=True, key="v97_build_custom_pack"):
+        snapshot = core.build_custom_pack_builder_v97_snapshot({
+            "project_name": st.session_state.project_name,
+            "company": company,
+            "industry": industry,
+            "desired_outcome": desired_outcome,
+            "data_readiness": data_readiness,
+            "budget_mode": budget_mode,
+            "urgency": urgency,
+            "selected_module_ids": selected_module_ids,
+            "wants_branding": wants_branding,
+            "wants_hardware": wants_hardware,
+            "wants_reusable_template": wants_reusable_template,
+            "allow_auto_approval": allow_auto_approval,
+            "customer_note": customer_note,
+            "snapshots": _v97_snapshot_map(),
+        })
+        st.session_state.custom_pack_builder_v97_snapshot = snapshot
+        st.session_state.custom_pack_builder_v97_bundle = core.create_custom_pack_builder_v97_bundle(st.session_state.project_name, snapshot)
+        st.success("Custom Pack Builder V97 completed.")
+
+    snapshot = st.session_state.get("custom_pack_builder_v97_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Auto-build", f"{snapshot.get('auto_build_score', 0)}%")
+        m2.metric("Price", snapshot.get("price_display", "Unknown"))
+        m3.metric("Founder work", snapshot.get("founder_work_minutes", "?") + " min")
+        m4.metric("Decision", snapshot.get("decision", "Unknown"))
+
+        decision = snapshot.get("decision", "")
+        if "AUTO-APPROVED" in decision:
+            st.success(decision)
+        elif "REVIEW" in decision:
+            st.warning(decision)
+        else:
+            st.info(decision)
+
+        tabs = st.tabs(["Pack", "Modules", "Pricing", "Customer gets", "Approvals", "Safe claims", "Reusable template", "Customer summary", "Full snapshot"])
+        with tabs[0]:
+            st.subheader(snapshot.get("pack_name", "Custom pack"))
+            st.write(snapshot.get("customer_problem_summary", ""))
+            st.json(snapshot.get("pack_config", {}))
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("selected_modules", [])), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("pricing_lines", [])), use_container_width=True)
+            st.json(snapshot.get("price_policy", {}))
+        with tabs[3]:
+            st.dataframe(pd.DataFrame(snapshot.get("deliverables", [])), use_container_width=True)
+            st.markdown("#### Acceptance criteria")
+            st.dataframe(pd.DataFrame(snapshot.get("acceptance_criteria", [])), use_container_width=True)
+        with tabs[4]:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("#### Auto-approved")
+                st.dataframe(pd.DataFrame(snapshot.get("auto_approved_items", [])), use_container_width=True)
+            with c2:
+                st.markdown("#### Founder review only when needed")
+                st.dataframe(pd.DataFrame(snapshot.get("founder_review_items", [])), use_container_width=True)
+        with tabs[5]:
+            st.write(snapshot.get("allowed_claims", []))
+            st.warning(snapshot.get("blocked_claim_policy", ""))
+        with tabs[6]:
+            st.json(snapshot.get("reusable_template", {}))
+        with tabs[7]:
+            st.markdown(snapshot.get("customer_summary_md", ""))
+        with tabs[8]:
+            st.json(snapshot)
+
+        if st.session_state.get("custom_pack_builder_v97_bundle"):
+            st.download_button(
+                "Download Custom Pack Builder Bundle V97",
+                st.session_state.custom_pack_builder_v97_bundle,
+                file_name=f"{st.session_state.project_name}_custom_pack_builder_v97.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v97_download_custom_pack_builder_bundle",
+            )
+
+    st.caption("V97 turns custom work into customer self-configuration plus guardrails. Founder only steps in for risky scope, claims, unusual pricing or high-complexity delivery.")
+
+
+
+
+
+# V100 — Marketplace Entitlement OS / Curated Packs + Custom Packs + Paid Unlock + Buyer Data Room
+
+def render_marketplace_entitlement_v100_tab():
+    st.header("Marketplace Entitlement OS V100")
+    st.info(
+        "Doel: Gemini's goede marketplace-idee samenbrengen met onze V93-V99 commerce/autopilot laag: curated industry packs, custom packs, plan/payment unlock, one-click pilot material en Buyer Data Room in één klantflow."
+    )
+
+    catalog = core.get_marketplace_entitlement_v100_catalog()
+    pack_catalog = catalog.get("curated_packs", [])
+    pack_ids = [p.get("pack_id") for p in pack_catalog]
+    pack_labels = {p.get("pack_id"): f"{p.get('name')} — {p.get('v100_price_display')}" for p in pack_catalog}
+
+    v97_snapshot = st.session_state.get("custom_pack_builder_v97_snapshot") or {}
+    v98_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
+    v99_snapshot = st.session_state.get("payment_unlock_delivery_v99_snapshot") or {}
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        marketplace_mode = st.selectbox("Marketplace route", catalog.get("marketplace_modes", []), index=0, key="v100_marketplace_mode")
+        selected_plan = st.selectbox(
+            "Plan / entitlement level",
+            catalog.get("plan_levels", []),
+            index=catalog.get("plan_levels", []).index(st.session_state.selected_plan) if st.session_state.selected_plan in catalog.get("plan_levels", []) else 0,
+            key="v100_selected_plan",
+        )
+        st.session_state.selected_plan = selected_plan
+        selected_pack_id = st.selectbox(
+            "Curated industry pack",
+            pack_ids,
+            format_func=lambda x: pack_labels.get(x, x),
+            key="v100_selected_pack",
+        )
+    with c2:
+        purchase_status = st.selectbox("Purchase/payment status", catalog.get("purchase_statuses", []), index=0, key="v100_purchase_status")
+        customer_company = st.text_input("Customer / company", value="Demo Customer", key="v100_customer_company")
+        customer_email = st.text_input("Customer email", value="customer@example.com", key="v100_customer_email")
+    with c3:
+        include_buyer_data_room = st.checkbox("Prepare Buyer Data Room", value=True, key="v100_include_buyer_dataroom")
+        include_one_click_pilot = st.checkbox("Prepare One-Click Pilot handoff", value=True, key="v100_include_one_click")
+        auto_unlock_policy = st.checkbox("Auto-unlock when paid + safe", value=True, key="v100_auto_unlock_policy")
+
+    if v99_snapshot:
+        st.success(f"V99 payment/unlock snapshot gevonden: {v99_snapshot.get('decision', 'status onbekend')} — {v99_snapshot.get('unlock_level', 'locked')}")
+    elif v98_snapshot:
+        st.warning("V98 quote is aanwezig, maar V99 payment unlock is nog niet opgebouwd. V100 kan entitlement simuleren, maar live unlock hoort later via V99/webhook.")
+    else:
+        st.caption("Tip: V97→V98→V99 maakt de commerciële flow sterker, maar V100 kan ook direct een marketplace entitlement blueprint maken.")
+
+    if st.button("Build Marketplace Entitlement V100", type="primary", use_container_width=True, key="v100_build_marketplace_entitlement"):
+        snapshot = core.build_marketplace_entitlement_v100_snapshot({
+            "project_name": st.session_state.project_name,
+            "marketplace_mode": marketplace_mode,
+            "selected_plan": selected_plan,
+            "selected_pack_id": selected_pack_id,
+            "purchase_status": purchase_status,
+            "customer_company": customer_company,
+            "customer_email": customer_email,
+            "include_buyer_data_room": include_buyer_data_room,
+            "include_one_click_pilot": include_one_click_pilot,
+            "auto_unlock_policy": auto_unlock_policy,
+            "custom_pack_builder_v97_snapshot": v97_snapshot,
+            "order_quote_builder_v98_snapshot": v98_snapshot,
+            "payment_unlock_delivery_v99_snapshot": v99_snapshot,
+            "pack_marketplace_snapshot": st.session_state.get("pack_marketplace_snapshot") or {},
+            "trust_ledger_v80_snapshot": st.session_state.get("trust_ledger_v80_snapshot") or {},
+            "release_guard_v83_snapshot": st.session_state.get("release_guard_v83_snapshot") or {},
+            "ultimate_product_v90_snapshot": st.session_state.get("ultimate_product_v90_snapshot") or {},
+        })
+        st.session_state.marketplace_entitlement_v100_snapshot = snapshot
+        st.session_state.marketplace_entitlement_v100_bundle = core.create_marketplace_entitlement_v100_bundle(st.session_state.project_name, snapshot)
+        st.success("Marketplace Entitlement OS V100 completed.")
+
+    snapshot = st.session_state.get("marketplace_entitlement_v100_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Commerce score", f"{snapshot.get('commerce_readiness_score', 0)}%")
+        m2.metric("Entitlement", snapshot.get("entitlement_status", "unknown"))
+        m3.metric("Access", snapshot.get("access_level", "locked"))
+        m4.metric("Route", snapshot.get("marketplace_mode", "marketplace"))
+
+        decision = snapshot.get("decision", "")
+        if "READY" in decision or "UNLOCKED" in decision:
+            st.success(decision)
+        elif "BLOCKED" in decision:
+            st.error(decision)
+        else:
+            st.warning(decision)
+
+        tabs = st.tabs(["Answer", "Access matrix", "Selected pack", "Buyer Data Room", "One-click pilot", "Customer page", "Risks", "Full snapshot"])
+        with tabs[0]:
+            st.markdown(snapshot.get("gemini_comparison_markdown", ""))
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("access_matrix", [])), use_container_width=True)
+        with tabs[2]:
+            st.json(snapshot.get("selected_pack", {}))
+        with tabs[3]:
+            st.json(snapshot.get("buyer_data_room_manifest", {}))
+        with tabs[4]:
+            st.json(snapshot.get("one_click_pilot_manifest", {}))
+        with tabs[5]:
+            st.markdown(snapshot.get("customer_marketplace_page_md", ""))
+        with tabs[6]:
+            combined = (snapshot.get("review_items", []) or []) + (snapshot.get("blocker_items", []) or [])
+            st.dataframe(pd.DataFrame(combined), use_container_width=True)
+            st.write(snapshot.get("safe_boundaries", []))
+        with tabs[7]:
+            st.json(snapshot)
+
+        if st.session_state.get("marketplace_entitlement_v100_bundle"):
+            st.download_button(
+                "Download Marketplace Entitlement Bundle V100",
+                st.session_state.marketplace_entitlement_v100_bundle,
+                file_name=f"{st.session_state.project_name}_marketplace_entitlement_v100.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v100_download_marketplace_entitlement_bundle",
+            )
+
+    st.caption("V100 is de lijmlaag: curated packs + custom packs + monetization/plan lock + payment unlock + buyer data room + one-click pilot handoff.")
+
+
+# V99 — Payment Unlock + Delivery Workbench / Paid Access Automation
+
+def render_payment_unlock_delivery_v99_tab():
+    st.header("Payment Unlock + Delivery Workbench V99")
+    st.info(
+        "Doel: dezelfde service-flow als digitale downloads: klant kiest pack, betaalt, EdgeTwin unlockt automatisch intake/download/delivery wanneer payment + quote gates veilig zijn. Geen kaartgegevens opslaan, geen contract/refund/legal claims automatiseren."
+    )
+
+    catalog = core.get_payment_unlock_delivery_v99_catalog()
+    v98_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
+
+    if not v98_snapshot:
+        st.warning("V98 quote/order snapshot is nog niet aanwezig. Run V98 eerst voor de beste automatische betaling→unlock flow.")
+    else:
+        st.success(f"V98 quote gevonden: {v98_snapshot.get('quote_id', 'quote')} — {v98_snapshot.get('price_display', 'prijs onbekend')} — {v98_snapshot.get('quote_status', 'status onbekend')}")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_company = st.text_input(
+            "Customer / company",
+            value=(v98_snapshot.get("order_intake", {}) or {}).get("company", "Demo Customer") if isinstance(v98_snapshot, dict) else "Demo Customer",
+            key="v99_customer_company",
+        )
+        customer_email = st.text_input(
+            "Customer email",
+            value=(v98_snapshot.get("order_intake", {}) or {}).get("contact_email", "customer@example.com") if isinstance(v98_snapshot, dict) else "customer@example.com",
+            key="v99_customer_email",
+        )
+        payment_provider = st.selectbox("Payment provider", catalog.get("payment_providers", []), index=0, key="v99_payment_provider")
+    with c2:
+        payment_status = st.selectbox("Payment status", catalog.get("payment_statuses", []), index=0, key="v99_payment_status")
+        fulfillment_mode = st.selectbox("Fulfillment mode", catalog.get("fulfillment_modes", []), index=1, key="v99_fulfillment_mode")
+        download_expiry_days = st.number_input("Download/access expiry days", min_value=1, max_value=60, value=7, step=1, key="v99_download_expiry_days")
+    with c3:
+        auto_unlock_allowed = st.checkbox("Allow automatic unlock when paid + safe", value=True, key="v99_auto_unlock_allowed")
+        require_webhook = st.checkbox("Require webhook/server confirmation for Stripe/Paddle", value=True, key="v99_require_webhook")
+        webhook_event_received = st.checkbox("Webhook/payment event received", value=False, key="v99_webhook_event_received")
+        require_founder_release_for_custom = st.checkbox("Founder release required for custom final delivery", value=False, key="v99_founder_release_custom")
+
+    st.caption("Tip: in live Stripe/Paddle mode hoort 'webhook/payment event received' door de server gezet te worden, niet door de klant of browserpagina.")
+
+    if st.button("Build Payment Unlock V99", type="primary", use_container_width=True, key="v99_build_payment_unlock"):
+        snapshot = core.build_payment_unlock_delivery_v99_snapshot({
+            "project_name": st.session_state.project_name,
+            "order_quote_builder_v98_snapshot": v98_snapshot,
+            "payment_provider": payment_provider,
+            "payment_status": payment_status,
+            "fulfillment_mode": fulfillment_mode,
+            "customer_company": customer_company,
+            "customer_email": customer_email,
+            "auto_unlock_allowed": auto_unlock_allowed,
+            "require_webhook": require_webhook,
+            "webhook_event_received": webhook_event_received,
+            "download_expiry_days": download_expiry_days,
+            "require_founder_release_for_custom": require_founder_release_for_custom,
+        })
+        st.session_state.payment_unlock_delivery_v99_snapshot = snapshot
+        st.session_state.payment_unlock_delivery_v99_bundle = core.create_payment_unlock_delivery_v99_bundle(st.session_state.project_name, snapshot)
+        st.success("Payment Unlock + Delivery V99 completed.")
+
+    snapshot = st.session_state.get("payment_unlock_delivery_v99_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Automation", f"{snapshot.get('automation_score', 0)}%")
+        m2.metric("Payment", snapshot.get("payment_status", "unknown"))
+        m3.metric("Unlock", snapshot.get("unlock_level", "locked"))
+        m4.metric("Delivery", snapshot.get("delivery_status", "locked"))
+
+        decision = snapshot.get("decision", "")
+        if "AUTO-UNLOCK" in decision or "UNLOCK READY" in decision:
+            st.success(decision)
+        elif "BLOCKED" in decision:
+            st.error(decision)
+        else:
+            st.warning(decision)
+
+        tabs = st.tabs(["Unlock", "Access manifest", "Checklist", "Webhook schema", "Customer message", "Review/blockers", "Boundaries", "Full snapshot"])
+        with tabs[0]:
+            st.json({
+                "quote_id": snapshot.get("quote_id"),
+                "payment_provider": snapshot.get("payment_provider"),
+                "payment_status": snapshot.get("payment_status"),
+                "fulfillment_mode": snapshot.get("fulfillment_mode"),
+                "unlock_level": snapshot.get("unlock_level"),
+                "delivery_status": snapshot.get("delivery_status"),
+                "auto_actions": snapshot.get("auto_actions", []),
+            })
+        with tabs[1]:
+            st.json(snapshot.get("access_manifest", {}))
+        with tabs[2]:
+            st.dataframe(pd.DataFrame(snapshot.get("delivery_checklist", [])), use_container_width=True)
+        with tabs[3]:
+            st.json(snapshot.get("webhook_event_schema", {}))
+        with tabs[4]:
+            st.text(snapshot.get("customer_message", ""))
+        with tabs[5]:
+            combined = (snapshot.get("review_items", []) or []) + (snapshot.get("blocker_items", []) or [])
+            st.dataframe(pd.DataFrame(combined), use_container_width=True)
+        with tabs[6]:
+            st.write(snapshot.get("safe_boundaries", []))
+        with tabs[7]:
+            st.json(snapshot)
+
+        if st.session_state.get("payment_unlock_delivery_v99_bundle"):
+            st.download_button(
+                "Download Payment Unlock + Delivery Bundle V99",
+                st.session_state.payment_unlock_delivery_v99_bundle,
+                file_name=f"{st.session_state.project_name}_payment_unlock_delivery_v99.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v99_download_payment_unlock_bundle",
+            )
+
+    st.caption("V99 maakt de MP3-achtige serviceflow mogelijk: betaalstatus bevestigd → intake/download/delivery vrijgeven. Live betalingen koppel je later via Stripe/Paddle webhooks.")
+
+
+# V98 — Order Intake + Quote Builder / Pack-to-Quote Automation
+
+def render_order_quote_builder_v98_tab():
+    st.header("Order Quote Builder V98")
+    st.info(
+        "Doel: klant kiest custom pack in V97; EdgeTwin zet dit automatisch om naar quote/order-ready scope, prijs, safe claims, review queue en delivery boundary. Geen SaaS, geen automatische betaling, geen contract signing."
+    )
+
+    catalog = core.get_order_quote_builder_v98_catalog()
+    v97_snapshot = st.session_state.get("custom_pack_builder_v97_snapshot") or {}
+
+    if not v97_snapshot:
+        st.warning("V97 custom pack snapshot is nog niet aanwezig. V98 kan een basisquote maken, maar run V97 eerst voor de beste automatische prijs/scope.")
+    else:
+        st.success(f"V97 input gevonden: {v97_snapshot.get('pack_name', 'Custom pack')} — {v97_snapshot.get('price_display', 'prijs onbekend')}")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        company = st.text_input("Customer / company", value=(v97_snapshot.get("company") if isinstance(v97_snapshot, dict) else None) or "Demo Customer", key="v98_company")
+        contact_name = st.text_input("Contact name", value="", key="v98_contact_name")
+        contact_email = st.text_input("Contact email", value="customer@example.com", key="v98_contact_email")
+    with c2:
+        customer_reference = st.text_input("Customer reference / PO note", value="", key="v98_customer_reference")
+        requested_start = st.text_input("Requested start", value="Flexible / after approval", key="v98_requested_start")
+        delivery_speed = st.selectbox("Delivery speed", catalog.get("delivery_speeds", ["Standard delivery"]), index=0, key="v98_delivery_speed")
+    with c3:
+        payment_mode = st.selectbox("Payment mode", catalog.get("payment_modes", ["Manual invoice after approval"]), index=0, key="v98_payment_mode")
+        include_deposit = st.checkbox("Suggest deposit before delivery", value=True, key="v98_include_deposit")
+        allow_auto_quote = st.checkbox("Allow auto-quote inside policy limits", value=True, key="v98_allow_auto_quote")
+
+    accepted_terms = st.checkbox(
+        "Customer accepts pilot/decision-support boundaries: no production, accuracy, legal or compliance guarantee without extra validation.",
+        value=True,
+        key="v98_terms_acceptance",
+    )
+    quote_note = st.text_area(
+        "Quote note / customer request",
+        value="Please prepare the selected EdgeTwin pack as a pilot-preparation and decision-support package.",
+        height=100,
+        key="v98_quote_note",
+    )
+
+    if st.button("Build Order Quote V98", type="primary", use_container_width=True, key="v98_build_order_quote"):
+        snapshot = core.build_order_quote_builder_v98_snapshot({
+            "project_name": st.session_state.project_name,
+            "company": company,
+            "contact_name": contact_name,
+            "contact_email": contact_email,
+            "customer_reference": customer_reference,
+            "requested_start": requested_start,
+            "delivery_speed": delivery_speed,
+            "payment_mode": payment_mode,
+            "include_deposit": include_deposit,
+            "allow_auto_quote": allow_auto_quote,
+            "accepted_terms": accepted_terms,
+            "quote_note": quote_note,
+            "custom_pack_builder_v97_snapshot": v97_snapshot,
+        })
+        st.session_state.order_quote_builder_v98_snapshot = snapshot
+        st.session_state.order_quote_builder_v98_bundle = core.create_order_quote_builder_v98_bundle(st.session_state.project_name, snapshot)
+        st.success("Order Quote Builder V98 completed.")
+
+    snapshot = st.session_state.get("order_quote_builder_v98_snapshot")
+    if snapshot:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Automation", f"{snapshot.get('automation_score', 0)}%")
+        m2.metric("Quote", snapshot.get("price_display", "Unknown"))
+        m3.metric("Deposit", f"€{snapshot.get('deposit_eur', 0)}")
+        m4.metric("Status", snapshot.get("quote_status", "unknown"))
+
+        decision = snapshot.get("decision", "")
+        if "AUTO-QUOTE" in decision:
+            st.success(decision)
+        elif "BLOCKED" in decision:
+            st.error(decision)
+        else:
+            st.warning(decision)
+
+        tabs = st.tabs(["Quote", "Lines", "Scope lock", "Review queue", "Safe claims", "Customer markdown", "Next actions", "Full snapshot"])
+        with tabs[0]:
+            st.subheader(snapshot.get("quote_id", "Quote"))
+            st.json(snapshot.get("order_intake", {}))
+        with tabs[1]:
+            st.dataframe(pd.DataFrame(snapshot.get("quote_lines", [])), use_container_width=True)
+        with tabs[2]:
+            st.json(snapshot.get("scope_lock", {}))
+        with tabs[3]:
+            combined = (snapshot.get("review_items", []) or []) + (snapshot.get("blocker_items", []) or [])
+            st.dataframe(pd.DataFrame(combined), use_container_width=True)
+        with tabs[4]:
+            st.write(snapshot.get("safe_customer_claims", []))
+            st.caption(snapshot.get("automation_boundary", ""))
+        with tabs[5]:
+            st.markdown(snapshot.get("customer_quote_md", ""))
+        with tabs[6]:
+            st.write(snapshot.get("next_actions", []))
+        with tabs[7]:
+            st.json(snapshot)
+
+        if st.session_state.get("order_quote_builder_v98_bundle"):
+            st.download_button(
+                "Download Order Quote Bundle V98",
+                st.session_state.order_quote_builder_v98_bundle,
+                file_name=f"{st.session_state.project_name}_order_quote_builder_v98.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v98_download_order_quote_bundle",
+            )
+
+    st.caption("V98 turns customer self-configured packs into quote/order-ready material while keeping payments, invoice sending and contracts manual until a later safe commerce layer.")
+
+
+def render_public_hosting_v101_tab():
+    st.header("🌐 Public Hosting Kit V101")
+    st.caption("Deploy EdgeTwin as a hosted web app without turning it into a full SaaS platform yet.")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Deployment mode", "Private/public app")
+    with col2:
+        st.metric("SaaS status", "Not required")
+    with col3:
+        st.metric("Best first host", "Render / Railway")
+
+    st.subheader("What this means")
+    st.write([
+        "One hosted EdgeTwin app URL for demos, pack selection, quotes and delivery workflows.",
+        "No multi-tenant SaaS yet: no complex customer accounts, subscriptions, tenant isolation or automated billing backend required.",
+        "Payment/unlock can stay manual first, then Stripe/Paddle webhooks can be connected later.",
+        "Customer data should remain limited, temporary and controlled until privacy/security review is stronger.",
+    ])
+
+    st.subheader("Recommended deployment path")
+    st.table(pd.DataFrame([
+        {"stage": "1", "mode": "Founder/private hosted app", "use": "You operate demos and paid packs", "risk": "Low"},
+        {"stage": "2", "mode": "Password-protected customer app", "use": "Customers can configure packs/intake", "risk": "Medium"},
+        {"stage": "3", "mode": "Payment unlock", "use": "Stripe/Paddle confirms paid orders", "risk": "Medium"},
+        {"stage": "4", "mode": "SaaS later", "use": "Accounts, subscriptions, tenant isolation", "risk": "High"},
+    ]))
+
+    st.subheader("Files included in this V101 zip")
+    st.write([
+        "Dockerfile — container deployment for Render/Fly/VPS.",
+        "Procfile — simple web process command for platforms that support it.",
+        "render.yaml — Render blueprint with persistent storage placeholder.",
+        "railway.json — Railway deployment hint.",
+        ".streamlit/config.toml — basic Streamlit server config.",
+        "DEPLOY_PUBLIC_NO_SAAS_V101.md — human deployment guide.",
+    ])
+
+    snapshot = {
+        "version": "V101",
+        "mode": "public_hosting_without_saas",
+        "recommended_first_step": "Deploy a founder-controlled private web app before building SaaS.",
+        "safe_for_now": [
+            "Public/private demo URL",
+            "Pack marketplace",
+            "Custom Pack Builder",
+            "Quote Builder",
+            "Manual payment confirmation",
+            "Manual/customer-safe download unlock",
+        ],
+        "not_yet": [
+            "Full SaaS multi-tenant accounts",
+            "Automatic refunds/disputes",
+            "Production/accuracy/legal/compliance guarantees",
+            "Sensitive customer data at scale",
+        ],
+        "deployment_files": ["Dockerfile", "Procfile", "render.yaml", "railway.json", ".streamlit/config.toml"],
+    }
+    st.session_state.public_hosting_v101_snapshot = snapshot
+    st.json(snapshot)
+
+    if st.button("Create V101 hosting checklist", use_container_width=True, key="v101_create_hosting_checklist"):
+        checklist = """# EdgeTwin V101 Hosting Checklist\n\n- Choose host: Render or Railway first.\n- Deploy from GitHub repo.\n- Set start command: streamlit run app.py --server.address=0.0.0.0 --server.port=$PORT --server.headless=true\n- Set EDGETWIN_STORAGE_ROOT to persistent storage if available.\n- Keep payments manual first.\n- Do not upload sensitive customer data until privacy/security review is complete.\n- Use V99 Payment Unlock logic before connecting Stripe/Paddle webhooks.\n"""
+        st.download_button(
+            "Download V101 Hosting Checklist",
+            checklist.encode("utf-8"),
+            file_name="edgetwin_v101_hosting_checklist.md",
+            mime="text/markdown",
+            use_container_width=True,
+        )
+
+
+def render_payment_provider_adapter_v102_tab():
+    st.header("💳 Payment Provider Adapter V102")
+    st.caption("Prepare automatic payment verification and unlock logic without storing card details inside EdgeTwin.")
+
+    st.info("V102 is the bridge between V98 quote, V99 unlock/delivery and a future Stripe/Paddle/manual payment event. It does not process card data itself.")
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        provider = st.selectbox("Provider", ["manual", "stripe", "paddle", "bank_transfer"], index=1, key="v102_provider")
+    with col2:
+        payment_status = st.selectbox("Payment status", ["unpaid", "deposit_paid", "paid", "failed", "cancelled", "refunded", "disputed"], index=2, key="v102_payment_status")
+    with col3:
+        amount_eur = st.number_input("Amount EUR", min_value=0.0, value=2500.0, step=100.0, key="v102_amount")
+    with col4:
+        webhook_verified = st.checkbox("Webhook/server confirmation verified", value=True, key="v102_webhook_verified")
+
+    col5, col6 = st.columns(2)
+    with col5:
+        order_id = st.text_input("Order / quote ID", value=st.session_state.get("order_quote_builder_v98_snapshot", {}).get("quote_id", "ET-ORDER-DEMO-001"), key="v102_order_id")
+        customer_email = st.text_input("Customer email", value="customer@example.com", key="v102_customer_email")
+    with col6:
+        event_type = st.text_input("Provider event type", value="checkout.session.completed" if provider == "stripe" else "transaction.completed", key="v102_event_type")
+        delivery_unlock_requested = st.checkbox("Request delivery unlock after payment", value=True, key="v102_unlock_requested")
+
+    selected_pack = st.session_state.get("marketplace_entitlement_v100_snapshot", {}).get("selected_pack") or st.session_state.get("custom_pack_builder_v97_snapshot", {}).get("recommended_pack") or {
+        "name": "Professional Pilot Pack",
+        "pack_id": "professional_pilot_pack",
+        "price_display": "EUR 1,500-3,500",
+    }
+
+    snapshot = core.build_payment_provider_adapter_v102_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        provider=provider,
+        payment_status=payment_status,
+        order_id=order_id,
+        selected_pack=selected_pack,
+        amount_eur=amount_eur,
+        customer_email=customer_email,
+        webhook_event_type=event_type,
+        webhook_verified=webhook_verified,
+        delivery_unlock_requested=delivery_unlock_requested,
+    )
+    st.session_state.payment_provider_adapter_v102_snapshot = snapshot
+
+    a, b, c = st.columns(3)
+    with a:
+        st.metric("Decision", snapshot.get("decision", "unknown"))
+    with b:
+        st.metric("Auto unlock", "YES" if snapshot.get("auto_unlock_allowed") else "NO")
+    with c:
+        st.metric("Risk level", snapshot.get("risk_level", "unknown"))
+
+    tabs = st.tabs(["Summary", "Webhook contract", "Unlock rules", "Data stored", "Review/blockers", "JSON"])
+    with tabs[0]:
+        st.markdown(snapshot.get("customer_safe_summary_md", ""))
+    with tabs[1]:
+        st.json(snapshot.get("webhook_contract", {}))
+    with tabs[2]:
+        st.table(pd.DataFrame(snapshot.get("unlock_rules", [])))
+    with tabs[3]:
+        st.table(pd.DataFrame(snapshot.get("stored_fields", [])))
+        st.warning("EdgeTwin should never store card numbers, CVC codes or raw payment credentials. Store only payment status, provider IDs and delivery status.")
+    with tabs[4]:
+        st.table(pd.DataFrame(snapshot.get("review_items", []) + snapshot.get("blocker_items", [])))
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V102 payment adapter bundle", use_container_width=True, key="v102_create_bundle"):
+        st.session_state.payment_provider_adapter_v102_bundle = core.create_payment_provider_adapter_v102_bundle(
+            st.session_state.get("project_name", "EdgeTwin_Project"), snapshot
+        )
+
+    if st.session_state.get("payment_provider_adapter_v102_bundle"):
+        st.download_button(
+            "Download Payment Provider Adapter Bundle V102",
+            st.session_state.payment_provider_adapter_v102_bundle,
+            file_name=f"{st.session_state.project_name}_payment_provider_adapter_v102.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="v102_download_payment_provider_adapter_bundle",
+        )
+
+    st.caption("V102 prepares Stripe/Paddle/manual payment event handling. Real API keys, webhook secrets and refund/dispute workflows must stay server-side and out of source control.")
+
+
+def render_customer_portal_lite_v103_tab():
+    st.header("🧑‍💼 Customer Portal Lite V103")
+    st.caption("A simple customer-facing portal page: pack, payment, intake, delivery and download status in one place. No full SaaS required.")
+
+    default_customer_email = (
+        st.session_state.get("payment_provider_adapter_v102_snapshot", {}).get("customer_email")
+        or st.session_state.get("order_quote_builder_v98_snapshot", {}).get("customer_email")
+        or "customer@example.com"
+    )
+    default_customer_name = default_customer_email.split("@")[0].replace(".", " ").title() if default_customer_email else "Customer"
+
+    c1, c2 = st.columns(2)
+    with c1:
+        customer_name = st.text_input("Customer name", value=default_customer_name, key="v103_customer_name")
+        customer_email = st.text_input("Customer email", value=default_customer_email, key="v103_customer_email")
+        portal_mode = st.selectbox(
+            "Portal mode",
+            ["private_demo", "paid_order", "deposit_order", "delivery_ready", "review_required"],
+            index=1,
+            key="v103_portal_mode",
+        )
+    with c2:
+        payment_status = st.selectbox(
+            "Payment status",
+            ["unpaid", "deposit_paid", "paid", "confirmed", "failed", "refunded", "disputed"],
+            index=2,
+            key="v103_payment_status",
+        )
+        intake_status = st.selectbox(
+            "Intake/upload status",
+            ["not_started", "unlocked", "submitted", "data_quality_review", "accepted", "needs_more_input"],
+            index=1,
+            key="v103_intake_status",
+        )
+        delivery_status = st.selectbox(
+            "Delivery status",
+            ["locked", "unlocked", "generating", "ready", "delivered", "blocked_review"],
+            index=3,
+            key="v103_delivery_status",
+        )
+
+    selected_pack = (
+        st.session_state.get("marketplace_entitlement_v100_snapshot", {}).get("selected_pack")
+        or st.session_state.get("custom_pack_builder_v97_snapshot", {}).get("recommended_pack")
+        or st.session_state.get("order_quote_builder_v98_snapshot", {}).get("selected_pack")
+        or {"name": "Professional Pilot Pack", "pack_id": "professional_pilot_pack", "price_display": "EUR 1,500-3,500"}
+    )
+
+    quote_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
+    payment_snapshot = st.session_state.get("payment_provider_adapter_v102_snapshot") or {}
+    unlock_snapshot = st.session_state.get("payment_unlock_delivery_v99_snapshot") or {}
+    entitlement_snapshot = st.session_state.get("marketplace_entitlement_v100_snapshot") or {}
+
+    snapshot = core.build_customer_portal_lite_v103_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        customer_name=customer_name,
+        customer_email=customer_email,
+        selected_pack=selected_pack,
+        quote_snapshot=quote_snapshot,
+        payment_snapshot=payment_snapshot,
+        unlock_snapshot=unlock_snapshot,
+        entitlement_snapshot=entitlement_snapshot,
+        payment_status=payment_status,
+        intake_status=intake_status,
+        delivery_status=delivery_status,
+        portal_mode=portal_mode,
+    )
+    st.session_state.customer_portal_lite_v103_snapshot = snapshot
+
+    a, b, c, d = st.columns(4)
+    a.metric("Portal decision", snapshot.get("portal_decision", "unknown"))
+    b.metric("Access", snapshot.get("access_level", "unknown"))
+    c.metric("Customer action", snapshot.get("customer_next_action", "unknown"))
+    d.metric("Founder action", snapshot.get("founder_next_action", "unknown"))
+
+    status_df = pd.DataFrame(snapshot.get("status_cards", []))
+    action_df = pd.DataFrame(snapshot.get("customer_timeline", []))
+    guardrail_df = pd.DataFrame(snapshot.get("guardrails", []))
+
+    tabs = st.tabs(["Customer view", "Status cards", "Timeline", "Downloads", "Guardrails", "JSON"])
+    with tabs[0]:
+        st.markdown(snapshot.get("customer_portal_markdown", ""))
+    with tabs[1]:
+        st.table(status_df)
+    with tabs[2]:
+        st.table(action_df)
+    with tabs[3]:
+        st.json(snapshot.get("download_manifest", {}))
+        st.info("In live mode these download URLs should be signed/expiring links. V103 prepares the manifest only; it does not expose real private files.")
+    with tabs[4]:
+        st.table(guardrail_df)
+        st.warning("V103 is portal-lite, not full SaaS. It does not replace proper auth, legal review, privacy review or production validation.")
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V103 customer portal bundle", use_container_width=True, key="v103_create_bundle"):
+        st.session_state.customer_portal_lite_v103_bundle = core.create_customer_portal_lite_v103_bundle(
+            st.session_state.get("project_name", "EdgeTwin_Project"), snapshot
+        )
+
+    if st.session_state.get("customer_portal_lite_v103_bundle"):
+        st.download_button(
+            "Download Customer Portal Lite Bundle V103",
+            st.session_state.customer_portal_lite_v103_bundle,
+            file_name=f"{st.session_state.project_name}_customer_portal_lite_v103.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="v103_download_customer_portal_lite_bundle",
+        )
+
+    st.caption("V103 is the customer-facing layer after marketplace/quote/payment unlock: simple status, next action and delivery visibility without building full SaaS yet.")
+
+
+
+def render_secure_download_links_v104_tab():
+    st.header("🔐 Secure Download Links V104")
+    st.caption("Generate signed, expiring download/intake tokens after payment/delivery readiness. This is the missing safety layer between portal status and real customer downloads.")
+
+    portal_snapshot = st.session_state.get("customer_portal_lite_v103_snapshot") or {}
+    payment_snapshot = st.session_state.get("payment_provider_adapter_v102_snapshot") or {}
+    quote_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
+
+    default_email = (
+        portal_snapshot.get("customer_email")
+        or payment_snapshot.get("customer_email")
+        or quote_snapshot.get("customer_email")
+        or "customer@example.com"
+    )
+    default_order = (
+        payment_snapshot.get("order_id")
+        or quote_snapshot.get("order_id")
+        or portal_snapshot.get("order_id")
+        or "ORDER-DEMO-104"
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_email = st.text_input("Customer email", value=default_email, key="v104_customer_email")
+        order_id = st.text_input("Order ID", value=str(default_order), key="v104_order_id")
+        provider = st.selectbox("Provider", ["manual", "stripe", "paddle", "bank_transfer"], index=1, key="v104_provider")
+    with c2:
+        payment_status = st.selectbox(
+            "Payment status",
+            ["unpaid", "deposit_paid", "paid", "confirmed", "failed", "refunded", "disputed"],
+            index=2,
+            key="v104_payment_status",
+        )
+        delivery_status = st.selectbox(
+            "Delivery status",
+            ["locked", "unlocked", "generating", "ready", "delivered", "blocked_review"],
+            index=3,
+            key="v104_delivery_status",
+        )
+        expiry_hours = st.slider("Download link expiry hours", min_value=1, max_value=336, value=168, step=1, key="v104_expiry_hours")
+    with c3:
+        include_final_pack = st.checkbox("Final ZIP/PDF pack", value=True, key="v104_include_final_pack")
+        include_report = st.checkbox("Customer report PDF", value=True, key="v104_include_report")
+        include_intake = st.checkbox("Intake/upload link", value=payment_status in ["deposit_paid", "paid", "confirmed"], key="v104_include_intake")
+        require_ready_delivery = st.checkbox("Require delivery ready before final download", value=True, key="v104_require_ready")
+
+    download_items = []
+    if include_final_pack:
+        download_items.append({"file_id": "final_delivery_bundle", "label": "Final delivery ZIP/PDF bundle", "scope": "download:final"})
+    if include_report:
+        download_items.append({"file_id": "customer_report_pdf", "label": "Customer report PDF", "scope": "download:report"})
+    if include_intake:
+        download_items.append({"file_id": "customer_intake_upload", "label": "Customer intake/upload access", "scope": "intake:upload"})
+
+    snapshot = core.build_secure_download_links_v104_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        customer_email=customer_email,
+        order_id=order_id,
+        provider=provider,
+        payment_status=payment_status,
+        delivery_status=delivery_status,
+        portal_snapshot=portal_snapshot,
+        payment_snapshot=payment_snapshot,
+        download_items=download_items,
+        expiry_hours=expiry_hours,
+        require_ready_delivery=require_ready_delivery,
+    )
+    st.session_state.secure_download_links_v104_snapshot = snapshot
+
+    a, b, c, d = st.columns(4)
+    a.metric("Decision", snapshot.get("download_decision", "unknown"))
+    b.metric("Tokens", snapshot.get("token_count", 0))
+    c.metric("Access", snapshot.get("access_state", "unknown"))
+    d.metric("Risk", snapshot.get("risk_level", "unknown"))
+
+    tabs = st.tabs(["Customer access", "Secure links", "Validation", "Guardrails", "JSON"])
+    with tabs[0]:
+        st.markdown(snapshot.get("customer_access_markdown", ""))
+    with tabs[1]:
+        st.table(pd.DataFrame(snapshot.get("secure_links", [])))
+        st.info("V104 creates token manifests. In real public hosting, the actual file-serving endpoint must validate the token server-side before sending a private file.")
+    with tabs[2]:
+        st.table(pd.DataFrame(snapshot.get("validation_checks", [])))
+    with tabs[3]:
+        st.table(pd.DataFrame(snapshot.get("guardrails", [])))
+        st.warning("Never expose raw storage paths. Do not unlock downloads after refund/dispute. Use an environment secret before live use.")
+    with tabs[4]:
+        st.json(snapshot)
+
+    if st.button("Create V104 secure download bundle", use_container_width=True, key="v104_create_bundle"):
+        st.session_state.secure_download_links_v104_bundle = core.create_secure_download_links_v104_bundle(
+            st.session_state.get("project_name", "EdgeTwin_Project"), snapshot
+        )
+
+    if st.session_state.get("secure_download_links_v104_bundle"):
+        st.download_button(
+            "Download Secure Download Links Bundle V104",
+            st.session_state.secure_download_links_v104_bundle,
+            file_name=f"{st.session_state.project_name}_secure_download_links_v104.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="v104_download_secure_links_bundle",
+        )
+
+    st.caption("V104 turns V99/V102/V103 into a safer digital-product style delivery flow: paid → signed expiring token → private download/intake access.")
+
+
+
+def render_private_delivery_endpoint_v105_tab():
+    st.header("🛡️ Private Delivery Endpoint V105")
+    st.caption("Prepare the real server-side layer behind V104 signed links: validate token, re-check payment/delivery status, audit the request, then stream a private file only when safe.")
+
+    secure_snapshot = st.session_state.get("secure_download_links_v104_snapshot") or {}
+    portal_snapshot = st.session_state.get("customer_portal_lite_v103_snapshot") or {}
+    payment_snapshot = st.session_state.get("payment_provider_adapter_v102_snapshot") or {}
+    quote_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
+
+    default_email = secure_snapshot.get("customer_email") or portal_snapshot.get("customer_email") or payment_snapshot.get("customer_email") or quote_snapshot.get("customer_email") or "customer@example.com"
+    default_order = secure_snapshot.get("order_id") or payment_snapshot.get("order_id") or quote_snapshot.get("order_id") or portal_snapshot.get("order_id") or "ORDER-DEMO-105"
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_email = st.text_input("Customer email", value=default_email, key="v105_customer_email")
+        order_id = st.text_input("Order ID", value=str(default_order), key="v105_order_id")
+        provider = st.selectbox("Payment provider", ["manual", "stripe", "paddle", "bank_transfer"], index=1, key="v105_provider")
+    with c2:
+        payment_status = st.selectbox("Payment status source of truth", ["unpaid", "deposit_paid", "paid", "confirmed", "failed", "refunded", "disputed"], index=2, key="v105_payment_status")
+        delivery_status = st.selectbox("Delivery status source of truth", ["locked", "unlocked", "generating", "ready", "delivered", "blocked_review"], index=3, key="v105_delivery_status")
+        endpoint_mode = st.selectbox("Endpoint mode", ["simulation", "staging_contract", "live_requires_secret"], index=0, key="v105_endpoint_mode")
+    with c3:
+        enable_audit_log = st.checkbox("Audit every request", value=True, key="v105_audit")
+        require_webhook_truth = st.checkbox("Require webhook-backed payment truth", value=True, key="v105_webhook_truth")
+        private_storage_only = st.checkbox("Private storage only", value=True, key="v105_private_storage")
+        rate_limit_enabled = st.checkbox("Rate limit endpoint", value=True, key="v105_rate_limit")
+
+    snapshot = core.build_private_delivery_endpoint_v105_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        customer_email=customer_email,
+        order_id=order_id,
+        provider=provider,
+        payment_status=payment_status,
+        delivery_status=delivery_status,
+        secure_snapshot=secure_snapshot,
+        endpoint_mode=endpoint_mode,
+        enable_audit_log=enable_audit_log,
+        require_webhook_truth=require_webhook_truth,
+        private_storage_only=private_storage_only,
+        rate_limit_enabled=rate_limit_enabled,
+    )
+    st.session_state.private_delivery_endpoint_v105_snapshot = snapshot
+
+    a, b, c, d = st.columns(4)
+    a.metric("Endpoint decision", snapshot.get("endpoint_decision", "unknown"))
+    b.metric("HTTP result", snapshot.get("primary_http_status", "n/a"))
+    c.metric("Audit events", snapshot.get("audit_event_count", 0))
+    d.metric("Risk", snapshot.get("risk_level", "unknown"))
+
+    tabs = st.tabs(["Customer flow", "Endpoint checks", "Audit log", "Server contract", "Go-live gaps", "JSON"])
+    with tabs[0]:
+        st.markdown(snapshot.get("customer_flow_markdown", ""))
+    with tabs[1]:
+        st.table(pd.DataFrame(snapshot.get("endpoint_checks", [])))
+        st.info("The endpoint must never trust only the browser success page. Payment/delivery status must be checked server-side before streaming the file.")
+    with tabs[2]:
+        st.table(pd.DataFrame(snapshot.get("audit_events", [])))
+        st.caption("Audit rows intentionally store safe identifiers, not card data and not raw storage paths.")
+    with tabs[3]:
+        st.json(snapshot.get("server_contract", {}))
+    with tabs[4]:
+        st.table(pd.DataFrame(snapshot.get("go_live_requirements", [])))
+        if snapshot.get("ready_for_live_private_delivery"):
+            st.success("V105 contract is ready for live private delivery when a real backend endpoint and hosting secrets are connected.")
+        else:
+            st.warning("V105 is implementation-ready, but live delivery still needs the missing items shown above.")
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V105 private delivery endpoint bundle", use_container_width=True, key="v105_create_bundle"):
+        st.session_state.private_delivery_endpoint_v105_bundle = core.create_private_delivery_endpoint_v105_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
+
+    if st.session_state.get("private_delivery_endpoint_v105_bundle"):
+        st.download_button("Download Private Delivery Endpoint Bundle V105", st.session_state.private_delivery_endpoint_v105_bundle, file_name=f"{st.session_state.project_name}_private_delivery_endpoint_v105.zip", mime="application/zip", use_container_width=True, key="v105_download_private_delivery_endpoint_bundle")
+
+    st.caption("V105 closes the loop after V104: token manifest → private endpoint validation → payment/delivery re-check → audit log → private file stream.")
+
+
+
+def render_order_fulfillment_v106_tab():
+    st.header("📚 Order Fulfillment V106")
+    st.caption("One order state machine from quote → payment → intake → generation → secure private delivery. No full SaaS, no card data stored in EdgeTwin.")
+
+    quote_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
+    payment_snapshot = st.session_state.get("payment_provider_adapter_v102_snapshot") or st.session_state.get("payment_unlock_delivery_v99_snapshot") or {}
+    portal_snapshot = st.session_state.get("customer_portal_lite_v103_snapshot") or {}
+    endpoint_snapshot = st.session_state.get("private_delivery_endpoint_v105_snapshot") or {}
+
+    default_email = quote_snapshot.get("customer_email") or payment_snapshot.get("customer_email") or portal_snapshot.get("customer_email") or endpoint_snapshot.get("customer_email") or "customer@example.com"
+    default_order = quote_snapshot.get("order_id") or payment_snapshot.get("order_id") or portal_snapshot.get("order_id") or endpoint_snapshot.get("order_id") or "ORDER-DEMO-V106"
+    default_pack = quote_snapshot.get("pack_name") or quote_snapshot.get("selected_pack") or "Professional Pilot Pack"
+    default_amount = quote_snapshot.get("total_price") or quote_snapshot.get("amount_eur") or payment_snapshot.get("amount_eur") or 2500
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        customer_email = st.text_input("Customer email", value=str(default_email), key="v106_customer_email")
+        order_id = st.text_input("Order ID", value=str(default_order), key="v106_order_id")
+        pack_name = st.text_input("Pack name", value=str(default_pack), key="v106_pack_name")
+        amount_eur = st.number_input("Amount EUR", min_value=0.0, value=float(default_amount or 2500), step=250.0, key="v106_amount")
+    with c2:
+        quote_status = st.selectbox("Quote status", ["draft", "quoted", "ready", "missing"], index=1, key="v106_quote_status")
+        payment_status = st.selectbox("Payment status", ["unpaid", "deposit_paid", "paid", "confirmed", "failed", "refunded", "disputed"], index=2, key="v106_payment_status")
+        delivery_status = st.selectbox("Delivery status", ["locked", "unlocked", "generating", "ready", "delivered", "blocked_review"], index=3, key="v106_delivery_status")
+        data_status = st.selectbox("Data/intake status", ["not_received", "received", "valid", "needs_fix", "ready"], index=1, key="v106_data_status")
+    with c3:
+        security_status = st.selectbox("Security status", ["ready", "staging_ready", "missing_secret", "unsafe", "blocked"], index=0, key="v106_security_status")
+        customer_acknowledged_scope = st.checkbox("Customer acknowledged scope", value=True, key="v106_scope_ack")
+        use_private_endpoint = st.checkbox("Use V105 private delivery endpoint", value=True, key="v106_use_endpoint")
+        store_no_card_data = st.checkbox("No card data stored in EdgeTwin", value=True, key="v106_no_card_data")
+
+    snapshot = core.build_order_fulfillment_v106_snapshot(project_name=st.session_state.get("project_name", "EdgeTwin_Project"), customer_email=customer_email, order_id=order_id, pack_name=pack_name, amount_eur=amount_eur, quote_status=quote_status, payment_status=payment_status, delivery_status=delivery_status, data_status=data_status, security_status=security_status, customer_acknowledged_scope=customer_acknowledged_scope, quote_snapshot=quote_snapshot, payment_snapshot=payment_snapshot, portal_snapshot=portal_snapshot, endpoint_snapshot=endpoint_snapshot, use_private_endpoint=use_private_endpoint, store_no_card_data=store_no_card_data)
+    st.session_state.order_fulfillment_v106_snapshot = snapshot
+
+    a, b, c, d = st.columns(4)
+    a.metric("Order state", snapshot.get("order_state", "unknown"))
+    b.metric("Decision", snapshot.get("decision", "unknown"))
+    c.metric("Download", "yes" if snapshot.get("customer_access", {}).get("download") else "no")
+    d.metric("Controls", "OK" if snapshot.get("controls_ok") else "review")
+
+    tabs = st.tabs(["Customer status", "Timeline", "Access matrix", "Controls", "SQLite schema", "JSON"])
+    with tabs[0]:
+        st.markdown(snapshot.get("customer_status_markdown", ""))
+        if snapshot.get("blockers"):
+            st.error("Blocked: " + "; ".join(snapshot.get("blockers", [])))
+        elif snapshot.get("review_queue"):
+            st.warning("Review: " + "; ".join(snapshot.get("review_queue", [])))
+        else:
+            st.success("Order flow is clean inside the current policy.")
+    with tabs[1]:
+        st.table(pd.DataFrame(snapshot.get("timeline", [])))
+        st.info("This is the backbone for: quote → payment webhook/manual confirmation → intake → generation → secure download → audit.")
+    with tabs[2]:
+        st.json(snapshot.get("customer_access", {}))
+    with tabs[3]:
+        st.table(pd.DataFrame(snapshot.get("controls", [])))
+    with tabs[4]:
+        st.json(snapshot.get("sqlite_schema", {}))
+        st.caption("The schema stores status and metadata only. Card details stay with Stripe/Paddle/payment provider.")
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V106 order fulfillment bundle", use_container_width=True, key="v106_create_bundle"):
+        st.session_state.order_fulfillment_v106_bundle = core.create_order_fulfillment_v106_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
+
+    if st.session_state.get("order_fulfillment_v106_bundle"):
+        st.download_button("Download Order Fulfillment Bundle V106", st.session_state.order_fulfillment_v106_bundle, file_name=f"{st.session_state.project_name}_order_fulfillment_v106.zip", mime="application/zip", use_container_width=True, key="v106_download_order_fulfillment_bundle")
+
+    st.caption("V106 is the missing backbone between V98 quote, V102 payment adapter, V103 portal, V104 secure links and V105 private delivery.")
+
+
+
+def render_ai_copilot_adapter_v107_tab():
+    st.header("🤖 AI Copilot Adapter V107")
+    st.caption("Controlled AI layer for summaries, pack suggestions, safe customer copy and founder-review notes. No blind approvals, no card data, no legal/accuracy guarantees.")
+
+    client_snapshot = st.session_state.get("client_input_autopilot_v94_snapshot") or {}
+    custom_snapshot = st.session_state.get("custom_pack_builder_v97_snapshot") or {}
+    policy_snapshot = st.session_state.get("policy_approval_engine_v95_snapshot") or {}
+    quote_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
+    fulfillment_snapshot = st.session_state.get("order_fulfillment_v106_snapshot") or {}
+
+    default_problem = client_snapshot.get("problem") or custom_snapshot.get("customer_problem") or "We have machine/sensor data and want to know which pilot/evidence pack fits best."
+    default_goal = client_snapshot.get("desired_outcome") or "Choose the right pack, explain missing inputs and generate safe customer-facing copy."
+
+    c1, c2 = st.columns(2)
+    with c1:
+        customer_message = st.text_area("Customer request / intake text", value=str(default_problem), height=160, key="v107_customer_message")
+        desired_outcome = st.text_input("Desired outcome", value=str(default_goal), key="v107_desired_outcome")
+        provider = st.selectbox("AI provider mode", ["offline_rules", "openai_ready", "manual_review"], index=0, key="v107_provider")
+    with c2:
+        copilot_mode = st.selectbox("Copilot task", ["pack_recommendation", "safe_quote_copy", "missing_input_questions", "founder_review_summary", "claim_safety_check"], index=0, key="v107_mode")
+        allow_external_api = st.checkbox("Allow external AI API later", value=False, key="v107_allow_external_api")
+        store_prompts = st.checkbox("Store prompts in project state", value=False, key="v107_store_prompts")
+        include_customer_data = st.checkbox("Include raw customer data in AI request", value=False, key="v107_include_customer_data")
+
+    allowed_tasks = st.multiselect(
+        "Allowed AI tasks",
+        ["summarize_customer_request", "suggest_pack", "suggest_addons", "draft_safe_customer_copy", "draft_missing_questions", "summarize_founder_review", "flag_risky_claims"],
+        default=["summarize_customer_request", "suggest_pack", "suggest_addons", "draft_safe_customer_copy", "draft_missing_questions", "flag_risky_claims"],
+        key="v107_allowed_tasks",
+    )
+
+    snapshot = core.build_ai_copilot_adapter_v107_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        customer_message=customer_message,
+        desired_outcome=desired_outcome,
+        copilot_mode=copilot_mode,
+        provider=provider,
+        allow_external_api=allow_external_api,
+        store_prompts=store_prompts,
+        include_customer_data=include_customer_data,
+        client_snapshot=client_snapshot,
+        custom_snapshot=custom_snapshot,
+        policy_snapshot=policy_snapshot,
+        quote_snapshot=quote_snapshot,
+        fulfillment_snapshot=fulfillment_snapshot,
+        allowed_tasks=allowed_tasks,
+    )
+    st.session_state.ai_copilot_adapter_v107_snapshot = snapshot
+
+    a, b, c, d = st.columns(4)
+    a.metric("Copilot decision", snapshot.get("decision", "unknown"))
+    b.metric("Auto action", "yes" if snapshot.get("auto_action_allowed") else "no")
+    c.metric("Risk", snapshot.get("risk_level", "unknown"))
+    d.metric("Score", snapshot.get("copilot_score", 0))
+
+    tabs = st.tabs(["Copilot output", "Structured JSON", "Prompt policy", "Blocked actions", "Integration contract", "Full snapshot"])
+    with tabs[0]:
+        st.markdown(snapshot.get("safe_customer_summary", ""))
+        if snapshot.get("missing_inputs"):
+            st.warning("Missing inputs: " + "; ".join(snapshot.get("missing_inputs", [])))
+        if snapshot.get("risk_flags"):
+            st.info("Risk flags: " + "; ".join(snapshot.get("risk_flags", [])))
+    with tabs[1]:
+        st.json(snapshot.get("structured_output", {}))
+    with tabs[2]:
+        st.table(pd.DataFrame(snapshot.get("prompt_policy", [])))
+        st.caption("V107 is designed so the model drafts and recommends, while EdgeTwin policy/state machines approve or block.")
+    with tabs[3]:
+        st.table(pd.DataFrame(snapshot.get("blocked_actions", [])))
+    with tabs[4]:
+        st.json(snapshot.get("integration_contract", {}))
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V107 AI Copilot bundle", use_container_width=True, key="v107_create_bundle"):
+        st.session_state.ai_copilot_adapter_v107_bundle = core.create_ai_copilot_adapter_v107_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
+
+    if st.session_state.get("ai_copilot_adapter_v107_bundle"):
+        st.download_button("Download AI Copilot Adapter Bundle V107", st.session_state.ai_copilot_adapter_v107_bundle, file_name=f"{st.session_state.project_name}_ai_copilot_adapter_v107.zip", mime="application/zip", use_container_width=True, key="v107_download_ai_copilot_bundle")
+
+    st.caption("V107 adds a controlled AI assistant layer: helpful for language and recommendations, never a replacement for payment webhooks, policy approval, legal review or production validation.")
+
+
+def render_claim_safety_prompt_policy_v108_tab():
+    st.header("🧯 Claim Safety & Prompt Policy Pack V108")
+    st.caption("A conservative safety gate for customer claims, AI prompts, sales copy and report text. It blocks hard production/accuracy/legal/compliance promises unless validated and approved.")
+
+    copilot_snapshot = st.session_state.get("ai_copilot_adapter_v107_snapshot") or {}
+    structured = copilot_snapshot.get("structured_output", {}) if isinstance(copilot_snapshot, dict) else {}
+    default_claim = structured.get("safe_customer_claim") or "EdgeTwin prepares a controlled pilot/evidence pack with data-quality checks, trust notes, assumptions, limitations and concrete next steps."
+    default_context = st.session_state.get("v107_customer_message", "") or "Customer wants to understand whether their data is ready for a pilot/evidence pack."
+
+    c1, c2 = st.columns(2)
+    with c1:
+        proposed_customer_claim = st.text_area("Proposed customer-facing claim / sales text", value=str(default_claim), height=160, key="v108_proposed_claim")
+        customer_context = st.text_area("Customer context to scan", value=str(default_context), height=140, key="v108_customer_context")
+    with c2:
+        pack_type = st.selectbox("Pack type", ["Starter Diagnostic Pack", "Professional Pilot Pack", "Real-Data Evidence Pack", "Premium Custom Pack"], index=1, key="v108_pack_type")
+        channel = st.selectbox("Where will this text be used?", ["quote_or_report", "customer_portal", "marketplace", "public_homepage", "ad", "sales_page", "internal_founder_review"], index=0, key="v108_channel")
+        allow_external_ai = st.checkbox("External AI may draft text later", value=False, key="v108_allow_external_ai")
+        include_raw_customer_data = st.checkbox("Raw customer data may be included in prompt later", value=False, key="v108_include_raw_customer_data")
+
+    snapshot = core.build_claim_safety_prompt_policy_v108_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        proposed_customer_claim=proposed_customer_claim,
+        customer_context=customer_context,
+        pack_type=pack_type,
+        channel=channel,
+        copilot_snapshot=copilot_snapshot,
+        allow_external_ai=allow_external_ai,
+        include_raw_customer_data=include_raw_customer_data,
+    )
+    st.session_state.claim_safety_prompt_policy_v108_snapshot = snapshot
+
+    a, b, c, d = st.columns(4)
+    a.metric("Decision", snapshot.get("decision", "unknown"))
+    b.metric("Auto publish", "yes" if snapshot.get("auto_publish_allowed") else "no")
+    c.metric("Risk", snapshot.get("risk_level", "unknown"))
+    d.metric("Claim score", snapshot.get("claim_score", 0))
+
+    tabs = st.tabs(["Safe rewrite", "Risk flags", "Safe claim library", "Prompt guard", "Policy rules", "Full snapshot"])
+    with tabs[0]:
+        if snapshot.get("auto_publish_allowed"):
+            st.success("This claim passes V108 standard-pack claim policy.")
+        elif snapshot.get("decision", "").startswith("BLOCK"):
+            st.error("This claim is blocked until rewritten or reviewed.")
+        else:
+            st.warning("This claim needs founder/legal/commercial review before use.")
+        st.markdown("### Customer-safe rewrite")
+        st.write(snapshot.get("safe_rewrite", ""))
+    with tabs[1]:
+        flags = snapshot.get("policy_flags", [])
+        if flags:
+            st.table(pd.DataFrame(flags))
+        else:
+            st.success("No risky claim flags detected.")
+    with tabs[2]:
+        st.table(pd.DataFrame(snapshot.get("safe_claim_library", [])))
+    with tabs[3]:
+        st.json(snapshot.get("prompt_guard", {}))
+    with tabs[4]:
+        st.table(pd.DataFrame(snapshot.get("prompt_policy_rules", [])))
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V108 Claim Safety bundle", use_container_width=True, key="v108_create_bundle"):
+        st.session_state.claim_safety_prompt_policy_v108_bundle = core.create_claim_safety_prompt_policy_v108_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
+
+    if st.session_state.get("claim_safety_prompt_policy_v108_bundle"):
+        st.download_button("Download Claim Safety & Prompt Policy Bundle V108", st.session_state.claim_safety_prompt_policy_v108_bundle, file_name=f"{st.session_state.project_name}_claim_safety_prompt_policy_v108.zip", mime="application/zip", use_container_width=True, key="v108_download_claim_policy_bundle")
+
+    st.caption("V108 keeps AI and sales copy useful but bounded: pilot/evidence language is allowed; production/accuracy/legal/compliance guarantees are blocked unless separately validated and approved.")
+
+
+def render_synthetic_data_optimizer_v109_tab():
+    st.header("🧬 Synthetic Data Optimizer V109")
+    st.caption("Build scenario-based golden synthetic data for demos, regression tests and Data Quality Gates. This improves synthetic data without pretending it replaces real customer field validation.")
+
+    try:
+        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY, generate_scenario_dataset
+    except Exception as exc:
+        st.error(f"V109 module could not load: {exc}")
+        return
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        pack_key = st.selectbox(
+            "Scenario pack",
+            list(SCENARIO_LIBRARY.keys()),
+            format_func=lambda k: SCENARIO_LIBRARY[k].get("title", k),
+            key="v109_pack_key",
+        )
+        rows = st.slider("Rows", min_value=250, max_value=10000, value=1500, step=250, key="v109_rows")
+        seed = st.number_input("Seed", min_value=1, max_value=999999, value=109, step=1, key="v109_seed")
+    with col2:
+        noise_level = st.slider("Noise level", min_value=0.0, max_value=0.30, value=0.06, step=0.01, key="v109_noise")
+        missing_rate = st.slider("Missing rate", min_value=0.0, max_value=0.20, value=0.015, step=0.005, key="v109_missing")
+        drift_strength = st.slider("Sensor drift", min_value=0.0, max_value=0.30, value=0.05, step=0.01, key="v109_drift")
+        imbalance_factor = st.slider("Anomaly imbalance factor", min_value=0.5, max_value=2.5, value=1.0, step=0.1, key="v109_imbalance")
+        include_edge_cases = st.checkbox("Include marked edge cases/outliers", value=True, key="v109_edge_cases")
+
+    snapshot = core.build_synthetic_data_optimizer_v109_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        pack_key=pack_key,
+        rows=int(rows),
+        seed=int(seed),
+        noise_level=float(noise_level),
+        missing_rate=float(missing_rate),
+        drift_strength=float(drift_strength),
+        imbalance_factor=float(imbalance_factor),
+        include_edge_cases=bool(include_edge_cases),
+    )
+    dataset_df, manifest = generate_scenario_dataset(
+        pack_key=pack_key,
+        rows=int(rows),
+        seed=int(seed),
+        noise_level=float(noise_level),
+        missing_rate=float(missing_rate),
+        drift_strength=float(drift_strength),
+        imbalance_factor=float(imbalance_factor),
+        include_edge_cases=bool(include_edge_cases),
+    )
+    st.session_state.synthetic_data_optimizer_v109_snapshot = snapshot
+    st.session_state.synthetic_data_optimizer_v109_dataset = dataset_df
+
+    a, b, c, d = st.columns(4)
+    a.metric("Decision", snapshot.get("decision", "unknown"))
+    b.metric("Synthetic score", snapshot.get("synthetic_quality_score", 0))
+    c.metric("Rows", manifest.get("rows", 0))
+    d.metric("Classes", len(manifest.get("labels", [])))
+
+    tabs = st.tabs(["Preview", "Quality", "Scenario manifest", "Stress profiles", "Validation boundary", "Full snapshot"])
+    with tabs[0]:
+        st.dataframe(dataset_df.head(50), use_container_width=True)
+        st.download_button("Download synthetic CSV", dataset_df.to_csv(index=False), file_name="synthetic_dataset_v109.csv", mime="text/csv", use_container_width=True, key="v109_download_csv")
+    with tabs[1]:
+        quality = snapshot.get("quality", {})
+        if snapshot.get("customer_demo_allowed"):
+            st.success("Golden synthetic data is ready for customer demos/regression testing.")
+        elif snapshot.get("auto_use_allowed"):
+            st.info("Synthetic data is usable for internal/pilot testing, but tune before premium demo use.")
+        else:
+            st.warning("Synthetic data needs tuning before it should be used in customer-facing demos.")
+        st.json(quality)
+    with tabs[2]:
+        st.json(manifest)
+        if manifest.get("class_counts"):
+            st.table(pd.DataFrame([{"label": k, "rows": v} for k, v in manifest.get("class_counts", {}).items()]))
+    with tabs[3]:
+        st.table(pd.DataFrame(snapshot.get("stress_profiles", [])))
+    with tabs[4]:
+        st.warning("Synthetic data validates workflow, stress behavior and known-label regression. It does not prove production accuracy or customer-specific field performance.")
+        st.json(snapshot.get("validation_contract", {}))
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V109 Synthetic Data bundle", use_container_width=True, key="v109_create_bundle"):
+        st.session_state.synthetic_data_optimizer_v109_bundle = core.create_synthetic_data_optimizer_v109_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, dataset_df)
+
+    if st.session_state.get("synthetic_data_optimizer_v109_bundle"):
+        st.download_button("Download Synthetic Data Optimizer Bundle V109", st.session_state.synthetic_data_optimizer_v109_bundle, file_name=f"{st.session_state.project_name}_synthetic_data_optimizer_v109.zip", mime="application/zip", use_container_width=True, key="v109_download_bundle")
+
+    st.caption("V109 makes synthetic testdata better and more honest: scenario-based, labeled, noisy, drifted, partially missing and ready for regression/data-quality gates — but still not a substitute for real customer validation.")
+
+
+def render_synthetic_real_bridge_v110_tab():
+    st.header("🌉 Synthetic→Real Bridge V110")
+    st.caption("Make synthetic data more like real customer data, without mixing raw customer data into EdgeTwin unless explicit permission and policy allow it.")
+
+    try:
+        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
+    except Exception:
+        SCENARIO_LIBRARY = {"rotating_machinery": {"title": "Rotating Machinery Pack"}}
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        pack_key = st.selectbox("Base scenario pack", list(SCENARIO_LIBRARY.keys()), key="v110_pack_key")
+        rows = st.slider("Synthetic rows", 300, 10000, 2500, 100, key="v110_rows")
+    with c2:
+        consent_mode = st.selectbox(
+            "Customer data learning consent mode",
+            ["no_learning", "profile_only", "synthetic_calibration", "reusable_benchmark_template"],
+            index=1,
+            key="v110_consent_mode",
+            help="Default is profile_only: aggregate stats only, no raw customer rows are stored in the bridge bundle.",
+        )
+        purpose = st.text_input("Purpose", "pilot readiness / synthetic calibration", key="v110_purpose")
+    with c3:
+        seed = st.number_input("Seed", min_value=1, max_value=2000000000, value=110, step=1, key="v110_seed")
+        include_customer_profile = st.checkbox("Use uploaded data profile if available", value=True, key="v110_use_profile")
+
+    uploaded = st.file_uploader("Optional customer sample CSV for calibration profile", type=["csv"], key="v110_customer_csv")
+    real_df = None
+    upload_note = "No customer CSV uploaded. V110 will generate synthetic-real target guidance only."
+    if uploaded is not None:
+        try:
+            real_df = pd.read_csv(uploaded)
+            upload_note = f"Loaded customer sample: {len(real_df):,} rows, {len(real_df.columns):,} columns. Raw rows are not included in the V110 bridge bundle by default."
+            st.success(upload_note)
+            st.dataframe(real_df.head(20), use_container_width=True)
+        except Exception as exc:
+            st.error(f"Could not read CSV: {exc}")
+            real_df = None
+    else:
+        st.info(upload_note)
+
+    effective_real_df = real_df if include_customer_profile else None
+    snapshot, calibrated_df = core.build_synthetic_real_bridge_v110_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        pack_key=pack_key,
+        rows=rows,
+        seed=int(seed),
+        consent_mode=consent_mode,
+        purpose=purpose,
+        real_df=effective_real_df,
+    )
+    st.session_state.synthetic_real_bridge_v110_snapshot = snapshot
+    st.session_state.synthetic_real_bridge_v110_dataset = calibrated_df
+
+    score = int(snapshot.get("realism_score", 0))
+    st.metric("Synthetic-realism score", score, snapshot.get("decision"))
+    st.metric("Consent mode", snapshot.get("consent", {}).get("mode", "unknown"))
+
+    tabs = st.tabs(["Decision", "Calibrated synthetic preview", "Real data profile", "Consent & learning", "Recommendations", "Raw JSON"])
+    with tabs[0]:
+        st.write(snapshot.get("customer_safe_summary", ""))
+        st.json(snapshot.get("decision_card", {}))
+    with tabs[1]:
+        st.dataframe(calibrated_df.head(100), use_container_width=True)
+        st.caption("This is synthetic/calibrated scenario data, not raw customer data.")
+    with tabs[2]:
+        st.json(snapshot.get("real_profile", {}))
+    with tabs[3]:
+        st.warning("Real customer data may only be used according to consent, contract/purpose, minimization and retention rules. V110 stores profiles by default, not raw uploaded rows.")
+        st.json(snapshot.get("consent", {}))
+        st.json(snapshot.get("learning_policy", {}))
+    with tabs[4]:
+        st.table(pd.DataFrame(snapshot.get("recommendations", [])))
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V110 Synthetic→Real Bridge bundle", use_container_width=True, key="v110_create_bundle"):
+        st.session_state.synthetic_real_bridge_v110_bundle = core.create_synthetic_real_bridge_v110_bundle(
+            st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, calibrated_df
+        )
+
+    if st.session_state.get("synthetic_real_bridge_v110_bundle"):
+        st.download_button(
+            "Download Synthetic→Real Bridge Bundle V110",
+            st.session_state.synthetic_real_bridge_v110_bundle,
+            file_name=f"{st.session_state.project_name}_synthetic_real_bridge_v110.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="v110_download_bundle",
+        )
+
+    st.caption("V110 bridges synthetic and real-world behavior using profiles, calibration and consent-controlled learning. It still does not claim production accuracy without real validation.")
+
+
+def render_synthetic_reliability_lab_v111_tab():
+    st.header("🧪 Synthetic Reliability Lab V111")
+    st.caption("Make synthetic testdata measurable: stress coverage, label coverage, timestamp health, correlation stability, real-profile fidelity and privacy/similarity red flags.")
+
+    try:
+        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
+        from synthetic_reliability_lab_v111 import STRESS_PROFILES
+    except Exception:
+        SCENARIO_LIBRARY = {"rotating_machinery": {"title": "Rotating Machinery Pack"}}
+        STRESS_PROFILES = {"realistic_messy": {"label": "Realistic messy"}}
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        pack_key = st.selectbox("Scenario pack", list(SCENARIO_LIBRARY.keys()), key="v111_pack_key")
+        rows = st.slider("Rows per stress profile", 300, 10000, 2500, 100, key="v111_rows")
+    with c2:
+        seed = st.number_input("Seed", min_value=1, max_value=2000000000, value=111, step=1, key="v111_seed")
+        use_real_profile = st.checkbox("Use uploaded real profile/fidelity checks if available", value=True, key="v111_use_real_profile")
+    with c3:
+        selected_stress = st.multiselect(
+            "Stress profiles",
+            list(STRESS_PROFILES.keys()),
+            default=list(STRESS_PROFILES.keys()),
+            key="v111_stress_profiles",
+        )
+
+    uploaded = st.file_uploader("Optional customer sample CSV for profile/fidelity red-team check", type=["csv"], key="v111_customer_csv")
+    real_df = None
+    if uploaded is not None:
+        try:
+            real_df = pd.read_csv(uploaded)
+            st.success(f"Loaded optional customer sample: {len(real_df):,} rows, {len(real_df.columns):,} columns. Use only with permission.")
+            st.dataframe(real_df.head(20), use_container_width=True)
+        except Exception as exc:
+            st.error(f"Could not read CSV: {exc}")
+            real_df = None
+    else:
+        st.info("No customer CSV uploaded. V111 will evaluate synthetic reliability without real-fidelity checks.")
+
+    snapshot, datasets = core.build_synthetic_reliability_lab_v111_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        pack_key=pack_key,
+        rows=int(rows),
+        seed=int(seed),
+        real_df=real_df,
+        use_real_profile=bool(use_real_profile),
+        stress_profile_keys=selected_stress,
+    )
+    st.session_state.synthetic_reliability_lab_v111_snapshot = snapshot
+    st.session_state.synthetic_reliability_lab_v111_dataset = datasets.get("realistic_messy") if isinstance(datasets.get("realistic_messy"), pd.DataFrame) else next(iter(datasets.values()))
+
+    st.metric("Synthetic reliability score", int(snapshot.get("synthetic_reliability_score", 0)), snapshot.get("decision"))
+    st.metric("Stress profiles", len(snapshot.get("stress_profiles", [])))
+
+    tabs = st.tabs(["Decision", "Stress coverage", "Realistic dataset preview", "Red-team checks", "Real bridge/privacy", "Validation contract", "Raw JSON"])
+    with tabs[0]:
+        st.write(snapshot.get("customer_safe_summary", ""))
+        st.json(snapshot.get("score_inputs", {}))
+        st.table(pd.DataFrame(snapshot.get("recommendations", [])))
+    with tabs[1]:
+        st.dataframe(pd.DataFrame(snapshot.get("stress_profiles", [])), use_container_width=True)
+        st.json(snapshot.get("correlation_stability", {}))
+    with tabs[2]:
+        df = st.session_state.synthetic_reliability_lab_v111_dataset
+        if isinstance(df, pd.DataFrame):
+            st.dataframe(df.head(120), use_container_width=True)
+        st.caption("Preview is synthetic scenario data; not customer raw data.")
+    with tabs[3]:
+        st.dataframe(pd.DataFrame(snapshot.get("red_team_checks_realistic_messy", [])), use_container_width=True)
+        st.json(snapshot.get("label_coverage_realistic_messy", {}))
+        st.json(snapshot.get("timestamp_health_realistic_messy", {}))
+    with tabs[4]:
+        st.warning("Real customer data may only be used with permission. V111 can compare aggregate/fidelity signals, but synthetic data still cannot prove production accuracy.")
+        st.json(snapshot.get("privacy_similarity_risk", {}))
+        st.json(snapshot.get("fidelity_to_real", {}))
+    with tabs[5]:
+        st.json(snapshot.get("validation_contract", {}))
+    with tabs[6]:
+        st.json(snapshot)
+
+    if st.button("Create V111 Synthetic Reliability Lab bundle", use_container_width=True, key="v111_create_bundle"):
+        st.session_state.synthetic_reliability_lab_v111_bundle = core.create_synthetic_reliability_lab_v111_bundle(
+            st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, datasets
+        )
+
+    if st.session_state.get("synthetic_reliability_lab_v111_bundle"):
+        st.download_button(
+            "Download Synthetic Reliability Lab Bundle V111",
+            st.session_state.synthetic_reliability_lab_v111_bundle,
+            file_name=f"{st.session_state.project_name}_synthetic_reliability_lab_v111.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="v111_download_bundle",
+        )
+
+    st.caption("V111 makes synthetic data trustworthy for regression, demos and gate testing. It still does not replace representative labelled customer data for production accuracy claims.")
+
+
+def render_dataset_benchmark_harness_v112_tab():
+    st.header("📏 Dataset Benchmark Harness V112")
+    st.caption("Validate synthetic and customer-sample datasets through one repeatable benchmark gate: schema, timestamps, labels, missingness, numeric health, leakage probes and V111 reliability.")
+
+    try:
+        from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
+        from dataset_benchmark_harness_v112 import BENCHMARK_PROFILES, build_v112_summary_table
+    except Exception:
+        SCENARIO_LIBRARY = {"rotating_machinery": {"title": "Rotating Machinery Pack"}}
+        BENCHMARK_PROFILES = {"pilot_evidence_ready": {"label": "Pilot evidence ready"}}
+        build_v112_summary_table = None
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        pack_key = st.selectbox("Scenario pack", list(SCENARIO_LIBRARY.keys()), key="v112_pack_key")
+        rows = st.slider("Rows", 300, 15000, 2500, 100, key="v112_rows")
+    with c2:
+        benchmark_profile = st.selectbox("Benchmark profile", list(BENCHMARK_PROFILES.keys()), index=list(BENCHMARK_PROFILES.keys()).index("pilot_evidence_ready") if "pilot_evidence_ready" in BENCHMARK_PROFILES else 0, key="v112_benchmark_profile")
+        seed = st.number_input("Seed", min_value=1, max_value=2000000000, value=112, step=1, key="v112_seed")
+    with c3:
+        include_v111_stress = st.checkbox("Include V111 stress/reliability signal", value=True, key="v112_include_v111")
+        st.info("Use V112 as the shared gate for synthetic data, customer samples, regression and pack QA.")
+
+    uploaded = st.file_uploader("Optional customer sample CSV for same-harness validation", type=["csv"], key="v112_customer_csv")
+    real_df = None
+    if uploaded is not None:
+        try:
+            real_df = pd.read_csv(uploaded)
+            st.success(f"Loaded optional customer sample: {len(real_df):,} rows, {len(real_df.columns):,} columns. Use only with permission.")
+            st.dataframe(real_df.head(20), use_container_width=True)
+        except Exception as exc:
+            st.error(f"Could not read CSV: {exc}")
+            real_df = None
+    else:
+        st.info("No customer sample uploaded. V112 will benchmark synthetic/golden datasets only.")
+
+    snapshot, datasets = core.build_dataset_benchmark_harness_v112_snapshot(
+        project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
+        pack_key=pack_key,
+        rows=int(rows),
+        seed=int(seed),
+        benchmark_profile=benchmark_profile,
+        real_df=real_df,
+        include_v111_stress=bool(include_v111_stress),
+    )
+    st.session_state.dataset_benchmark_harness_v112_snapshot = snapshot
+    st.session_state.dataset_benchmark_harness_v112_dataset = datasets.get("golden_synthetic") if isinstance(datasets.get("golden_synthetic"), pd.DataFrame) else next(iter(datasets.values()))
+
+    st.metric("Benchmark harness score", int(snapshot.get("benchmark_harness_score", 0)), snapshot.get("decision"))
+    st.metric("Dataset validations", int(snapshot.get("dataset_count", 0)))
+    st.metric("V111 reliability signal", snapshot.get("v111_synthetic_reliability_score", "n/a"), snapshot.get("v111_decision", ""))
+
+    tabs = st.tabs(["Decision", "Benchmark matrix", "Dataset preview", "Profile details", "Recommendations", "Raw JSON"])
+    with tabs[0]:
+        st.write(snapshot.get("customer_safe_summary", ""))
+        st.warning(snapshot.get("important_boundary", ""))
+        st.json({"allowed_claim": snapshot.get("allowed_claim"), "blocked_claims": snapshot.get("blocked_claims")})
+    with tabs[1]:
+        if build_v112_summary_table is not None:
+            st.dataframe(build_v112_summary_table(snapshot), use_container_width=True)
+        else:
+            st.dataframe(pd.DataFrame(snapshot.get("validations", [])), use_container_width=True)
+    with tabs[2]:
+        df = st.session_state.dataset_benchmark_harness_v112_dataset
+        if isinstance(df, pd.DataFrame):
+            st.dataframe(df.head(150), use_container_width=True)
+        st.caption("Preview is benchmark data. Customer samples are used only with permission and should not be reused across customers without explicit consent.")
+    with tabs[3]:
+        for v in snapshot.get("validations", []):
+            with st.expander(f"{v.get('dataset_name')} — {v.get('decision')} / {v.get('benchmark_score')}"):
+                st.json(v)
+    with tabs[4]:
+        st.table(pd.DataFrame(snapshot.get("recommendations", [])))
+        st.json(snapshot.get("real_fingerprint_distance", {}))
+    with tabs[5]:
+        st.json(snapshot)
+
+    if st.button("Create V112 Dataset Benchmark Harness bundle", use_container_width=True, key="v112_create_bundle"):
+        st.session_state.dataset_benchmark_harness_v112_bundle = core.create_dataset_benchmark_harness_v112_bundle(
+            st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, datasets
+        )
+
+    if st.session_state.get("dataset_benchmark_harness_v112_bundle"):
+        st.download_button(
+            "Download Dataset Benchmark Harness Bundle V112",
+            st.session_state.dataset_benchmark_harness_v112_bundle,
+            file_name=f"{st.session_state.project_name}_dataset_benchmark_harness_v112.zip",
+            mime="application/zip",
+            use_container_width=True,
+            key="v112_download_bundle",
+        )
+
+    st.caption("V112 makes synthetic/customer-sample data benchmarkable. It still does not replace representative labelled field validation for production/accuracy claims.")
+
+
+def render_public_benchmark_dataset_v113_tab():
+    st.header("🎧 Public Benchmark Dataset Adapter V113")
+    st.caption("Use public/open datasets such as ESC-50 as benchmark/demo/reference assets without confusing them with customer production validation.")
+
+    catalog = public_benchmark_v113.get_public_benchmark_catalog_v113()
+    dataset_names = {spec["display_name"]: dataset_id for dataset_id, spec in catalog.items()}
+
+    c1, c2 = st.columns(2)
+    with c1:
+        selected_name = st.selectbox("Public benchmark dataset", list(dataset_names.keys()), key="v113_dataset_select")
+        dataset_id = dataset_names[selected_name]
+    with c2:
+        intended_use = st.selectbox(
+            "Intended use",
+            ["internal_benchmark", "demo_reference", "paid_customer_bundle", "commercial_model_training", "production_accuracy_claim"],
+            key="v113_intended_use",
+        )
+
+    spec = catalog[dataset_id]
+    st.info(spec.get("primary_use", ""))
+
+    with st.expander("Dataset license / commercial guard", expanded=True):
+        st.write(spec.get("license_note", ""))
+        st.warning(spec.get("commercial_guard", ""))
+
+    uploaded_meta = st.file_uploader("Optional metadata CSV", type=["csv"], key="v113_metadata_upload")
+    metadata_df = None
+    if uploaded_meta is not None:
+        try:
+            metadata_df = pd.read_csv(uploaded_meta)
+            st.dataframe(metadata_df.head(20), use_container_width=True)
+        except Exception as exc:
+            st.error(f"Could not read metadata CSV: {exc}")
+
+    if st.button("Build V113 Public Benchmark Dataset Card", use_container_width=True, key="v113_build_card"):
+        snapshot = public_benchmark_v113.build_public_benchmark_v113_snapshot(
+            dataset_id=dataset_id,
+            metadata_df=metadata_df,
+            intended_use=intended_use,
+            project_id=st.session_state.project_id,
+        )
+        st.session_state.public_benchmark_v113_snapshot = snapshot
+        st.session_state.public_benchmark_v113_bundle = public_benchmark_v113.create_public_benchmark_v113_bundle(
+            snapshot,
+            project_name=st.session_state.project_name,
+        )
+
+    snap = st.session_state.get("public_benchmark_v113_snapshot")
+    if snap:
+        scoring = snap.get("scoring", {})
+        profile = snap.get("metadata_profile", {})
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Benchmark score", f"{scoring.get('public_benchmark_score', 0)}%")
+        m2.metric("Classes", profile.get("class_count", 0))
+        m3.metric("Folds/splits", profile.get("fold_count", 0))
+        m4.metric("Metadata rows", profile.get("rows", 0))
+
+        decision = scoring.get("decision", "UNKNOWN")
+        if "BLOCKED" in decision or scoring.get("blockers"):
+            st.error(decision)
+        elif "READY" in decision:
+            st.success(decision)
+        else:
+            st.warning(decision)
+
+        if scoring.get("blockers"):
+            st.subheader("Blockers")
+            st.write(scoring.get("blockers"))
+        if scoring.get("review_flags"):
+            st.subheader("Review flags")
+            st.write(scoring.get("review_flags"))
+
+        st.subheader("EdgeTwin positioning")
+        st.write(snap.get("edge_twin_positioning"))
+        st.subheader("Recommended next steps")
+        for item in snap.get("next_steps", []):
+            st.write(f"- {item}")
+
+        if st.session_state.get("public_benchmark_v113_bundle"):
+            st.download_button(
+                "Download Public Benchmark Dataset Bundle V113",
+                st.session_state.public_benchmark_v113_bundle,
+                file_name=f"{st.session_state.project_name}_public_benchmark_dataset_v113.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="v113_download_bundle",
+            )
+
+    st.caption("V113 makes public datasets useful for benchmark/demo/regression work. It does not turn public data into customer production accuracy proof.")
+
+
+def render_dataset_import_wizard_v114_tab():
+    st.header("🗂️ Dataset Library Import Wizard V114")
+    st.caption("Register ESC-50/public datasets, golden synthetic sets and customer-consented samples without mixing raw data into SQLite or paid bundles.")
+
+    dirs = dataset_import_v114.ensure_dataset_library_dirs()
+    with st.expander("Recommended dataset library folders", expanded=True):
+        st.json(dirs)
+        st.code("""storage/dataset_library/
+  public/esc50/meta/esc50.csv
+  public/esc50/audio/*.wav
+  synthetic/golden/
+  customer_consent/<customer_or_order_id>/
+  manifests/""")
+
+    known = dataset_import_v114.get_known_dataset_profiles_v114()
+    policies = dataset_import_v114.get_dataset_source_policies_v114()
+    dataset_options = {f"{v['display_name']} ({k})": k for k, v in known.items()}
+
+    c1, c2 = st.columns(2)
+    with c1:
+        selected = st.selectbox("Dataset profile", list(dataset_options.keys()), key="v114_dataset_profile")
+        known_dataset_id = dataset_options[selected]
+        dataset_name = st.text_input("Dataset name", value=known[known_dataset_id].get("display_name", known_dataset_id), key="v114_dataset_name")
+        dataset_path = st.text_input("Local dataset folder path", value=f"storage/dataset_library/{known[known_dataset_id].get('recommended_library_subdir', 'public/esc50')}", key="v114_dataset_path")
+    with c2:
+        default_source = known[known_dataset_id].get("source_type", "public_benchmark")
+        source_type = st.selectbox("Source/consent type", list(policies.keys()), index=list(policies.keys()).index(default_source) if default_source in policies else 0, key="v114_source_type")
+        allowed_modes = policies[source_type].get("allowed_learning_modes", [])
+        learning_mode = st.selectbox("Learning mode", allowed_modes, key="v114_learning_mode")
+        intended_use = st.selectbox("Intended use", ["benchmark_regression", "demo_reference", "synthetic_calibration", "single_customer_delivery", "paid_bundle_raw_redistribution", "commercial_training", "production_accuracy_claim"], key="v114_intended_use")
+
+    customer_consent_reference = ""
+    if source_type.startswith("customer"):
+        customer_consent_reference = st.text_input("Customer consent reference / order ID", value="", key="v114_consent_ref")
+        st.warning("Customer data needs explicit consent scope. Prefer profile-only or synthetic calibration over raw reuse.")
+
+    with st.expander("Policy for selected source type", expanded=False):
+        st.json(policies[source_type])
+
+    if st.button("Register dataset in V114 library", use_container_width=True, key="v114_register_dataset"):
+        manifest = dataset_import_v114.build_dataset_import_manifest_v114(
+            dataset_name=dataset_name,
+            known_dataset_id=known_dataset_id,
+            dataset_path=dataset_path,
+            source_type=source_type,
+            learning_mode=learning_mode,
+            intended_use=intended_use,
+            customer_consent_reference=customer_consent_reference,
+            project_id=st.session_state.project_id,
+        )
+        saved = dataset_import_v114.save_dataset_manifest_v114(manifest)
+        st.session_state.dataset_import_v114_manifest = saved
+        st.session_state.dataset_import_v114_bundle = dataset_import_v114.create_dataset_import_v114_bundle(saved, st.session_state.project_name)
+
+    manifest = st.session_state.get("dataset_import_v114_manifest")
+    if manifest:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Import score", f"{manifest.get('score', 0)}%")
+        m2.metric("Files scanned", manifest.get("folder_inventory", {}).get("file_count", 0))
+        m3.metric("Metadata rows", manifest.get("metadata_profile", {}).get("rows", 0))
+        m4.metric("Classes", manifest.get("metadata_profile", {}).get("class_count", 0))
+
+        decision = manifest.get("decision", "UNKNOWN")
+        if manifest.get("blockers"):
+            st.error(decision)
+        elif "READY" in decision:
+            st.success(decision)
+        else:
+            st.warning(decision)
+
+        tabs = st.tabs(["Manifest", "Policy", "Inventory", "Next steps", "Download"] )
+        with tabs[0]:
+            st.json(manifest)
+        with tabs[1]:
+            st.json(manifest.get("source_policy", {}))
+        with tabs[2]:
+            st.json(manifest.get("folder_inventory", {}))
+            st.json(manifest.get("metadata_profile", {}))
+        with tabs[3]:
+            for step in manifest.get("recommended_next_steps", []):
+                st.write(f"- {step}")
+        with tabs[4]:
+            if st.session_state.get("dataset_import_v114_bundle"):
+                st.download_button(
+                    "Download Dataset Import Bundle V114",
+                    st.session_state.dataset_import_v114_bundle,
+                    file_name=f"{st.session_state.project_name}_dataset_import_v114.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    key="v114_download_bundle",
+                )
+
+    st.caption("V114 registers datasets and policies. It does not auto-download datasets, store raw data in SQLite or turn benchmarks into production accuracy proof.")
+
+
+def render_synthetic_calibration_loop_v115_tab():
+    st.header("🔁 Dataset-to-Synthetic Calibration Loop V115")
+    st.caption("Turn imported/public/customer-approved dataset profiles into stronger synthetic candidates for demo, regression and pilot-readiness. No production accuracy claims.")
+
+    from synthetic_data_optimizer_v109 import SCENARIO_LIBRARY
+    from dataset_benchmark_harness_v112 import BENCHMARK_PROFILES
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        pack_key = st.selectbox("Scenario pack", list(SCENARIO_LIBRARY.keys()), key="v115_pack_key")
+        rows = st.slider("Rows per candidate", 300, 12000, 2500, 100, key="v115_rows")
+        seed = st.number_input("Seed", min_value=1, max_value=2000000000, value=115, step=1, key="v115_seed")
+    with c2:
+        consent_mode = st.selectbox("Reference/consent mode", list(synthetic_calibration_v115.CONSENT_MODES.keys()), index=list(synthetic_calibration_v115.CONSENT_MODES.keys()).index("benchmark_only"), key="v115_consent_mode")
+        benchmark_profile = st.selectbox("Benchmark profile", list(BENCHMARK_PROFILES.keys()), index=list(BENCHMARK_PROFILES.keys()).index("pilot_evidence_ready") if "pilot_evidence_ready" in BENCHMARK_PROFILES else 0, key="v115_benchmark_profile")
+        max_candidates = st.slider("Calibration candidates", 2, 10, 6, 1, key="v115_max_candidates")
+    with c3:
+        base_noise = st.slider("Base noise", 0.0, 0.30, 0.075, 0.005, key="v115_base_noise")
+        base_missing = st.slider("Base missing", 0.0, 0.20, 0.020, 0.005, key="v115_base_missing")
+        base_drift = st.slider("Base drift", 0.0, 0.30, 0.065, 0.005, key="v115_base_drift")
+        base_imbalance = st.slider("Base imbalance", 0.3, 2.5, 1.0, 0.05, key="v115_base_imbalance")
+
+    uploaded = st.file_uploader("Optional reference CSV: public benchmark metadata/features or customer sample with consent", type=["csv"], key="v115_reference_csv")
+    reference_df = None
+    if uploaded is not None:
+        try:
+            reference_df = pd.read_csv(uploaded)
+            st.info(f"Reference dataset loaded: {reference_df.shape[0]} rows x {reference_df.shape[1]} columns")
+            st.dataframe(reference_df.head(20), use_container_width=True)
+        except Exception as exc:
+            st.error(f"Could not read reference CSV: {exc}")
+
+    with st.expander("Selected consent policy", expanded=False):
+        st.json(synthetic_calibration_v115.CONSENT_MODES.get(consent_mode, {}))
+
+    if st.button("Run V115 calibration loop", use_container_width=True, key="v115_run_loop"):
+        snapshot, datasets = synthetic_calibration_v115.build_dataset_to_synthetic_calibration_v115_snapshot(
+            project_name=st.session_state.project_name,
+            pack_key=pack_key,
+            rows=int(rows),
+            seed=int(seed),
+            reference_df=reference_df,
+            consent_mode=consent_mode,
+            benchmark_profile=benchmark_profile,
+            max_candidates=int(max_candidates),
+            base_noise=float(base_noise),
+            base_missing=float(base_missing),
+            base_drift=float(base_drift),
+            base_imbalance=float(base_imbalance),
+        )
+        st.session_state.synthetic_calibration_v115_snapshot = snapshot
+        st.session_state.synthetic_calibration_v115_dataset = datasets.get("best_calibrated_synthetic_v115", pd.DataFrame())
+        st.session_state.synthetic_calibration_v115_bundle = synthetic_calibration_v115.create_synthetic_calibration_v115_bundle(snapshot, datasets, st.session_state.project_name)
+
+    snap = st.session_state.get("synthetic_calibration_v115_snapshot")
+    if snap:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Calibration score", f"{snap.get('calibration_score', 0)}%")
+        m2.metric("Improvement", f"{snap.get('improvement_points', 0)} pts")
+        m3.metric("Candidates", snap.get("candidate_count", 0))
+        m4.metric("Golden allowed", "yes" if snap.get("golden_candidate_allowed") else "no")
+
+        decision = snap.get("decision", "UNKNOWN")
+        if snap.get("blockers"):
+            st.error(decision)
+        elif "GO" in decision:
+            st.success(decision)
+        else:
+            st.warning(decision)
+
+        tabs = st.tabs(["Best", "Candidates", "Validation", "Dataset", "Download"])
+        with tabs[0]:
+            st.json({
+                "best_candidate": snap.get("best_candidate"),
+                "best_fidelity": snap.get("best_fidelity"),
+                "best_privacy_similarity": snap.get("best_privacy_similarity"),
+                "consent_policy": snap.get("consent_policy"),
+                "review_flags": snap.get("review_flags"),
+                "blockers": snap.get("blockers"),
+                "recommendations": snap.get("recommendations"),
+            })
+        with tabs[1]:
+            st.dataframe(synthetic_calibration_v115.build_v115_candidate_table(snap), use_container_width=True)
+        with tabs[2]:
+            st.json(snap.get("best_validation", {}))
+            st.write("V111 reliability signal:", snap.get("v111_synthetic_reliability_score"), snap.get("v111_decision"))
+        with tabs[3]:
+            df = st.session_state.get("synthetic_calibration_v115_dataset", pd.DataFrame())
+            if isinstance(df, pd.DataFrame) and not df.empty:
+                st.dataframe(df.head(80), use_container_width=True)
+                st.download_button("Download best calibrated synthetic CSV", df.to_csv(index=False), file_name="best_calibrated_synthetic_v115.csv", mime="text/csv", use_container_width=True, key="v115_download_csv")
+        with tabs[4]:
+            if st.session_state.get("synthetic_calibration_v115_bundle"):
+                st.download_button(
+                    "Download Synthetic Calibration Loop Bundle V115",
+                    st.session_state.synthetic_calibration_v115_bundle,
+                    file_name=f"{st.session_state.project_name}_synthetic_calibration_loop_v115.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    key="v115_download_bundle",
+                )
+
+    st.caption("V115 improves synthetic data for demo/regression/pilot-preparation. It does not prove production accuracy or compliance readiness.")
+
+
+
+
+
+def render_product_release_candidate_v120_tab():
+    st.header("🚀 Product Release Candidate V120")
+    st.caption("One controlled customer-test release candidate: landing → custom → quote/payment handoff → delivery, with safe claims and data trust checks.")
+
+    with st.form("v120_release_candidate_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            project_name = st.text_input("Project/product name", value=st.session_state.get("project_name", "EdgeTwin Studio"))
+            company = st.text_input("Example customer/company", value="Customer")
+            industry = st.text_input("Industry", value="Industrial / maintenance")
+            customer_problem = st.text_area(
+                "Customer problem",
+                value="We have machine or sensor data but do not know if it is ready for a predictive maintenance pilot.",
+                height=110,
+            )
+            desired_outcome = st.text_input("Desired outcome", value="Pilot/evidence pack")
+        with col2:
+            budget_eur = st.number_input("Budget / expected pack value (€)", min_value=0, max_value=50000, value=2500, step=250)
+            data_readiness_score = st.slider("Data readiness score", 0, 100, 82)
+            trust_score = st.slider("Trust/evidence score", 0, 100, 92)
+            synthetic_reliability_score = st.slider("Synthetic reliability score", 0, 100, 92)
+            wants_custom = st.checkbox("Enable guided custom route", value=True)
+            has_real_data = st.checkbox("Customer has real-data sample", value=False)
+            hosted_ready = st.checkbox("Public/private hosting ready", value=False)
+            payment_ready = st.checkbox("Payment handoff/link ready", value=False)
+        submitted = st.form_submit_button("Build Product RC V120", use_container_width=True)
+
+    if submitted:
+        snapshot = release_candidate_v120.build_product_release_candidate_v120_snapshot(
+            project_name=project_name,
+            company=company,
+            industry=industry,
+            customer_problem=customer_problem,
+            desired_outcome=desired_outcome,
+            budget_eur=int(budget_eur),
+            data_readiness_score=int(data_readiness_score),
+            trust_score=int(trust_score),
+            synthetic_reliability_score=int(synthetic_reliability_score),
+            wants_custom=bool(wants_custom),
+            has_real_data=bool(has_real_data),
+            payment_ready=bool(payment_ready),
+            hosted_ready=bool(hosted_ready),
+        )
+        st.session_state.product_release_candidate_v120_snapshot = snapshot
+        st.session_state.product_release_candidate_v120_bundle = release_candidate_v120.create_product_release_candidate_v120_bundle(snapshot)
+
+    snap = st.session_state.get("product_release_candidate_v120_snapshot")
+    if snap:
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("RC score", snap.get("release_candidate_score"))
+        c2.metric("Decision", snap.get("decision"))
+        c3.metric("Route", snap.get("recommended_route"))
+        c4.metric("SaaS?", "No")
+
+        offer = snap.get("customer_safe_offer", {})
+        st.subheader("Customer-safe offer")
+        st.success(offer.get("headline", ""))
+        st.write(offer.get("safe_claim", ""))
+        st.caption(offer.get("not_included", ""))
+
+        st.subheader("Release readiness areas")
+        st.dataframe(release_candidate_v120.build_v120_area_table(snap), use_container_width=True)
+
+        st.subheader("Customer journey")
+        st.dataframe(release_candidate_v120.build_v120_customer_steps_table(snap), use_container_width=True)
+
+        st.subheader("Blockers / review flags")
+        flags_df = release_candidate_v120.build_v120_flags_table(snap)
+        st.dataframe(flags_df, use_container_width=True)
+
+        with st.expander("Launch checklist", expanded=False):
+            for item in snap.get("launch_checklist", []):
+                st.write("- " + item)
+
+        if st.session_state.get("product_release_candidate_v120_bundle"):
+            st.download_button(
+                "Download V120 Release Candidate Bundle",
+                st.session_state.product_release_candidate_v120_bundle,
+                file_name="edgetwin_v120_release_candidate_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+            )
+
+    st.caption("V120 is a founder-led pack product release candidate. It is not full SaaS and does not make production/accuracy/legal/compliance guarantees.")
+
+def render_customer_facing_landing_portal_v119_tab():
+    st.header("🌍 Customer-Facing Landing Portal V119")
+    st.caption("One clean public/private customer front door: packs, guided custom route, proof, quote/payment handoff and safe claims without exposing the technical cockpit.")
+
+    with st.form("v119_landing_portal_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            company = st.text_input("Customer/company", "Example Industrial Customer")
+            industry = st.text_input("Industry", "Industrial / maintenance")
+            customer_segment = st.text_input("Customer segment", "industrial maintenance / machine operations teams")
+            desired_outcome = st.text_input("Desired outcome", "Predictive maintenance pilot/evidence pack")
+            customer_problem = st.text_area("Customer problem", "We have machine or sensor data but do not know if it is ready for a predictive maintenance pilot.", height=110)
+        with c2:
+            budget_eur = st.number_input("Budget / price anchor EUR", 0, 50000, 2500, 250)
+            data_readiness_score = st.slider("Data readiness signal", 0, 100, 78)
+            trust_score = st.slider("Trust/evidence signal", 0, 100, 90)
+            demo_score = st.slider("Demo clarity signal", 0, 100, 86)
+            wants_custom = st.checkbox("Customer wants custom route", value=True)
+            has_real_data = st.checkbox("Customer has real/sample data", value=False)
+            public_mode = st.selectbox("Portal mode", ["private_demo_link", "public_landing", "founder_internal_preview"], index=0)
+            payment_mode = st.selectbox("Payment/CTA mode", ["quote_ready", "payment_link_ready", "deposit_paid", "paid", "confirmed", "demo_only"], index=1)
+        submitted = st.form_submit_button("Build Customer Landing Portal V119", use_container_width=True)
+
+    if submitted:
+        snapshot = landing_portal_v119.build_customer_facing_landing_portal_v119_snapshot(
+            project_name=st.session_state.project_name,
+            company=company,
+            industry=industry,
+            customer_segment=customer_segment,
+            customer_problem=customer_problem,
+            desired_outcome=desired_outcome,
+            budget_eur=int(budget_eur),
+            data_readiness_score=int(data_readiness_score),
+            trust_score=int(trust_score),
+            demo_score=int(demo_score),
+            wants_custom=bool(wants_custom),
+            has_real_data=bool(has_real_data),
+            public_mode=public_mode,
+            payment_mode=payment_mode,
+        )
+        st.session_state.customer_facing_landing_portal_v119_snapshot = snapshot
+        st.session_state.customer_facing_landing_portal_v119_bundle = landing_portal_v119.create_customer_facing_landing_portal_v119_bundle(snapshot)
+
+    snap = st.session_state.get("customer_facing_landing_portal_v119_snapshot")
+    if snap:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Portal score", f"{snap.get('portal_score', 0)}%")
+        m2.metric("Route", snap.get("recommended_route", "n/a"))
+        m3.metric("Blockers", len(snap.get("blockers", [])))
+        m4.metric("Reviews", len(snap.get("review_flags", [])))
+
+        if snap.get("blockers"):
+            st.error(snap.get("decision"))
+        elif "READY" in snap.get("decision", ""):
+            st.success(snap.get("decision"))
+        else:
+            st.warning(snap.get("decision"))
+
+        tabs = st.tabs(["Landing page", "Packs", "Custom route", "Proof", "Quote/payment", "Safety", "Download"])
+        with tabs[0]:
+            hero = snap.get("hero", {})
+            st.subheader(hero.get("headline"))
+            st.write(hero.get("subheadline"))
+            st.info(hero.get("trust_line"))
+            st.json({"primary_cta": hero.get("primary_cta"), "secondary_cta": hero.get("secondary_cta"), "recommended_offer": hero.get("recommended_offer")})
+        with tabs[1]:
+            st.dataframe(landing_portal_v119.build_v119_pack_card_table(snap), use_container_width=True)
+        with tabs[2]:
+            st.json(snap.get("custom_builder_handoff", {}))
+        with tabs[3]:
+            st.dataframe(landing_portal_v119.build_v119_proof_table(snap), use_container_width=True)
+            st.dataframe(landing_portal_v119.build_v119_portal_section_table(snap), use_container_width=True)
+        with tabs[4]:
+            st.json(snap.get("quote_payment_handoff", {}))
+        with tabs[5]:
+            st.write(snap.get("customer_safe_copy", {}).get("safe_claim"))
+            st.warning(snap.get("customer_safe_copy", {}).get("boundary"))
+            st.json({"blockers": snap.get("blockers", []), "review_flags": snap.get("review_flags", []), "hidden_from_customer": snap.get("hidden_from_customer", [])})
+        with tabs[6]:
+            if st.session_state.get("customer_facing_landing_portal_v119_bundle"):
+                st.download_button(
+                    "Download Customer Landing Portal Bundle V119",
+                    st.session_state.customer_facing_landing_portal_v119_bundle,
+                    file_name=f"{st.session_state.project_name}_customer_landing_portal_v119.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    key="v119_download_bundle",
+                )
+
+    st.caption("V119 is a customer-facing portal/front-door layer. It is not full SaaS, does not process payments directly and does not make production/accuracy/legal/compliance guarantees.")
+
+
+def render_guided_custom_customer_builder_v118_tab():
+    st.header("🧭 Guided Custom Customer Builder V118")
+    st.caption("Customer-facing custom route: the customer chooses what they need, EdgeTwin recommends modules, calculates price/scope/risk and only escalates exceptions.")
+
+    with st.form("v118_guided_custom_builder_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            company = st.text_input("Customer / company", "Demo Industrial Customer", key="v118_company")
+            industry = st.selectbox("Industry", custom_customer_v118.INDUSTRIES, index=0, key="v118_industry")
+            desired_outcome = st.selectbox("Desired outcome", custom_customer_v118.OUTCOMES, index=0, key="v118_outcome")
+            customer_problem = st.text_area("Customer problem in normal language", "We have machine vibration and maintenance data and want to know whether it is ready for a predictive maintenance pilot.", height=110, key="v118_problem")
+        with c2:
+            data_readiness = st.selectbox("Data readiness", custom_customer_v118.DATA_READINESS, index=2, key="v118_data_readiness")
+            budget_mode = st.selectbox("Budget comfort", custom_customer_v118.BUDGET_MODES, index=2, key="v118_budget_mode")
+            urgency = st.selectbox("Delivery urgency", custom_customer_v118.URGENCIES, index=1, key="v118_urgency")
+            allow_auto_approval = st.checkbox("Allow auto-approval inside safe policy", value=True, key="v118_auto")
+
+        st.markdown("**Customer-selected modules**")
+        selected = []
+        cols = st.columns(2)
+        for idx, mod in enumerate(custom_customer_v118.MODULES):
+            default = bool(mod.get("default_selected"))
+            label = f"{mod.get('label')} — €{mod.get('price_eur')}"
+            with cols[idx % 2]:
+                if st.checkbox(label, value=default, key=f"v118_module_{mod.get('module_id')}"):
+                    selected.append(mod.get("module_id"))
+
+        g1, g2, g3 = st.columns(3)
+        with g1:
+            wants_branding = st.checkbox("Needs branding/language", value=False, key="v118_branding")
+        with g2:
+            wants_hardware = st.checkbox("Needs hardware/BOM reference", value=False, key="v118_hardware")
+        with g3:
+            wants_reusable_template = st.checkbox("Make reusable template", value=True, key="v118_reusable")
+
+        submitted = st.form_submit_button("Build Guided Custom Pack V118", use_container_width=True)
+
+    if submitted:
+        snapshot = custom_customer_v118.build_guided_custom_customer_builder_v118_snapshot(
+            project_name=st.session_state.project_name,
+            company=company,
+            industry=industry,
+            desired_outcome=desired_outcome,
+            customer_problem=customer_problem,
+            data_readiness=data_readiness,
+            budget_mode=budget_mode,
+            urgency=urgency,
+            selected_module_ids=selected,
+            wants_branding=wants_branding,
+            wants_hardware=wants_hardware,
+            wants_reusable_template=wants_reusable_template,
+            allow_auto_approval=allow_auto_approval,
+        )
+        st.session_state.guided_custom_customer_builder_v118_snapshot = snapshot
+        st.session_state.guided_custom_customer_builder_v118_bundle = custom_customer_v118.create_guided_custom_customer_builder_v118_bundle(snapshot)
+
+    snap = st.session_state.get("guided_custom_customer_builder_v118_snapshot")
+    if snap:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Custom readiness", f"{snap.get('custom_customer_score', 0)}%")
+        m2.metric("Decision", snap.get("decision", "n/a"))
+        m3.metric("Price", snap.get("price_display", "n/a"))
+        m4.metric("Founder time", f"{snap.get('founder_work_minutes', 'n/a')} min")
+
+        if snap.get("blockers"):
+            st.error(snap.get("customer_visible_decision"))
+        elif snap.get("auto_send_allowed"):
+            st.success(snap.get("customer_visible_decision"))
+        else:
+            st.warning(snap.get("customer_visible_decision"))
+
+        tabs = st.tabs(["Customer builder", "Recommended modules", "Scope & price", "Questions", "Risks", "Reusable template", "Download"])
+        with tabs[0]:
+            st.write(snap.get("customer_page", {}).get("intro"))
+            st.info(snap.get("customer_page", {}).get("safe_boundary"))
+            st.json({"primary_cta": snap.get("customer_page", {}).get("primary_cta"), "secondary_cta": snap.get("customer_page", {}).get("secondary_cta")})
+        with tabs[1]:
+            st.dataframe(custom_customer_v118.build_v118_module_table(snap), use_container_width=True)
+        with tabs[2]:
+            st.dataframe(custom_customer_v118.build_v118_pricing_table(snap), use_container_width=True)
+            st.json(snap.get("scope_lock", {}))
+        with tabs[3]:
+            st.dataframe(custom_customer_v118.build_v118_question_table(snap), use_container_width=True)
+        with tabs[4]:
+            st.json({"review_flags": snap.get("review_flags"), "blockers": snap.get("blockers"), "auto_approval_boundary": snap.get("auto_approval_boundary")})
+        with tabs[5]:
+            st.json(snap.get("reusable_template", {}))
+            st.write(snap.get("customer_copy", {}).get("safe_summary"))
+        with tabs[6]:
+            if st.session_state.get("guided_custom_customer_builder_v118_bundle"):
+                st.download_button(
+                    "Download Guided Custom Builder Bundle V118",
+                    st.session_state.guided_custom_customer_builder_v118_bundle,
+                    file_name=f"{st.session_state.project_name}_guided_custom_builder_v118.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    key="v118_download_bundle",
+                )
+
+    st.caption("V118 lets customers self-configure custom packs inside safety policy. It does not promise production accuracy, compliance certification or unreviewed high-risk custom work.")
+
+def render_one_perfect_customer_flow_v117_tab():
+    st.header("🛣️ One Perfect Customer Flow V117")
+    st.caption("One calm customer route: problem → pack → data readiness → proof → quote/payment → delivery. No production/accuracy/legal/compliance guarantees.")
+
+    with st.form("v117_one_perfect_flow_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            customer_segment = st.text_input("Customer segment", "industrial maintenance / machine operations teams", key="v117_segment")
+            customer_problem = st.text_area("Customer problem", "We have machine or sensor data but do not know if it is ready for a predictive maintenance pilot.", height=100, key="v117_problem")
+            selected_pack_key = st.selectbox("Recommended pack", ["auto"] + list(customer_flow_v117.v116.PACK_LIBRARY.keys()), index=0, key="v117_pack")
+            budget_eur = st.number_input("Budget / price anchor EUR", 0, 25000, 2500, 250, key="v117_budget")
+        with c2:
+            data_readiness_score = st.slider("Data readiness", 0, 100, 82, key="v117_data")
+            trust_score = st.slider("Trust/evidence", 0, 100, 92, key="v117_trust")
+            demo_score = st.slider("Demo clarity", 0, 100, 90, key="v117_demo")
+            urgency = st.selectbox("Urgency", ["low", "normal", "high", "urgent"], index=1, key="v117_urgency")
+        g1, g2, g3 = st.columns(3)
+        with g1:
+            wants_custom = st.checkbox("Customer wants custom", value=False, key="v117_custom")
+            needs_real_data = st.checkbox("Needs real-data evidence", value=False, key="v117_real")
+        with g2:
+            payment_status = st.selectbox("Payment status", customer_flow_v117.PAYMENT_STATUSES, index=2, key="v117_payment")
+            upload_status = st.selectbox("Upload/intake status", customer_flow_v117.UPLOAD_STATUSES, index=2, key="v117_upload")
+        with g3:
+            delivery_status = st.selectbox("Delivery status", customer_flow_v117.DELIVERY_STATUSES, index=0, key="v117_delivery")
+        submitted = st.form_submit_button("Build One Perfect Customer Flow V117", use_container_width=True)
+
+    if submitted:
+        snapshot = customer_flow_v117.build_one_perfect_customer_flow_v117_snapshot(
+            project_name=st.session_state.project_name,
+            customer_segment=customer_segment,
+            customer_problem=customer_problem,
+            selected_pack_key=selected_pack_key,
+            budget_eur=int(budget_eur),
+            data_readiness_score=int(data_readiness_score),
+            trust_score=int(trust_score),
+            demo_score=int(demo_score),
+            urgency=urgency,
+            wants_custom=bool(wants_custom),
+            needs_real_data=bool(needs_real_data),
+            payment_status=payment_status,
+            upload_status=upload_status,
+            delivery_status=delivery_status,
+        )
+        st.session_state.one_perfect_customer_flow_v117_snapshot = snapshot
+        st.session_state.one_perfect_customer_flow_v117_bundle = customer_flow_v117.create_one_perfect_customer_flow_v117_bundle(snapshot)
+
+    snap = st.session_state.get("one_perfect_customer_flow_v117_snapshot")
+    if snap:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Flow score", f"{snap.get('customer_flow_score', 0)}%")
+        m2.metric("Pack", snap.get("selected_pack", {}).get("name", "n/a"))
+        m3.metric("Data gate", snap.get("data_gate", {}).get("level", "n/a"))
+        m4.metric("Unlock", snap.get("payment_delivery_gate", {}).get("unlock_decision", "n/a"))
+
+        if snap.get("blockers"):
+            st.error(snap.get("decision"))
+        elif "READY" in snap.get("decision", ""):
+            st.success(snap.get("decision"))
+        else:
+            st.warning(snap.get("decision"))
+
+        tabs = st.tabs(["Customer page", "Journey", "Proof", "Price", "Gates", "Safe copy", "Download"])
+        with tabs[0]:
+            page = snap.get("customer_page", {})
+            st.subheader(page.get("hero"))
+            st.write(page.get("subhero"))
+            st.info(page.get("safe_boundary"))
+            st.json({"primary_cta": page.get("primary_cta"), "secondary_cta": page.get("secondary_cta"), "price_range_eur": page.get("price_range_eur")})
+        with tabs[1]:
+            st.dataframe(customer_flow_v117.build_v117_flow_table(snap), use_container_width=True)
+        with tabs[2]:
+            for card in snap.get("proof_cards", []):
+                st.markdown(f"**{card.get('title')}**")
+                st.write(card.get("proof"))
+                st.caption(card.get("customer_benefit"))
+        with tabs[3]:
+            st.json(snap.get("pricing_justification", {}))
+        with tabs[4]:
+            st.json({"data_gate": snap.get("data_gate"), "payment_delivery_gate": snap.get("payment_delivery_gate"), "blockers": snap.get("blockers"), "review_flags": snap.get("review_flags")})
+        with tabs[5]:
+            st.write(snap.get("safe_customer_claim"))
+            st.json({"recommended_next_actions": snap.get("recommended_next_actions"), "hidden_internal_complexity": snap.get("hidden_internal_complexity")})
+        with tabs[6]:
+            if st.session_state.get("one_perfect_customer_flow_v117_bundle"):
+                st.download_button(
+                    "Download One Perfect Customer Flow Bundle V117",
+                    st.session_state.one_perfect_customer_flow_v117_bundle,
+                    file_name=f"{st.session_state.project_name}_one_perfect_customer_flow_v117.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    key="v117_download_bundle",
+                )
+
+    st.caption("V117 is the simplified customer route. It prepares conversion, quote/payment handoff and delivery status, but does not process payments or guarantee production accuracy.")
+
+
+def render_self_selling_conversion_v116_tab():
+    st.header("🧲 Self-Selling Conversion Engine V116")
+    st.caption("Make EdgeTwin explain its value, justify the price, handle objections and guide customers toward payment without unsafe guarantees.")
+
+    with st.form("v116_self_selling_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            customer_segment = st.text_input("Customer segment", "industrial maintenance / machine operations teams")
+            customer_problem = st.text_area("Customer problem", "We have machine or sensor data but do not know if it is ready for a predictive maintenance pilot.", height=100)
+            selected_pack_key = st.selectbox("Pack", ["auto"] + list(self_selling_v116.PACK_LIBRARY.keys()), index=0)
+            budget_eur = st.number_input("Budget / price anchor EUR", 0, 25000, 2500, 250)
+        with c2:
+            data_readiness_score = st.slider("Data readiness signal", 0, 100, 76)
+            trust_score = st.slider("Trust/evidence signal", 0, 100, 88)
+            demo_score = st.slider("Demo clarity signal", 0, 100, 84)
+            urgency = st.selectbox("Urgency", ["low", "normal", "high", "urgent"], index=1)
+        pain_text = st.text_area("Pain points, one per line", "We do not know whether our data is usable.\nWe need management-friendly evidence before approving a pilot.\nWe want to avoid wasting months on the wrong data/use-case.", height=100)
+        proof_text = st.text_area("Proof assets, one per line", "Trust Ledger\nData Quality Gate\nSynthetic Reliability Lab\nDataset Benchmark Harness\nSecure Delivery Flow", height=100)
+        draft_claim_text = st.text_area("Draft customer-facing claim to check", "EdgeTwin prepares a pilot/evidence pack with data checks, assumptions, limitations and next steps.", height=80)
+        b1, b2, b3 = st.columns(3)
+        with b1:
+            wants_custom = st.checkbox("Customer wants custom", value=False)
+        with b2:
+            needs_real_data = st.checkbox("Needs real-data evidence", value=False)
+        with b3:
+            payment_ready = st.checkbox("Payment/unlock route prepared", value=True)
+            download_ready = st.checkbox("Download/delivery route prepared", value=True)
+        submitted = st.form_submit_button("Build Self-Selling Conversion Pack V116", use_container_width=True)
+
+    if submitted:
+        snapshot = self_selling_v116.build_self_selling_conversion_v116_snapshot(
+            project_name=st.session_state.project_name,
+            customer_segment=customer_segment,
+            customer_problem=customer_problem,
+            pain_points=[x.strip() for x in pain_text.splitlines() if x.strip()],
+            selected_pack_key=selected_pack_key,
+            budget_eur=int(budget_eur),
+            data_readiness_score=int(data_readiness_score),
+            trust_score=int(trust_score),
+            demo_score=int(demo_score),
+            urgency=urgency,
+            wants_custom=bool(wants_custom),
+            needs_real_data=bool(needs_real_data),
+            proof_assets=[x.strip() for x in proof_text.splitlines() if x.strip()],
+            draft_claim_text=draft_claim_text,
+            payment_ready=bool(payment_ready),
+            download_ready=bool(download_ready),
+        )
+        st.session_state.self_selling_conversion_v116_snapshot = snapshot
+        st.session_state.self_selling_conversion_v116_bundle = self_selling_v116.create_self_selling_conversion_v116_bundle(snapshot)
+
+    snap = st.session_state.get("self_selling_conversion_v116_snapshot")
+    if snap:
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Conversion score", f"{snap.get('conversion_score', 0)}%")
+        c2.metric("Pack", snap.get("selected_pack", {}).get("name", "n/a"))
+        c3.metric("Price range", str(snap.get("selected_pack", {}).get("price_range_eur", [])))
+        c4.metric("Claim blockers", len(snap.get("blockers", [])))
+
+        if snap.get("blockers"):
+            st.error(snap.get("decision"))
+        elif "READY" in snap.get("decision", ""):
+            st.success(snap.get("decision"))
+        else:
+            st.warning(snap.get("decision"))
+
+        tabs = st.tabs(["Landing page", "Proof", "Price", "Objections", "Journey", "Claims", "Download"])
+        with tabs[0]:
+            st.write(snap.get("customer_copy", {}).get("one_line_pitch"))
+            st.dataframe(self_selling_v116.build_v116_homepage_table(snap), use_container_width=True)
+        with tabs[1]:
+            for card in snap.get("proof_cards", []):
+                st.markdown(f"**{card.get('title')}**")
+                st.write(card.get("proof"))
+                st.caption(card.get("customer_benefit"))
+        with tabs[2]:
+            st.json(snap.get("pricing_justification", {}))
+        with tabs[3]:
+            st.dataframe(self_selling_v116.build_v116_objection_table(snap), use_container_width=True)
+        with tabs[4]:
+            st.json(snap.get("buyer_journey", []))
+        with tabs[5]:
+            st.write(snap.get("customer_copy", {}).get("safe_claim"))
+            if snap.get("claim_findings"):
+                st.error("Risky claims found")
+                st.json(snap.get("claim_findings"))
+            st.json({"blockers": snap.get("blockers", []), "review_flags": snap.get("review_flags", []), "allowed_and_blocked": snap.get("sales_boundary", {})})
+        with tabs[6]:
+            if st.session_state.get("self_selling_conversion_v116_bundle"):
+                st.download_button(
+                    "Download Self-Selling Conversion Bundle V116",
+                    st.session_state.self_selling_conversion_v116_bundle,
+                    file_name=f"{st.session_state.project_name}_self_selling_conversion_v116.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    key="v116_download_bundle",
+                )
+
+    st.caption("V116 helps EdgeTwin sell pilot/evidence packs. It does not execute payments, sign contracts, certify compliance or guarantee production accuracy.")
+
+
 _PAGE_RENDERERS = {
+    'product_release_candidate_v120_tab': render_product_release_candidate_v120_tab,
+    'customer_facing_landing_portal_v119_tab': render_customer_facing_landing_portal_v119_tab,
+    'guided_custom_customer_builder_v118_tab': render_guided_custom_customer_builder_v118_tab,
+    'one_perfect_customer_flow_v117_tab': render_one_perfect_customer_flow_v117_tab,
+    'self_selling_conversion_v116_tab': render_self_selling_conversion_v116_tab,
+    'synthetic_calibration_loop_v115_tab': render_synthetic_calibration_loop_v115_tab,
+    'dataset_import_wizard_v114_tab': render_dataset_import_wizard_v114_tab,
+    'public_benchmark_dataset_v113_tab': render_public_benchmark_dataset_v113_tab,
+    'dataset_benchmark_harness_v112_tab': render_dataset_benchmark_harness_v112_tab,
+    'synthetic_reliability_lab_v111_tab': render_synthetic_reliability_lab_v111_tab,
+    'synthetic_real_bridge_v110_tab': render_synthetic_real_bridge_v110_tab,
+    'synthetic_data_optimizer_v109_tab': render_synthetic_data_optimizer_v109_tab,
+    'claim_safety_prompt_policy_v108_tab': render_claim_safety_prompt_policy_v108_tab,
+    'ai_copilot_adapter_v107_tab': render_ai_copilot_adapter_v107_tab,
+    'order_fulfillment_v106_tab': render_order_fulfillment_v106_tab,
+    'private_delivery_endpoint_v105_tab': render_private_delivery_endpoint_v105_tab,
+    'secure_download_links_v104_tab': render_secure_download_links_v104_tab,
+    'customer_portal_lite_v103_tab': render_customer_portal_lite_v103_tab,
+    'payment_provider_adapter_v102_tab': render_payment_provider_adapter_v102_tab,
+    'public_hosting_v101_tab': render_public_hosting_v101_tab,
+    'marketplace_entitlement_v100_tab': render_marketplace_entitlement_v100_tab,
+    'payment_unlock_delivery_v99_tab': render_payment_unlock_delivery_v99_tab,
+    'order_quote_builder_v98_tab': render_order_quote_builder_v98_tab,
+    'custom_pack_builder_v97_tab': render_custom_pack_builder_v97_tab,
+    'pricing_assurance_os_v96_tab': render_pricing_assurance_os_v96_tab,
+    'policy_approval_engine_v95_tab': render_policy_approval_engine_v95_tab,
+    'client_input_autopilot_v94_tab': render_client_input_autopilot_v94_tab,
+    'pack_commerce_os_v93_tab': render_pack_commerce_os_v93_tab,
+    'customer_demo_os_v92_tab': render_customer_demo_os_v92_tab,
+    'pilot_launch_os_v91_tab': render_pilot_launch_os_v91_tab,
     'ultimate_product_v90_tab': render_ultimate_product_v90_tab,
     'release_guard_v83_tab': render_release_guard_v83_tab,
     'autonomy_controller_v82_tab': render_autonomy_controller_v82_tab,
