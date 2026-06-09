@@ -30595,7 +30595,7 @@ This portal unlocks pilot/evidence/delivery workflow access. It does **not** cre
         "customer_portal_markdown": customer_portal_markdown,
         "source_snapshots_detected": {
             "quote_v98": bool(quote_snapshot),
-            "payment_adapter_v102": bool(payment_snapshot),
+            "payment_adapter": bool(payment_snapshot),
             "unlock_v99": bool(unlock_snapshot),
             "entitlement_v100": bool(entitlement_snapshot),
         },
@@ -30971,7 +30971,7 @@ def _v105_audit_event(kind, order_id, customer_email, token_payload=None, http_s
     }
 
 
-def build_private_delivery_endpoint_v105_snapshot(
+def build_delivery_endpoint_snapshot(
     project_name="EdgeTwin_Project",
     customer_email="customer@example.com",
     order_id="ORDER-DEMO-105",
@@ -31099,7 +31099,7 @@ The customer gets a modern download experience, but EdgeTwin does not expose raw
     }
 
 
-def create_private_delivery_endpoint_v105_bundle(project_name, snapshot):
+def create_delivery_endpoint_bundle(project_name, snapshot):
     buffer = io.BytesIO()
     pseudocode = "\n".join([
         "# EdgeTwin V105 private delivery endpoint pseudocode",
@@ -31123,7 +31123,7 @@ def create_private_delivery_endpoint_v105_bundle(project_name, snapshot):
         "    return private_file_store.stream(file_ref)",
     ])
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("private_delivery_endpoint_v105.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("delivery_endpoint.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("customer_private_delivery_flow_v105.md", str(snapshot.get("customer_flow_markdown", "")))
         zf.writestr("endpoint_checks_v105.csv", pd.DataFrame(snapshot.get("endpoint_checks", [])).to_csv(index=False))
         zf.writestr("audit_log_sample_v105.csv", pd.DataFrame(snapshot.get("audit_events", [])).to_csv(index=False))
@@ -31133,7 +31133,7 @@ def create_private_delivery_endpoint_v105_bundle(project_name, snapshot):
         pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, "EdgeTwin Private Delivery Endpoint V105", ln=True)
         pdf.set_font("Arial", "", 10)
         pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('endpoint_decision')}\nHTTP: {snapshot.get('primary_http_status')}\nAudit events: {snapshot.get('audit_event_count')}\n\nV105 prepares the backend contract for token validation, payment/delivery re-check, audit logging and private file streaming.")
-        zf.writestr("private_delivery_endpoint_v105.pdf", safe_pdf_output(pdf))
+        zf.writestr("delivery_endpoint.pdf", safe_pdf_output(pdf))
     return buffer.getvalue()
 
 # ============================================================
@@ -31347,7 +31347,7 @@ def _v107_risk_flags(text, include_customer_data=False, allow_external_api=False
     return flags
 
 
-def build_ai_copilot_adapter_v107_snapshot(project_name="EdgeTwin Project", customer_message="", desired_outcome="", copilot_mode="pack_recommendation", provider="offline_rules", allow_external_api=False, store_prompts=False, include_customer_data=False, client_snapshot=None, custom_snapshot=None, policy_snapshot=None, quote_snapshot=None, fulfillment_snapshot=None, allowed_tasks=None):
+def build_ai_copilot_adapter_snapshot(project_name="EdgeTwin Project", customer_message="", desired_outcome="", copilot_mode="pack_recommendation", provider="offline_rules", allow_external_api=False, store_prompts=False, include_customer_data=False, client_snapshot=None, custom_snapshot=None, policy_snapshot=None, quote_snapshot=None, fulfillment_snapshot=None, allowed_tasks=None):
     client_snapshot = client_snapshot or {}; custom_snapshot = custom_snapshot or {}; policy_snapshot = policy_snapshot or {}; quote_snapshot = quote_snapshot or {}; fulfillment_snapshot = fulfillment_snapshot or {}
     allowed_tasks = allowed_tasks or []
     redacted_message = _v107_redact(customer_message)
@@ -31411,10 +31411,10 @@ def build_ai_copilot_adapter_v107_snapshot(project_name="EdgeTwin Project", cust
     }
 
 
-def create_ai_copilot_adapter_v107_bundle(project_name, snapshot):
+def create_ai_copilot_adapter_bundle(project_name, snapshot):
     bio = io.BytesIO()
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("ai_copilot_adapter_v107.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("ai_copilot_adapter.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("ai_copilot_customer_summary_v107.md", str(snapshot.get("safe_customer_summary", "")))
         zf.writestr("ai_structured_output_v107.json", json.dumps(_json_safe(snapshot.get("structured_output", {})), indent=2, ensure_ascii=False))
         zf.writestr("prompt_policy_v107.csv", pd.DataFrame(snapshot.get("prompt_policy", [])).to_csv(index=False))
@@ -31424,7 +31424,7 @@ def create_ai_copilot_adapter_v107_bundle(project_name, snapshot):
         pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, "EdgeTwin AI Copilot Adapter V107", ln=True)
         pdf.set_font("Arial", size=10)
         pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nRecommended pack: {snapshot.get('recommended_pack')}\nRisk: {snapshot.get('risk_level')}\nScore: {snapshot.get('copilot_score')}\n\nV107 adds a controlled AI copilot layer for summaries, pack suggestions, missing-input questions and safe customer copy. It does not approve payments, legal claims, production accuracy or private delivery.")
-        zf.writestr("ai_copilot_adapter_v107.pdf", safe_pdf_output(pdf))
+        zf.writestr("ai_copilot_adapter.pdf", safe_pdf_output(pdf))
     bio.seek(0)
     return bio.getvalue()
 
@@ -31434,7 +31434,7 @@ def create_ai_copilot_adapter_v107_bundle(project_name, snapshot):
 # ============================================================
 
 def build_claim_safety_prompt_policy_v108_snapshot(project_name="EdgeTwin Project", proposed_customer_claim="", customer_context="", pack_type="Professional Pilot Pack", channel="quote_or_report", copilot_snapshot=None, allow_external_ai=False, include_raw_customer_data=False):
-    from claim_safety_policy_v108 import build_claim_safety_prompt_policy_snapshot
+    from claim_safety_policy import build_claim_safety_prompt_policy_snapshot
     return build_claim_safety_prompt_policy_snapshot(
         project_name=project_name,
         proposed_customer_claim=proposed_customer_claim,
@@ -31473,8 +31473,8 @@ def create_claim_safety_prompt_policy_v108_bundle(project_name, snapshot):
 # V109 - SYNTHETIC DATA OPTIMIZER / GOLDEN SCENARIO DATA
 # ============================================================
 
-def build_synthetic_data_optimizer_v109_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=1500, seed=109, noise_level=0.06, missing_rate=0.015, drift_strength=0.05, imbalance_factor=1.0, include_edge_cases=True):
-    from synthetic_data_optimizer_v109 import build_synthetic_data_optimizer_v109_snapshot as _build
+def build_synthetic_data_optimizer_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=1500, seed=109, noise_level=0.06, missing_rate=0.015, drift_strength=0.05, imbalance_factor=1.0, include_edge_cases=True):
+    from synthetic_data_optimizer import build_synthetic_data_optimizer_snapshot as _build
     return _build(
         project_name=project_name,
         pack_key=pack_key,
@@ -31488,8 +31488,8 @@ def build_synthetic_data_optimizer_v109_snapshot(project_name="EdgeTwin Project"
     )
 
 
-def create_synthetic_data_optimizer_v109_bundle(project_name, snapshot, dataset_df=None):
-    from synthetic_data_optimizer_v109 import generate_scenario_dataset, score_synthetic_dataset
+def create_synthetic_data_optimizer_bundle(project_name, snapshot, dataset_df=None):
+    from synthetic_data_optimizer import generate_scenario_dataset, score_synthetic_dataset
     bio = io.BytesIO()
     manifest = snapshot.get("manifest", {}) if isinstance(snapshot, dict) else {}
     if dataset_df is None or not isinstance(dataset_df, pd.DataFrame) or dataset_df.empty:
@@ -31505,7 +31505,7 @@ def create_synthetic_data_optimizer_v109_bundle(project_name, snapshot, dataset_
         )
     quality = score_synthetic_dataset(dataset_df, manifest)
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("synthetic_data_optimizer_v109.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("synthetic_data_optimizer.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("synthetic_dataset_v109.csv", dataset_df.to_csv(index=False))
         zf.writestr("synthetic_dataset_manifest_v109.json", json.dumps(_json_safe(manifest), indent=2, ensure_ascii=False))
         zf.writestr("synthetic_quality_report_v109.json", json.dumps(_json_safe(quality), indent=2, ensure_ascii=False))
@@ -31535,7 +31535,7 @@ Boundary: {snapshot.get('important_boundary')}
         pdf.cell(0, 10, "EdgeTwin Synthetic Data Optimizer V109", ln=True)
         pdf.set_font("Arial", size=10)
         pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nScore: {snapshot.get('synthetic_quality_score')}\nPack: {snapshot.get('pack_title')}\nRows: {manifest.get('rows')}\nDataset hash: {manifest.get('dataset_hash')}\n\nV109 upgrades synthetic testdata into scenario-based golden data with labels, controlled noise, missingness, drift and edge cases. It supports demos/regression/data-quality gates, but does not prove production accuracy without real customer validation.")
-        zf.writestr("synthetic_data_optimizer_v109.pdf", safe_pdf_output(pdf))
+        zf.writestr("synthetic_data_optimizer.pdf", safe_pdf_output(pdf))
     bio.seek(0)
     return bio.getvalue()
 
@@ -31544,8 +31544,8 @@ Boundary: {snapshot.get('important_boundary')}
 # V110 - SYNTHETIC→REAL BRIDGE / CONSENT-CONTROLLED LEARNING
 # ============================================================
 
-def build_synthetic_real_bridge_v110_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=110, consent_mode="profile_only", purpose="pilot readiness / synthetic calibration", real_df=None):
-    from synthetic_real_bridge_v110 import build_synthetic_real_bridge_v110_snapshot as _build
+def build_synthetic_real_bridge_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=110, consent_mode="profile_only", purpose="pilot readiness / synthetic calibration", real_df=None):
+    from synthetic_real_bridge import build_synthetic_real_bridge_snapshot as _build
     return _build(
         project_name=project_name,
         pack_key=pack_key,
@@ -31557,16 +31557,16 @@ def build_synthetic_real_bridge_v110_snapshot(project_name="EdgeTwin Project", p
     )
 
 
-def create_synthetic_real_bridge_v110_bundle(project_name, snapshot, calibrated_df=None):
+def create_synthetic_real_bridge_bundle(project_name, snapshot, calibrated_df=None):
     import io, json, zipfile
     import pandas as pd
     from fpdf import FPDF
-    from synthetic_real_bridge_v110 import build_synthetic_real_bridge_v110_snapshot
+    from synthetic_real_bridge import build_synthetic_real_bridge_snapshot
     bio = io.BytesIO()
     if calibrated_df is None or not isinstance(calibrated_df, pd.DataFrame) or calibrated_df.empty:
-        snapshot, calibrated_df = build_synthetic_real_bridge_v110_snapshot(project_name=project_name)
+        snapshot, calibrated_df = build_synthetic_real_bridge_snapshot(project_name=project_name)
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("synthetic_real_bridge_v110.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("synthetic_real_bridge.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("calibrated_synthetic_dataset_v110.csv", calibrated_df.to_csv(index=False))
         zf.writestr("real_data_profile_v110.json", json.dumps(_json_safe(snapshot.get("real_profile", {})), indent=2, ensure_ascii=False))
         zf.writestr("consent_learning_policy_v110.json", json.dumps(_json_safe(snapshot.get("learning_policy", {})), indent=2, ensure_ascii=False))
@@ -31595,7 +31595,7 @@ Boundary: {snapshot.get('important_boundary')}
         pdf.cell(0, 10, "EdgeTwin Synthetic to Real Bridge V110", ln=True)
         pdf.set_font("Arial", size=10)
         pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nRealism score: {snapshot.get('realism_score')}\nConsent mode: {snapshot.get('consent', {}).get('mode')}\nRaw customer rows in bundle: {snapshot.get('raw_customer_rows_in_bundle')}\n\n{snapshot.get('customer_safe_summary')}\n\nBoundary: {snapshot.get('important_boundary')}")
-        zf.writestr("synthetic_real_bridge_v110.pdf", safe_pdf_output(pdf))
+        zf.writestr("synthetic_real_bridge.pdf", safe_pdf_output(pdf))
     bio.seek(0)
     return bio.getvalue()
 
@@ -31603,8 +31603,8 @@ Boundary: {snapshot.get('important_boundary')}
 # V111 - SYNTHETIC RELIABILITY LAB / GOLDEN REGRESSION TRUST
 # ============================================================
 
-def build_synthetic_reliability_lab_v111_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=111, real_df=None, use_real_profile=True, stress_profile_keys=None):
-    from synthetic_reliability_lab_v111 import build_synthetic_reliability_lab_v111_snapshot as _build
+def build_synthetic_reliability_lab_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=111, real_df=None, use_real_profile=True, stress_profile_keys=None):
+    from synthetic_reliability_lab import build_synthetic_reliability_lab_snapshot as _build
     return _build(
         project_name=project_name,
         pack_key=pack_key,
@@ -31616,16 +31616,16 @@ def build_synthetic_reliability_lab_v111_snapshot(project_name="EdgeTwin Project
     )
 
 
-def create_synthetic_reliability_lab_v111_bundle(project_name, snapshot, datasets=None):
+def create_synthetic_reliability_lab_bundle(project_name, snapshot, datasets=None):
     import io, json, zipfile
     import pandas as pd
     from fpdf import FPDF
-    from synthetic_reliability_lab_v111 import build_synthetic_reliability_lab_v111_snapshot
+    from synthetic_reliability_lab import build_synthetic_reliability_lab_snapshot
     bio = io.BytesIO()
     if not isinstance(datasets, dict) or not datasets:
-        snapshot, datasets = build_synthetic_reliability_lab_v111_snapshot(project_name=project_name)
+        snapshot, datasets = build_synthetic_reliability_lab_snapshot(project_name=project_name)
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("synthetic_reliability_lab_v111.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("synthetic_reliability_lab.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("stress_profiles_v111.csv", pd.DataFrame(snapshot.get("stress_profiles", [])).to_csv(index=False))
         zf.writestr("recommendations_v111.csv", pd.DataFrame(snapshot.get("recommendations", [])).to_csv(index=False))
         zf.writestr("red_team_checks_v111.csv", pd.DataFrame(snapshot.get("red_team_checks_realistic_messy", [])).to_csv(index=False))
@@ -31664,7 +31664,7 @@ Boundary: {snapshot.get('important_boundary')}
         pdf.cell(0, 10, "EdgeTwin Synthetic Reliability Lab V111", ln=True)
         pdf.set_font("Arial", size=10)
         pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nScore: {snapshot.get('synthetic_reliability_score')}\nPack: {snapshot.get('pack_title')}\nStress profiles: {len(snapshot.get('stress_profiles', []))}\n\n{snapshot.get('customer_safe_summary')}\n\nBoundary: {snapshot.get('important_boundary')}")
-        zf.writestr("synthetic_reliability_lab_v111.pdf", safe_pdf_output(pdf))
+        zf.writestr("synthetic_reliability_lab.pdf", safe_pdf_output(pdf))
     bio.seek(0)
     return bio.getvalue()
 
@@ -31673,8 +31673,8 @@ Boundary: {snapshot.get('important_boundary')}
 # V112 - DATASET VALIDATION & BENCHMARK HARNESS
 # ============================================================
 
-def build_dataset_benchmark_harness_v112_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=112, benchmark_profile="pilot_evidence_ready", real_df=None, include_v111_stress=True):
-    from dataset_benchmark_harness_v112 import build_dataset_benchmark_harness_v112_snapshot as _build
+def build_dataset_benchmark_harness_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=112, benchmark_profile="pilot_evidence_ready", real_df=None, include_v111_stress=True):
+    from dataset_benchmark_harness import build_dataset_benchmark_harness_snapshot as _build
     return _build(
         project_name=project_name,
         pack_key=pack_key,
@@ -31686,16 +31686,16 @@ def build_dataset_benchmark_harness_v112_snapshot(project_name="EdgeTwin Project
     )
 
 
-def create_dataset_benchmark_harness_v112_bundle(project_name, snapshot, datasets=None):
+def create_dataset_benchmark_harness_bundle(project_name, snapshot, datasets=None):
     import io, json, zipfile
     import pandas as pd
     from fpdf import FPDF
-    from dataset_benchmark_harness_v112 import build_dataset_benchmark_harness_v112_snapshot, build_v112_summary_table
+    from dataset_benchmark_harness import build_dataset_benchmark_harness_snapshot, build_v112_summary_table
     bio = io.BytesIO()
     if not isinstance(datasets, dict) or not datasets:
-        snapshot, datasets = build_dataset_benchmark_harness_v112_snapshot(project_name=project_name)
+        snapshot, datasets = build_dataset_benchmark_harness_snapshot(project_name=project_name)
     with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("dataset_benchmark_harness_v112.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("dataset_benchmark_harness.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
         zf.writestr("benchmark_summary_v112.csv", build_v112_summary_table(snapshot).to_csv(index=False))
         zf.writestr("recommendations_v112.csv", pd.DataFrame(snapshot.get("recommendations", [])).to_csv(index=False))
         for v in snapshot.get("validations", []):
@@ -31734,7 +31734,7 @@ Boundary: {snapshot.get('important_boundary')}
         pdf.cell(0, 10, "EdgeTwin Dataset Benchmark Harness V112", ln=True)
         pdf.set_font("Arial", size=10)
         pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nScore: {snapshot.get('benchmark_harness_score')}\nPack: {snapshot.get('pack_title')}\nDatasets: {snapshot.get('dataset_count')}\n\n{snapshot.get('customer_safe_summary')}\n\nBoundary: {snapshot.get('important_boundary')}")
-        zf.writestr("dataset_benchmark_harness_v112.pdf", safe_pdf_output(pdf))
+        zf.writestr("dataset_benchmark_harness.pdf", safe_pdf_output(pdf))
     bio.seek(0)
     return bio.getvalue()
 
@@ -31743,13 +31743,13 @@ Boundary: {snapshot.get('important_boundary')}
 # V117 - ONE PERFECT CUSTOMER FLOW
 # ============================================================
 
-def build_one_perfect_customer_flow_v117_snapshot(*args, **kwargs):
-    from customer_flow_v117 import build_one_perfect_customer_flow_v117_snapshot as _build
+def build_one_perfect_customer_flow_snapshot(*args, **kwargs):
+    from customer_flow import build_one_perfect_customer_flow_snapshot as _build
     return _build(*args, **kwargs)
 
 
-def create_one_perfect_customer_flow_v117_bundle(snapshot):
-    from customer_flow_v117 import create_one_perfect_customer_flow_v117_bundle as _bundle
+def create_one_perfect_customer_flow_bundle(snapshot):
+    from customer_flow import create_one_perfect_customer_flow_bundle as _bundle
     return _bundle(snapshot)
 
 
@@ -31757,11 +31757,11 @@ def create_one_perfect_customer_flow_v117_bundle(snapshot):
 # V118 - GUIDED CUSTOM CUSTOMER BUILDER
 # ============================================================
 
-def build_guided_custom_customer_builder_v118_snapshot(*args, **kwargs):
-    from guided_custom_customer_builder_v118 import build_guided_custom_customer_builder_v118_snapshot as _build
+def build_guided_custom_customer_builder_snapshot(*args, **kwargs):
+    from guided_custom_customer_builder import build_guided_custom_customer_builder_snapshot as _build
     return _build(*args, **kwargs)
 
 
-def create_guided_custom_customer_builder_v118_bundle(snapshot):
-    from guided_custom_customer_builder_v118 import create_guided_custom_customer_builder_v118_bundle as _bundle
+def create_guided_custom_customer_builder_bundle(snapshot):
+    from guided_custom_customer_builder import create_guided_custom_customer_builder_bundle as _bundle
     return _bundle(snapshot)
