@@ -1,4 +1,4 @@
-"""EdgeTwin Studio V118 Guided Custom Customer Builder.
+"""EdgeTwin Studio Guided Custom Customer Builder.
 
 Purpose:
 - Put the Custom Pack Builder inside the customer-facing flow.
@@ -7,7 +7,7 @@ Purpose:
   price explanation, self-service/approval decisions and reusable-template guidance.
 
 Boundary:
-- V118 can recommend modules, calculate scope/price/risk and prepare a safe custom pack bundle.
+- Recommends modules, calculates scope/price/risk and prepares a safe custom pack bundle.
 - It does not process payments, sign contracts, certify compliance, guarantee production accuracy,
   or auto-approve high-risk custom promises.
 """
@@ -347,7 +347,7 @@ def create_guided_custom_customer_builder_bundle(snapshot: Dict[str, Any]) -> by
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 16)
-        pdf.cell(0, 8, _safe_pdf_text("EdgeTwin Studio V118 - Guided Custom Customer Builder"), ln=True)
+        pdf.cell(0, 8, _safe_pdf_text("EdgeTwin Studio - Guided Custom Customer Builder"), ln=True)
         pdf.set_font("Arial", size=10)
         for line in [
             f"Customer: {snapshot.get('company')}",
