@@ -19,13 +19,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from synthetic_data_optimizer import (
-    SCENARIO_LIBRARY,
-    generate_scenario_dataset,
-    score_synthetic_dataset,
-)
-
-from synthetic_reliability_lab import build_synthetic_reliability_lab_v111_snapshot
+from synthetic_data_optimizer import SCENARIO_LIBRARY, generate_scenario_dataset, score_synthetic_dataset
+from synthetic_reliability_lab import build_synthetic_reliability_lab_snapshot
 
 VERSION = "V112"
 MODULE = "Dataset Validation & Benchmark Harness"
@@ -434,7 +429,7 @@ def validate_dataset_v112(df: pd.DataFrame, pack_key: str = "rotating_machinery"
     })
 
 
-def build_dataset_benchmark_harness_v112_snapshot(
+def build_dataset_benchmark_harness_snapshot(
     project_name: str = "EdgeTwin Project",
     pack_key: str = "rotating_machinery",
     rows: int = 2500,
@@ -484,7 +479,7 @@ def build_dataset_benchmark_harness_v112_snapshot(
     v111_decision = None
     if include_v111_stress:
         try:
-            v111_snapshot, _ = build_synthetic_reliability_lab_v111_snapshot(project_name=project_name, pack_key=pack_key, rows=min(max(int(rows), 500), 4000), seed=int(seed) + 11, real_df=real_df, use_real_profile=bool(isinstance(real_df, pd.DataFrame) and not real_df.empty))
+            v111_snapshot, _ = build_synthetic_reliability_lab_snapshot(project_name=project_name, pack_key=pack_key, rows=min(max(int(rows), 500), 4000), seed=int(seed) + 11, real_df=real_df, use_real_profile=bool(isinstance(real_df, pd.DataFrame) and not real_df.empty))
             v111_score = int(v111_snapshot.get("synthetic_reliability_score", 0))
             v111_decision = v111_snapshot.get("decision")
         except Exception as exc:
