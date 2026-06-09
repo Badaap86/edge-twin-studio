@@ -227,7 +227,7 @@ def build_conversion_journey_v116(pack_key: str, payment_ready: bool, download_r
         {"step": 1, "title": "Understand the problem", "customer_action": "Describe the use-case and upload/select sample data", "system_output": "Plain-language use-case summary and missing-input checklist", "status": "ready"},
         {"step": 2, "title": "See the recommended pack", "customer_action": "Review the suggested pack and scope", "system_output": pack["name"], "status": "ready"},
         {"step": 3, "title": "Trust before payment", "customer_action": "Review what is included, what is excluded and why the pack is priced this way", "system_output": "Proof cards + safe claim boundary + example deliverables", "status": "ready"},
-        {"step": 4, "title": "Pay / request quote", "customer_action": "Use Stripe/Paddle/manual invoice route", "system_output": "Payment status can unlock intake/download through V99/V102/V106", "status": "ready" if payment_ready else "manual_or_provider_needed"},
+        {"step": 4, "title": "Pay / request quote", "customer_action": "Use Stripe/Paddle/manual invoice route", "system_output": "Payment status can unlock intake/download through the payment, unlock and order-state layers", "status": "ready" if payment_ready else "manual_or_provider_needed"},
         {"step": 5, "title": "Receive delivery", "customer_action": "Download the bundle or complete intake/upload", "system_output": "Secure link, portal status and delivery audit path", "status": "ready" if download_ready else "prepared"},
     ]
 
