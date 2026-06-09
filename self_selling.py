@@ -328,7 +328,7 @@ def build_conversion_score_v116(
     return max(0, min(100, int(score)))
 
 
-def build_self_selling_conversion_v116_snapshot(
+def build_self_selling_snapshot(
     project_name: str = "EdgeTwin_Project",
     customer_segment: str = "industrial machine and operations teams",
     customer_problem: str = "We have machine/sensor data but do not know if it is ready for a predictive maintenance pilot.",
@@ -535,7 +535,7 @@ def _pdf_bytes(snapshot: Dict[str, Any]) -> bytes:
     return bytes(out)
 
 
-def create_self_selling_conversion_v116_bundle(snapshot: Dict[str, Any]) -> bytes:
+def create_self_selling_bundle(snapshot: Dict[str, Any]) -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("v116_self_selling_conversion_snapshot.json", json.dumps(snapshot, indent=2, ensure_ascii=False))
@@ -573,5 +573,5 @@ def _markdown_customer_copy(snapshot: Dict[str, Any]) -> str:
 
 
 if __name__ == "__main__":
-    snap = build_self_selling_conversion_v116_snapshot()
+    snap = build_self_selling_snapshot()
     print(json.dumps({"decision": snap["decision"], "score": snap["conversion_score"], "pack": snap["selected_pack"]["name"]}, indent=2))
