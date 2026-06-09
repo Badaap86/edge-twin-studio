@@ -20,7 +20,11 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from synthetic_data_optimizer_v109 import generate_scenario_dataset, score_synthetic_dataset
+from synthetic_data_optimizer import (
+    SCENARIO_LIBRARY,
+    generate_scenario_dataset,
+    score_synthetic_dataset,
+)
 
 VERSION = "V110"
 MODULE = "Synthetic→Real Bridge"
