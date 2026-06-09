@@ -20,11 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from synthetic_data_optimizer import (
-    SCENARIO_LIBRARY,
-    generate_scenario_dataset,
-    score_synthetic_dataset,
-)
+from synthetic_data_optimizer import generate_scenario_dataset, score_synthetic_dataset
 
 VERSION = "V110"
 MODULE = "Synthetic→Real Bridge"
@@ -264,7 +260,7 @@ def build_learning_policy(consent_mode: str, purpose: str) -> Dict[str, Any]:
     }
 
 
-def build_synthetic_real_bridge_v110_snapshot(
+def build_synthetic_real_bridge_snapshot(
     project_name: str = "EdgeTwin Project",
     pack_key: str = "rotating_machinery",
     rows: int = 2500,
