@@ -26591,3 +26591,5177 @@ def create_ultimate_product_v90_bundle(project_name, snapshot):
         zf.writestr("ultimate_product_v90.pdf", safe_pdf_output(pdf))
     mem.seek(0)
     return mem.getvalue()
+
+
+# ============================================================
+# V91 — Pilot Launch OS / Founder-to-Customer Execution Layer
+# ============================================================
+
+def _v91_safe_int(value, default=0):
+    try:
+        return int(round(float(value)))
+    except Exception:
+        return int(default)
+
+
+def _v91_clamp(value, lo=0, hi=100):
+    return max(lo, min(hi, _v91_safe_int(value, 0)))
+
+
+def _v91_present(value):
+    return isinstance(value, dict) and len(value) > 0
+
+
+def build_pilot_launch_os_v91_snapshot(context):
+    """Create the next practical product step after V90: a launchable paid-pilot operating plan.
+
+    V91 does not weaken the engine. It wraps the existing engine/product brain in a concrete customer flow:
+    what to show, what to block, what to sell first, what evidence to regenerate, and what founder approval still owns.
+    """
+    context = context or {}
+    project_name = str(context.get("project_name") or "EdgeTwin Project")
+    customer_type = str(context.get("customer_type") or "First serious paid pilot")
+    pilot_price_mode = str(context.get("pilot_price_mode") or "Founder-approved manual invoice")
+    target_days = max(1, _v91_safe_int(context.get("target_days", 14), 14))
+    founder_hours = max(1, _v91_safe_int(context.get("founder_hours_per_week", 6), 6))
+    use_real_customer_data = bool(context.get("use_real_customer_data", False))
+    customer_self_service = bool(context.get("customer_self_service", False))
+
+    dataset_df = context.get("dataset_df")
+    rows = int(len(dataset_df)) if isinstance(dataset_df, pd.DataFrame) else 0
+    cols = int(len(dataset_df.columns)) if isinstance(dataset_df, pd.DataFrame) else 0
+    numeric_cols = int(len(dataset_df.select_dtypes(include="number").columns)) if isinstance(dataset_df, pd.DataFrame) and cols else 0
+
+    snapshots = context.get("snapshots") or {}
+    v90 = snapshots.get("ultimate_product_v90") or context.get("ultimate_product_v90_snapshot") or {}
+    release_guard = snapshots.get("release_guard_v83") or {}
+    autonomy = snapshots.get("autonomy_controller_v82") or {}
+    trust = snapshots.get("trust_ledger_v80") or {}
+    state = snapshots.get("state_registry_v81") or {}
+    quality = snapshots.get("quality_guardian_v74") or {}
+    delivery = snapshots.get("deliverable_qa_v75") or {}
+
+    v90_score = _v91_safe_int(v90.get("ultimate_score", 0), 0) if isinstance(v90, dict) else 0
+    engine_score = _v91_safe_int(v90.get("engine_score", 0), 0) if isinstance(v90, dict) else 0
+    v90_fail_count = _v91_safe_int(v90.get("fail_count", 0), 0) if isinstance(v90, dict) else 0
+    v90_blockers = v90.get("blockers", []) if isinstance(v90, dict) else []
+    release_score = _v91_safe_int(release_guard.get("release_score", 0), 0) if isinstance(release_guard, dict) else 0
+    autonomy_score = _v91_safe_int(autonomy.get("autonomy_score", 0), 0) if isinstance(autonomy, dict) else 0
+
+    stack_present = {
+        "engine_dataset": rows > 0,
+        "trust_ledger_v80": _v91_present(trust),
+        "state_registry_v81": _v91_present(state) or bool(context.get("registry_status")),
+        "autonomy_controller_v82": _v91_present(autonomy),
+        "release_guard_v83": _v91_present(release_guard),
+        "ultimate_product_v90": _v91_present(v90),
+        "quality_guardian_v74": _v91_present(quality),
+        "deliverable_qa_v75": _v91_present(delivery),
+    }
+    present_count = sum(1 for v in stack_present.values() if v)
+
+    engine_power_preserved = engine_score >= 85 or (rows >= 50 and numeric_cols >= 2)
+    engine_note = (
+        "Engine power is preserved: V91 only adds launch controls, customer flow and founder-safe boundaries."
+        if engine_power_preserved else
+        "Engine needs stronger data proof before it should be shown as a customer-grade analysis engine."
+    )
+
+    launch_score = 55
+    launch_score += min(20, present_count * 3)
+    if rows >= 30:
+        launch_score += 5
+    if rows >= 100:
+        launch_score += 4
+    if numeric_cols >= 2:
+        launch_score += 4
+    if v90_score >= 95:
+        launch_score += 8
+    elif v90_score >= 90:
+        launch_score += 5
+    if release_score >= 90:
+        launch_score += 4
+    if autonomy_score >= 90:
+        launch_score += 3
+    if founder_hours < 4:
+        launch_score -= 5
+    if customer_self_service:
+        launch_score -= 4
+    if use_real_customer_data:
+        launch_score -= 2  # privacy/consent burden; not a bad thing, but more controlled
+    launch_score -= v90_fail_count * 10
+    launch_score -= len(v90_blockers) * 6
+    launch_score = _v91_clamp(launch_score)
+
+    blockers = []
+    if rows == 0:
+        blockers.append(_v83_issue("high", "data", "No dataset is available for the pilot flow.", "Generate a demo dataset or upload privacy-approved customer data."))
+    if not _v91_present(v90):
+        blockers.append(_v83_issue("high", "product_brain", "V90 Ultimate Product Brain has not been run.", "Run V90 before using V91 as the launch operating layer."))
+    if v90_fail_count:
+        blockers.append(_v83_issue("high", "regression", f"V90 reported {v90_fail_count} failed check(s).", "Run Release Guard and self-healing before customer handoff."))
+    if customer_self_service and launch_score < 95:
+        blockers.append(_v83_issue("medium", "self_service", "Self-service should wait until the launch score is 95+.", "Use assisted paid pilot mode first."))
+    if use_real_customer_data:
+        blockers.append(_v83_issue("medium", "privacy", "Real customer data requires explicit consent and retention rules.", "Use feature-level data where possible and document permission before upload."))
+
+    if blockers:
+        decision = "ASSISTED LAUNCH ONLY - FIX BLOCKERS"
+    elif launch_score >= 97 and not customer_self_service:
+        decision = "FOUNDER-LED PAID PILOT GO"
+    elif launch_score >= 94:
+        decision = "CONTROLLED PAID PILOT GO"
+    elif launch_score >= 88:
+        decision = "PRIVATE BETA / DEMO GO"
+    else:
+        decision = "INTERNAL PREP ONLY"
+
+    customer_flow = [
+        {"step": 1, "name": "Simple intake", "owner": "EdgeTwin", "automation": "allowed", "output": "Use case, data type, expected outcome, risk flags"},
+        {"step": 2, "name": "Dataset or demo generation", "owner": "EdgeTwin", "automation": "allowed", "output": "Safe demo data or privacy-approved feature data"},
+        {"step": 3, "name": "Engine analysis", "owner": "EdgeTwin", "automation": "allowed", "output": "Readiness, anomaly indicators, reliability estimate"},
+        {"step": 4, "name": "Trust and QA evidence", "owner": "EdgeTwin", "automation": "allowed", "output": "Trust ledger, release guard, quality checks"},
+        {"step": 5, "name": "Customer-safe summary", "owner": "EdgeTwin", "automation": "allowed", "output": "Plain-language status with no fake production claims"},
+        {"step": 6, "name": "Pricing/proposal", "owner": "Founder", "automation": "assist only", "output": "Founder-approved offer, scope and terms"},
+        {"step": 7, "name": "Paid pilot handoff", "owner": "Founder + EdgeTwin", "automation": "controlled", "output": "Pilot bundle, action plan, acceptance criteria"},
+    ]
+
+    founder_operating_rules = [
+        "Sell the first version as a founder-led paid pilot, not as production automation.",
+        "Keep self-service off until multiple pilot runs pass without manual rescue.",
+        "Use manual invoice/payment link first; do not automate money flows yet.",
+        "Never claim guaranteed accuracy, safety certification or production readiness without field evidence.",
+        "Let EdgeTwin regenerate evidence and bundles automatically, but keep customer promises under founder approval.",
+    ]
+
+    next_24h = [
+        "Run V90 and V91 on one strong demo dataset.",
+        "Generate one customer-safe pilot bundle and read it as if you are the buyer.",
+        "Pick one narrow use case instead of selling every possible industry at once.",
+        "Create one short demo script: problem, upload/data, result, evidence, paid pilot next step.",
+        "Do not add more random features until this flow feels smooth end-to-end.",
+    ]
+
+    launch_week_plan = [
+        {"day": "Day 1", "goal": "Lock demo route", "action": "Use one dataset and run V80/V83/V90/V91 end-to-end."},
+        {"day": "Day 2", "goal": "Customer story", "action": "Write one concrete before/after use case and the pain it solves."},
+        {"day": "Day 3", "goal": "Evidence pack", "action": "Export customer-safe bundle and remove confusing internal-only language."},
+        {"day": "Day 4", "goal": "Offer", "action": "Prepare a fixed-scope paid pilot with acceptance criteria."},
+        {"day": "Day 5", "goal": "Test call", "action": "Run the demo as a 15-minute walkthrough and note every confusing moment."},
+        {"day": "Day 6", "goal": "Tighten", "action": "Fix only flow, wording and reliability blockers. No feature stacking."},
+        {"day": "Day 7", "goal": "Pilot ask", "action": "Ask one real prospect for a small controlled pilot or letter of intent."},
+    ]
+
+    offer_guardrails = {
+        "recommended_first_offer": "Founder-led paid pilot",
+        "avoid_selling_as": ["fully autonomous production system", "certified safety system", "guaranteed anomaly detection"],
+        "safe_claims": [
+            "pilot decision-support workspace",
+            "local-first data/evidence workflow",
+            "readiness and trust checks for sensor/anomaly projects",
+            "customer-safe pilot bundle with traceable assumptions",
+        ],
+        "manual_approval_required_for": [
+            "price and payment terms",
+            "legal/compliance language",
+            "privacy/data retention promises",
+            "production deployment claims",
+            "external emails/messages",
+        ],
+    }
+
+    return {
+        "version": "V91",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "customer_type": customer_type,
+        "pilot_price_mode": pilot_price_mode,
+        "target_days": target_days,
+        "founder_hours_per_week": founder_hours,
+        "use_real_customer_data": use_real_customer_data,
+        "customer_self_service_requested": customer_self_service,
+        "decision": decision,
+        "pilot_launch_score": int(launch_score),
+        "v90_score": int(v90_score),
+        "engine_score": int(engine_score),
+        "engine_power_preserved": bool(engine_power_preserved),
+        "engine_note": engine_note,
+        "dataset_rows": rows,
+        "dataset_cols": cols,
+        "numeric_cols": numeric_cols,
+        "stack_present": stack_present,
+        "stack_present_count": int(present_count),
+        "blockers": blockers,
+        "customer_flow": customer_flow,
+        "founder_operating_rules": founder_operating_rules,
+        "next_24h": next_24h,
+        "launch_week_plan": launch_week_plan,
+        "offer_guardrails": offer_guardrails,
+        "customer_safe_status": {
+            "decision": decision,
+            "pilot_launch_score": int(launch_score),
+            "safe_for_founder_led_paid_pilot": decision in {"FOUNDER-LED PAID PILOT GO", "CONTROLLED PAID PILOT GO"},
+            "safe_for_customer_self_service": bool(customer_self_service and launch_score >= 95 and not blockers),
+            "safe_for_production_claims": False,
+            "plain_language": "Use this as a controlled, founder-led paid pilot route unless V91 explicitly clears self-service.",
+        },
+        "truth_policy": [
+            "The engine remains powerful; V91 controls how it is used and sold.",
+            "A paid pilot can be sold before production readiness, as long as the scope and claims are honest.",
+            "Customer self-service comes after repeated assisted pilot success, not before.",
+        ],
+    }
+
+
+def create_pilot_launch_os_v91_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("pilot_launch_os_v91.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_safe_status_v91.json", json.dumps(_json_safe(snapshot.get("customer_safe_status", {})), indent=2, ensure_ascii=False))
+        summary = [
+            "# EdgeTwin Studio V91 — Pilot Launch OS",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Pilot launch score: {snapshot.get('pilot_launch_score')}%",
+            f"V90 score: {snapshot.get('v90_score')}%",
+            f"Engine score: {snapshot.get('engine_score')}%",
+            "",
+            "## Engine power",
+            snapshot.get("engine_note", ""),
+            "",
+            "## Next 24 hours",
+            *[f"- {x}" for x in snapshot.get("next_24h", [])],
+            "",
+            "## Founder operating rules",
+            *[f"- {x}" for x in snapshot.get("founder_operating_rules", [])],
+            "",
+            "## Safe claims",
+            *[f"- {x}" for x in snapshot.get("offer_guardrails", {}).get("safe_claims", [])],
+        ]
+        zf.writestr("pilot_launch_os_v91_summary.md", "\n".join(summary))
+        if snapshot.get("customer_flow"):
+            zf.writestr("customer_flow_v91.csv", pd.DataFrame(snapshot.get("customer_flow", [])).to_csv(index=False))
+        if snapshot.get("launch_week_plan"):
+            zf.writestr("launch_week_plan_v91.csv", pd.DataFrame(snapshot.get("launch_week_plan", [])).to_csv(index=False))
+        if snapshot.get("blockers"):
+            zf.writestr("launch_blockers_v91.csv", pd.DataFrame(snapshot.get("blockers", [])).to_csv(index=False))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V91 - Pilot Launch OS")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Pilot launch score: {snapshot.get('pilot_launch_score')}%")
+        safe_pdf_cell(pdf, f"Engine score: {snapshot.get('engine_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("engine_note", ""))
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Next 24 hours")
+        pdf.set_font("Arial", size=10)
+        for item in snapshot.get("next_24h", [])[:8]:
+            safe_pdf_cell(pdf, f"- {item}")
+        zf.writestr("pilot_launch_os_v91.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V92 — Customer Demo OS / One-Click Proof Flow
+# ============================================================
+
+def _v92_safe_int(value, default=0):
+    try:
+        return int(round(float(value)))
+    except Exception:
+        return int(default)
+
+
+def _v92_clamp(value, lo=0, hi=100):
+    return max(lo, min(hi, _v92_safe_int(value, 0)))
+
+
+def _v92_present(value):
+    return isinstance(value, dict) and len(value) > 0
+
+
+def _v92_dataset_profile(dataset_df):
+    if not isinstance(dataset_df, pd.DataFrame) or dataset_df.empty:
+        return {
+            "rows": 0,
+            "cols": 0,
+            "numeric_cols": 0,
+            "label_like_cols": [],
+            "health": "missing",
+            "demo_ready": False,
+        }
+    rows = int(len(dataset_df))
+    cols = int(len(dataset_df.columns))
+    numeric_cols = int(len(dataset_df.select_dtypes(include="number").columns))
+    label_like_cols = [str(c) for c in dataset_df.columns if str(c).lower() in {"label", "class", "target", "state", "status", "fault"}]
+    health = "strong" if rows >= 100 and numeric_cols >= 2 else "usable" if rows >= 30 and numeric_cols >= 1 else "thin"
+    return {
+        "rows": rows,
+        "cols": cols,
+        "numeric_cols": numeric_cols,
+        "label_like_cols": label_like_cols,
+        "health": health,
+        "demo_ready": health in {"usable", "strong"},
+    }
+
+
+def build_customer_demo_os_v92_snapshot(context):
+    """Turn the product brain into a tight customer-facing demo route.
+
+    V92 is intentionally not another raw engine feature. It packages the existing engine strength,
+    trust layers and pilot launch logic into a 10-15 minute buyer-safe proof flow: what to show,
+    what to say, what to avoid, what evidence to export, and when to ask for a paid pilot.
+    """
+    context = context or {}
+    project_name = str(context.get("project_name") or "EdgeTwin Project")
+    audience = str(context.get("audience") or "Technical buyer")
+    demo_use_case = str(context.get("demo_use_case") or "Predictive maintenance / anomaly readiness")
+    demo_minutes = max(5, min(30, _v92_safe_int(context.get("demo_minutes", 15), 15)))
+    use_synthetic_demo = bool(context.get("use_synthetic_demo", True))
+    ask_for_paid_pilot = bool(context.get("ask_for_paid_pilot", True))
+    show_technical_depth = bool(context.get("show_technical_depth", False))
+
+    dataset_df = context.get("dataset_df")
+    profile = _v92_dataset_profile(dataset_df)
+
+    snapshots = context.get("snapshots") or {}
+    v91 = snapshots.get("pilot_launch_os_v91") or context.get("pilot_launch_os_v91_snapshot") or {}
+    v90 = snapshots.get("ultimate_product_v90") or {}
+    release_guard = snapshots.get("release_guard_v83") or {}
+    autonomy = snapshots.get("autonomy_controller_v82") or {}
+    trust = snapshots.get("trust_ledger_v80") or {}
+    quality = snapshots.get("quality_guardian_v74") or {}
+    delivery = snapshots.get("deliverable_qa_v75") or {}
+
+    v91_score = _v92_safe_int(v91.get("pilot_launch_score", 0), 0) if isinstance(v91, dict) else 0
+    v90_score = _v92_safe_int(v90.get("ultimate_score", 0), 0) if isinstance(v90, dict) else 0
+    engine_score = _v92_safe_int(v91.get("engine_score", v90.get("engine_score", 0) if isinstance(v90, dict) else 0), 0) if isinstance(v91, dict) else 0
+    release_score = _v92_safe_int(release_guard.get("release_score", 0), 0) if isinstance(release_guard, dict) else 0
+    autonomy_score = _v92_safe_int(autonomy.get("autonomy_score", 0), 0) if isinstance(autonomy, dict) else 0
+
+    stack_present = {
+        "dataset_or_demo_data": profile["demo_ready"] or use_synthetic_demo,
+        "trust_ledger_v80": _v92_present(trust),
+        "autonomy_controller_v82": _v92_present(autonomy),
+        "release_guard_v83": _v92_present(release_guard),
+        "ultimate_product_v90": _v92_present(v90),
+        "pilot_launch_os_v91": _v92_present(v91),
+        "quality_guardian_v74": _v92_present(quality),
+        "deliverable_qa_v75": _v92_present(delivery),
+    }
+    stack_count = sum(1 for v in stack_present.values() if v)
+
+    demo_score = 58
+    demo_score += min(20, stack_count * 3)
+    if profile["health"] == "strong":
+        demo_score += 7
+    elif profile["health"] == "usable":
+        demo_score += 4
+    elif use_synthetic_demo:
+        demo_score += 3
+    if v91_score >= 95:
+        demo_score += 7
+    elif v91_score >= 90:
+        demo_score += 4
+    if v90_score >= 95:
+        demo_score += 5
+    if release_score >= 90:
+        demo_score += 3
+    if autonomy_score >= 90:
+        demo_score += 2
+    if 10 <= demo_minutes <= 18:
+        demo_score += 2
+    if show_technical_depth and audience.lower().startswith("executive"):
+        demo_score -= 3
+    if not ask_for_paid_pilot:
+        demo_score -= 2
+    demo_score = _v92_clamp(demo_score)
+
+    blockers = []
+    if not profile["demo_ready"] and not use_synthetic_demo:
+        blockers.append(_v83_issue("high", "demo_data", "No customer-safe demo dataset is available.", "Use synthetic demo mode or upload approved pilot data."))
+    if not _v92_present(v91):
+        blockers.append(_v83_issue("high", "launch_os", "V91 Pilot Launch OS has not been run.", "Run V91 before using the customer demo flow."))
+    if not _v92_present(v90):
+        blockers.append(_v83_issue("medium", "product_brain", "V90 Ultimate Product Brain is missing.", "Run V90 to strengthen the proof flow."))
+    if isinstance(v91, dict) and v91.get("blockers"):
+        blockers.append(_v83_issue("medium", "v91_blockers", "V91 still has founder-control warnings.", "Keep demo as assisted/founder-led and avoid self-service claims."))
+
+    if blockers:
+        decision = "DEMO PREP ONLY - FIX BLOCKERS"
+    elif demo_score >= 97 and ask_for_paid_pilot:
+        decision = "CUSTOMER DEMO + PAID PILOT ASK READY"
+    elif demo_score >= 94:
+        decision = "CUSTOMER DEMO READY"
+    elif demo_score >= 88:
+        decision = "INTERNAL DEMO READY"
+    else:
+        decision = "REHEARSE INTERNALLY FIRST"
+
+    demo_script = [
+        {"minute": "0-1", "section": "Open", "say": "We use EdgeTwin to turn messy sensor or operations data into a controlled pilot decision workflow.", "show": "Project name, use case and customer-safe status."},
+        {"minute": "1-3", "section": "Pain", "say": "The risk is not only missing anomalies; it is trusting a tool without knowing why it made a decision.", "show": "Use-case card and assumptions."},
+        {"minute": "3-6", "section": "Data", "say": "We keep big data outside SQLite and preserve a light project record so pilots stay manageable.", "show": "Dataset profile, rows, columns and storage status."},
+        {"minute": "6-9", "section": "Engine", "say": "The engine remains the analysis layer; the product brain controls when results are safe to show.", "show": "Engine score, patterns, readiness and any warnings."},
+        {"minute": "9-12", "section": "Trust", "say": "Before customer handoff, EdgeTwin checks evidence, QA, release state and autonomy limits.", "show": "V80/V83/V90/V91 status."},
+        {"minute": "12-14", "section": "Pilot", "say": "The right next step is a narrow paid pilot with acceptance criteria, not a fake production claim.", "show": "Pilot route, guardrails and acceptance criteria."},
+        {"minute": "14-15", "section": "Ask", "say": "If this problem is worth validating, we can scope a controlled pilot around one dataset, one workflow and one outcome.", "show": "Paid pilot ask or next meeting."},
+    ]
+
+    proof_cards = [
+        {"card": "Engine preserved", "proof": "V92 wraps the existing engine; it does not weaken analysis capability.", "customer_safe": True},
+        {"card": "Local-first storage", "proof": "Large DataFrames are stored as files; SQLite remains metadata-focused.", "customer_safe": True},
+        {"card": "Trust gates", "proof": "Evidence, release checks and customer claims are separated from raw analysis.", "customer_safe": True},
+        {"card": "Founder-safe automation", "proof": "Safe generation can run automatically; legal, payment and production claims stay blocked.", "customer_safe": True},
+        {"card": "Pilot not production", "proof": "V92 recommends a paid pilot route until field evidence supports stronger claims.", "customer_safe": True},
+    ]
+
+    acceptance_criteria = [
+        {"criterion": "Single use case", "definition": "One narrowly scoped problem and one measurable outcome."},
+        {"criterion": "Approved data", "definition": "Synthetic demo data or customer-approved pilot data only."},
+        {"criterion": "Evidence bundle", "definition": "Trust, release and customer-safe summary generated before handoff."},
+        {"criterion": "No production claim", "definition": "Pilot validates usefulness; it does not certify safety or guaranteed accuracy."},
+        {"criterion": "Founder review", "definition": "Pricing, legal language and final customer promise require founder approval."},
+    ]
+
+    objection_responses = [
+        {"objection": "Is this fully automatic?", "response": "The safe parts are automated, but risky promises and production decisions stay under approval until field evidence is strong."},
+        {"objection": "Can it guarantee detection?", "response": "No honest pilot should claim that. EdgeTwin shows evidence, uncertainty and readiness so a pilot can validate value."},
+        {"objection": "Do we need to share sensitive data?", "response": "Not for the first demo. Start with synthetic or feature-level data, then define consent and retention rules for a pilot."},
+        {"objection": "What do we buy first?", "response": "A controlled paid pilot with one workflow, clear acceptance criteria and a founder-reviewed scope."},
+    ]
+
+    founder_checklist = [
+        "Run V90, V91 and V92 before every serious customer walkthrough.",
+        "Use the demo script; do not wander through every tab.",
+        "Show one use case, one result, one evidence bundle and one paid-pilot ask.",
+        "Never promise guaranteed accuracy, certified safety or production readiness.",
+        "After the call, write down every confusing moment and improve flow before adding features.",
+    ]
+
+    customer_safe_one_pager = {
+        "headline": "EdgeTwin Studio turns sensor or operations data into a controlled pilot decision workflow.",
+        "best_for": ["predictive maintenance pilots", "sensor anomaly readiness", "operations evidence workflows", "customer-safe pilot handoff"],
+        "not_claiming": ["guaranteed anomaly detection", "certified safety system", "unsupervised production automation", "legal/compliance approval"],
+        "pilot_offer": "Founder-led paid pilot with one use case, one dataset route, one evidence bundle and clear acceptance criteria.",
+    }
+
+    return {
+        "version": "V92",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "audience": audience,
+        "demo_use_case": demo_use_case,
+        "demo_minutes": demo_minutes,
+        "use_synthetic_demo": use_synthetic_demo,
+        "ask_for_paid_pilot": ask_for_paid_pilot,
+        "show_technical_depth": show_technical_depth,
+        "decision": decision,
+        "customer_demo_score": int(demo_score),
+        "v91_score": int(v91_score),
+        "v90_score": int(v90_score),
+        "engine_score": int(engine_score),
+        "engine_power_preserved": True,
+        "engine_note": "The engine remains the core analysis layer. V92 only packages it into a customer-safe proof flow.",
+        "dataset_profile": profile,
+        "stack_present": stack_present,
+        "stack_present_count": int(stack_count),
+        "blockers": blockers,
+        "demo_script": demo_script,
+        "proof_cards": proof_cards,
+        "acceptance_criteria": acceptance_criteria,
+        "objection_responses": objection_responses,
+        "founder_checklist": founder_checklist,
+        "customer_safe_one_pager": customer_safe_one_pager,
+        "next_best_action": "Run the V92 demo script on one strong use case and ask for a controlled paid pilot if the buyer recognizes the pain.",
+        "truth_policy": [
+            "V92 is a customer proof flow, not a claim that the product is universally finished.",
+            "The engine remains powerful; the demo route makes it understandable and safer to sell.",
+            "Self-service and production claims should wait for repeated pilot evidence.",
+        ],
+    }
+
+
+def create_customer_demo_os_v92_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("customer_demo_os_v92.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_safe_one_pager_v92.json", json.dumps(_json_safe(snapshot.get("customer_safe_one_pager", {})), indent=2, ensure_ascii=False))
+
+        summary = [
+            "# EdgeTwin Studio V92 — Customer Demo OS",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Customer demo score: {snapshot.get('customer_demo_score')}%",
+            f"V91 score: {snapshot.get('v91_score')}%",
+            f"Engine score: {snapshot.get('engine_score')}%",
+            "",
+            "## What this version does",
+            "V92 turns the product brain into a focused buyer-safe demo route. It does not weaken the engine.",
+            "",
+            "## Demo script",
+            *[f"- {row.get('minute')}: {row.get('section')} — {row.get('say')}" for row in snapshot.get("demo_script", [])],
+            "",
+            "## Founder checklist",
+            *[f"- {x}" for x in snapshot.get("founder_checklist", [])],
+            "",
+            "## Next best action",
+            str(snapshot.get("next_best_action", "")),
+        ]
+        zf.writestr("customer_demo_os_v92_summary.md", "\n".join(summary))
+
+        if snapshot.get("demo_script"):
+            zf.writestr("demo_script_v92.csv", pd.DataFrame(snapshot.get("demo_script", [])).to_csv(index=False))
+        if snapshot.get("proof_cards"):
+            zf.writestr("proof_cards_v92.csv", pd.DataFrame(snapshot.get("proof_cards", [])).to_csv(index=False))
+        if snapshot.get("acceptance_criteria"):
+            zf.writestr("pilot_acceptance_criteria_v92.csv", pd.DataFrame(snapshot.get("acceptance_criteria", [])).to_csv(index=False))
+        if snapshot.get("objection_responses"):
+            zf.writestr("objection_responses_v92.csv", pd.DataFrame(snapshot.get("objection_responses", [])).to_csv(index=False))
+        if snapshot.get("blockers"):
+            zf.writestr("demo_blockers_v92.csv", pd.DataFrame(snapshot.get("blockers", [])).to_csv(index=False))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V92 - Customer Demo OS")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Customer demo score: {snapshot.get('customer_demo_score')}%")
+        safe_pdf_cell(pdf, f"Engine score: {snapshot.get('engine_score')}%")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("engine_note", ""))
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Customer-safe one pager")
+        pdf.set_font("Arial", size=10)
+        one = snapshot.get("customer_safe_one_pager", {})
+        safe_pdf_multicell(pdf, str(one.get("headline", "")))
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Demo script")
+        pdf.set_font("Arial", size=9)
+        for row in snapshot.get("demo_script", [])[:7]:
+            safe_pdf_multicell(pdf, f"{row.get('minute')}: {row.get('section')} - {row.get('say')}")
+        zf.writestr("customer_demo_os_v92.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V93 — Pack Commerce OS / Sell Packs Before SaaS
+# ============================================================
+
+def _v93_present(value):
+    if value is None:
+        return False
+    if isinstance(value, dict):
+        return len(value) > 0
+    if isinstance(value, (list, tuple, set)):
+        return len(value) > 0
+    return True
+
+
+def build_pack_commerce_os_v93_snapshot(config):
+    config = config or {}
+    project_name = str(config.get("project_name") or "EdgeTwin Project")
+    df = config.get("dataset_df")
+    snapshots = config.get("snapshots") or {}
+    buyer_type = str(config.get("buyer_type") or "SMB operations")
+    primary_pack = str(config.get("primary_pack") or "Predictive Maintenance Pack")
+    delivery_model = str(config.get("delivery_model") or "Founder-assisted pack")
+    selected_modules = list(config.get("selected_modules") or [])
+    customer_can_configure = bool(config.get("customer_can_configure", True))
+    founder_final_approval = bool(config.get("founder_final_approval", True))
+    include_price_ladder = bool(config.get("include_price_ladder", True))
+    require_saas = bool(config.get("require_saas", False))
+    allow_custom_claims = bool(config.get("allow_custom_claims", False))
+    target_delivery_days = _v92_safe_int(config.get("target_delivery_days", 5), 5)
+
+    profile = _v92_dataset_profile(df)
+    v92 = snapshots.get("customer_demo_os_v92") or {}
+    v91 = snapshots.get("pilot_launch_os_v91") or {}
+    v90 = snapshots.get("ultimate_product_v90") or {}
+    release_guard = snapshots.get("release_guard_v83") or {}
+    trust = snapshots.get("trust_ledger_v80") or {}
+    quality = snapshots.get("quality_guardian_v74") or {}
+    delivery = snapshots.get("deliverable_qa_v75") or {}
+
+    v92_score = _v92_safe_int(v92.get("customer_demo_score", 0), 0) if isinstance(v92, dict) else 0
+    v91_score = _v92_safe_int(v91.get("pilot_launch_score", 0), 0) if isinstance(v91, dict) else 0
+    v90_score = _v92_safe_int(v90.get("ultimate_score", 0), 0) if isinstance(v90, dict) else 0
+    engine_score = _v92_safe_int(v92.get("engine_score", v91.get("engine_score", v90.get("engine_score", 0) if isinstance(v90, dict) else 0)), 0) if isinstance(v92, dict) else 0
+    release_score = _v92_safe_int(release_guard.get("release_score", 0), 0) if isinstance(release_guard, dict) else 0
+
+    required_modules = ["Use-case intake", "Signal feature extraction", "Trust ledger", "PDF/ZIP export bundle", "Acceptance criteria", "Founder review"]
+    recommended_modules = ["Customer demo script", "One-page pilot report", "Release guard", "Support checklist"]
+    missing_required = [m for m in required_modules if m not in selected_modules]
+    missing_recommended = [m for m in recommended_modules if m not in selected_modules]
+
+    pack_stack = {
+        "pack_first_strategy": not require_saas,
+        "customer_configurable": customer_can_configure,
+        "founder_final_approval": founder_final_approval,
+        "v92_customer_demo_os": _v93_present(v92),
+        "v91_pilot_launch_os": _v93_present(v91),
+        "v90_product_brain": _v93_present(v90),
+        "release_guard_v83": _v93_present(release_guard),
+        "trust_ledger_v80": _v93_present(trust),
+        "quality_guardian_v74": _v93_present(quality),
+        "deliverable_qa_v75": _v93_present(delivery),
+        "price_ladder": include_price_ladder,
+        "safe_claim_policy": not allow_custom_claims,
+    }
+
+    stack_count = sum(1 for v in pack_stack.values() if v)
+    pack_score = 60
+    pack_score += min(20, stack_count * 2)
+    if not require_saas:
+        pack_score += 8
+    if customer_can_configure and founder_final_approval:
+        pack_score += 7
+    elif customer_can_configure:
+        pack_score += 3
+    if include_price_ladder:
+        pack_score += 5
+    if not allow_custom_claims:
+        pack_score += 6
+    if target_delivery_days <= 7:
+        pack_score += 4
+    elif target_delivery_days > 14:
+        pack_score -= 3
+    if v92_score >= 97:
+        pack_score += 5
+    elif v92_score >= 92:
+        pack_score += 3
+    if v91_score >= 94:
+        pack_score += 2
+    if release_score >= 90:
+        pack_score += 2
+    if missing_required:
+        pack_score -= min(18, len(missing_required) * 4)
+    if require_saas:
+        pack_score -= 15
+    if allow_custom_claims:
+        pack_score -= 12
+    if not founder_final_approval:
+        pack_score -= 8
+    pack_score = _v92_clamp(pack_score)
+
+    blockers = []
+    if require_saas:
+        blockers.append(_v83_issue("high", "saas_dependency", "This configuration requires SaaS even though the current strategy is pack-first.", "Keep delivery as downloadable/founder-assisted pack and move SaaS later."))
+    if allow_custom_claims:
+        blockers.append(_v83_issue("high", "unsafe_claims", "Customer-specific performance claims are enabled before field validation.", "Keep claims evidence-based and founder-reviewed."))
+    if not founder_final_approval:
+        blockers.append(_v83_issue("medium", "founder_approval", "Custom packs can be finalized without founder approval.", "Require founder approval for custom scope, pricing and claims."))
+    if missing_required:
+        blockers.append(_v83_issue("medium", "missing_modules", "Required pack modules are missing.", "Add: " + ", ".join(missing_required)))
+    if not _v93_present(v92):
+        blockers.append(_v83_issue("medium", "demo_flow", "V92 Customer Demo OS is missing.", "Run V92 before finalizing customer-facing pack copy."))
+
+    if blockers:
+        decision = "PACK PREP ONLY - FIX BLOCKERS"
+    elif pack_score >= 98:
+        decision = "PACK COMMERCE READY"
+    elif pack_score >= 94:
+        decision = "CUSTOM PACK SALES READY"
+    elif pack_score >= 88:
+        decision = "FOUNDER-ASSISTED PACK PILOT READY"
+    else:
+        decision = "INTERNAL PACK DESIGN ONLY"
+
+    pack_menu = [
+        {"pack": "Starter Diagnostic Pack", "best_for": "First buyer conversation, quick proof, no integration promise", "delivery": "downloadable/founder-assisted", "typical_price_eur": "€299-€750", "includes": "use-case intake, demo dataset, one-page report, trust summary"},
+        {"pack": "Predictive Maintenance Pack", "best_for": "Machines, vibration/features, anomaly readiness", "delivery": "founder-assisted", "typical_price_eur": "€750-€2,500", "includes": "feature flow, acceptance criteria, trust ledger, PDF/ZIP handoff"},
+        {"pack": "Sensor Anomaly Pack", "best_for": "Sensor streams, abnormality proof, pilot planning", "delivery": "founder-assisted/custom", "typical_price_eur": "€950-€3,500", "includes": "signal checks, evidence cards, demo script, pilot report"},
+        {"pack": "Operations Evidence Pack", "best_for": "Back-office/operations evidence workflows", "delivery": "custom pack", "typical_price_eur": "€1,500-€4,500", "includes": "workflow mapping, proof bundle, release guard, customer handoff"},
+        {"pack": "Premium Custom Pack", "best_for": "Customer assembles modules with founder review", "delivery": "premium implementation pack", "typical_price_eur": "€3,500-€12,000+", "includes": "custom scope, data checklist, reports, support, training handoff"},
+    ]
+
+    selected_pack = next((p for p in pack_menu if p["pack"] == primary_pack), None)
+    if selected_pack is None and primary_pack == "Custom Pack Builder":
+        selected_pack = pack_menu[-1]
+    if selected_pack is None:
+        selected_pack = pack_menu[1]
+
+    price_ladder = [
+        {"tier": "Lite", "price_eur": "€299-€750", "who_for": "Curious buyer / first proof", "manual_effort": "low", "founder_review": "yes"},
+        {"tier": "Pilot Pack", "price_eur": "€750-€2,500", "who_for": "Buyer with one real use case", "manual_effort": "medium", "founder_review": "yes"},
+        {"tier": "Custom Pack", "price_eur": "€2,500-€6,500", "who_for": "Customer wants selected modules and own workflow", "manual_effort": "medium/high", "founder_review": "mandatory"},
+        {"tier": "Premium Implementation", "price_eur": "€6,500-€12,000+", "who_for": "Serious customer needing guided rollout", "manual_effort": "high", "founder_review": "mandatory"},
+    ] if include_price_ladder else []
+
+    custom_pack_manifest = {
+        "buyer_type": buyer_type,
+        "primary_pack": primary_pack,
+        "delivery_model": delivery_model,
+        "selected_modules": selected_modules,
+        "required_modules": required_modules,
+        "missing_required_modules": missing_required,
+        "missing_recommended_modules": missing_recommended,
+        "customer_can_configure": customer_can_configure,
+        "founder_final_approval_required": founder_final_approval,
+        "saas_required": require_saas,
+        "target_delivery_days": target_delivery_days,
+        "selected_pack_template": selected_pack,
+    }
+
+    delivery_checklist = [
+        {"step": 1, "name": "Confirm one use case", "owner": "founder/customer", "done_when": "problem, dataset route and outcome are written down"},
+        {"step": 2, "name": "Choose pack modules", "owner": "customer", "done_when": "module list is selected and missing required items are resolved"},
+        {"step": 3, "name": "Founder review", "owner": "founder", "done_when": "scope, price, claims and delivery date are approved"},
+        {"step": 4, "name": "Generate pack bundle", "owner": "EdgeTwin", "done_when": "JSON/CSV/PDF/Markdown ZIP is created"},
+        {"step": 5, "name": "Customer handoff", "owner": "founder", "done_when": "buyer receives pack, limitations and next step"},
+        {"step": 6, "name": "Upsell decision", "owner": "founder", "done_when": "pilot/custom implementation/SaaS-later path is selected"},
+    ]
+
+    claim_policy = {
+        "allowed": [
+            "Pack-first delivery; SaaS is optional later.",
+            "Founder-reviewed custom packs based on one clear use case.",
+            "Evidence bundle includes assumptions, limitations and acceptance criteria.",
+            "The engine is preserved; V93 packages it into a sellable pack flow.",
+        ],
+        "blocked_without_evidence": [
+            "guaranteed detection accuracy",
+            "production-certified safety",
+            "fully autonomous customer deployment",
+            "legal/compliance approval",
+            "customer-specific performance guarantees",
+        ],
+        "approval_required": ["final price", "custom scope", "customer-specific claims", "refund/payment terms", "production handoff"],
+    }
+
+    customer_pack_copy_md = "\n".join([
+        f"# {primary_pack}",
+        "",
+        "A pack-first EdgeTwin delivery for one clear operational or sensor-data problem.",
+        "",
+        "## What you get",
+        *[f"- {m}" for m in selected_modules],
+        "",
+        "## How custom packs work",
+        "You can choose the modules you want, but final scope, price and claims are reviewed before delivery. This keeps the pack practical, honest and safe.",
+        "",
+        "## Not a SaaS requirement",
+        "This pack can be delivered as a ZIP/PDF/CSV handoff. SaaS can come later when repeated customer demand proves the workflow.",
+        "",
+        "## Next step",
+        "Choose one use case, confirm the modules, then request a founder-reviewed quote or paid pilot pack.",
+    ])
+
+    founder_rules = [
+        "Sell packs first; do not force SaaS before demand is proven.",
+        "Let customers configure modules, but keep final approval with the founder.",
+        "Price the result and handoff, not only time spent.",
+        "Every paid pack needs limitations, acceptance criteria and a safe next step.",
+        "Use custom packs as market research for the later SaaS roadmap.",
+    ]
+
+    upsell_path = [
+        {"from": "Starter Diagnostic Pack", "to": "Pilot Pack", "trigger": "buyer recognizes pain and wants own data checked"},
+        {"from": "Pilot Pack", "to": "Custom Pack", "trigger": "buyer wants specific workflow/modules"},
+        {"from": "Custom Pack", "to": "Premium Implementation", "trigger": "buyer wants repeated use, training or rollout"},
+        {"from": "Repeated premium packs", "to": "SaaS later", "trigger": "same workflow repeats across multiple customers"},
+    ]
+
+    return {
+        "version": "V93",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "decision": decision,
+        "pack_commerce_score": int(pack_score),
+        "v92_score": int(v92_score),
+        "v91_score": int(v91_score),
+        "v90_score": int(v90_score),
+        "engine_score": int(engine_score),
+        "engine_power_preserved": True,
+        "saas_not_required": not require_saas,
+        "pack_first_strategy": True,
+        "buyer_type": buyer_type,
+        "primary_pack": primary_pack,
+        "delivery_model": delivery_model,
+        "dataset_profile": profile,
+        "pack_stack": pack_stack,
+        "blockers": blockers,
+        "pack_menu": pack_menu,
+        "selected_pack": selected_pack,
+        "custom_pack_manifest": custom_pack_manifest,
+        "price_ladder": price_ladder,
+        "delivery_checklist": delivery_checklist,
+        "claim_policy": claim_policy,
+        "customer_pack_copy_md": customer_pack_copy_md,
+        "founder_rules": founder_rules,
+        "upsell_path": upsell_path,
+        "next_best_action": "Sell one founder-reviewed pack around one use case, then use the result to decide whether a custom pack or later SaaS path is justified.",
+        "truth_policy": [
+            "V93 is designed for pack sales before SaaS.",
+            "Customer configuration is allowed, but founder approval protects scope, price and claims.",
+            "The pack is a deliverable and validation vehicle, not a universal production guarantee.",
+        ],
+    }
+
+
+def create_pack_commerce_os_v93_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("pack_commerce_os_v93.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("custom_pack_manifest_v93.json", json.dumps(_json_safe(snapshot.get("custom_pack_manifest", {})), indent=2, ensure_ascii=False))
+        zf.writestr("customer_pack_copy_v93.md", str(snapshot.get("customer_pack_copy_md", "")))
+
+        summary = [
+            "# EdgeTwin Studio V93 — Pack Commerce OS",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Pack commerce score: {snapshot.get('pack_commerce_score')}%",
+            f"V92 score: {snapshot.get('v92_score')}%",
+            f"Engine score: {snapshot.get('engine_score')}%",
+            "",
+            "## Positioning",
+            "Sell packs and custom packs first. Keep SaaS for later when repeated demand proves the workflow.",
+            "",
+            "## Selected pack",
+            json.dumps(_json_safe(snapshot.get("selected_pack", {})), indent=2, ensure_ascii=False),
+            "",
+            "## Founder rules",
+            *[f"- {x}" for x in snapshot.get("founder_rules", [])],
+            "",
+            "## Next best action",
+            str(snapshot.get("next_best_action", "")),
+        ]
+        zf.writestr("pack_commerce_os_v93_summary.md", "\n".join(summary))
+
+        for name, rows in [
+            ("pack_menu_v93.csv", snapshot.get("pack_menu", [])),
+            ("price_ladder_v93.csv", snapshot.get("price_ladder", [])),
+            ("delivery_checklist_v93.csv", snapshot.get("delivery_checklist", [])),
+            ("upsell_path_v93.csv", snapshot.get("upsell_path", [])),
+            ("pack_blockers_v93.csv", snapshot.get("blockers", [])),
+        ]:
+            if rows:
+                zf.writestr(name, pd.DataFrame(rows).to_csv(index=False))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V93 - Pack Commerce OS")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Pack score: {snapshot.get('pack_commerce_score')}%")
+        safe_pdf_cell(pdf, f"Engine score: {snapshot.get('engine_score')}%")
+        safe_pdf_cell(pdf, f"SaaS required: {not snapshot.get('saas_not_required', False)}")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, "Pack-first delivery: sell downloadable or founder-assisted packs now, keep SaaS for later.")
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Selected pack")
+        pdf.set_font("Arial", size=9)
+        selected = snapshot.get("selected_pack", {})
+        safe_pdf_multicell(pdf, f"{selected.get('pack', snapshot.get('primary_pack'))}: {selected.get('best_for', '')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Founder rules")
+        pdf.set_font("Arial", size=9)
+        for item in snapshot.get("founder_rules", [])[:6]:
+            safe_pdf_multicell(pdf, f"- {item}")
+        zf.writestr("pack_commerce_os_v93.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V94 — Client Input Autopilot / Pack Builder from customer input
+# ============================================================
+
+def _v94_text(value):
+    return str(value or "").strip()
+
+
+def _v94_lower(value):
+    return _v94_text(value).lower()
+
+
+def _v94_has_any(text, words):
+    t = _v94_lower(text)
+    return any(str(w).lower() in t for w in words)
+
+
+def _v94_budget_floor(budget_band):
+    band = _v94_lower(budget_band)
+    if "12" in band or "premium" in band or "enterprise" in band:
+        return 6500
+    if "6" in band or "custom" in band:
+        return 2500
+    if "2" in band or "pilot" in band:
+        return 750
+    if "750" in band or "starter" in band:
+        return 299
+    return 0
+
+
+def _v94_quote_range(recommended_pack, complexity_score, budget_band):
+    floor = _v94_budget_floor(budget_band)
+    pack = _v94_lower(recommended_pack)
+    if "premium" in pack:
+        low, high = 6500, 12000
+    elif "custom" in pack:
+        low, high = 2500, 6500
+    elif "predictive" in pack or "sensor" in pack or "operations" in pack:
+        low, high = 950, 3500
+    else:
+        low, high = 299, 750
+    if complexity_score >= 80:
+        low, high = max(low, 2500), max(high, 6500)
+    elif complexity_score >= 60:
+        low, high = max(low, 950), max(high, 2500)
+    if floor and high < floor:
+        high = floor
+    return {"low_eur": int(low), "high_eur": int(high), "display": f"€{int(low):,}-€{int(high):,}".replace(",", ".")}
+
+
+def _v94_required_inputs(customer_inputs, data_available, requested_output):
+    required = [
+        {"field": "problem", "label": "What problem should EdgeTwin solve?", "provided": bool(_v94_text(customer_inputs.get("problem")))},
+        {"field": "target_outcome", "label": "What decision or report should the customer receive?", "provided": bool(_v94_text(customer_inputs.get("target_outcome")))},
+        {"field": "data_type", "label": "What data/sensor/source is available?", "provided": bool(_v94_text(customer_inputs.get("data_type")))},
+        {"field": "urgency", "label": "How urgent is the need?", "provided": bool(_v94_text(customer_inputs.get("urgency")))},
+        {"field": "budget_band", "label": "What budget range is realistic?", "provided": bool(_v94_text(customer_inputs.get("budget_band")))},
+    ]
+    if data_available:
+        required.append({"field": "sample_data", "label": "Customer sample dataset or example rows", "provided": bool(customer_inputs.get("sample_data_confirmed"))})
+    if _v94_has_any(requested_output, ["dashboard", "api", "integration", "automatic email", "whatsapp", "sms"]):
+        required.append({"field": "integration_limits", "label": "Integration permissions and limits", "provided": bool(_v94_text(customer_inputs.get("integration_limits")))})
+    return required
+
+
+def build_client_input_autopilot_v94_snapshot(config):
+    """Turn a customer's intake answers into a pack recommendation, scope, quote range and founder approval queue.
+
+    V94 is intentionally pack-first, not SaaS-first. It automates intake triage and bundle creation,
+    while leaving price, claims, contracts and production promises under founder approval.
+    """
+    config = config or {}
+    project_name = config.get("project_name", "EdgeTwin Project")
+    dataset_df = config.get("dataset_df") if isinstance(config.get("dataset_df"), pd.DataFrame) else pd.DataFrame()
+    snapshots = config.get("snapshots") if isinstance(config.get("snapshots"), dict) else {}
+    customer_inputs = config.get("customer_inputs") if isinstance(config.get("customer_inputs"), dict) else {}
+
+    customer_name = _v94_text(customer_inputs.get("customer_name")) or "Unnamed customer"
+    company = _v94_text(customer_inputs.get("company")) or "Unknown company"
+    industry = _v94_text(customer_inputs.get("industry")) or "Unknown industry"
+    problem = _v94_text(customer_inputs.get("problem"))
+    target_outcome = _v94_text(customer_inputs.get("target_outcome"))
+    data_type = _v94_text(customer_inputs.get("data_type"))
+    urgency = _v94_text(customer_inputs.get("urgency")) or "Normal"
+    budget_band = _v94_text(customer_inputs.get("budget_band")) or "Unknown"
+    constraints = _v94_text(customer_inputs.get("constraints"))
+    requested_output = _v94_text(customer_inputs.get("requested_output"))
+    data_available = bool(customer_inputs.get("data_available", False))
+    customer_can_upload = bool(customer_inputs.get("customer_can_upload", True))
+    self_config_modules = customer_inputs.get("self_config_modules") or []
+    if not isinstance(self_config_modules, list):
+        self_config_modules = []
+
+    v93 = snapshots.get("pack_commerce_os_v93") or snapshots.get("pack_commerce_os_v93_snapshot") or {}
+    v92 = snapshots.get("customer_demo_os_v92") or snapshots.get("customer_demo_os_v92_snapshot") or {}
+    v90 = snapshots.get("ultimate_product_v90") or snapshots.get("ultimate_product_v90_snapshot") or {}
+    v93_score = int(v93.get("pack_commerce_score", 0) or 0) if isinstance(v93, dict) else 0
+    v92_score = int(v92.get("customer_demo_score", 0) or v92.get("demo_score", 0) or 0) if isinstance(v92, dict) else 0
+    v90_score = int(v90.get("ultimate_product_score", 0) or 0) if isinstance(v90, dict) else 0
+    engine_score = max(int(v90.get("engine_score", 0) or 0) if isinstance(v90, dict) else 0, int(v93.get("engine_score", 0) or 0) if isinstance(v93, dict) else 0, 80)
+
+    combined_text = " ".join([industry, problem, target_outcome, data_type, requested_output, constraints])
+    complexity_score = 30
+    if len(problem) > 80:
+        complexity_score += 10
+    if data_available:
+        complexity_score += 8
+    if _v94_has_any(combined_text, ["integration", "api", "dashboard", "multiple", "multi", "factory", "fleet", "deployment", "rollout"]):
+        complexity_score += 22
+    if _v94_has_any(combined_text, ["legal", "compliance", "safety", "guarantee", "production", "certified"]):
+        complexity_score += 24
+    if len(self_config_modules) >= 8:
+        complexity_score += 12
+    complexity_score = min(100, complexity_score)
+
+    if _v94_has_any(combined_text, ["vibration", "machine", "motor", "bearing", "maintenance", "predictive", "failure", "downtime"]):
+        recommended_pack = "Predictive Maintenance Pack"
+        reason = "Customer problem/data points to machine, vibration or downtime prevention."
+    elif _v94_has_any(combined_text, ["sensor", "anomaly", "temperature", "pressure", "gas", "sound", "signal", "iot", "stream"]):
+        recommended_pack = "Sensor Anomaly Pack"
+        reason = "Customer problem points to sensor streams and abnormality detection."
+    elif _v94_has_any(combined_text, ["evidence", "report", "operations", "workflow", "audit", "proof", "handoff"]):
+        recommended_pack = "Operations Evidence Pack"
+        reason = "Customer mainly needs evidence, reports, workflow proof or decision support."
+    elif complexity_score >= 75 or _v94_budget_floor(budget_band) >= 2500:
+        recommended_pack = "Premium Custom Pack"
+        reason = "Customer asks for broader/custom scope or has enough budget for founder-reviewed customization."
+    else:
+        recommended_pack = "Starter Diagnostic Pack"
+        reason = "Best first step is a small paid diagnostic pack before deeper customization."
+
+    if "custom" in _v94_lower(requested_output) or len(self_config_modules) >= 10:
+        recommended_pack = "Premium Custom Pack"
+        reason = "Customer-selected modules indicate a custom pack instead of a fixed starter pack."
+
+    default_modules = [
+        "Use-case intake",
+        "Customer data import checklist",
+        "Signal feature extraction" if _v94_has_any(combined_text, ["sensor", "machine", "vibration", "signal", "stream"]) else "Workflow evidence mapping",
+        "Trust ledger",
+        "One-page pilot report",
+        "PDF/ZIP export bundle",
+        "Acceptance criteria",
+        "Founder review",
+    ]
+    selected_modules = list(dict.fromkeys(default_modules + [str(x) for x in self_config_modules if str(x).strip()]))
+
+    required_inputs = _v94_required_inputs(customer_inputs, data_available, requested_output)
+    missing_inputs = [x for x in required_inputs if not x.get("provided")]
+    completeness = int(round(100 * (1 - (len(missing_inputs) / max(1, len(required_inputs))))))
+
+    blockers = []
+    warnings = []
+    if not problem:
+        blockers.append(_v83_issue("high", "missing_problem", "Customer has not described the problem clearly.", "Require a one-sentence problem before building a paid pack."))
+    if not data_type:
+        warnings.append(_v83_issue("medium", "unknown_data", "Customer data type/source is unclear.", "Ask for sample rows, screenshots, sensor list or CSV template."))
+    if _v94_has_any(combined_text, ["guarantee", "certified", "legal approval", "compliance approval", "safety certified"]):
+        blockers.append(_v83_issue("high", "unsafe_claim", "Customer wording suggests guarantees/certification claims.", "Keep output as pilot evidence; founder must review legal/compliance wording."))
+    if _v94_has_any(combined_text, ["delete customer data", "send email automatically", "refund", "payment", "contract"]):
+        blockers.append(_v83_issue("high", "human_approval_required", "Requested action touches money, contracts, data deletion or outbound communication.", "Autopilot may prepare, but founder must approve/send/execute."))
+    if customer_can_upload is False and data_available:
+        warnings.append(_v83_issue("medium", "data_access", "Customer says data exists but cannot upload it.", "Use template/example data first and request anonymized sample later."))
+    if v93_score < 90:
+        warnings.append(_v83_issue("medium", "pack_os_missing", "V93 Pack Commerce OS is not confirmed above 90%.", "Run V93 before final customer handoff."))
+
+    quote = _v94_quote_range(recommended_pack, complexity_score, budget_band)
+    if budget_band != "Unknown" and _v94_budget_floor(budget_band) and _v94_budget_floor(budget_band) < quote["low_eur"]:
+        warnings.append(_v83_issue("medium", "budget_gap", "Customer budget may be below the recommended pack range.", "Offer Starter Diagnostic Pack or reduce scope."))
+
+    safe_auto_actions = [
+        "Classify customer request into a pack type",
+        "Generate required-input checklist",
+        "Recommend module stack",
+        "Prepare quote range",
+        "Draft customer-safe scope summary",
+        "Generate ZIP/PDF/CSV/Markdown handoff bundle",
+        "Flag missing customer inputs",
+        "Flag founder approval items",
+    ]
+    blocked_auto_actions = [
+        "Send customer email without approval",
+        "Create final contract/SOW without approval",
+        "Accept payments or issue refunds",
+        "Delete customer data",
+        "Make legal/compliance/production guarantees",
+        "Claim guaranteed accuracy before field validation",
+    ]
+
+    founder_approval_queue = []
+    for item in [
+        ("Final price", quote["display"]),
+        ("Scope", recommended_pack),
+        ("Customer-specific claims", "Review before sending"),
+        ("Delivery date", "Confirm after data sample"),
+    ]:
+        founder_approval_queue.append({"approval_item": item[0], "autopilot_prepared_value": item[1], "required": True})
+    if blockers:
+        founder_approval_queue.insert(0, {"approval_item": "Resolve blockers", "autopilot_prepared_value": f"{len(blockers)} blocker(s)", "required": True})
+
+    delivery_days = 3
+    if recommended_pack in {"Predictive Maintenance Pack", "Sensor Anomaly Pack", "Operations Evidence Pack"}:
+        delivery_days = 5
+    if recommended_pack == "Premium Custom Pack" or complexity_score >= 80:
+        delivery_days = 7
+    if len(missing_inputs) >= 2:
+        delivery_days += 2
+
+    delivery_plan = [
+        {"step": 1, "owner": "Customer", "task": "Submit missing intake/data fields", "automatic": False if missing_inputs else True, "status": "needed" if missing_inputs else "ready"},
+        {"step": 2, "owner": "EdgeTwin", "task": "Build recommended pack configuration", "automatic": True, "status": "ready"},
+        {"step": 3, "owner": "EdgeTwin", "task": "Generate evidence/report bundle", "automatic": True, "status": "ready"},
+        {"step": 4, "owner": "Founder", "task": "Approve price, scope and customer-facing claims", "automatic": False, "status": "approval_required"},
+        {"step": 5, "owner": "Founder/EdgeTwin", "task": "Deliver pack and next-step recommendation", "automatic": "prepared_not_sent", "status": "prepared"},
+    ]
+
+    customer_safe_summary_md = "\n".join([
+        f"# EdgeTwin Intake Summary — {company}",
+        "",
+        f"**Recommended pack:** {recommended_pack}",
+        f"**Why:** {reason}",
+        f"**Estimated range:** {quote['display']}",
+        f"**Estimated delivery:** {delivery_days} working days after required input is complete.",
+        "",
+        "## Customer problem",
+        problem or "Not provided yet.",
+        "",
+        "## Target outcome",
+        target_outcome or "Not provided yet.",
+        "",
+        "## What EdgeTwin can prepare automatically",
+        *[f"- {x}" for x in safe_auto_actions],
+        "",
+        "## Founder approval still required",
+        *[f"- {x['approval_item']}" for x in founder_approval_queue],
+        "",
+        "## Missing input",
+        *([f"- {x['label']}" for x in missing_inputs] or ["- No critical missing intake fields."]),
+    ])
+
+    customer_form_schema = [
+        {"field": "company", "type": "text", "required": True, "helper": "Company or project name"},
+        {"field": "industry", "type": "select", "required": True, "helper": "Industry/use-case area"},
+        {"field": "problem", "type": "textarea", "required": True, "helper": "One clear problem; no broad wish list"},
+        {"field": "target_outcome", "type": "textarea", "required": True, "helper": "Report, score, anomaly check, pilot pack, etc."},
+        {"field": "data_type", "type": "text", "required": True, "helper": "CSV, sensor stream, vibration, maintenance logs, images, workflow notes"},
+        {"field": "requested_output", "type": "select", "required": False, "helper": "PDF/ZIP report, pilot pack, custom pack, integration later"},
+        {"field": "budget_band", "type": "select", "required": True, "helper": "Used for scope fit, not automatic final pricing"},
+    ]
+
+    intake_score = min(100, max(0, 72 + int(completeness * 0.18) + (8 if data_available else 0) + (5 if selected_modules else 0) - len(blockers) * 12 - len(warnings) * 3))
+    autopilot_score = min(100, max(0, int(round((intake_score * 0.45) + (max(v93_score, 90) * 0.25) + (engine_score * 0.20) + (min(100, 100 - len(blockers)*20) * 0.10)))))
+
+    if blockers:
+        decision = "FOUNDER REVIEW REQUIRED BEFORE CUSTOMER SEND"
+    elif autopilot_score >= 98 and completeness >= 90:
+        decision = "CLIENT INPUT AUTOPILOT READY"
+    elif autopilot_score >= 94:
+        decision = "PACK PREPARED - APPROVAL BEFORE SEND"
+    elif autopilot_score >= 88:
+        decision = "INTAKE NEEDS MISSING INPUT"
+    else:
+        decision = "MANUAL REVIEW REQUIRED"
+
+    return {
+        "version": "V94",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "decision": decision,
+        "client_input_autopilot_score": int(autopilot_score),
+        "intake_completeness_score": int(completeness),
+        "intake_score": int(intake_score),
+        "complexity_score": int(complexity_score),
+        "v93_pack_score": int(v93_score),
+        "v92_demo_score": int(v92_score),
+        "v90_score": int(v90_score),
+        "engine_score": int(engine_score),
+        "customer": {"name": customer_name, "company": company, "industry": industry},
+        "customer_inputs": customer_inputs,
+        "recommended_pack": recommended_pack,
+        "recommendation_reason": reason,
+        "selected_modules": selected_modules,
+        "quote_range": quote,
+        "estimated_delivery_days_after_input_complete": int(delivery_days),
+        "required_inputs": required_inputs,
+        "missing_inputs": missing_inputs,
+        "safe_auto_actions": safe_auto_actions,
+        "blocked_auto_actions": blocked_auto_actions,
+        "founder_approval_queue": founder_approval_queue,
+        "delivery_plan": delivery_plan,
+        "blockers": blockers,
+        "warnings": warnings,
+        "customer_form_schema": customer_form_schema,
+        "customer_safe_summary_md": customer_safe_summary_md,
+        "pack_config_for_v93": {
+            "primary_pack": recommended_pack,
+            "selected_modules": selected_modules,
+            "delivery_model": "Founder-assisted pack" if recommended_pack != "Premium Custom Pack" else "Premium implementation pack",
+            "customer_can_configure": True,
+            "founder_final_approval": True,
+            "require_saas": False,
+            "allow_custom_claims": False,
+        },
+        "truth_policy": [
+            "V94 automates intake, routing, scope preparation and pack bundle generation.",
+            "V94 does not send emails, accept money, sign contracts or make production guarantees.",
+            "Customer input drives the pack; founder approval protects time, scope, price and claims.",
+        ],
+        "next_best_action": "Let the customer fill the intake form, let V94 prepare the pack automatically, then approve only price/scope/claims before delivery.",
+    }
+
+
+def create_client_input_autopilot_v94_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("client_input_autopilot_v94.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_safe_intake_summary_v94.md", str(snapshot.get("customer_safe_summary_md", "")))
+        zf.writestr("pack_config_for_v93.json", json.dumps(_json_safe(snapshot.get("pack_config_for_v93", {})), indent=2, ensure_ascii=False))
+        zf.writestr("customer_form_schema_v94.json", json.dumps(_json_safe(snapshot.get("customer_form_schema", [])), indent=2, ensure_ascii=False))
+
+        for name, rows in [
+            ("required_inputs_v94.csv", snapshot.get("required_inputs", [])),
+            ("missing_inputs_v94.csv", snapshot.get("missing_inputs", [])),
+            ("delivery_plan_v94.csv", snapshot.get("delivery_plan", [])),
+            ("founder_approval_queue_v94.csv", snapshot.get("founder_approval_queue", [])),
+            ("safe_auto_actions_v94.csv", [{"action": x} for x in snapshot.get("safe_auto_actions", [])]),
+            ("blocked_auto_actions_v94.csv", [{"action": x} for x in snapshot.get("blocked_auto_actions", [])]),
+            ("warnings_v94.csv", snapshot.get("warnings", [])),
+            ("blockers_v94.csv", snapshot.get("blockers", [])),
+        ]:
+            if rows:
+                zf.writestr(name, pd.DataFrame(rows).to_csv(index=False))
+
+        summary = [
+            "# EdgeTwin Studio V94 — Client Input Autopilot",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Autopilot score: {snapshot.get('client_input_autopilot_score')}%",
+            f"Intake completeness: {snapshot.get('intake_completeness_score')}%",
+            f"Recommended pack: {snapshot.get('recommended_pack')}",
+            f"Quote range: {snapshot.get('quote_range', {}).get('display')}",
+            "",
+            "## What this automates",
+            *[f"- {x}" for x in snapshot.get("safe_auto_actions", [])],
+            "",
+            "## What still needs founder approval",
+            *[f"- {x.get('approval_item')}" for x in snapshot.get("founder_approval_queue", [])],
+            "",
+            "## Next best action",
+            str(snapshot.get("next_best_action", "")),
+        ]
+        zf.writestr("client_input_autopilot_v94_summary.md", "\n".join(summary))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V94 - Client Input Autopilot")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Autopilot score: {snapshot.get('client_input_autopilot_score')}%")
+        safe_pdf_cell(pdf, f"Recommended pack: {snapshot.get('recommended_pack')}")
+        safe_pdf_cell(pdf, f"Quote range: {snapshot.get('quote_range', {}).get('display')}")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, "V94 turns customer input into a prepared pack, quote range, scope and handoff bundle. Founder approval remains required for final price, scope and claims.")
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Missing input")
+        pdf.set_font("Arial", size=9)
+        missing = snapshot.get("missing_inputs", [])
+        if missing:
+            for item in missing[:8]:
+                safe_pdf_multicell(pdf, f"- {item.get('label', item.get('field', 'missing'))}")
+        else:
+            safe_pdf_multicell(pdf, "No critical missing intake fields.")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Founder approval queue")
+        pdf.set_font("Arial", size=9)
+        for item in snapshot.get("founder_approval_queue", [])[:8]:
+            safe_pdf_multicell(pdf, f"- {item.get('approval_item')}: {item.get('autopilot_prepared_value')}")
+        zf.writestr("client_input_autopilot_v94.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V95 — Policy Approval Engine
+# ============================================================
+
+def _v95_as_int(value, default=0):
+    try:
+        return int(float(value))
+    except Exception:
+        return default
+
+
+def _v95_quote_high(quote):
+    if not isinstance(quote, dict):
+        return 0
+    return _v95_as_int(quote.get("high_eur", quote.get("high", 0)), 0)
+
+
+def _v95_quote_low(quote):
+    if not isinstance(quote, dict):
+        return 0
+    return _v95_as_int(quote.get("low_eur", quote.get("low", 0)), 0)
+
+
+def _v95_status(ok, reason, action, status_ok="AUTO_APPROVED", status_bad="FOUNDER_REVIEW"):
+    return {
+        "status": status_ok if ok else status_bad,
+        "ok": bool(ok),
+        "reason": str(reason),
+        "action": str(action),
+    }
+
+
+def build_policy_approval_engine_v95_snapshot(config):
+    """Automatically approve standard price/scope/claims when they fit pre-approved guardrails.
+
+    V95 does not remove founder control. It reduces founder work by turning repeated decisions into rules.
+    Anything outside the policy becomes founder review or hard block instead of a silent approval.
+    """
+    config = config or {}
+    project_name = config.get("project_name", "EdgeTwin Project")
+    snapshots = config.get("snapshots") if isinstance(config.get("snapshots"), dict) else {}
+    v94 = config.get("client_input_autopilot_v94") or snapshots.get("client_input_autopilot_v94") or snapshots.get("client_input_autopilot_v94_snapshot") or {}
+    if not isinstance(v94, dict):
+        v94 = {}
+
+    policy = config.get("policy") if isinstance(config.get("policy"), dict) else {}
+    auto_price_cap_eur = _v95_as_int(policy.get("auto_price_cap_eur", 2500), 2500)
+    min_margin_percent = _v95_as_int(policy.get("min_margin_percent", 55), 55)
+    max_auto_modules = _v95_as_int(policy.get("max_auto_modules", 12), 12)
+    allow_standard_custom_pack = bool(policy.get("allow_standard_custom_pack", False))
+    require_data_sample_for_auto = bool(policy.get("require_data_sample_for_auto", True))
+    allow_auto_customer_summary = bool(policy.get("allow_auto_customer_summary", True))
+    safe_claim_templates = policy.get("safe_claim_templates") or [
+        "pilot evidence, not production guarantee",
+        "local-first pack delivery",
+        "trust score with assumptions and limitations",
+        "anomaly screening for decision support",
+        "no guaranteed accuracy before field validation",
+    ]
+    if not isinstance(safe_claim_templates, list):
+        safe_claim_templates = []
+
+    recommended_pack = _v94_text(v94.get("recommended_pack")) or "Starter Diagnostic Pack"
+    selected_modules = v94.get("selected_modules") if isinstance(v94.get("selected_modules"), list) else []
+    quote = v94.get("quote_range") if isinstance(v94.get("quote_range"), dict) else {"low_eur": 299, "high_eur": 750, "display": "€299-€750"}
+    quote_low = _v95_quote_low(quote)
+    quote_high = _v95_quote_high(quote)
+    budget_band = _v94_text((v94.get("customer_inputs") or {}).get("budget_band")) or "Unknown"
+    budget_floor = _v94_budget_floor(budget_band)
+    data_available = bool((v94.get("customer_inputs") or {}).get("data_available", False))
+    sample_data_confirmed = bool((v94.get("customer_inputs") or {}).get("sample_data_confirmed", False))
+    v94_score = _v95_as_int(v94.get("client_input_autopilot_score", 0), 0)
+    completeness = _v95_as_int(v94.get("intake_completeness_score", 0), 0)
+    complexity_score = _v95_as_int(v94.get("complexity_score", 0), 0)
+    blockers = v94.get("blockers") if isinstance(v94.get("blockers"), list) else []
+    warnings = v94.get("warnings") if isinstance(v94.get("warnings"), list) else []
+    customer_inputs = v94.get("customer_inputs") if isinstance(v94.get("customer_inputs"), dict) else {}
+    combined_text = " ".join([
+        _v94_text(customer_inputs.get("problem")),
+        _v94_text(customer_inputs.get("target_outcome")),
+        _v94_text(customer_inputs.get("constraints")),
+        _v94_text(customer_inputs.get("requested_output")),
+        _v94_text(v94.get("customer_safe_summary_md")),
+    ])
+
+    forbidden_claim_words = [
+        "guaranteed accuracy", "guaranteed result", "guaranteed uptime", "production guarantee",
+        "certified", "legal approval", "compliance approval", "production ready",
+        "zero false", "100% accurate", "safety certified", "replace human",
+        "fully autonomous production", "medical", "life-critical",
+    ]
+    safe_negation_phrases = [
+        "no production guarantee", "no production guarantees", "not production guarantee",
+        "not a production guarantee", "no guaranteed accuracy", "not guaranteed accuracy",
+        "before field validation", "not production ready",
+    ]
+    has_forbidden_claim = _v94_has_any(combined_text, forbidden_claim_words) and not _v94_has_any(combined_text, safe_negation_phrases)
+    has_contract_money_data_action = _v94_has_any(combined_text, ["refund", "accept payment", "contract signed", "delete customer data", "send email automatically"])
+
+    effective_blockers = []
+    for b in blockers:
+        if isinstance(b, dict) and b.get("area") == "unsafe_claim" and _v94_has_any(combined_text, safe_negation_phrases):
+            continue
+        effective_blockers.append(b)
+    blockers = effective_blockers
+
+    # Price policy: standard cap + budget fit + no blockers.
+    price_ok = (
+        quote_high > 0 and
+        quote_high <= auto_price_cap_eur and
+        not blockers and
+        (budget_floor == 0 or budget_floor <= quote_low or budget_floor >= quote_low)
+    )
+    # If a customer budget is explicit and far under the low quote, require review.
+    if budget_floor and budget_floor < quote_low:
+        price_ok = False
+
+    price_policy_result = [
+        _v95_status(quote_high <= auto_price_cap_eur and quote_high > 0,
+                    f"Quote high €{quote_high} is within auto cap €{auto_price_cap_eur}.",
+                    "Auto-approve standard price range." if quote_high <= auto_price_cap_eur and quote_high > 0 else "Founder must approve price or reduce scope."),
+        _v95_status(not (budget_floor and budget_floor < quote_low),
+                    "Budget band is not below the recommended quote floor.",
+                    "Keep price range." if not (budget_floor and budget_floor < quote_low) else "Offer smaller starter pack or founder-approved exception."),
+        _v95_status(not blockers,
+                    "No V94 blockers affect pricing.",
+                    "Price can follow policy." if not blockers else "Resolve V94 blockers before final quote.", status_bad="HARD_BLOCK"),
+        {
+            "status": "POLICY_INFO",
+            "ok": True,
+            "reason": f"Minimum margin policy is {min_margin_percent}%. EdgeTwin does not yet calculate real cost margin, so this remains a policy marker.",
+            "action": "Use as founder/default pricing rule until cost accounting is added.",
+        },
+    ]
+
+    standard_packs = {"Starter Diagnostic Pack", "Predictive Maintenance Pack", "Sensor Anomaly Pack", "Operations Evidence Pack"}
+    scope_standard = recommended_pack in standard_packs or (allow_standard_custom_pack and recommended_pack == "Premium Custom Pack")
+    modules_ok = len(selected_modules) <= max_auto_modules
+    data_ok = (not require_data_sample_for_auto) or data_available or sample_data_confirmed
+    complexity_ok = complexity_score <= 78 or recommended_pack != "Premium Custom Pack"
+
+    scope_ok = scope_standard and modules_ok and data_ok and complexity_ok and not blockers
+    scope_policy_result = [
+        _v95_status(scope_standard,
+                    f"Pack '{recommended_pack}' is within standard policy." if scope_standard else f"Pack '{recommended_pack}' is outside standard auto-scope policy.",
+                    "Auto-approve pack scope." if scope_standard else "Founder reviews custom scope."),
+        _v95_status(modules_ok,
+                    f"{len(selected_modules)} selected modules vs max auto-approved {max_auto_modules}.",
+                    "Auto-approve module stack." if modules_ok else "Reduce modules or founder approves custom scope."),
+        _v95_status(data_ok,
+                    "Data/sample requirement is satisfied or not required by policy.",
+                    "Proceed with pack preparation." if data_ok else "Request data/sample before auto-approval."),
+        _v95_status(complexity_ok,
+                    f"Complexity score {complexity_score} fits auto policy." if complexity_ok else f"Complexity score {complexity_score} is too high for blind approval.",
+                    "Auto-approve normal complexity." if complexity_ok else "Founder reviews complexity/scope."),
+    ]
+
+    claim_ok = (not has_forbidden_claim) and allow_auto_customer_summary
+    approved_safe_claims = [
+        x for x in safe_claim_templates
+        if isinstance(x, str) and x.strip() and not _v94_has_any(x, forbidden_claim_words)
+    ]
+    claim_policy_result = [
+        _v95_status(allow_auto_customer_summary,
+                    "Policy allows auto-approval of safe customer summary text.",
+                    "Use generated customer summary." if allow_auto_customer_summary else "Founder must approve customer summary."),
+        _v95_status(not has_forbidden_claim,
+                    "No forbidden guarantee/certification/production claim detected.",
+                    "Auto-approve safe claims." if not has_forbidden_claim else "Remove unsafe claims before sending.", status_bad="HARD_BLOCK"),
+        _v95_status(len(approved_safe_claims) >= 3,
+                    f"{len(approved_safe_claims)} safe claim templates are available.",
+                    "Use approved claim library." if len(approved_safe_claims) >= 3 else "Add more pre-approved claim templates."),
+    ]
+
+    hard_blocks = []
+    founder_reviews = []
+    auto_approved = []
+
+    if blockers:
+        hard_blocks.append(_v83_issue("high", "v94_blockers", f"V94 has {len(blockers)} blocker(s).", "Resolve blockers before automatic customer send."))
+    if has_forbidden_claim:
+        hard_blocks.append(_v83_issue("high", "forbidden_claim", "Unsafe guarantee/certification/production wording detected.", "Remove unsafe wording and keep claims pilot-safe."))
+    if has_contract_money_data_action:
+        hard_blocks.append(_v83_issue("high", "regulated_action", "Request touches contract, payment, refund, deletion or outbound communication.", "Founder approval remains required."))
+
+    if price_ok:
+        auto_approved.append({"item": "price_range", "value": quote.get("display", f"€{quote_low}-€{quote_high}"), "policy": "within price cap and budget fit"})
+    else:
+        founder_reviews.append({"item": "price_range", "value": quote.get("display", f"€{quote_low}-€{quote_high}"), "reason": "price outside policy, budget mismatch or blockers"})
+
+    if scope_ok:
+        auto_approved.append({"item": "scope", "value": recommended_pack, "policy": "standard pack/scope policy"})
+    else:
+        founder_reviews.append({"item": "scope", "value": recommended_pack, "reason": "custom, complex, too many modules, missing data or blockers"})
+
+    if claim_ok and approved_safe_claims:
+        auto_approved.append({"item": "claims", "value": "safe claim library", "policy": "approved non-guarantee language"})
+    else:
+        founder_reviews.append({"item": "claims", "value": "customer summary / claims", "reason": "claim policy not satisfied"})
+
+    approval_matrix = [
+        {"approval_area": "Price", "result": "AUTO_APPROVED" if price_ok and not hard_blocks else "FOUNDER_REVIEW", "prepared_value": quote.get("display", "Unknown"), "customer_send_allowed": bool(price_ok and not hard_blocks)},
+        {"approval_area": "Scope", "result": "AUTO_APPROVED" if scope_ok and not hard_blocks else "FOUNDER_REVIEW", "prepared_value": recommended_pack, "customer_send_allowed": bool(scope_ok and not hard_blocks)},
+        {"approval_area": "Claims", "result": "AUTO_APPROVED" if claim_ok and not hard_blocks else "FOUNDER_REVIEW", "prepared_value": ", ".join(approved_safe_claims[:3]), "customer_send_allowed": bool(claim_ok and not hard_blocks)},
+        {"approval_area": "Contracts / payments / deletion / outbound send", "result": "ALWAYS_FOUNDER_APPROVAL", "prepared_value": "Prepared only, never executed automatically", "customer_send_allowed": False},
+    ]
+
+    exceptions = []
+    exceptions.extend(hard_blocks)
+    for review in founder_reviews:
+        exceptions.append(_v83_issue("medium", f"review_{review['item']}", f"Founder review needed for {review['item']}: {review['value']}", review["reason"]))
+    for warn in warnings[:5]:
+        if isinstance(warn, dict):
+            exceptions.append(warn)
+
+    all_core_ok = price_ok and scope_ok and claim_ok and not hard_blocks
+    policy_approval_score = 74
+    policy_approval_score += 8 if price_ok else -8
+    policy_approval_score += 8 if scope_ok else -8
+    policy_approval_score += 8 if claim_ok else -10
+    policy_approval_score += 5 if v94_score >= 94 else -5
+    policy_approval_score += 5 if completeness >= 85 else -5
+    policy_approval_score -= len(hard_blocks) * 18
+    policy_approval_score -= max(0, len(founder_reviews) - 1) * 4
+    policy_approval_score = min(100, max(0, int(policy_approval_score)))
+
+    if hard_blocks:
+        decision = "HARD BLOCK - FOUNDER MUST REVIEW"
+    elif all_core_ok and policy_approval_score >= 96:
+        decision = "STANDARD PACK AUTO-APPROVED"
+    elif (price_ok or scope_ok or claim_ok) and policy_approval_score >= 88:
+        decision = "PARTIAL AUTO-APPROVAL - REVIEW EXCEPTIONS"
+    else:
+        decision = "FOUNDER REVIEW REQUIRED"
+
+    customer_safe_policy_summary_md = "\n".join([
+        f"# EdgeTwin Policy Approval Summary — {project_name}",
+        "",
+        f"**Decision:** {decision}",
+        f"**Recommended pack:** {recommended_pack}",
+        f"**Quote range:** {quote.get('display', f'€{quote_low}-€{quote_high}')}",
+        f"**Policy score:** {policy_approval_score}%",
+        "",
+        "## Automatically approved",
+        *([f"- {x['item']}: {x['value']}" for x in auto_approved] or ["- Nothing fully auto-approved yet."]),
+        "",
+        "## Needs founder review / exception handling",
+        *([f"- {x['item']}: {x['reason']}" for x in founder_reviews] or ["- No founder review needed for standard pack policy areas."]),
+        "",
+        "## Safe claim library",
+        *([f"- {x}" for x in approved_safe_claims] or ["- No safe claim templates configured."]),
+        "",
+        "## Non-automated actions",
+        "- Contracts, payments, refunds, data deletion and outbound customer sending remain founder-approved.",
+    ])
+
+    return {
+        "version": "V95",
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "decision": decision,
+        "policy_approval_score": int(policy_approval_score),
+        "v94_score": int(v94_score),
+        "intake_completeness_score": int(completeness),
+        "recommended_pack": recommended_pack,
+        "selected_modules": selected_modules,
+        "quote_range": quote,
+        "automation_policy": {
+            "auto_price_cap_eur": int(auto_price_cap_eur),
+            "min_margin_percent": int(min_margin_percent),
+            "max_auto_modules": int(max_auto_modules),
+            "allow_standard_custom_pack": bool(allow_standard_custom_pack),
+            "require_data_sample_for_auto": bool(require_data_sample_for_auto),
+            "allow_auto_customer_summary": bool(allow_auto_customer_summary),
+            "safe_claim_template_count": len(safe_claim_templates),
+        },
+        "price_policy_result": price_policy_result,
+        "scope_policy_result": scope_policy_result,
+        "claim_policy_result": claim_policy_result,
+        "approval_matrix": approval_matrix,
+        "auto_approved": auto_approved,
+        "auto_approved_count": len(auto_approved),
+        "founder_review_items": founder_reviews,
+        "founder_review_count": len(founder_reviews),
+        "hard_blocks": hard_blocks,
+        "hard_block_count": len(hard_blocks),
+        "exceptions": exceptions,
+        "approved_safe_claims": approved_safe_claims,
+        "customer_safe_policy_summary_md": customer_safe_policy_summary_md,
+        "truth_policy": [
+            "V95 can auto-approve standard pack price, scope and safe claims only inside configured guardrails.",
+            "V95 never executes contracts, payments, refunds, data deletion or outbound sends automatically.",
+            "V95 turns repeated founder decisions into explicit policies; exceptions stay visible.",
+        ],
+        "next_best_action": "Use V95 as the default gate after V94: standard packs can pass automatically, exceptions go to founder review.",
+    }
+
+
+def create_policy_approval_engine_v95_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("policy_approval_engine_v95.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_safe_policy_summary_v95.md", str(snapshot.get("customer_safe_policy_summary_md", "")))
+
+        for name, rows in [
+            ("price_policy_result_v95.csv", snapshot.get("price_policy_result", [])),
+            ("scope_policy_result_v95.csv", snapshot.get("scope_policy_result", [])),
+            ("claim_policy_result_v95.csv", snapshot.get("claim_policy_result", [])),
+            ("approval_matrix_v95.csv", snapshot.get("approval_matrix", [])),
+            ("auto_approved_v95.csv", snapshot.get("auto_approved", [])),
+            ("founder_review_items_v95.csv", snapshot.get("founder_review_items", [])),
+            ("hard_blocks_v95.csv", snapshot.get("hard_blocks", [])),
+            ("exceptions_v95.csv", snapshot.get("exceptions", [])),
+            ("approved_safe_claims_v95.csv", [{"claim": x} for x in snapshot.get("approved_safe_claims", [])]),
+        ]:
+            if rows:
+                zf.writestr(name, pd.DataFrame(rows).to_csv(index=False))
+
+        summary = [
+            "# EdgeTwin Studio V95 — Policy Approval Engine",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Policy score: {snapshot.get('policy_approval_score')}%",
+            f"Recommended pack: {snapshot.get('recommended_pack')}",
+            f"Quote range: {snapshot.get('quote_range', {}).get('display')}",
+            f"Auto-approved items: {snapshot.get('auto_approved_count')}",
+            f"Founder review items: {snapshot.get('founder_review_count')}",
+            f"Hard blocks: {snapshot.get('hard_block_count')}",
+            "",
+            "## Auto-approved",
+            *[f"- {x.get('item')}: {x.get('value')}" for x in snapshot.get("auto_approved", [])],
+            "",
+            "## Founder review items",
+            *[f"- {x.get('item')}: {x.get('reason')}" for x in snapshot.get("founder_review_items", [])],
+            "",
+            "## Next best action",
+            str(snapshot.get("next_best_action", "")),
+        ]
+        zf.writestr("policy_approval_engine_v95_summary.md", "\n".join(summary))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V95 - Policy Approval Engine")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Policy score: {snapshot.get('policy_approval_score')}%")
+        safe_pdf_cell(pdf, f"Recommended pack: {snapshot.get('recommended_pack')}")
+        safe_pdf_cell(pdf, f"Quote range: {snapshot.get('quote_range', {}).get('display')}")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, "V95 reduces founder work by auto-approving standard price, scope and safe claims inside explicit policy guardrails. Exceptions remain visible and blocked.")
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Approval matrix")
+        pdf.set_font("Arial", size=9)
+        for item in snapshot.get("approval_matrix", [])[:8]:
+            safe_pdf_multicell(pdf, f"- {item.get('approval_area')}: {item.get('result')} ({item.get('prepared_value')})")
+        zf.writestr("policy_approval_engine_v95.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V96 — Pricing & Assurance OS
+# ============================================================
+
+EDGETWIN_V96_VERSION = "EdgeTwin Studio V96 - Pricing & Assurance OS"
+
+V96_PRICE_PACKS = [
+    {
+        "pack_id": "free_discovery_demo",
+        "pack_name": "Free Discovery Demo",
+        "standard_price_eur": 0,
+        "price_range_eur": "€0",
+        "best_for": "Lead qualification only; customer has no dataset yet or is not ready to buy.",
+        "customer_gets": [
+            "Short use-case fit check",
+            "Example screenshots or demo workflow",
+            "Missing-data checklist",
+            "Clear next paid pack recommendation",
+        ],
+        "delivery_time": "Same day / automated",
+        "reliability_level": "Workflow demonstration only",
+        "safe_claim": "Shows how EdgeTwin works; does not validate customer performance.",
+        "auto_approval_limit": "Always allowed as lead magnet; no custom analysis promises.",
+    },
+    {
+        "pack_id": "starter_diagnostic_pack",
+        "pack_name": "Starter Diagnostic Pack",
+        "standard_price_eur": 750,
+        "price_range_eur": "€499 - €950",
+        "best_for": "One clear use-case, limited data, first paid diagnostic.",
+        "customer_gets": [
+            "Client intake review",
+            "Data/sample readiness check",
+            "Basic signal feature extraction or dataset profile",
+            "Trust score with assumptions and limitations",
+            "One customer-safe PDF/ZIP pack",
+            "Go / no-go recommendation for next pilot step",
+        ],
+        "delivery_time": "1-3 working days",
+        "reliability_level": "Good for feasibility and pack direction; not production proof",
+        "safe_claim": "Pilot-preparation evidence with clear limitations, not guaranteed accuracy.",
+        "auto_approval_limit": "Auto-approve when one use-case, <=6 modules, no unsafe claims, customer data/sample provided or explicitly not needed.",
+    },
+    {
+        "pack_id": "professional_pilot_pack",
+        "pack_name": "Professional Pilot Pack",
+        "standard_price_eur": 2500,
+        "price_range_eur": "€1,500 - €3,500",
+        "best_for": "Real customer data or serious pilot preparation with decision support.",
+        "customer_gets": [
+            "Everything in Starter",
+            "V80 Trust Ledger evidence bundle",
+            "V91/V92 customer demo and paid-pilot structure",
+            "V94 client-input autopilot output",
+            "V95 policy approval summary",
+            "Acceptance criteria and risk list",
+            "Professional report bundle for internal customer discussion",
+        ],
+        "delivery_time": "3-7 working days",
+        "reliability_level": "Strong pilot-preparation reliability when input data is representative",
+        "safe_claim": "Decision-support pack for pilot planning and anomaly screening; field validation required before production claims.",
+        "auto_approval_limit": "Auto-approve up to €3,500 when pack is standard, <=12 modules, no production/legal/compliance guarantees.",
+    },
+    {
+        "pack_id": "real_data_evidence_pack",
+        "pack_name": "Real-Data Evidence Pack",
+        "standard_price_eur": 5500,
+        "price_range_eur": "€3,500 - €7,500",
+        "best_for": "Customer has WAV/CSV/log data and wants stronger evidence before pilot or deployment.",
+        "customer_gets": [
+            "Everything in Professional",
+            "Real-data import and quality screen",
+            "Synthetic-to-real comparison where available",
+            "Reliability calibration plan",
+            "Normal-vs-abnormal evidence summary",
+            "Deployment/BOM/power checklist if hardware is relevant",
+            "Customer handoff pack with limitations and next tests",
+        ],
+        "delivery_time": "1-2 weeks depending on data quality",
+        "reliability_level": "High for pilot evidence if data coverage is good; still not a certification or production guarantee",
+        "safe_claim": "Real-data-based pilot evidence and risk reduction, not certified reliability or guaranteed detection.",
+        "auto_approval_limit": "Prepare automatically, but final send requires data-quality gate >=80 and no high-risk domain.",
+    },
+    {
+        "pack_id": "premium_custom_pack",
+        "pack_name": "Premium Custom Pack",
+        "standard_price_eur": 9500,
+        "price_range_eur": "€7,500 - €15,000+",
+        "best_for": "Multi-module custom pack, custom customer flow, or higher-risk operational environment.",
+        "customer_gets": [
+            "Custom intake and scope map",
+            "Custom module selection",
+            "Custom pack definition for repeatable delivery",
+            "Evidence bundle and delivery plan",
+            "Founder-reviewed claims and commercial boundary",
+            "Optional hardware reference notes",
+            "Roadmap toward recurring SaaS or on-prem later",
+        ],
+        "delivery_time": "2-4 weeks depending on scope",
+        "reliability_level": "Depends on real data, domain risk and validation depth",
+        "safe_claim": "Custom pilot/evidence package; scope, limits and validation requirements are explicit.",
+        "auto_approval_limit": "Never fully auto-approve as final customer send unless converted into a reusable standard pack.",
+    },
+]
+
+V96_ADD_ONS = [
+    {"add_on": "Extra data source / file type", "price_range_eur": "€250 - €750", "when": "Customer adds another CSV/WAV/log source."},
+    {"add_on": "Extra report language or customer branding", "price_range_eur": "€250 - €950", "when": "Customer needs localized/white-label pack."},
+    {"add_on": "Extra use-case variant", "price_range_eur": "€750 - €2,500", "when": "Same customer wants another machine/process/site."},
+    {"add_on": "Hardware/BOM reference module", "price_range_eur": "€750 - €2,500", "when": "Customer wants sensor/node/deployment guidance."},
+    {"add_on": "Founder review call", "price_range_eur": "€250 - €750", "when": "Manual explanation, scope review or decision workshop."},
+    {"add_on": "Reusable custom pack template", "price_range_eur": "€1,500 - €5,000", "when": "Turn one custom job into a repeatable pack."},
+]
+
+V96_RELIABILITY_LADDER = [
+    {"level": "Demo", "data_quality_score": "0-49", "allowed_use": "Show workflow only", "not_allowed": "Paid accuracy claims, production advice"},
+    {"level": "Starter Feasibility", "data_quality_score": "50-69", "allowed_use": "Paid diagnostic with visible limitations", "not_allowed": "Deployment decision or detection guarantee"},
+    {"level": "Pilot Preparation", "data_quality_score": "70-79", "allowed_use": "Pilot report, feature/risk evidence, next-step plan", "not_allowed": "Production-ready or compliance claim"},
+    {"level": "Real-Data Pilot Evidence", "data_quality_score": "80-89", "allowed_use": "Stronger real-data evidence and paid pilot support", "not_allowed": "Certification, guaranteed accuracy, safety-critical automation"},
+    {"level": "Production Handoff Candidate", "data_quality_score": "90-100", "allowed_use": "Candidate for production review after field validation/security/legal checks", "not_allowed": "Automatic legal/compliance approval"},
+]
+
+V96_CLAIM_POLICY = {
+    "allowed_claims": [
+        "EdgeTwin creates pilot-preparation evidence from customer input and uploaded data.",
+        "EdgeTwin generates trust scores, assumptions, limitations and next-step recommendations.",
+        "EdgeTwin can help reduce manual preparation work for sensor/operational AI pilots.",
+        "EdgeTwin is local-first in the current pack-delivery model.",
+        "EdgeTwin supports anomaly screening and decision support when data quality is sufficient.",
+    ],
+    "blocked_claims": [
+        "100% accurate",
+        "guaranteed detection",
+        "production ready without validation",
+        "certified compliance",
+        "legal approval",
+        "safety-certified system",
+        "replaces human review",
+        "fully autonomous in critical operations",
+    ],
+    "customer_safe_disclaimer": "EdgeTwin packs are decision-support and pilot-preparation deliverables. Production use, legal/compliance claims and guaranteed accuracy require representative data, field validation, security review and customer-specific approval.",
+}
+
+V96_IMPROVEMENT_ROADMAP = [
+    {"priority": 1, "item": "Golden real-data test set", "why": "Synthetic/demo data proves workflow; real representative data proves commercial reliability.", "target": "At least 3-5 real datasets per target pack."},
+    {"priority": 2, "item": "Data Quality Gate", "why": "Automatically blocks weak input before we sell strong claims.", "target": "Score data coverage, labels, missing values, sampling rate, time span and class balance."},
+    {"priority": 3, "item": "Pack acceptance criteria", "why": "Customer must know exactly what counts as delivered.", "target": "Every pack has clear deliverables, exclusions and pass/fail checks."},
+    {"priority": 4, "item": "Regression suite on multiple datasets", "why": "One smoke test is not enough for premium trust.", "target": "Run all V80-V96 gates over stored demo + real examples."},
+    {"priority": 5, "item": "Security/privacy pack mode", "why": "EU customers will care about personal data, retention and safe exports.", "target": "Retention policy, upload deletion, local/cloud flag, audit log."},
+    {"priority": 6, "item": "Claim/legal boundary library", "why": "Prevents dangerous promises while still sounding commercially strong.", "target": "Approved wording per pack and blocked wording scanner."},
+    {"priority": 7, "item": "Repeatable custom pack builder", "why": "Custom jobs become reusable assets instead of one-off workload.", "target": "Convert successful custom pack into marketplace pack template."},
+]
+
+
+def _v96_num(value, default=0):
+    try:
+        return float(value)
+    except Exception:
+        return float(default)
+
+
+def _v96_score_data_quality(customer_inputs, v94=None):
+    customer_inputs = customer_inputs if isinstance(customer_inputs, dict) else {}
+    v94 = v94 if isinstance(v94, dict) else {}
+    score = 35
+    reasons = []
+
+    if customer_inputs.get("data_available"):
+        score += 18
+        reasons.append("Customer says data is available.")
+    else:
+        reasons.append("No customer data confirmed yet.")
+
+    if customer_inputs.get("sample_data_confirmed") or customer_inputs.get("customer_can_upload"):
+        score += 12
+        reasons.append("Sample/upload path is confirmed.")
+
+    data_type = str(customer_inputs.get("data_type", "")).strip()
+    if data_type and data_type.lower() not in {"unknown", "not sure"}:
+        score += 8
+        reasons.append(f"Data type is known: {data_type}.")
+
+    problem = str(customer_inputs.get("problem", "")).strip()
+    target = str(customer_inputs.get("target_outcome", "")).strip()
+    if len(problem) >= 30:
+        score += 8
+        reasons.append("Problem statement is specific enough for pack routing.")
+    if len(target) >= 30:
+        score += 7
+        reasons.append("Target outcome is specific enough for delivery planning.")
+
+    completeness = _v96_num(v94.get("intake_completeness_score", 0), 0)
+    if completeness >= 85:
+        score += 10
+        reasons.append("V94 intake completeness is strong.")
+    elif completeness >= 70:
+        score += 5
+        reasons.append("V94 intake completeness is usable but not ideal.")
+
+    blockers = v94.get("blockers") if isinstance(v94.get("blockers"), list) else []
+    warnings = v94.get("warnings") if isinstance(v94.get("warnings"), list) else []
+    score -= min(20, len(blockers) * 10)
+    score -= min(10, len(warnings) * 3)
+
+    return int(max(0, min(100, score))), reasons
+
+
+def _v96_pick_pack(v94=None, v95=None, data_quality_score=0):
+    v94 = v94 if isinstance(v94, dict) else {}
+    v95 = v95 if isinstance(v95, dict) else {}
+    rec = str(v94.get("recommended_pack") or v95.get("recommended_pack") or "").lower()
+    if data_quality_score >= 84:
+        return "real_data_evidence_pack"
+    if "premium" in rec or "custom" in rec:
+        return "premium_custom_pack"
+    if data_quality_score >= 70:
+        return "professional_pilot_pack"
+    if data_quality_score >= 50:
+        return "starter_diagnostic_pack"
+    return "free_discovery_demo"
+
+
+def _v96_pack_by_id(pack_id):
+    for p in V96_PRICE_PACKS:
+        if p.get("pack_id") == pack_id:
+            return p
+    return V96_PRICE_PACKS[1]
+
+
+def build_pricing_assurance_os_v96_snapshot(config):
+    """Create the commercial price/deliverable/reliability layer for pack-first selling.
+
+    V96 is intentionally not a legal/compliance certification engine. It gives a standard
+    price ladder, customer deliverables, reliability boundaries and improvement roadmap.
+    """
+    config = config or {}
+    project_name = config.get("project_name", "EdgeTwin Project")
+    snapshots = config.get("snapshots") if isinstance(config.get("snapshots"), dict) else {}
+    v94 = config.get("client_input_autopilot_v94") or snapshots.get("client_input_autopilot_v94_snapshot") or snapshots.get("client_input_autopilot_v94") or {}
+    v95 = config.get("policy_approval_engine_v95") or snapshots.get("policy_approval_engine_v95_snapshot") or snapshots.get("policy_approval_engine_v95") or {}
+    if not isinstance(v94, dict):
+        v94 = {}
+    if not isinstance(v95, dict):
+        v95 = {}
+
+    customer_inputs = v94.get("customer_inputs") if isinstance(v94.get("customer_inputs"), dict) else {}
+    data_quality_score, data_quality_reasons = _v96_score_data_quality(customer_inputs, v94)
+    selected_pack_id = config.get("selected_pack_id") or _v96_pick_pack(v94, v95, data_quality_score)
+    selected_pack = dict(_v96_pack_by_id(selected_pack_id))
+
+    v95_score = int(_v96_num(v95.get("policy_approval_score", 0), 0))
+    hard_blocks = int(_v96_num(v95.get("hard_block_count", 0), 0))
+    founder_reviews = int(_v96_num(v95.get("founder_review_count", 0), 0))
+    policy_ok = hard_blocks == 0 and v95_score >= 88
+
+    reliability_score = 48
+    reliability_score += int(data_quality_score * 0.32)
+    reliability_score += 12 if policy_ok else -8
+    reliability_score += 8 if v95_score >= 96 else (4 if v95_score >= 88 else 0)
+    reliability_score -= min(12, founder_reviews * 3)
+    reliability_score = int(max(0, min(100, reliability_score)))
+
+    if reliability_score >= 90 and data_quality_score >= 88 and policy_ok:
+        assurance_decision = "PRODUCTION HANDOFF CANDIDATE - STILL NEEDS FIELD/LEGAL/SECURITY REVIEW"
+        assurance_level = "Very strong pilot evidence"
+    elif reliability_score >= 80 and data_quality_score >= 75:
+        assurance_decision = "REAL-DATA PAID PILOT READY"
+        assurance_level = "Strong pilot confidence"
+    elif reliability_score >= 70:
+        assurance_decision = "CONTROLLED PAID PACK READY"
+        assurance_level = "Good pack confidence with limitations"
+    elif reliability_score >= 55:
+        assurance_decision = "STARTER DIAGNOSTIC ONLY"
+        assurance_level = "Feasibility confidence only"
+    else:
+        assurance_decision = "DEMO / INTAKE ONLY"
+        assurance_level = "Not enough evidence for paid assurance"
+
+    allowed_claims = list(V96_CLAIM_POLICY["allowed_claims"])
+    blocked_claims = list(V96_CLAIM_POLICY["blocked_claims"])
+    if selected_pack_id in ["free_discovery_demo", "starter_diagnostic_pack"]:
+        allowed_claims = [x for x in allowed_claims if "production" not in x.lower()]
+
+    price_policy = {
+        "default_auto_price_cap_eur": 3500,
+        "standard_pack_auto_send": selected_pack_id in ["starter_diagnostic_pack", "professional_pilot_pack"] and policy_ok and data_quality_score >= 60,
+        "custom_requires_review": selected_pack_id in ["real_data_evidence_pack", "premium_custom_pack"],
+        "recommended_margin_floor_percent": 55,
+        "discount_policy": "Do not discount below 20% without turning scope down. Use smaller pack instead of cheap custom work.",
+    }
+
+    customer_receives = []
+    for item in selected_pack.get("customer_gets", []):
+        customer_receives.append({"deliverable": item, "included": True, "notes": "Included in selected V96 pack."})
+
+    acceptance_criteria = [
+        {"criterion": "Inputs captured", "pass_rule": "Customer problem, target outcome, data type and pack scope are recorded."},
+        {"criterion": "Data quality visible", "pass_rule": "Data/sample status and limitations are shown before strong claims."},
+        {"criterion": "Trust evidence included", "pass_rule": "Pack includes trust score, assumptions, limitations and next-step recommendation."},
+        {"criterion": "Safe claims only", "pass_rule": "No production/accuracy/legal/compliance guarantees are included."},
+        {"criterion": "Customer-safe bundle", "pass_rule": "PDF/ZIP/Markdown outputs match selected pack and exclude internal-only notes."},
+    ]
+    if selected_pack_id in ["real_data_evidence_pack", "premium_custom_pack"]:
+        acceptance_criteria.append({"criterion": "Founder review", "pass_rule": "Founder approves scope/claims before final customer delivery."})
+
+    customer_summary_md = "\n".join([
+        f"# EdgeTwin V96 Pricing & Assurance Summary — {project_name}",
+        "",
+        f"**Recommended pack:** {selected_pack.get('pack_name')}",
+        f"**Standard price:** {selected_pack.get('price_range_eur')}",
+        f"**Assurance decision:** {assurance_decision}",
+        f"**Reliability score:** {reliability_score}%",
+        f"**Data quality score:** {data_quality_score}%",
+        "",
+        "## What the customer gets",
+        *[f"- {x}" for x in selected_pack.get("customer_gets", [])],
+        "",
+        "## Safe wording",
+        *[f"- {x}" for x in allowed_claims[:5]],
+        "",
+        "## Important boundary",
+        V96_CLAIM_POLICY["customer_safe_disclaimer"],
+    ])
+
+    return {
+        "version": "V96",
+        "product_name": EDGETWIN_V96_VERSION,
+        "project_name": project_name,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "recommended_pack_id": selected_pack_id,
+        "recommended_pack": selected_pack,
+        "standard_price_catalog": V96_PRICE_PACKS,
+        "add_on_catalog": V96_ADD_ONS,
+        "data_quality_score": int(data_quality_score),
+        "data_quality_reasons": data_quality_reasons,
+        "reliability_score": int(reliability_score),
+        "assurance_level": assurance_level,
+        "assurance_decision": assurance_decision,
+        "reliability_ladder": V96_RELIABILITY_LADDER,
+        "price_policy": price_policy,
+        "customer_receives": customer_receives,
+        "acceptance_criteria": acceptance_criteria,
+        "allowed_claims": allowed_claims,
+        "blocked_claims": blocked_claims,
+        "customer_safe_disclaimer": V96_CLAIM_POLICY["customer_safe_disclaimer"],
+        "improvement_roadmap": V96_IMPROVEMENT_ROADMAP,
+        "truth_policy": [
+            "V96 pricing is a founder policy proposal, not market proof.",
+            "Reliability is bounded by input data quality and validation depth.",
+            "Production, accuracy, legal and compliance guarantees stay blocked until representative real data, field validation, security review and contract review exist.",
+        ],
+        "next_best_action": "Use V96 as the standard pack/pricing/assurance page after V94/V95. Sell standard packs first; convert successful custom work into reusable packs.",
+        "customer_summary_md": customer_summary_md,
+    }
+
+
+def create_pricing_assurance_os_v96_bundle(project_name, snapshot):
+    snapshot = snapshot or {}
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("pricing_assurance_os_v96.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_pricing_assurance_summary_v96.md", str(snapshot.get("customer_summary_md", "")))
+        for name, rows in [
+            ("standard_price_catalog_v96.csv", snapshot.get("standard_price_catalog", [])),
+            ("add_on_catalog_v96.csv", snapshot.get("add_on_catalog", [])),
+            ("reliability_ladder_v96.csv", snapshot.get("reliability_ladder", [])),
+            ("customer_receives_v96.csv", snapshot.get("customer_receives", [])),
+            ("acceptance_criteria_v96.csv", snapshot.get("acceptance_criteria", [])),
+            ("improvement_roadmap_v96.csv", snapshot.get("improvement_roadmap", [])),
+            ("allowed_claims_v96.csv", [{"claim": x} for x in snapshot.get("allowed_claims", [])]),
+            ("blocked_claims_v96.csv", [{"blocked_claim": x} for x in snapshot.get("blocked_claims", [])]),
+        ]:
+            if rows:
+                zf.writestr(name, pd.DataFrame(rows).to_csv(index=False))
+
+        summary = [
+            "# EdgeTwin Studio V96 — Pricing & Assurance OS",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Recommended pack: {(snapshot.get('recommended_pack') or {}).get('pack_name')}",
+            f"Price range: {(snapshot.get('recommended_pack') or {}).get('price_range_eur')}",
+            f"Reliability score: {snapshot.get('reliability_score')}%",
+            f"Data quality score: {snapshot.get('data_quality_score')}%",
+            f"Decision: {snapshot.get('assurance_decision')}",
+            "",
+            "## Boundary",
+            snapshot.get("customer_safe_disclaimer", ""),
+            "",
+            "## Next best action",
+            snapshot.get("next_best_action", ""),
+        ]
+        zf.writestr("pricing_assurance_os_v96_summary.md", "\n".join(map(str, summary)))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V96 - Pricing & Assurance OS")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Recommended pack: {(snapshot.get('recommended_pack') or {}).get('pack_name')}")
+        safe_pdf_cell(pdf, f"Price range: {(snapshot.get('recommended_pack') or {}).get('price_range_eur')}")
+        safe_pdf_cell(pdf, f"Reliability score: {snapshot.get('reliability_score')}%")
+        safe_pdf_cell(pdf, f"Data quality score: {snapshot.get('data_quality_score')}%")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('assurance_decision')}")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_safe_disclaimer", ""))
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Standard price catalog")
+        pdf.set_font("Arial", size=9)
+        for p in snapshot.get("standard_price_catalog", [])[:8]:
+            safe_pdf_multicell(pdf, f"- {p.get('pack_name')}: {p.get('price_range_eur')} - {p.get('best_for')}")
+        zf.writestr("pricing_assurance_os_v96.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V97 — Custom Pack Builder / Client Self-Configuration
+# ============================================================
+
+EDGETWIN_V97_VERSION = "EdgeTwin Studio V97 - Custom Pack Builder"
+
+V97_CUSTOM_MODULES = [
+    {
+        "module_id": "intake_scope",
+        "label": "Use-case intake + scope lock",
+        "category": "foundation",
+        "price_eur": 350,
+        "complexity": 1,
+        "default_selected": True,
+        "deliverable": "Structured intake summary, scope boundary and next-step map.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "data_quality_gate",
+        "label": "Data quality gate",
+        "category": "assurance",
+        "price_eur": 650,
+        "complexity": 2,
+        "default_selected": True,
+        "deliverable": "Data readiness score, missing inputs and limits before strong claims.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "feature_anomaly_analysis",
+        "label": "Feature/anomaly analysis",
+        "category": "engine",
+        "price_eur": 950,
+        "complexity": 3,
+        "default_selected": True,
+        "deliverable": "Core EdgeTwin analysis path with signal/data features and anomaly evidence.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "trust_ledger",
+        "label": "Trust ledger + limitations",
+        "category": "trust",
+        "price_eur": 550,
+        "complexity": 2,
+        "default_selected": True,
+        "deliverable": "Trust score, assumptions, blockers, safe claims and limitations.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "customer_report_bundle",
+        "label": "PDF/ZIP customer report bundle",
+        "category": "delivery",
+        "price_eur": 550,
+        "complexity": 1,
+        "default_selected": True,
+        "deliverable": "Customer-safe PDF/ZIP/JSON/CSV/Markdown delivery bundle.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "maintenance_alignment",
+        "label": "Maintenance history alignment",
+        "category": "advanced",
+        "price_eur": 900,
+        "complexity": 3,
+        "default_selected": False,
+        "deliverable": "Aligns available machine/sensor data with maintenance or failure history.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "hardware_bom_reference",
+        "label": "Hardware/BOM reference module",
+        "category": "hardware",
+        "price_eur": 1250,
+        "complexity": 4,
+        "default_selected": False,
+        "deliverable": "Sensor/gateway/BOM reference guidance with deployment cautions.",
+        "auto_approvable": False,
+    },
+    {
+        "module_id": "extra_data_source",
+        "label": "Extra data source/file type",
+        "category": "data",
+        "price_eur": 500,
+        "complexity": 2,
+        "default_selected": False,
+        "deliverable": "Adds one extra standard source such as CSV, Excel, JSON or maintenance export.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "branding_language",
+        "label": "Branding/language pack",
+        "category": "delivery",
+        "price_eur": 450,
+        "complexity": 1,
+        "default_selected": False,
+        "deliverable": "Customer name/branding and selected language/tone for report outputs.",
+        "auto_approvable": True,
+    },
+    {
+        "module_id": "extra_use_case_variant",
+        "label": "Extra use-case variant",
+        "category": "custom",
+        "price_eur": 1400,
+        "complexity": 4,
+        "default_selected": False,
+        "deliverable": "Adds one additional use-case route with its own risks and acceptance criteria.",
+        "auto_approvable": False,
+    },
+    {
+        "module_id": "founder_review_call",
+        "label": "Founder review call",
+        "category": "service",
+        "price_eur": 500,
+        "complexity": 1,
+        "default_selected": False,
+        "deliverable": "Founder/operator review call with action list and upgrade recommendation.",
+        "auto_approvable": False,
+    },
+    {
+        "module_id": "reusable_custom_template",
+        "label": "Reusable custom pack template",
+        "category": "productization",
+        "price_eur": 2500,
+        "complexity": 5,
+        "default_selected": False,
+        "deliverable": "Turns the custom configuration into a reusable future pack recipe.",
+        "auto_approvable": False,
+    },
+]
+
+V97_INDUSTRIES = [
+    "Industrial / maintenance",
+    "Manufacturing",
+    "Energy / utilities",
+    "Construction / assets",
+    "Remote assets / forestry",
+    "Security / monitoring",
+    "Other / unknown",
+]
+
+V97_OUTCOMES = [
+    "Predictive maintenance pilot",
+    "Sensor anomaly screening",
+    "Data quality and feasibility check",
+    "Operations evidence report",
+    "Hardware/sensor reference pack",
+    "Custom management report",
+]
+
+V97_DATA_READINESS = [
+    "No data yet",
+    "Small sample available",
+    "Real data available",
+    "Real labelled data available",
+    "Multiple data sources available",
+]
+
+V97_BUDGET_MODES = [
+    "Auto",
+    "Keep under €1.000",
+    "€1.000–€3.500",
+    "€3.500–€7.500",
+    "€7.500+",
+]
+
+
+def get_custom_pack_builder_v97_catalog():
+    return {
+        "version": "V97",
+        "modules": V97_CUSTOM_MODULES,
+        "industries": V97_INDUSTRIES,
+        "outcomes": V97_OUTCOMES,
+        "data_readiness": V97_DATA_READINESS,
+        "budget_modes": V97_BUDGET_MODES,
+    }
+
+
+def _v97_module_lookup():
+    return {m["module_id"]: dict(m) for m in V97_CUSTOM_MODULES}
+
+
+def _v97_bool(value):
+    return bool(value) if value is not None else False
+
+
+def _v97_num(value, default=0):
+    try:
+        return float(value)
+    except Exception:
+        return default
+
+
+def _v97_budget_cap(budget_mode):
+    mode = str(budget_mode or "Auto")
+    if "1.000" in mode and "under" in mode.lower():
+        return 1000
+    if "1.000" in mode and "3.500" in mode:
+        return 3500
+    if "3.500" in mode and "7.500" in mode:
+        return 7500
+    if "7.500" in mode and "+" in mode:
+        return 25000
+    return None
+
+
+def _v97_data_readiness_score(data_readiness):
+    mapping = {
+        "No data yet": 35,
+        "Small sample available": 58,
+        "Real data available": 76,
+        "Real labelled data available": 90,
+        "Multiple data sources available": 84,
+    }
+    return mapping.get(str(data_readiness), 50)
+
+
+def build_custom_pack_builder_v97_snapshot(config):
+    """Build a self-service custom pack from customer-selected modules.
+
+    V97 moves custom work away from founder handcrafting and toward a guarded configurator:
+    the customer chooses modules, EdgeTwin calculates price/scope/risk and only escalates exceptions.
+    """
+    config = config or {}
+    project_name = config.get("project_name", "EdgeTwin Project")
+    company = str(config.get("company") or "Customer")
+    selected_ids = list(config.get("selected_module_ids") or [])
+    lookup = _v97_module_lookup()
+
+    if not selected_ids:
+        selected_ids = [m["module_id"] for m in V97_CUSTOM_MODULES if m.get("default_selected")]
+
+    if _v97_bool(config.get("wants_branding")) and "branding_language" not in selected_ids:
+        selected_ids.append("branding_language")
+    if _v97_bool(config.get("wants_hardware")) and "hardware_bom_reference" not in selected_ids:
+        selected_ids.append("hardware_bom_reference")
+    if _v97_bool(config.get("wants_reusable_template")) and "reusable_custom_template" not in selected_ids:
+        selected_ids.append("reusable_custom_template")
+
+    selected_modules = [lookup[mid] for mid in selected_ids if mid in lookup]
+    # Deduplicate while preserving order.
+    seen = set()
+    deduped = []
+    for m in selected_modules:
+        if m["module_id"] in seen:
+            continue
+        seen.add(m["module_id"])
+        deduped.append(m)
+    selected_modules = deduped
+
+    base_price = int(sum(int(m.get("price_eur", 0)) for m in selected_modules))
+    complexity = int(sum(int(m.get("complexity", 0)) for m in selected_modules))
+    data_score = _v97_data_readiness_score(config.get("data_readiness"))
+
+    urgency = str(config.get("urgency") or "Normal")
+    rush_fee = 0
+    if urgency == "Fast":
+        rush_fee = int(base_price * 0.15)
+    elif urgency == "Very urgent":
+        rush_fee = int(base_price * 0.3)
+
+    subtotal = base_price + rush_fee
+    min_price = int(round(subtotal * 0.90 / 50) * 50)
+    max_price = int(round(subtotal * 1.25 / 50) * 50)
+
+    budget_cap = _v97_budget_cap(config.get("budget_mode"))
+    budget_warning = budget_cap is not None and min_price > budget_cap
+
+    # Use existing policy/pricing snapshots when available, but stay standalone.
+    snapshots = config.get("snapshots") if isinstance(config.get("snapshots"), dict) else {}
+    v95 = snapshots.get("policy_approval_engine_v95") or {}
+    v96 = snapshots.get("pricing_assurance_os_v96") or {}
+    v95_score = int(_v97_num(v95.get("policy_approval_score", 90), 90)) if isinstance(v95, dict) else 90
+    v96_reliability = int(_v97_num(v96.get("reliability_score", 75), 75)) if isinstance(v96, dict) else 75
+
+    review_items = []
+    auto_items = []
+    for m in selected_modules:
+        item = {
+            "item": m.get("label"),
+            "reason": "Standard safe module" if m.get("auto_approvable") else "Custom/high-impact module",
+            "module_id": m.get("module_id"),
+        }
+        if m.get("auto_approvable"):
+            auto_items.append(item)
+        else:
+            review_items.append(item)
+
+    if budget_warning:
+        review_items.append({"item": "Budget mismatch", "reason": f"Estimated pack starts above selected budget cap of €{budget_cap}.", "module_id": "budget_policy"})
+    if complexity >= 15:
+        review_items.append({"item": "High custom complexity", "reason": "Too many advanced/custom modules for blind auto-approval.", "module_id": "complexity_policy"})
+    if data_score < 55:
+        review_items.append({"item": "Low data readiness", "reason": "Customer data is not ready enough for strong analysis/accuracy claims.", "module_id": "data_policy"})
+    if v95_score < 88:
+        review_items.append({"item": "Policy approval weak", "reason": "V95 policy score below auto-approval threshold.", "module_id": "policy_v95"})
+
+    allow_auto = _v97_bool(config.get("allow_auto_approval"))
+    auto_approval_ok = allow_auto and not review_items and max_price <= 5000 and complexity <= 10 and data_score >= 55 and v95_score >= 88
+
+    auto_build_score = 62
+    auto_build_score += min(18, len(auto_items) * 3)
+    auto_build_score += 8 if data_score >= 70 else (3 if data_score >= 55 else -8)
+    auto_build_score += 8 if v95_score >= 92 else (3 if v95_score >= 88 else -10)
+    auto_build_score += 6 if v96_reliability >= 80 else (2 if v96_reliability >= 70 else -5)
+    auto_build_score -= min(25, len(review_items) * 5)
+    if budget_warning:
+        auto_build_score -= 8
+    auto_build_score = int(max(0, min(100, auto_build_score)))
+
+    if auto_approval_ok:
+        decision = "CUSTOM PACK AUTO-APPROVED INSIDE POLICY"
+        founder_minutes = "0-2"
+    elif auto_build_score >= 82:
+        decision = "CUSTOM PACK READY - LIGHT FOUNDER REVIEW"
+        founder_minutes = "5-10"
+    elif auto_build_score >= 68:
+        decision = "CUSTOM PACK PREPARED - FOUNDER SCOPE REVIEW"
+        founder_minutes = "10-20"
+    else:
+        decision = "DISCOVERY / RE-SCOPE REQUIRED"
+        founder_minutes = "20+"
+
+    pack_name = "EdgeTwin Custom Pack"
+    if max_price <= 1200:
+        pack_name = "EdgeTwin Custom Starter Pack"
+    elif max_price <= 3500:
+        pack_name = "EdgeTwin Custom Pilot Pack"
+    elif max_price <= 7500:
+        pack_name = "EdgeTwin Custom Evidence Pack"
+    else:
+        pack_name = "EdgeTwin Premium Custom Pack"
+
+    pricing_lines = []
+    for m in selected_modules:
+        pricing_lines.append({
+            "line": m.get("label"),
+            "category": m.get("category"),
+            "price_eur": int(m.get("price_eur", 0)),
+            "complexity": int(m.get("complexity", 0)),
+            "auto_approvable": bool(m.get("auto_approvable")),
+        })
+    if rush_fee:
+        pricing_lines.append({"line": f"Urgency surcharge: {urgency}", "category": "delivery", "price_eur": rush_fee, "complexity": 0, "auto_approvable": False})
+
+    deliverables = [
+        {"deliverable": m.get("deliverable"), "source_module": m.get("label"), "included": True}
+        for m in selected_modules
+    ]
+
+    acceptance_criteria = [
+        {"criterion": "Customer-selected modules locked", "pass_rule": "The final quote lists every included module and excludes unselected work."},
+        {"criterion": "Price range visible", "pass_rule": "Customer sees a range before founder/manual work starts."},
+        {"criterion": "Data readiness respected", "pass_rule": "Strong accuracy or production claims are blocked when data is weak."},
+        {"criterion": "Safe claims only", "pass_rule": "No legal/compliance/production guarantee is included automatically."},
+        {"criterion": "Reusable where possible", "pass_rule": "If selected, this configuration becomes a future pack recipe."},
+    ]
+
+    reusable_template = {
+        "enabled": bool("reusable_custom_template" in selected_ids or config.get("wants_reusable_template")),
+        "template_name": f"{str(config.get('industry') or 'Custom')} - {str(config.get('desired_outcome') or 'Outcome')} Pack",
+        "module_ids": [m.get("module_id") for m in selected_modules],
+        "recommended_reuse": "Convert into a standard pack after 2-3 similar customer requests." if selected_modules else "Not enough modules selected.",
+        "future_automation_gain": "Next similar customer can be quoted with far less founder work.",
+    }
+
+    allowed_claims = [
+        "Customer-configured evidence pack based on selected modules and provided data.",
+        "Decision-support and pilot-preparation output with assumptions and limitations.",
+        "Data quality and trust boundaries are shown before strong claims.",
+        "Production deployment requires representative field validation and customer approval.",
+    ]
+    blocked_claim_policy = "Blocked automatically: guaranteed accuracy, production-ready guarantee, legal/compliance certification, safety certification or replacement of human review."
+
+    customer_problem_summary = str(config.get("customer_note") or "Customer configured a custom EdgeTwin pack.").strip()
+    customer_summary_md = "\n".join([
+        f"# {pack_name} — {company}",
+        "",
+        f"**Decision:** {decision}",
+        f"**Estimated price:** €{min_price:,}–€{max_price:,}".replace(",", "."),
+        f"**Founder work:** {founder_minutes} minutes",
+        f"**Data readiness:** {config.get('data_readiness')} ({data_score}%)",
+        "",
+        "## Selected modules",
+        *[f"- {m.get('label')} — {m.get('deliverable')}" for m in selected_modules],
+        "",
+        "## Important boundary",
+        blocked_claim_policy,
+        "",
+        "## Next step",
+        "Auto-send if policy-approved; otherwise founder reviews only the highlighted exceptions, not the whole pack.",
+    ])
+
+    return {
+        "version": "V97",
+        "product_name": EDGETWIN_V97_VERSION,
+        "project_name": project_name,
+        "company": company,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "pack_name": pack_name,
+        "decision": decision,
+        "auto_build_score": auto_build_score,
+        "founder_work_minutes": founder_minutes,
+        "customer_problem_summary": customer_problem_summary,
+        "industry": config.get("industry"),
+        "desired_outcome": config.get("desired_outcome"),
+        "data_readiness": config.get("data_readiness"),
+        "data_readiness_score": data_score,
+        "selected_modules": selected_modules,
+        "pricing_lines": pricing_lines,
+        "base_price_eur": base_price,
+        "rush_fee_eur": rush_fee,
+        "min_price_eur": min_price,
+        "max_price_eur": max_price,
+        "price_display": f"€{min_price:,}–€{max_price:,}".replace(",", "."),
+        "budget_mode": config.get("budget_mode"),
+        "budget_warning": budget_warning,
+        "complexity_score": complexity,
+        "deliverables": deliverables,
+        "acceptance_criteria": acceptance_criteria,
+        "auto_approved_items": auto_items,
+        "founder_review_items": review_items,
+        "allowed_claims": allowed_claims,
+        "blocked_claim_policy": blocked_claim_policy,
+        "reusable_template": reusable_template,
+        "pack_config": {
+            "module_ids": [m.get("module_id") for m in selected_modules],
+            "safe_to_auto_send": auto_approval_ok,
+            "requires_founder_review": bool(review_items),
+            "quote_range_eur": {"min": min_price, "max": max_price},
+            "customer_self_configured": True,
+        },
+        "price_policy": {
+            "auto_approval_cap_eur": 5000,
+            "auto_approval_requires": "standard modules, data readiness >= 55, V95 score >= 88, no review items, complexity <= 10, quote max <= €5.000",
+            "discount_rule": "Use fewer modules instead of discounting custom work.",
+            "founder_review_rule": "Founder reviews exceptions only: high complexity, hardware, extra use-case, reusable template, low data quality or unsafe claims.",
+        },
+        "truth_policy": [
+            "V97 lets customers self-configure custom packs, but does not promise production guarantees.",
+            "Custom scope is limited to selected modules unless founder expands it.",
+            "Reusable templates should become standard packs only after real repeated demand.",
+        ],
+        "customer_summary_md": customer_summary_md,
+    }
+
+
+def create_custom_pack_builder_v97_bundle(project_name, snapshot):
+    snapshot = snapshot or {}
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("custom_pack_builder_v97.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_custom_pack_summary_v97.md", str(snapshot.get("customer_summary_md", "")))
+        for name, rows in [
+            ("selected_modules_v97.csv", snapshot.get("selected_modules", [])),
+            ("pricing_lines_v97.csv", snapshot.get("pricing_lines", [])),
+            ("deliverables_v97.csv", snapshot.get("deliverables", [])),
+            ("acceptance_criteria_v97.csv", snapshot.get("acceptance_criteria", [])),
+            ("auto_approved_items_v97.csv", snapshot.get("auto_approved_items", [])),
+            ("founder_review_items_v97.csv", snapshot.get("founder_review_items", [])),
+        ]:
+            if rows:
+                zf.writestr(name, pd.DataFrame(rows).to_csv(index=False))
+
+        zf.writestr("pack_config_v97.json", json.dumps(_json_safe(snapshot.get("pack_config", {})), indent=2, ensure_ascii=False))
+        zf.writestr("reusable_template_v97.json", json.dumps(_json_safe(snapshot.get("reusable_template", {})), indent=2, ensure_ascii=False))
+
+        summary = [
+            "# EdgeTwin Studio V97 — Custom Pack Builder",
+            "",
+            f"Project: {snapshot.get('project_name', project_name)}",
+            f"Customer: {snapshot.get('company')}",
+            f"Pack: {snapshot.get('pack_name')}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Price: {snapshot.get('price_display')}",
+            f"Founder work: {snapshot.get('founder_work_minutes')} minutes",
+            "",
+            "## Boundary",
+            snapshot.get("blocked_claim_policy", ""),
+        ]
+        zf.writestr("custom_pack_builder_v97_summary.md", "\n".join(map(str, summary)))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V97 - Custom Pack Builder")
+        pdf.set_font("Arial", size=11)
+        safe_pdf_cell(pdf, f"Project: {snapshot.get('project_name', project_name)}")
+        safe_pdf_cell(pdf, f"Customer: {snapshot.get('company')}")
+        safe_pdf_cell(pdf, f"Pack: {snapshot.get('pack_name')}")
+        safe_pdf_cell(pdf, f"Price: {snapshot.get('price_display')}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        pdf.ln(3)
+        safe_pdf_multicell(pdf, snapshot.get("customer_problem_summary", ""))
+        pdf.ln(3)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Selected modules")
+        pdf.set_font("Arial", size=9)
+        for m in snapshot.get("selected_modules", [])[:12]:
+            safe_pdf_multicell(pdf, f"- {m.get('label')}: {m.get('deliverable')}")
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 12)
+        safe_pdf_cell(pdf, "Boundary")
+        pdf.set_font("Arial", size=9)
+        safe_pdf_multicell(pdf, snapshot.get("blocked_claim_policy", ""))
+        zf.writestr("custom_pack_builder_v97.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V98 — Order Intake + Quote Builder / Pack-to-Quote Automation
+# ============================================================
+
+EDGETWIN_V98_VERSION = "EdgeTwin Studio V98 - Order Intake + Quote Builder"
+
+V98_DELIVERY_SPEEDS = [
+    "Standard delivery",
+    "Fast delivery",
+    "Very urgent delivery",
+]
+
+V98_PAYMENT_MODES = [
+    "Manual invoice after approval",
+    "Payment link prepared manually",
+    "Bank transfer instructions only",
+    "Deposit required before delivery",
+]
+
+V98_ORDER_STAGES = [
+    "Draft quote",
+    "Customer review",
+    "Founder review",
+    "Approved for manual invoice",
+    "Delivery ready",
+]
+
+V98_FORBIDDEN_QUOTE_CLAIMS = [
+    "guaranteed accuracy",
+    "100% accurate",
+    "production ready",
+    "certified compliant",
+    "legal approved",
+    "safety certified",
+    "replaces human review",
+    "always predicts",
+    "liability guarantee",
+]
+
+
+def get_order_quote_builder_v98_catalog():
+    return {
+        "version": "V98",
+        "delivery_speeds": V98_DELIVERY_SPEEDS,
+        "payment_modes": V98_PAYMENT_MODES,
+        "order_stages": V98_ORDER_STAGES,
+        "forbidden_quote_claims": V98_FORBIDDEN_QUOTE_CLAIMS,
+        "policy": "V98 prepares a quote/order pack automatically but does not send invoices, collect payment or sign contracts by itself.",
+    }
+
+
+def _v98_money(value, default=0):
+    try:
+        return int(round(float(value)))
+    except Exception:
+        return default
+
+
+def _v98_text(value, default=""):
+    return str(value if value is not None else default).strip()
+
+
+def _v98_quote_id(project_name, company):
+    seed = f"{project_name}|{company}|{datetime.datetime.utcnow().isoformat()}|V98"
+    return "ETQ-" + hashlib.sha1(seed.encode("utf-8", errors="replace")).hexdigest()[:10].upper()
+
+
+def _v98_add_business_days(days=14):
+    # Simple validity window; for quote validity a calendar-day approximation is enough.
+    return (datetime.datetime.utcnow() + datetime.timedelta(days=days)).date().isoformat()
+
+
+def _v98_extract_price(snapshot):
+    if not isinstance(snapshot, dict):
+        return 0, 0, "Unknown"
+    root_min = _v98_money(snapshot.get("min_price_eur"), 0)
+    root_max = _v98_money(snapshot.get("max_price_eur"), 0)
+    display = str(snapshot.get("price_display") or "Unknown")
+    if root_min or root_max:
+        return root_min, root_max, display
+    if isinstance(snapshot.get("price_policy"), dict):
+        pp = snapshot.get("price_policy")
+        return _v98_money(pp.get("min_price_eur"), 0), _v98_money(pp.get("max_price_eur"), 0), display
+    return 0, 0, display
+
+
+def _v98_claim_risk(text):
+    hay = str(text or "").lower()
+    hits = [claim for claim in V98_FORBIDDEN_QUOTE_CLAIMS if claim in hay]
+    return hits
+
+
+def build_order_quote_builder_v98_snapshot(config):
+    """Turn a V97 custom pack into a customer-ready quote/order intake package.
+
+    V98 is the commercial handoff layer: it receives the customer's chosen pack/modules,
+    prepares quote lines, scope, payment mode, delivery assumptions and safe claim language.
+    It intentionally does not send invoices, collect payments or sign contracts automatically.
+    """
+    config = config or {}
+    project_name = _v98_text(config.get("project_name"), "EdgeTwin Project")
+    company = _v98_text(config.get("company"), "Customer")
+    contact_name = _v98_text(config.get("contact_name"), "")
+    contact_email = _v98_text(config.get("contact_email"), "")
+    customer_reference = _v98_text(config.get("customer_reference"), "")
+    quote_note = _v98_text(config.get("quote_note"), "")
+    accepted_terms = bool(config.get("accepted_terms", False))
+    allow_auto_quote = bool(config.get("allow_auto_quote", True))
+    include_deposit = bool(config.get("include_deposit", True))
+    delivery_speed = _v98_text(config.get("delivery_speed"), "Standard delivery")
+    payment_mode = _v98_text(config.get("payment_mode"), "Manual invoice after approval")
+    requested_start = _v98_text(config.get("requested_start"), "Flexible")
+
+    v97 = config.get("custom_pack_builder_v97_snapshot") if isinstance(config.get("custom_pack_builder_v97_snapshot"), dict) else {}
+    if not v97:
+        snapshots = config.get("snapshots") if isinstance(config.get("snapshots"), dict) else {}
+        v97 = snapshots.get("custom_pack_builder_v97") or snapshots.get("custom_pack_builder_v97_snapshot") or {}
+        if not isinstance(v97, dict):
+            v97 = {}
+
+    quote_id = _v98_quote_id(project_name, company)
+    min_price, max_price, price_display = _v98_extract_price(v97)
+    selected_modules = list(v97.get("selected_modules") or []) if isinstance(v97, dict) else []
+    deliverables = list(v97.get("deliverables") or []) if isinstance(v97, dict) else []
+    founder_review_items = list(v97.get("founder_review_items") or []) if isinstance(v97, dict) else []
+    auto_approved_items = list(v97.get("auto_approved_items") or []) if isinstance(v97, dict) else []
+    pack_name = _v98_text(v97.get("pack_name"), "Custom EdgeTwin Pack") if isinstance(v97, dict) else "Custom EdgeTwin Pack"
+
+    # Fallback if V97 was not run yet.
+    if not selected_modules:
+        selected_modules = [
+            {"module_id": "intake_scope", "label": "Use-case intake + scope lock", "price_eur": 350, "category": "foundation"},
+            {"module_id": "data_quality_gate", "label": "Data quality gate", "price_eur": 650, "category": "assurance"},
+            {"module_id": "customer_report_bundle", "label": "PDF/ZIP customer report bundle", "price_eur": 550, "category": "delivery"},
+        ]
+        deliverables = [
+            {"deliverable": "Structured intake summary and scope boundary."},
+            {"deliverable": "Data readiness check and limitations."},
+            {"deliverable": "Customer-safe PDF/ZIP delivery bundle."},
+        ]
+        min_price, max_price = 1350, 1950
+        price_display = "€1.350–€1.950"
+        founder_review_items.append({"item": "V97 custom pack missing", "reason": "Run V97 first for fully automated module-based pricing.", "module_id": "v97_missing"})
+
+    rush_fee = 0
+    if delivery_speed == "Fast delivery":
+        rush_fee = int(round(max_price * 0.12 / 50) * 50)
+    elif delivery_speed == "Very urgent delivery":
+        rush_fee = int(round(max_price * 0.25 / 50) * 50)
+
+    deposit_eur = int(round((max_price + rush_fee) * 0.40 / 50) * 50) if include_deposit else 0
+    final_min = min_price + rush_fee
+    final_max = max_price + rush_fee
+
+    quote_lines = []
+    for m in selected_modules:
+        label = m.get("label") or m.get("item") or m.get("module_id") or "Module"
+        quote_lines.append({
+            "line_type": "module",
+            "description": label,
+            "category": m.get("category", "pack"),
+            "estimated_price_eur": _v98_money(m.get("price_eur"), 0),
+            "approval": "auto" if m.get("auto_approvable", True) else "review",
+        })
+    if rush_fee:
+        quote_lines.append({
+            "line_type": "delivery",
+            "description": delivery_speed,
+            "category": "delivery_speed",
+            "estimated_price_eur": rush_fee,
+            "approval": "review" if delivery_speed == "Very urgent delivery" else "auto",
+        })
+    if deposit_eur:
+        quote_lines.append({
+            "line_type": "payment",
+            "description": "Suggested 40% deposit before delivery start",
+            "category": "deposit",
+            "estimated_price_eur": deposit_eur,
+            "approval": "manual_invoice_only",
+        })
+
+    claim_hits = _v98_claim_risk(quote_note)
+    blocker_items = []
+    review_items = []
+
+    if not contact_email or "@" not in contact_email:
+        review_items.append({"item": "Customer email", "reason": "Valid customer email is needed before sending quote manually.", "severity": "medium"})
+    if not accepted_terms:
+        review_items.append({"item": "Terms not accepted", "reason": "Customer must accept pilot/decision-support boundaries before order handoff.", "severity": "medium"})
+    if founder_review_items:
+        review_items.append({"item": "V97 review items", "reason": f"{len(founder_review_items)} custom-pack item(s) require review.", "severity": "medium"})
+    if delivery_speed == "Very urgent delivery":
+        review_items.append({"item": "Very urgent delivery", "reason": "Rush delivery may affect scope and must be checked before commitment.", "severity": "medium"})
+    if payment_mode != "Manual invoice after approval":
+        review_items.append({"item": "Payment mode", "reason": "Payment collection/linking remains manual until a later SaaS/payment integration.", "severity": "medium"})
+    if claim_hits:
+        blocker_items.append({"item": "Unsafe quote claim", "reason": "Quote note includes unsafe guarantee language.", "matches": claim_hits, "severity": "high"})
+
+    auto_quote_ready = bool(allow_auto_quote and accepted_terms and not blocker_items and len(review_items) == 0 and final_max <= 7500)
+    founder_review_required = bool(review_items or final_max > 7500 or founder_review_items)
+
+    if blocker_items:
+        decision = "BLOCKED - UNSAFE CLAIM OR GUARANTEE"
+        quote_status = "blocked"
+    elif auto_quote_ready:
+        decision = "AUTO-QUOTE READY"
+        quote_status = "quote_ready"
+    elif founder_review_required:
+        decision = "QUOTE PREPARED - FOUNDER REVIEW REQUIRED"
+        quote_status = "review_required"
+    else:
+        decision = "QUOTE DRAFT READY"
+        quote_status = "draft_ready"
+
+    automation_score = 100
+    automation_score -= min(30, len(review_items) * 8)
+    automation_score -= min(45, len(blocker_items) * 25)
+    if final_max > 7500:
+        automation_score -= 10
+    if not v97:
+        automation_score -= 12
+    automation_score = max(0, min(100, int(automation_score)))
+
+    safe_customer_claims = [
+        "This quote covers a pilot-preparation and decision-support pack, not a production guarantee.",
+        "EdgeTwin will generate a structured evidence pack with assumptions, limitations, data-readiness checks and next steps.",
+        "Accuracy and production readiness can only be validated with representative real and, where needed, labelled field data.",
+        "Legal, compliance, safety and certification claims are outside automatic quote approval.",
+    ]
+
+    order_intake = {
+        "quote_id": quote_id,
+        "company": company,
+        "contact_name": contact_name,
+        "contact_email": contact_email,
+        "customer_reference": customer_reference,
+        "requested_start": requested_start,
+        "delivery_speed": delivery_speed,
+        "payment_mode": payment_mode,
+        "accepted_terms": accepted_terms,
+    }
+
+    scope_lock = {
+        "included": [d.get("deliverable") if isinstance(d, dict) else str(d) for d in deliverables],
+        "not_included": [
+            "Production deployment guarantee",
+            "Certified legal/compliance approval",
+            "Guaranteed predictive accuracy",
+            "Automatic payment collection or contract signing",
+            "Data deletion outside explicit manual/customer-approved workflow",
+        ],
+        "change_policy": "New data sources, new use-cases, branding/language changes or hardware guidance are priced as add-ons unless already included.",
+    }
+
+    next_actions = []
+    if quote_status == "quote_ready":
+        next_actions = [
+            "Download the V98 quote/order bundle.",
+            "Manually send quote to customer or paste the customer summary into your email tool.",
+            "Create invoice/payment request manually after customer confirmation.",
+            "Start delivery only after deposit/payment agreement if required.",
+        ]
+    elif quote_status == "review_required":
+        next_actions = [
+            "Review the flagged scope/price/payment items.",
+            "Adjust quote lines or remove risky modules if needed.",
+            "Approve manually before sending to customer.",
+        ]
+    else:
+        next_actions = [
+            "Remove unsafe guarantees or production/compliance claims.",
+            "Rebuild the quote with safe decision-support language.",
+        ]
+
+    customer_quote_md = f"""# EdgeTwin Quote / Order Intake — {quote_id}
+
+**Customer:** {company}  
+**Contact:** {contact_name or 'Not provided'}  
+**Pack:** {pack_name}  
+**Estimated quote:** €{final_min:,}–€{final_max:,}  
+**Delivery speed:** {delivery_speed}  
+**Quote valid until:** {_v98_add_business_days(14)}  
+
+## What is included
+{chr(10).join('- ' + str(x) for x in scope_lock['included'][:20])}
+
+## Safe boundary
+This is a pilot-preparation and decision-support pack. It does not guarantee production accuracy, legal/compliance approval, certification, or replacement of human review.
+
+## Next step
+{decision}. {('Founder/operator review is required before sending.' if quote_status == 'review_required' else 'The quote bundle is ready for manual customer handoff.' if quote_status == 'quote_ready' else 'Resolve blockers before sending.')}
+"""
+
+    snapshot = {
+        "version": "V98",
+        "product_name": EDGETWIN_V98_VERSION,
+        "created_at": _now(),
+        "project_name": project_name,
+        "quote_id": quote_id,
+        "decision": decision,
+        "quote_status": quote_status,
+        "automation_score": automation_score,
+        "pack_name": pack_name,
+        "price_display": f"€{final_min:,}–€{final_max:,}".replace(',', '.'),
+        "min_price_eur": final_min,
+        "max_price_eur": final_max,
+        "deposit_eur": deposit_eur,
+        "rush_fee_eur": rush_fee,
+        "order_intake": order_intake,
+        "quote_lines": quote_lines,
+        "selected_modules": selected_modules,
+        "deliverables": deliverables,
+        "scope_lock": scope_lock,
+        "auto_approved_items": auto_approved_items,
+        "review_items": review_items,
+        "blocker_items": blocker_items,
+        "safe_customer_claims": safe_customer_claims,
+        "forbidden_claims": V98_FORBIDDEN_QUOTE_CLAIMS,
+        "next_actions": next_actions,
+        "customer_quote_md": customer_quote_md,
+        "source_v97_summary": {
+            "had_v97_snapshot": bool(v97),
+            "v97_decision": v97.get("decision") if isinstance(v97, dict) else None,
+            "v97_price_display": price_display,
+            "v97_founder_review_count": len(founder_review_items),
+        },
+        "automation_boundary": "V98 prepares quote/order materials automatically; final invoice sending, payment collection and contract acceptance stay manual until later commerce integration.",
+    }
+    return snapshot
+
+
+def create_order_quote_builder_v98_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    snapshot = snapshot or {}
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("order_quote_builder_v98.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_quote_v98.md", str(snapshot.get("customer_quote_md", "")))
+        zf.writestr("quote_lines_v98.csv", pd.DataFrame(snapshot.get("quote_lines", [])).to_csv(index=False))
+        zf.writestr("scope_lock_v98.json", json.dumps(_json_safe(snapshot.get("scope_lock", {})), indent=2, ensure_ascii=False))
+        zf.writestr("review_queue_v98.csv", pd.DataFrame(snapshot.get("review_items", []) + snapshot.get("blocker_items", [])).to_csv(index=False))
+        zf.writestr("safe_claims_v98.txt", "\n".join(map(str, snapshot.get("safe_customer_claims", []))))
+        zf.writestr("next_actions_v98.txt", "\n".join(map(str, snapshot.get("next_actions", []))))
+
+        summary = [
+            "# EdgeTwin Studio V98 — Order Intake + Quote Builder",
+            "",
+            f"Project: {project_name}",
+            f"Quote ID: {snapshot.get('quote_id')}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Automation score: {snapshot.get('automation_score')}%",
+            f"Price: {snapshot.get('price_display')}",
+            "",
+            "V98 converts customer-selected custom packs into quote/order-ready materials while keeping invoice, payment and contract execution manual for safety.",
+        ]
+        zf.writestr("order_quote_builder_v98_summary.md", "\n".join(map(str, summary)))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V98 - Order Quote Builder")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Quote ID: {snapshot.get('quote_id')}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Automation score: {snapshot.get('automation_score')}%")
+        safe_pdf_cell(pdf, f"Estimated price: {snapshot.get('price_display')}")
+        safe_pdf_cell(pdf, f"Deposit suggestion: EUR {snapshot.get('deposit_eur', 0)}")
+        safe_pdf_cell(pdf, "")
+        safe_pdf_cell(pdf, "Scope boundary:")
+        for item in (snapshot.get("scope_lock", {}).get("included", []) or [])[:12]:
+            safe_pdf_cell(pdf, f"- {item}")
+        safe_pdf_cell(pdf, "")
+        safe_pdf_cell(pdf, "Important: pilot-preparation / decision-support only; no production, accuracy, legal or compliance guarantee.")
+        zf.writestr("order_quote_builder_v98.pdf", safe_pdf_output(pdf))
+
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# V99 — Payment Unlock + Delivery Workbench / Paid Access Automation
+
+EDGETWIN_V99_VERSION = "EdgeTwin Studio V99 - Payment Unlock + Delivery Workbench"
+
+V99_PAYMENT_PROVIDERS = [
+    "Manual payment confirmation",
+    "Stripe Checkout / Payment Link placeholder",
+    "Paddle Checkout placeholder",
+    "Bank transfer / invoice paid",
+]
+
+V99_PAYMENT_STATUSES = [
+    "Unpaid",
+    "Deposit paid",
+    "Paid / payment confirmed",
+    "Failed / cancelled",
+    "Refunded / disputed",
+]
+
+V99_FULFILLMENT_MODES = [
+    "Instant standard pack download",
+    "Unlock intake/upload for custom pack",
+    "Generate real-data evidence pack after upload",
+    "Manual hold until founder approval",
+]
+
+
+def get_payment_unlock_delivery_v99_catalog():
+    return {
+        "version": "V99",
+        "payment_providers": V99_PAYMENT_PROVIDERS,
+        "payment_statuses": V99_PAYMENT_STATUSES,
+        "fulfillment_modes": V99_FULFILLMENT_MODES,
+        "policy": "V99 automates paid-access decisions from quote/payment status, but does not process real payments, store card data, sign contracts or issue legal/tax advice.",
+        "recommended_first_provider": "Stripe Payment Links or Checkout for first phase; Paddle if you want more merchant-of-record/tax handling later.",
+    }
+
+
+def _v99_str(value, default=""):
+    try:
+        value = "" if value is None else str(value)
+    except Exception:
+        return default
+    return value.strip() or default
+
+
+def _v99_int(value, default=0):
+    try:
+        return int(float(value))
+    except Exception:
+        return default
+
+
+def _v99_access_id(project_name, quote_id, customer_email):
+    seed = f"{project_name}|{quote_id}|{customer_email}|{datetime.datetime.utcnow().isoformat()}|V99"
+    return "ET-ACCESS-" + hashlib.sha256(seed.encode("utf-8", errors="replace")).hexdigest()[:12].upper()
+
+
+def _v99_has_v98_blockers(v98):
+    if not isinstance(v98, dict):
+        return True, ["V98 quote/order snapshot missing"]
+    blockers = []
+    if v98.get("blocker_items"):
+        blockers.append("V98 has quote/order blockers")
+    if str(v98.get("quote_status", "")).lower() == "blocked":
+        blockers.append("V98 quote status is blocked")
+    if "BLOCKED" in str(v98.get("decision", "")).upper():
+        blockers.append("V98 decision is blocked")
+    return bool(blockers), blockers
+
+
+def build_payment_unlock_delivery_v99_snapshot(config):
+    """Turn quote/payment status into an automated unlock + delivery workbench snapshot.
+
+    V99 is integration-ready: it models Stripe/Paddle/manual events and unlock rules,
+    but does not process real payments or expose deliverables without an explicit paid status.
+    """
+    config = config or {}
+    project_name = _v99_str(config.get("project_name"), "EdgeTwin Project")
+    v98 = config.get("order_quote_builder_v98_snapshot") or {}
+    provider = _v99_str(config.get("payment_provider"), "Manual payment confirmation")
+    payment_status = _v99_str(config.get("payment_status"), "Unpaid")
+    fulfillment_mode = _v99_str(config.get("fulfillment_mode"), "Unlock intake/upload for custom pack")
+    customer_email = _v99_str(config.get("customer_email"), v98.get("order_intake", {}).get("contact_email", "customer@example.com") if isinstance(v98, dict) else "customer@example.com")
+    customer_company = _v99_str(config.get("customer_company"), v98.get("order_intake", {}).get("company", "Demo Customer") if isinstance(v98, dict) else "Demo Customer")
+    auto_unlock_allowed = bool(config.get("auto_unlock_allowed", True))
+    require_webhook = bool(config.get("require_webhook", True))
+    download_expiry_days = _v99_int(config.get("download_expiry_days", 7), 7)
+    require_founder_release_for_custom = bool(config.get("require_founder_release_for_custom", False))
+    quote_id = _v99_str(v98.get("quote_id") if isinstance(v98, dict) else None, "QUOTE-MISSING")
+    quote_status = _v99_str(v98.get("quote_status") if isinstance(v98, dict) else None, "unknown")
+    price_display = _v99_str(v98.get("price_display") if isinstance(v98, dict) else None, "Unknown")
+    deposit_eur = _v99_int(v98.get("deposit_eur") if isinstance(v98, dict) else 0, 0)
+    max_price_eur = _v99_int(v98.get("max_price_eur") if isinstance(v98, dict) else 0, 0)
+
+    has_blockers, v98_blockers = _v99_has_v98_blockers(v98)
+    provider_is_real_placeholder = provider in ["Stripe Checkout / Payment Link placeholder", "Paddle Checkout placeholder"]
+
+    payment_confirmed = payment_status in {"Paid / payment confirmed", "Deposit paid"}
+    fully_paid = payment_status == "Paid / payment confirmed"
+    deposit_paid = payment_status == "Deposit paid"
+    payment_failed = payment_status in {"Failed / cancelled", "Refunded / disputed"}
+
+    review_items = []
+    blocker_items = []
+    auto_actions = []
+
+    if not isinstance(v98, dict) or not v98:
+        review_items.append({"item": "Quote snapshot", "reason": "Run V98 before payment unlock so price/scope/order boundaries are available.", "severity": "medium"})
+    if v98_blockers:
+        blocker_items.extend({"item": "V98 blocker", "reason": reason, "severity": "high"} for reason in v98_blockers)
+    if "@" not in customer_email:
+        review_items.append({"item": "Customer email", "reason": "A valid customer email is needed for access handoff.", "severity": "medium"})
+    if payment_failed:
+        blocker_items.append({"item": "Payment status", "reason": "Payment failed/cancelled/refunded/disputed. Keep delivery locked.", "severity": "high"})
+    if payment_status == "Unpaid":
+        review_items.append({"item": "Payment status", "reason": "Payment is not confirmed yet. Keep download and delivery locked.", "severity": "medium"})
+    if require_webhook and provider_is_real_placeholder and not config.get("webhook_event_received"):
+        review_items.append({"item": "Webhook confirmation", "reason": "Use webhook/server-side confirmation before auto-fulfillment, not only browser success page.", "severity": "medium"})
+    if fulfillment_mode == "Manual hold until founder approval":
+        review_items.append({"item": "Manual hold", "reason": "Founder/operator selected manual hold.", "severity": "medium"})
+    if require_founder_release_for_custom and "custom" in fulfillment_mode.lower():
+        review_items.append({"item": "Custom release", "reason": "Custom pack requires founder release before final deliverable download.", "severity": "medium"})
+
+    access_id = _v99_access_id(project_name, quote_id, customer_email)
+    unlock_level = "locked"
+    delivery_status = "locked"
+    decision = "LOCKED - PAYMENT OR REVIEW REQUIRED"
+
+    if blocker_items:
+        decision = "BLOCKED - DO NOT RELEASE"
+        unlock_level = "locked"
+        delivery_status = "locked"
+    elif auto_unlock_allowed and fully_paid and not review_items:
+        decision = "AUTO-UNLOCK READY"
+        unlock_level = "full_delivery_download"
+        delivery_status = "ready_for_delivery"
+        auto_actions = [
+            "Mark order as paid",
+            "Unlock customer download area",
+            "Generate/rebuild delivery bundle",
+            "Create expiring access manifest",
+            "Prepare customer delivery email draft",
+        ]
+    elif auto_unlock_allowed and deposit_paid and not blocker_items:
+        decision = "INTAKE/UPLOAD UNLOCK READY - FINAL DELIVERY HOLDS UNTIL FULL PAYMENT OR APPROVAL"
+        unlock_level = "intake_upload_only"
+        delivery_status = "intake_unlocked"
+        auto_actions = [
+            "Mark order as deposit paid",
+            "Unlock intake/upload checklist",
+            "Prepare data request and delivery workbench",
+            "Keep final report/download locked until final payment or approval",
+        ]
+    else:
+        decision = "PAYMENT WORKBENCH PREPARED - REVIEW REQUIRED"
+        unlock_level = "locked"
+        delivery_status = "review_required"
+
+    delivery_checklist = [
+        {"step": "Confirm paid status", "owner": "system/webhook/manual admin", "status": "done" if payment_confirmed else "pending"},
+        {"step": "Check V98 quote has no blockers", "owner": "system", "status": "done" if not has_blockers else "blocked"},
+        {"step": "Create access manifest", "owner": "system", "status": "done" if payment_confirmed and not blocker_items else "pending"},
+        {"step": "Unlock intake/upload or delivery", "owner": "system", "status": "done" if unlock_level != "locked" else "pending"},
+        {"step": "Generate delivery bundle", "owner": "system", "status": "ready" if fully_paid and not blocker_items else "hold"},
+        {"step": "Send customer link", "owner": "founder/manual now; webhook email later", "status": "draft_ready" if unlock_level != "locked" else "hold"},
+    ]
+
+    access_manifest = {
+        "access_id": access_id,
+        "quote_id": quote_id,
+        "customer_company": customer_company,
+        "customer_email": customer_email,
+        "unlock_level": unlock_level,
+        "delivery_status": delivery_status,
+        "expires_in_days": download_expiry_days,
+        "download_policy": "Expiring signed URL / tokenized link recommended in production. V99 stores only a safe access manifest placeholder.",
+        "do_not_store": ["card_number", "cvv", "raw payment credentials", "unverified client-only success state"],
+    }
+
+    customer_message = f"""Subject: Your EdgeTwin pack access is {delivery_status.replace('_', ' ')}
+
+Hi {customer_company},
+
+Payment status: {payment_status}
+Quote: {quote_id}
+Package value: {price_display}
+Access ID: {access_id}
+
+Current access level: {unlock_level}
+
+What happens next:
+{chr(10).join('- ' + str(a) for a in (auto_actions or ['We will keep the delivery locked until payment/review is confirmed.']))}
+
+Important boundary:
+This is a pilot-preparation and decision-support delivery workflow. It does not provide production, accuracy, legal, compliance or certification guarantees without separate validation and written approval.
+"""
+
+    webhook_event_schema = {
+        "stripe_expected_event": "checkout.session.completed or payment_intent.succeeded mapped to quote_id/order_id metadata",
+        "paddle_expected_event": "transaction.completed mapped to quote_id/order_id/custom_data",
+        "manual_expected_event": "operator sets payment_status after invoice/bank confirmation",
+        "fulfillment_rule": "Only server-side/webhook-confirmed paid events may unlock final delivery automatically.",
+        "idempotency_rule": "If the same event arrives twice, keep one delivery record and do not regenerate duplicate orders.",
+    }
+
+    automation_score = 100
+    automation_score -= min(40, len(review_items) * 10)
+    automation_score -= min(60, len(blocker_items) * 25)
+    if not isinstance(v98, dict) or not v98:
+        automation_score -= 15
+    if not auto_unlock_allowed:
+        automation_score -= 10
+    if provider == "Manual payment confirmation":
+        automation_score -= 5
+    automation_score = max(0, min(100, int(automation_score)))
+
+    snapshot = {
+        "version": "V99",
+        "product_name": EDGETWIN_V99_VERSION,
+        "created_at": _now(),
+        "project_name": project_name,
+        "decision": decision,
+        "automation_score": automation_score,
+        "quote_id": quote_id,
+        "quote_status": quote_status,
+        "price_display": price_display,
+        "max_price_eur": max_price_eur,
+        "deposit_eur": deposit_eur,
+        "payment_provider": provider,
+        "payment_status": payment_status,
+        "fulfillment_mode": fulfillment_mode,
+        "unlock_level": unlock_level,
+        "delivery_status": delivery_status,
+        "auto_unlock_allowed": auto_unlock_allowed,
+        "require_webhook": require_webhook,
+        "download_expiry_days": download_expiry_days,
+        "access_manifest": access_manifest,
+        "delivery_checklist": delivery_checklist,
+        "auto_actions": auto_actions,
+        "review_items": review_items,
+        "blocker_items": blocker_items,
+        "customer_message": customer_message,
+        "webhook_event_schema": webhook_event_schema,
+        "safe_boundaries": [
+            "Automatic unlock is allowed only after confirmed paid/deposit status and no quote blockers.",
+            "Use payment-provider webhooks/server-side events for fulfillment; do not trust only a browser success page.",
+            "Do not store card data in EdgeTwin; payment provider handles sensitive payment collection.",
+            "Refunds, disputes, contract signing, legal/tax/compliance claims and final production guarantees stay outside automatic approval.",
+        ],
+        "source_v98_summary": {
+            "had_v98_snapshot": bool(v98),
+            "v98_decision": v98.get("decision") if isinstance(v98, dict) else None,
+            "v98_quote_status": quote_status,
+            "v98_price_display": price_display,
+        },
+    }
+    return snapshot
+
+
+def create_payment_unlock_delivery_v99_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    snapshot = snapshot or {}
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("payment_unlock_delivery_v99.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("access_manifest_v99.json", json.dumps(_json_safe(snapshot.get("access_manifest", {})), indent=2, ensure_ascii=False))
+        zf.writestr("webhook_event_schema_v99.json", json.dumps(_json_safe(snapshot.get("webhook_event_schema", {})), indent=2, ensure_ascii=False))
+        zf.writestr("customer_delivery_message_v99.txt", str(snapshot.get("customer_message", "")))
+        zf.writestr("delivery_checklist_v99.csv", pd.DataFrame(snapshot.get("delivery_checklist", [])).to_csv(index=False))
+        zf.writestr("review_and_blockers_v99.csv", pd.DataFrame((snapshot.get("review_items", []) or []) + (snapshot.get("blocker_items", []) or [])).to_csv(index=False))
+        zf.writestr("safe_payment_boundaries_v99.txt", "\n".join(map(str, snapshot.get("safe_boundaries", []))))
+
+        summary = [
+            "# EdgeTwin Studio V99 — Payment Unlock + Delivery Workbench",
+            "",
+            f"Project: {project_name}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Automation score: {snapshot.get('automation_score')}%",
+            f"Quote ID: {snapshot.get('quote_id')}",
+            f"Payment status: {snapshot.get('payment_status')}",
+            f"Unlock level: {snapshot.get('unlock_level')}",
+            "",
+            "V99 models the MP3-style flow for EdgeTwin packs: quote -> paid event -> unlock intake/download/delivery. It is integration-ready, not a live payment processor by itself.",
+        ]
+        zf.writestr("payment_unlock_delivery_v99_summary.md", "\n".join(map(str, summary)))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V99 - Payment Unlock + Delivery")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Automation score: {snapshot.get('automation_score')}%")
+        safe_pdf_cell(pdf, f"Quote ID: {snapshot.get('quote_id')}")
+        safe_pdf_cell(pdf, f"Payment provider: {snapshot.get('payment_provider')}")
+        safe_pdf_cell(pdf, f"Payment status: {snapshot.get('payment_status')}")
+        safe_pdf_cell(pdf, f"Unlock level: {snapshot.get('unlock_level')}")
+        safe_pdf_cell(pdf, "")
+        safe_pdf_cell(pdf, "Delivery checklist:")
+        for item in (snapshot.get("delivery_checklist", []) or [])[:12]:
+            safe_pdf_cell(pdf, f"- {item.get('step')}: {item.get('status')}")
+        safe_pdf_cell(pdf, "")
+        safe_pdf_cell(pdf, "Boundary: payment unlock does not create legal, tax, accuracy, compliance or production guarantees.")
+        zf.writestr("payment_unlock_delivery_v99.pdf", safe_pdf_output(pdf))
+
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V100 — Marketplace Entitlement OS
+# ============================================================
+
+EDGETWIN_V100_VERSION = "EdgeTwin Studio V100 - Marketplace Entitlement OS"
+
+V100_PURCHASE_STATUSES = [
+    "Preview / unpaid",
+    "Paid / payment confirmed",
+    "Deposit paid",
+    "Manual founder unlock",
+    "Refunded / disputed / cancelled",
+]
+
+V100_MARKETPLACE_MODES = [
+    "Curated industry pack",
+    "Custom pack builder",
+    "Hybrid curated + custom add-ons",
+    "Founder demo / buyer data room",
+]
+
+V100_PRICE_OVERRIDES = {
+    "audio_vibration_fusion_core": (750, 950, "Starter Diagnostic Pack"),
+    "bearing_wear_predictive_maintenance": (1500, 3500, "Professional Pilot Pack"),
+    "acoustic_tamper_security": (1500, 3500, "Professional Pilot Pack"),
+    "agricultural_machinery_monitoring": (1500, 3500, "Professional Pilot Pack"),
+    "forestry_remote_threat": (3500, 7500, "Real-Data Evidence Pack"),
+}
+
+
+def get_marketplace_entitlement_v100_catalog():
+    curated = []
+    for row in get_marketplace_pack_catalog():
+        pack_id = row.get("pack_id")
+        low, high, tier = V100_PRICE_OVERRIDES.get(pack_id, (750, 2500, row.get("tier", "Professional Pack")))
+        enriched = dict(row)
+        enriched["v100_price_min_eur"] = low
+        enriched["v100_price_max_eur"] = high
+        enriched["v100_commercial_tier"] = tier
+        enriched["v100_price_display"] = f"EUR {low:,} - {high:,}".replace(",", ".")
+        curated.append(enriched)
+    return {
+        "version": "V100",
+        "product_name": EDGETWIN_V100_VERSION,
+        "curated_packs": curated,
+        "plan_levels": get_pricing_plans(),
+        "purchase_statuses": V100_PURCHASE_STATUSES,
+        "marketplace_modes": V100_MARKETPLACE_MODES,
+        "positioning": "Sell knowledge-as-product through curated packs, let customers self-configure custom packs, and unlock delivery only after entitlement/payment gates are safe.",
+        "recommended_default": "Curated industry pack -> paid unlock -> Buyer Data Room + One-Click Pilot bundle.",
+    }
+
+
+def _v100_plan_rank(plan_name):
+    order = {
+        "Free Demo": 0,
+        "Starter Pilot": 1,
+        "Professional Pilot": 2,
+        "Real-Data Pilot": 3,
+        "Enterprise": 4,
+        "Founder Test Mode": 99,
+    }
+    return order.get(str(plan_name or "Free Demo"), 0)
+
+
+def _v100_required_rank(minimum_plan):
+    return _v100_plan_rank(minimum_plan or "Free Demo")
+
+
+def _v100_get_pack(pack_id):
+    pack = get_marketplace_pack(pack_id) or get_marketplace_pack("audio_vibration_fusion_core") or {}
+    low, high, tier = V100_PRICE_OVERRIDES.get(pack_id, (750, 2500, pack.get("tier", "Professional Pack")))
+    out = dict(pack)
+    out.update({
+        "pack_id": pack_id,
+        "v100_price_min_eur": low,
+        "v100_price_max_eur": high,
+        "v100_commercial_tier": tier,
+        "v100_price_display": f"EUR {low:,} - {high:,}".replace(",", "."),
+        "what_customer_buys": "A pre-configured EdgeTwin knowledge pack: sensors/classes/sample-rate assumptions, pilot dataset logic, evidence checklist, safe claims, and delivery bundle structure.",
+    })
+    return out
+
+
+def build_marketplace_entitlement_v100_snapshot(config):
+    config = config or {}
+    project_name = _v99_str(config.get("project_name"), "EdgeTwin Project")
+    mode = _v99_str(config.get("marketplace_mode"), "Curated industry pack")
+    selected_plan = _v99_str(config.get("selected_plan"), "Free Demo")
+    selected_pack_id = _v99_str(config.get("selected_pack_id"), "audio_vibration_fusion_core")
+    purchase_status = _v99_str(config.get("purchase_status"), "Preview / unpaid")
+    customer_company = _v99_str(config.get("customer_company"), "Demo Customer")
+    customer_email = _v99_str(config.get("customer_email"), "customer@example.com")
+    include_buyer_data_room = bool(config.get("include_buyer_data_room", True))
+    include_one_click_pilot = bool(config.get("include_one_click_pilot", True))
+    auto_unlock_policy = bool(config.get("auto_unlock_policy", True))
+
+    v97 = config.get("custom_pack_builder_v97_snapshot") or {}
+    v98 = config.get("order_quote_builder_v98_snapshot") or {}
+    v99 = config.get("payment_unlock_delivery_v99_snapshot") or {}
+    trust = config.get("trust_ledger_v80_snapshot") or {}
+    release_guard = config.get("release_guard_v83_snapshot") or {}
+    ultimate = config.get("ultimate_product_v90_snapshot") or {}
+
+    selected_pack = _v100_get_pack(selected_pack_id)
+    plan_rank = _v100_plan_rank(selected_plan)
+    required_rank = _v100_required_rank(selected_pack.get("minimum_plan"))
+    paid = purchase_status == "Paid / payment confirmed"
+    deposit_paid = purchase_status == "Deposit paid"
+    manual_unlock = purchase_status == "Manual founder unlock" or selected_plan == "Founder Test Mode"
+    failed = purchase_status == "Refunded / disputed / cancelled"
+
+    if isinstance(v99, dict) and v99.get("payment_status") in {"Paid / payment confirmed", "Deposit paid"}:
+        paid = v99.get("payment_status") == "Paid / payment confirmed"
+        deposit_paid = v99.get("payment_status") == "Deposit paid"
+
+    review_items = []
+    blocker_items = []
+
+    if failed:
+        blocker_items.append({"item": "Payment", "reason": "Refunded/disputed/cancelled payments must keep access locked.", "severity": "high"})
+    if "Real-Data" in str(selected_pack.get("v100_commercial_tier")) and not (v97 or v98 or trust):
+        review_items.append({"item": "Real-data evidence", "reason": "Real-Data Evidence packs should include data quality/trust evidence before strong customer claims.", "severity": "medium"})
+    if "Custom" in mode and not v97:
+        review_items.append({"item": "Custom pack snapshot", "reason": "Run V97 when the customer self-configures modules; otherwise this is only a marketplace blueprint.", "severity": "medium"})
+    if v98 and (v98.get("blocker_items") or "BLOCKED" in str(v98.get("decision", "")).upper()):
+        blocker_items.append({"item": "Quote/order blockers", "reason": "V98 has blockers; do not unlock paid delivery yet.", "severity": "high"})
+    if v99 and (v99.get("blocker_items") or "BLOCKED" in str(v99.get("decision", "")).upper()):
+        blocker_items.append({"item": "Payment/unlock blockers", "reason": "V99 has blockers; do not unlock paid delivery yet.", "severity": "high"})
+    if "@" not in customer_email:
+        review_items.append({"item": "Customer email", "reason": "Valid email needed for access handoff/download link later.", "severity": "low"})
+
+    plan_entitled = plan_rank >= required_rank
+    entitlement_status = "locked_preview"
+    access_level = "preview_only"
+    decision = "MARKETPLACE PREVIEW READY - PAYMENT/ENTITLEMENT REQUIRED"
+
+    if blocker_items:
+        entitlement_status = "blocked"
+        access_level = "locked"
+        decision = "BLOCKED - DO NOT UNLOCK MARKETPLACE DELIVERY"
+    elif manual_unlock:
+        entitlement_status = "founder_unlocked"
+        access_level = "full_pack_and_data_room"
+        decision = "MARKETPLACE UNLOCKED BY FOUNDER MODE"
+    elif paid and auto_unlock_policy and plan_entitled:
+        entitlement_status = "paid_entitled"
+        access_level = "full_pack_and_data_room"
+        decision = "MARKETPLACE PACK AUTO-UNLOCK READY"
+    elif deposit_paid and auto_unlock_policy:
+        entitlement_status = "deposit_entitled"
+        access_level = "intake_and_buyer_data_room_only"
+        decision = "MARKETPLACE INTAKE + BUYER DATA ROOM UNLOCK READY"
+    elif plan_entitled and selected_plan != "Free Demo":
+        entitlement_status = "plan_entitled_unpaid"
+        access_level = "locked_until_payment"
+        decision = "PLAN ENTITLED - PAYMENT STILL REQUIRED"
+
+    access_matrix = []
+    for row in get_marketplace_entitlement_v100_catalog().get("curated_packs", []):
+        req = row.get("minimum_plan", "Free Demo")
+        req_rank = _v100_required_rank(req)
+        is_selected = row.get("pack_id") == selected_pack_id
+        unlocked = bool((manual_unlock or (paid and plan_rank >= req_rank and auto_unlock_policy)) and not blocker_items)
+        preview = True
+        access_matrix.append({
+            "pack_id": row.get("pack_id"),
+            "pack_name": row.get("name"),
+            "minimum_plan": req,
+            "v100_price": row.get("v100_price_display"),
+            "selected": is_selected,
+            "preview": "unlocked" if preview else "locked",
+            "full_pack": "unlocked" if unlocked else "locked",
+            "reason": "Paid/entitled" if unlocked else "Preview only until plan/payment gate passes",
+        })
+
+    buyer_files = [
+        {"file": "pack_overview.pdf", "purpose": "Manager-friendly overview of the selected pack and value."},
+        {"file": "readiness_manifest.json", "purpose": "Machine-readable plan/payment/scope/entitlement status."},
+        {"file": "trust_ledger_summary.md", "purpose": "Evidence, assumptions and limitations."},
+        {"file": "deployment_plan_placeholder.md", "purpose": "What is needed before real deployment."},
+        {"file": "acceptance_criteria.md", "purpose": "What 'good enough for pilot' means."},
+        {"file": "safe_claims_and_boundaries.md", "purpose": "What EdgeTwin can and cannot claim."},
+    ]
+    if v98:
+        buyer_files.append({"file": "quote_scope_lock.md", "purpose": "Price/scope boundary generated by V98."})
+    if v99:
+        buyer_files.append({"file": "access_manifest_v99.json", "purpose": "Payment/unlock boundary generated by V99."})
+
+    buyer_data_room_manifest = {
+        "enabled": include_buyer_data_room,
+        "customer_company": customer_company,
+        "access_level": access_level,
+        "files": buyer_files if include_buyer_data_room else [],
+        "locked_until": "paid_entitled_or_founder_unlock" if access_level in {"preview_only", "locked", "locked_until_payment"} else None,
+    }
+
+    one_click_pilot_manifest = {
+        "enabled": include_one_click_pilot,
+        "steps": [
+            "Load selected marketplace/custom pack",
+            "Generate or attach pilot dataset template",
+            "Run data quality gate / dataset doctor",
+            "Build Trust Ledger + limitations",
+            "Build customer-safe PDF/ZIP bundle",
+            "Open delivery workbench after paid entitlement",
+        ] if include_one_click_pilot else [],
+        "available_now": bool(include_one_click_pilot and access_level in {"full_pack_and_data_room", "intake_and_buyer_data_room_only"}),
+    }
+
+    customer_marketplace_page_md = f"""# {selected_pack.get('name', 'EdgeTwin Pack')}
+
+**Customer:** {customer_company}  
+**Marketplace route:** {mode}  
+**Access:** {access_level}  
+**Price:** {selected_pack.get('v100_price_display')}  
+
+## What you are buying
+{selected_pack.get('what_customer_buys')}
+
+## Included
+- Pre-configured sensors/classes/sample-rate assumptions
+- Data readiness checklist
+- Trust score and limitations structure
+- Customer-safe PDF/ZIP delivery bundle
+- Buyer Data Room material when entitled
+- One-Click Pilot handoff when entitled
+
+## Important boundary
+This is a pilot-preparation and decision-support pack. It does not guarantee production accuracy, legal/compliance approval, safety certification or operational outcomes without separate validation and written approval.
+"""
+
+    gemini_md = """## Gemini comparison — honest answer
+
+Gemini is right about the marketplace idea: curated Industry Packs and a Custom Pack Builder are commercially strong because the customer buys speed, structure and ready-to-use knowledge.
+
+Where EdgeTwin is now stronger: V93-V99 already added pack commerce, client input autopilot, policy approval, pricing assurance, custom pack builder, quote builder and payment unlock logic. That is smarter than a marketplace alone because it also controls scope, price, risk, claims and paid access.
+
+What V100 adds: it turns the older Marketplace + Monetization + One-Click Pilot + Buyer Data Room idea into one entitlement flow: preview -> payment/plan gate -> unlock -> buyer data room -> delivery.
+"""
+
+    score = 82
+    if selected_pack:
+        score += 4
+    if plan_entitled or manual_unlock:
+        score += 4
+    if paid or deposit_paid or manual_unlock:
+        score += 5
+    if include_buyer_data_room:
+        score += 3
+    if include_one_click_pilot:
+        score += 3
+    if v97:
+        score += 2
+    if v98:
+        score += 2
+    if v99:
+        score += 2
+    score -= min(20, len(review_items) * 4)
+    score -= min(50, len(blocker_items) * 20)
+    score = max(0, min(100, int(score)))
+
+    snapshot = {
+        "version": "V100",
+        "product_name": EDGETWIN_V100_VERSION,
+        "created_at": _now(),
+        "project_name": project_name,
+        "decision": decision,
+        "commerce_readiness_score": score,
+        "marketplace_mode": mode,
+        "selected_plan": selected_plan,
+        "purchase_status": purchase_status,
+        "customer_company": customer_company,
+        "customer_email": customer_email,
+        "selected_pack_id": selected_pack_id,
+        "selected_pack": selected_pack,
+        "entitlement_status": entitlement_status,
+        "access_level": access_level,
+        "plan_entitled": plan_entitled,
+        "auto_unlock_policy": auto_unlock_policy,
+        "access_matrix": access_matrix,
+        "buyer_data_room_manifest": buyer_data_room_manifest,
+        "one_click_pilot_manifest": one_click_pilot_manifest,
+        "customer_marketplace_page_md": customer_marketplace_page_md,
+        "gemini_comparison_markdown": gemini_md,
+        "review_items": review_items,
+        "blocker_items": blocker_items,
+        "safe_boundaries": [
+            "Preview can be public/free; full pack unlock requires paid entitlement or founder unlock.",
+            "Buyer Data Room can be prepared automatically, but production/accuracy/legal/compliance guarantees stay blocked.",
+            "Customers buy readiness, speed, scope clarity and evidence packaging, not raw data ownership or guaranteed outcomes.",
+            "Use V99/server-side payment event before automatic final delivery in live commerce.",
+        ],
+        "source_stack": {
+            "marketplace_v26_present": True,
+            "custom_pack_builder_v97_present": bool(v97),
+            "order_quote_builder_v98_present": bool(v98),
+            "payment_unlock_delivery_v99_present": bool(v99),
+            "trust_ledger_v80_present": bool(trust),
+            "release_guard_v83_present": bool(release_guard),
+            "ultimate_product_v90_present": bool(ultimate),
+        },
+    }
+    return snapshot
+
+
+def create_marketplace_entitlement_v100_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    snapshot = snapshot or {}
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("marketplace_entitlement_v100.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("access_matrix_v100.csv", pd.DataFrame(snapshot.get("access_matrix", [])).to_csv(index=False))
+        zf.writestr("buyer_data_room_manifest_v100.json", json.dumps(_json_safe(snapshot.get("buyer_data_room_manifest", {})), indent=2, ensure_ascii=False))
+        zf.writestr("one_click_pilot_manifest_v100.json", json.dumps(_json_safe(snapshot.get("one_click_pilot_manifest", {})), indent=2, ensure_ascii=False))
+        zf.writestr("customer_marketplace_page_v100.md", str(snapshot.get("customer_marketplace_page_md", "")))
+        zf.writestr("gemini_comparison_v100.md", str(snapshot.get("gemini_comparison_markdown", "")))
+        zf.writestr("safe_boundaries_v100.md", "\n".join("- " + str(x) for x in snapshot.get("safe_boundaries", [])))
+        zf.writestr("review_and_blockers_v100.csv", pd.DataFrame((snapshot.get("review_items", []) or []) + (snapshot.get("blocker_items", []) or [])).to_csv(index=False))
+
+        summary = [
+            "# EdgeTwin Studio V100 — Marketplace Entitlement OS",
+            "",
+            f"Project: {project_name}",
+            f"Decision: {snapshot.get('decision')}",
+            f"Commerce readiness: {snapshot.get('commerce_readiness_score')}%",
+            f"Selected pack: {snapshot.get('selected_pack', {}).get('name')}",
+            f"Access level: {snapshot.get('access_level')}",
+            "",
+            "V100 combines curated industry packs, custom pack builder output, quote/order, payment unlock, buyer data room and one-click pilot handoff into one pack-commerce entitlement flow.",
+        ]
+        zf.writestr("marketplace_entitlement_v100_summary.md", "\n".join(map(str, summary)))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V100 - Marketplace Entitlement OS")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Commerce readiness: {snapshot.get('commerce_readiness_score')}%")
+        safe_pdf_cell(pdf, f"Selected pack: {snapshot.get('selected_pack', {}).get('name')}")
+        safe_pdf_cell(pdf, f"Price: {snapshot.get('selected_pack', {}).get('v100_price_display')}")
+        safe_pdf_cell(pdf, f"Access: {snapshot.get('access_level')}")
+        safe_pdf_cell(pdf, "")
+        safe_pdf_cell(pdf, "Core idea: preview -> payment/plan gate -> unlock -> Buyer Data Room -> One-Click Pilot handoff.")
+        safe_pdf_cell(pdf, "Boundary: no production, accuracy, legal or compliance guarantee is created by marketplace unlock.")
+        zf.writestr("marketplace_entitlement_v100.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V102 — Payment Provider Adapter & Webhook Contract
+# ============================================================
+
+def _v102_norm(value):
+    return str(value or "").strip().lower().replace(" ", "_")
+
+
+def build_payment_provider_adapter_v102_snapshot(
+    project_name,
+    provider="stripe",
+    payment_status="paid",
+    order_id="ET-ORDER-DEMO-001",
+    selected_pack=None,
+    amount_eur=0.0,
+    customer_email="",
+    webhook_event_type="checkout.session.completed",
+    webhook_verified=False,
+    delivery_unlock_requested=True,
+):
+    """Build a safe payment-to-unlock decision snapshot.
+
+    This function does not process payment credentials. It maps provider payment
+    events/statuses into EdgeTwin order and delivery states, so Stripe/Paddle/manual
+    payment handling can be connected later without putting card data in EdgeTwin.
+    """
+    provider = _v102_norm(provider) or "manual"
+    status = _v102_norm(payment_status) or "unpaid"
+    event_type = str(webhook_event_type or "").strip()
+    selected_pack = selected_pack or {}
+    try:
+        amount = float(amount_eur or 0)
+    except Exception:
+        amount = 0.0
+
+    allowed_providers = {"manual", "stripe", "paddle", "bank_transfer"}
+    paid_statuses = {"paid", "confirmed", "succeeded", "completed"}
+    deposit_statuses = {"deposit_paid", "partial_paid", "partially_paid"}
+    failed_statuses = {"failed", "cancelled", "canceled", "refunded", "disputed", "chargeback"}
+
+    provider_event_allowlist = {
+        "stripe": ["checkout.session.completed", "payment_intent.succeeded", "invoice.paid"],
+        "paddle": ["transaction.completed", "subscription.activated", "transaction.paid"],
+        "manual": ["manual.confirmed", "manual.paid", "bank_transfer.confirmed"],
+        "bank_transfer": ["bank_transfer.confirmed", "manual.confirmed"],
+    }
+
+    review_items = []
+    blocker_items = []
+
+    if provider not in allowed_providers:
+        blocker_items.append({"type": "provider", "message": f"Unsupported payment provider: {provider}"})
+
+    allowed_events = provider_event_allowlist.get(provider, [])
+    event_allowed = (not event_type) or event_type in allowed_events
+    if provider in {"stripe", "paddle"} and not webhook_verified:
+        blocker_items.append({"type": "verification", "message": "Provider payment must be verified server-side via webhook before unlock."})
+    if not event_allowed:
+        blocker_items.append({"type": "event", "message": f"Event type not in allowlist for {provider}: {event_type}"})
+
+    if status in failed_statuses:
+        blocker_items.append({"type": "payment_status", "message": f"Payment status blocks unlock: {status}"})
+    if status in deposit_statuses:
+        review_items.append({"type": "deposit", "message": "Deposit paid: intake/custom work can unlock, final delivery may stay locked until full payment."})
+    if amount <= 0 and status in paid_statuses:
+        review_items.append({"type": "amount", "message": "Paid status with zero amount should be reviewed before delivery unlock."})
+
+    pack_name = selected_pack.get("name") or selected_pack.get("pack_name") or "Selected EdgeTwin Pack"
+    pack_id = selected_pack.get("pack_id") or selected_pack.get("id") or "selected_pack"
+
+    auto_unlock_allowed = (
+        provider in allowed_providers
+        and not blocker_items
+        and delivery_unlock_requested
+        and (status in paid_statuses or status in deposit_statuses)
+        and (webhook_verified or provider in {"manual", "bank_transfer"})
+    )
+
+    if blocker_items:
+        decision = "PAYMENT_LOCKED_BLOCKED"
+        delivery_status = "locked"
+        risk_level = "high"
+    elif status in paid_statuses and auto_unlock_allowed:
+        decision = "AUTO_UNLOCK_FULL_DELIVERY_ALLOWED"
+        delivery_status = "unlocked_full_delivery"
+        risk_level = "low"
+    elif status in deposit_statuses and auto_unlock_allowed:
+        decision = "AUTO_UNLOCK_INTAKE_ONLY"
+        delivery_status = "unlocked_intake_only"
+        risk_level = "medium"
+    else:
+        decision = "LOCKED_PENDING_PAYMENT"
+        delivery_status = "locked"
+        risk_level = "medium"
+
+    stored_fields = [
+        {"field": "order_id", "store": True, "reason": "Needed to match quote/order to delivery."},
+        {"field": "customer_email", "store": True, "reason": "Needed for customer delivery message and order lookup."},
+        {"field": "provider", "store": True, "reason": "Needed to route payment status."},
+        {"field": "payment_status", "store": True, "reason": "Needed to unlock or lock delivery."},
+        {"field": "provider_checkout_session_id", "store": True, "reason": "Safe provider reference; no card data."},
+        {"field": "card_number", "store": False, "reason": "Never store payment card data in EdgeTwin."},
+        {"field": "cvc", "store": False, "reason": "Never store payment card security data."},
+        {"field": "raw_payment_credentials", "store": False, "reason": "Provider-hosted checkout should handle sensitive payment data."},
+    ]
+
+    unlock_rules = [
+        {"case": "Free/demo pack", "payment_required": "No", "unlock": "preview/demo bundle only"},
+        {"case": "Paid standard pack", "payment_required": "Full paid", "unlock": "download/delivery bundle"},
+        {"case": "Custom pack deposit", "payment_required": "Deposit paid", "unlock": "intake/upload/custom builder"},
+        {"case": "Custom final delivery", "payment_required": "Full paid or founder override", "unlock": "final PDF/ZIP bundle"},
+        {"case": "Refund/dispute/chargeback", "payment_required": "N/A", "unlock": "lock and review"},
+    ]
+
+    webhook_contract = {
+        "provider": provider,
+        "accepted_events": allowed_events,
+        "received_event_type": event_type,
+        "event_allowed": event_allowed,
+        "webhook_verified": bool(webhook_verified),
+        "server_side_rule": "Do not unlock from browser success page alone. Unlock only after server-side provider confirmation/manual confirmation.",
+        "environment_secrets_expected_later": [
+            "STRIPE_SECRET_KEY",
+            "STRIPE_WEBHOOK_SECRET",
+            "PADDLE_API_KEY",
+            "PADDLE_WEBHOOK_SECRET",
+        ],
+        "never_commit_secrets": True,
+    }
+
+    customer_safe_summary_md = f"""# Payment Adapter Decision — V102
+
+Project: **{project_name}**  
+Order: **{order_id}**  
+Pack: **{pack_name}**  
+Provider: **{provider}**  
+Payment status: **{status}**  
+Decision: **{decision}**  
+Delivery status: **{delivery_status}**
+
+EdgeTwin stores order/payment status and provider references only. Card details and payment credentials must stay with the payment provider. Automatic unlock is allowed only when the provider/manual confirmation is trusted and the order is not disputed/refunded/failed.
+"""
+
+    return {
+        "version": "V102",
+        "project_name": str(project_name),
+        "order_id": str(order_id),
+        "customer_email": str(customer_email),
+        "provider": provider,
+        "payment_status": status,
+        "amount_eur": amount,
+        "selected_pack": selected_pack,
+        "pack_id": pack_id,
+        "pack_name": pack_name,
+        "webhook_event_type": event_type,
+        "webhook_verified": bool(webhook_verified),
+        "delivery_unlock_requested": bool(delivery_unlock_requested),
+        "auto_unlock_allowed": bool(auto_unlock_allowed),
+        "decision": decision,
+        "delivery_status": delivery_status,
+        "risk_level": risk_level,
+        "unlock_rules": unlock_rules,
+        "stored_fields": stored_fields,
+        "webhook_contract": webhook_contract,
+        "review_items": review_items,
+        "blocker_items": blocker_items,
+        "customer_safe_summary_md": customer_safe_summary_md,
+        "safe_boundaries": [
+            "EdgeTwin does not store card numbers, CVC codes or raw payment credentials.",
+            "Provider-hosted checkout or manual confirmation should handle payment collection.",
+            "Refunds, disputes and chargebacks lock delivery and require review.",
+            "Payment unlock does not create production, accuracy, legal or compliance guarantees.",
+        ],
+    }
+
+
+def create_payment_provider_adapter_v102_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    snapshot = snapshot or {}
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("payment_provider_adapter_v102.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("payment_adapter_summary_v102.md", str(snapshot.get("customer_safe_summary_md", "")))
+        zf.writestr("webhook_contract_v102.json", json.dumps(_json_safe(snapshot.get("webhook_contract", {})), indent=2, ensure_ascii=False))
+        zf.writestr("unlock_rules_v102.csv", pd.DataFrame(snapshot.get("unlock_rules", [])).to_csv(index=False))
+        zf.writestr("stored_fields_v102.csv", pd.DataFrame(snapshot.get("stored_fields", [])).to_csv(index=False))
+        zf.writestr("review_blockers_v102.csv", pd.DataFrame((snapshot.get("review_items", []) or []) + (snapshot.get("blocker_items", []) or [])).to_csv(index=False))
+        zf.writestr("safe_payment_boundaries_v102.md", "\n".join("- " + str(x) for x in snapshot.get("safe_boundaries", [])))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V102 - Payment Provider Adapter")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Project: {project_name}")
+        safe_pdf_cell(pdf, f"Order: {snapshot.get('order_id')}")
+        safe_pdf_cell(pdf, f"Provider: {snapshot.get('provider')}")
+        safe_pdf_cell(pdf, f"Payment status: {snapshot.get('payment_status')}")
+        safe_pdf_cell(pdf, f"Decision: {snapshot.get('decision')}")
+        safe_pdf_cell(pdf, f"Delivery status: {snapshot.get('delivery_status')}")
+        safe_pdf_cell(pdf, f"Auto unlock: {snapshot.get('auto_unlock_allowed')}")
+        safe_pdf_cell(pdf, "")
+        safe_pdf_cell(pdf, "Boundary: payment unlock does not create production/accuracy/legal/compliance guarantees.")
+        safe_pdf_cell(pdf, "Card details and raw payment credentials must stay with the payment provider.")
+        zf.writestr("payment_provider_adapter_v102.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+# ============================================================
+# V103 — Customer Portal Lite / No-SaaS Customer Access Layer
+# ============================================================
+
+def _v103_pack_name(selected_pack):
+    if isinstance(selected_pack, dict):
+        return str(selected_pack.get("name") or selected_pack.get("pack_name") or selected_pack.get("pack_id") or "Selected EdgeTwin Pack")
+    return str(selected_pack or "Selected EdgeTwin Pack")
+
+
+def _v103_pack_price(selected_pack, quote_snapshot=None):
+    if isinstance(quote_snapshot, dict):
+        for key in ["price_display", "quote_range", "recommended_price_display", "total_display"]:
+            if quote_snapshot.get(key):
+                return str(quote_snapshot.get(key))
+    if isinstance(selected_pack, dict):
+        return str(selected_pack.get("price_display") or selected_pack.get("quote_range") or selected_pack.get("price_range") or "See quote")
+    return "See quote"
+
+
+def build_customer_portal_lite_v103_snapshot(
+    project_name,
+    customer_name="Customer",
+    customer_email="customer@example.com",
+    selected_pack=None,
+    quote_snapshot=None,
+    payment_snapshot=None,
+    unlock_snapshot=None,
+    entitlement_snapshot=None,
+    payment_status="unpaid",
+    intake_status="not_started",
+    delivery_status="locked",
+    portal_mode="private_demo",
+):
+    """Build one simple customer portal state without creating full SaaS accounts.
+
+    V103 is intentionally a portal-lite layer: it shows customer status and next actions,
+    but leaves real authentication, signed downloads, Stripe/Paddle webhooks and data privacy controls
+    to the deployment layer.
+    """
+    quote_snapshot = quote_snapshot or {}
+    payment_snapshot = payment_snapshot or {}
+    unlock_snapshot = unlock_snapshot or {}
+    entitlement_snapshot = entitlement_snapshot or {}
+    selected_pack = selected_pack or {"name": "Professional Pilot Pack", "pack_id": "professional_pilot_pack", "price_display": "EUR 1,500-3,500"}
+
+    payment_status = str(payment_status or payment_snapshot.get("payment_status") or "unpaid").lower()
+    intake_status = str(intake_status or "not_started").lower()
+    delivery_status = str(delivery_status or unlock_snapshot.get("delivery_status") or "locked").lower()
+    portal_mode = str(portal_mode or "private_demo")
+
+    paid_like = payment_status in {"paid", "confirmed", "succeeded", "complete", "completed"}
+    deposit_like = payment_status in {"deposit_paid", "partial_paid", "partially_paid"}
+    blocked_payment = payment_status in {"failed", "cancelled", "refunded", "disputed", "chargeback"}
+    ready_like = delivery_status in {"ready", "delivered"}
+
+    if blocked_payment:
+        portal_decision = "LOCKED_REVIEW_REQUIRED"
+        access_level = "locked"
+        customer_next_action = "Contact support / wait for review"
+        founder_next_action = "Review payment/refund/dispute before unlocking"
+    elif paid_like and ready_like:
+        portal_decision = "CUSTOMER_DELIVERY_READY"
+        access_level = "full_delivery"
+        customer_next_action = "Download delivery bundle"
+        founder_next_action = "Monitor delivery and support questions"
+    elif paid_like:
+        portal_decision = "PAID_ACCESS_UNLOCKED"
+        access_level = "intake_and_delivery"
+        customer_next_action = "Complete intake/upload or wait for generated delivery"
+        founder_next_action = "Only review blockers or high-risk claims"
+    elif deposit_like:
+        portal_decision = "DEPOSIT_ACCESS_UNLOCKED"
+        access_level = "intake_only"
+        customer_next_action = "Complete intake/upload so the pack can be prepared"
+        founder_next_action = "Review custom scope before final delivery"
+    elif portal_mode == "private_demo":
+        portal_decision = "DEMO_PORTAL_PREVIEW"
+        access_level = "preview"
+        customer_next_action = "Review pack preview and proceed to checkout/quote"
+        founder_next_action = "Use for demo; do not expose sensitive data"
+    else:
+        portal_decision = "PAYMENT_REQUIRED"
+        access_level = "locked"
+        customer_next_action = "Pay or request approval before access unlocks"
+        founder_next_action = "No action unless customer requests manual approval"
+
+    pack_name = _v103_pack_name(selected_pack)
+    price_display = _v103_pack_price(selected_pack, quote_snapshot)
+    safe_order_id = str(payment_snapshot.get("order_id") or unlock_snapshot.get("order_id") or quote_snapshot.get("quote_id") or "EDGE-ORDER-PENDING")
+    portal_ref = re.sub(r"[^A-Za-z0-9_-]+", "-", safe_order_id).strip("-") or "pending"
+
+    status_cards = [
+        {"area": "Pack", "status": "selected", "detail": pack_name},
+        {"area": "Quote", "status": "prepared" if quote_snapshot else "placeholder", "detail": price_display},
+        {"area": "Payment", "status": payment_status, "detail": "Handled by Stripe/Paddle/manual provider; no card data stored in EdgeTwin."},
+        {"area": "Access", "status": access_level, "detail": portal_decision},
+        {"area": "Intake/upload", "status": intake_status, "detail": "Unlocked after payment/deposit for custom or real-data packs."},
+        {"area": "Delivery", "status": delivery_status, "detail": "Final bundle is downloadable only when delivery status is ready/delivered."},
+    ]
+
+    customer_timeline = [
+        {"step": 1, "label": "Choose pack", "owner": "customer", "status": "done" if selected_pack else "pending"},
+        {"step": 2, "label": "Quote/order prepared", "owner": "EdgeTwin", "status": "done" if quote_snapshot else "ready"},
+        {"step": 3, "label": "Payment/deposit confirmation", "owner": "payment provider", "status": "done" if (paid_like or deposit_like) else payment_status},
+        {"step": 4, "label": "Intake/upload access", "owner": "customer", "status": "unlocked" if (paid_like or deposit_like) else "locked"},
+        {"step": 5, "label": "Pack generation / review", "owner": "EdgeTwin", "status": delivery_status if delivery_status in {"generating", "ready", "delivered"} else "waiting"},
+        {"step": 6, "label": "Download delivery bundle", "owner": "customer", "status": "available" if ready_like and paid_like else "not_available_yet"},
+    ]
+
+    download_manifest = {
+        "portal_ref": portal_ref,
+        "order_id": safe_order_id,
+        "download_access": "enabled" if paid_like and ready_like else "disabled",
+        "download_policy": "Use signed/expiring links in public hosting. V103 only prepares the manifest.",
+        "available_files_when_ready": [
+            "customer_summary.pdf",
+            "pack_manifest.json",
+            "scope_lock.md",
+            "safe_claims.md",
+            "delivery_checklist.csv",
+            "evidence_bundle.zip",
+        ],
+        "intake_access": "enabled" if (paid_like or deposit_like) else "disabled",
+        "payment_provider_safe_fields_only": True,
+    }
+
+    guardrails = [
+        {"guardrail": "No card data", "status": "enforced", "detail": "Payment details stay with Stripe/Paddle/manual provider."},
+        {"guardrail": "No full SaaS assumption", "status": "enforced", "detail": "Portal Lite shows status; it is not multi-tenant SaaS."},
+        {"guardrail": "Signed downloads later", "status": "required before public", "detail": "Public downloads should use expiring URLs or authenticated access."},
+        {"guardrail": "Sensitive uploads", "status": "blocked until review", "detail": "Do not invite sensitive customer data until privacy/security storage is hardened."},
+        {"guardrail": "No production/accuracy/legal guarantees", "status": "enforced", "detail": "Delivery remains pilot/evidence/decision-support unless separately validated."},
+    ]
+
+    customer_portal_markdown = f"""# EdgeTwin Customer Portal Lite — V103
+
+Hello {customer_name},
+
+Your selected pack is **{pack_name}**.
+
+**Project:** {project_name}  
+**Order/reference:** {safe_order_id}  
+**Price/quote:** {price_display}  
+**Payment status:** {payment_status}  
+**Access level:** {access_level}  
+**Delivery status:** {delivery_status}
+
+## Your next step
+
+**{customer_next_action}**
+
+## What this portal provides
+
+- Pack status
+- Payment/deposit status
+- Intake/upload status
+- Delivery/download status
+- Customer-safe next steps
+- Clear limitations and guardrails
+
+## Important boundary
+
+This portal unlocks pilot/evidence/delivery workflow access. It does **not** create production, accuracy, legal or compliance guarantees. Production deployment requires separate validation with representative real-world data.
+"""
+
+    return {
+        "version": "V103",
+        "generated_at": _now(),
+        "project_name": str(project_name),
+        "customer_name": str(customer_name),
+        "customer_email": str(customer_email),
+        "selected_pack": selected_pack,
+        "pack_name": pack_name,
+        "price_display": price_display,
+        "order_id": safe_order_id,
+        "portal_ref": portal_ref,
+        "portal_mode": portal_mode,
+        "payment_status": payment_status,
+        "intake_status": intake_status,
+        "delivery_status": delivery_status,
+        "portal_decision": portal_decision,
+        "access_level": access_level,
+        "customer_next_action": customer_next_action,
+        "founder_next_action": founder_next_action,
+        "status_cards": status_cards,
+        "customer_timeline": customer_timeline,
+        "download_manifest": download_manifest,
+        "guardrails": guardrails,
+        "customer_portal_markdown": customer_portal_markdown,
+        "source_snapshots_detected": {
+            "quote_v98": bool(quote_snapshot),
+            "payment_adapter_v102": bool(payment_snapshot),
+            "unlock_v99": bool(unlock_snapshot),
+            "entitlement_v100": bool(entitlement_snapshot),
+        },
+    }
+
+
+def create_customer_portal_lite_v103_bundle(project_name, snapshot):
+    mem = io.BytesIO()
+    snapshot = snapshot or {}
+    with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("customer_portal_lite_v103.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_portal_page_v103.md", str(snapshot.get("customer_portal_markdown", "")))
+        zf.writestr("customer_status_cards_v103.csv", pd.DataFrame(snapshot.get("status_cards", [])).to_csv(index=False))
+        zf.writestr("customer_timeline_v103.csv", pd.DataFrame(snapshot.get("customer_timeline", [])).to_csv(index=False))
+        zf.writestr("download_manifest_v103.json", json.dumps(_json_safe(snapshot.get("download_manifest", {})), indent=2, ensure_ascii=False))
+        zf.writestr("portal_guardrails_v103.csv", pd.DataFrame(snapshot.get("guardrails", [])).to_csv(index=False))
+        zf.writestr("README_CUSTOMER_PORTAL_LITE_V103.md", "# Customer Portal Lite V103\n\nThis is a no-SaaS customer access/status layer. Use signed links and proper auth before public sensitive-data delivery.\n")
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        safe_pdf_cell(pdf, "EdgeTwin Studio V103 - Customer Portal Lite")
+        pdf.set_font("Arial", size=10)
+        safe_pdf_cell(pdf, f"Project: {project_name}")
+        safe_pdf_cell(pdf, f"Customer: {snapshot.get('customer_name')}")
+        safe_pdf_cell(pdf, f"Pack: {snapshot.get('pack_name')}")
+        safe_pdf_cell(pdf, f"Payment status: {snapshot.get('payment_status')}")
+        safe_pdf_cell(pdf, f"Access level: {snapshot.get('access_level')}")
+        safe_pdf_cell(pdf, f"Delivery status: {snapshot.get('delivery_status')}")
+        safe_pdf_cell(pdf, f"Customer next action: {snapshot.get('customer_next_action')}")
+        safe_pdf_cell(pdf, "")
+        safe_pdf_cell(pdf, "Boundary: Portal Lite does not create production/accuracy/legal/compliance guarantees.")
+        safe_pdf_cell(pdf, "Payment card details must remain with the provider; use signed downloads before public use.")
+        zf.writestr("customer_portal_lite_v103.pdf", safe_pdf_output(pdf))
+    mem.seek(0)
+    return mem.getvalue()
+
+
+
+# ============================================================
+# V104 - SECURE DOWNLOAD LINK LAYER
+# ============================================================
+
+
+def _v104_b64url_encode(data: bytes) -> str:
+    import base64
+    return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
+
+
+def _v104_b64url_decode(data: str) -> bytes:
+    import base64
+    padding = "=" * (-len(data) % 4)
+    return base64.urlsafe_b64decode((data or "") + padding)
+
+
+def _v104_download_secret() -> str:
+    # Public hosting must set this to a long random value in environment/secrets.
+    return os.environ.get("EDGETWIN_DOWNLOAD_SECRET", "DEV_ONLY_CHANGE_ME_EDGE_TWIN_DOWNLOAD_SECRET")
+
+
+def _v104_iso(dt):
+    try:
+        return dt.replace(microsecond=0).isoformat() + "Z"
+    except Exception:
+        return str(dt)
+
+
+def create_secure_download_token_v104(
+    order_id,
+    file_id,
+    customer_email,
+    scope="download:final",
+    expires_hours=168,
+    provider="manual",
+    secret=None,
+    issued_at=None,
+):
+    """Create a signed, expiring token manifest for one private download/intake item.
+
+    The token contains no raw storage path and no payment card data.
+    Real public hosting must validate this server-side before serving a private file.
+    """
+    issued = issued_at or datetime.datetime.utcnow()
+    try:
+        expires_hours = max(1, int(expires_hours))
+    except Exception:
+        expires_hours = 168
+    expires = issued + datetime.timedelta(hours=expires_hours)
+    email_norm = str(customer_email or "").strip().lower()
+    customer_hash = hashlib.sha256(email_norm.encode("utf-8", errors="replace")).hexdigest()[:16]
+    payload = {
+        "version": "V104",
+        "token_id": str(uuid.uuid4()),
+        "order_id": str(order_id or "ORDER-UNKNOWN"),
+        "file_id": str(file_id or "file"),
+        "customer_hash": customer_hash,
+        "scope": str(scope or "download:final"),
+        "provider": str(provider or "manual"),
+        "issued_at": _v104_iso(issued),
+        "expires_at": _v104_iso(expires),
+    }
+    payload_json = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    body = _v104_b64url_encode(payload_json)
+    key = str(secret or _v104_download_secret()).encode("utf-8", errors="replace")
+    sig = hmac.new(key, body.encode("utf-8"), hashlib.sha256).digest()
+    token = f"{body}.{_v104_b64url_encode(sig)}"
+    return {
+        "token": token,
+        "payload": payload,
+        "expires_at": payload["expires_at"],
+        "scope": payload["scope"],
+        "file_id": payload["file_id"],
+        "raw_path_exposed": False,
+        "card_data_stored": False,
+        "dev_secret_warning": secret is None and _v104_download_secret().startswith("DEV_ONLY"),
+    }
+
+
+def validate_secure_download_token_v104(token, secret=None, now=None):
+    """Validate a V104 signed token. Returns a safe validation object, not file bytes."""
+    try:
+        body, sig = str(token or "").split(".", 1)
+        key = str(secret or _v104_download_secret()).encode("utf-8", errors="replace")
+        expected = _v104_b64url_encode(hmac.new(key, body.encode("utf-8"), hashlib.sha256).digest())
+        if not hmac.compare_digest(expected, sig):
+            return {"valid": False, "reason": "bad_signature"}
+        payload = json.loads(_v104_b64url_decode(body).decode("utf-8"))
+        expires_raw = str(payload.get("expires_at", "")).replace("Z", "")
+        expires = datetime.datetime.fromisoformat(expires_raw)
+        current = now or datetime.datetime.utcnow()
+        if current > expires:
+            return {"valid": False, "reason": "expired", "payload": payload}
+        return {"valid": True, "reason": "ok", "payload": payload}
+    except Exception as exc:
+        return {"valid": False, "reason": "parse_error", "error": str(exc)}
+
+
+def _v104_safe_status(payment_status, delivery_status, require_ready_delivery=True):
+    ps = str(payment_status or "").lower()
+    ds = str(delivery_status or "").lower()
+    if ps in {"refunded", "disputed", "failed", "cancelled"}:
+        return "locked", "PAYMENT_RISK_LOCK", "high"
+    if ps in {"paid", "confirmed"} and (not require_ready_delivery or ds in {"ready", "delivered", "unlocked"}):
+        return "full_download", "SECURE_DOWNLOAD_READY", "low"
+    if ps == "deposit_paid":
+        return "intake_only", "INTAKE_UNLOCK_READY", "medium"
+    if ps in {"paid", "confirmed"} and ds in {"generating", "locked"}:
+        return "paid_waiting_delivery", "PAID_BUT_DELIVERY_NOT_READY", "medium"
+    return "locked", "PAYMENT_REQUIRED", "medium"
+
+
+def build_secure_download_links_v104_snapshot(
+    project_name="EdgeTwin_Project",
+    customer_email="customer@example.com",
+    order_id="ORDER-DEMO-104",
+    provider="manual",
+    payment_status="paid",
+    delivery_status="ready",
+    portal_snapshot=None,
+    payment_snapshot=None,
+    download_items=None,
+    expiry_hours=168,
+    require_ready_delivery=True,
+):
+    portal_snapshot = portal_snapshot if isinstance(portal_snapshot, dict) else {}
+    payment_snapshot = payment_snapshot if isinstance(payment_snapshot, dict) else {}
+    if not isinstance(download_items, list) or not download_items:
+        download_items = [
+            {"file_id": "final_delivery_bundle", "label": "Final delivery ZIP/PDF bundle", "scope": "download:final"},
+            {"file_id": "customer_report_pdf", "label": "Customer report PDF", "scope": "download:report"},
+        ]
+
+    access_state, decision, risk_level = _v104_safe_status(payment_status, delivery_status, require_ready_delivery=require_ready_delivery)
+    can_generate_final = access_state == "full_download"
+    can_generate_intake = access_state in {"full_download", "intake_only"}
+
+    secure_links = []
+    validation_checks = []
+    for item in download_items:
+        file_id = str(item.get("file_id", "file")) if isinstance(item, dict) else "file"
+        label = str(item.get("label", file_id)) if isinstance(item, dict) else file_id
+        scope = str(item.get("scope", "download:final")) if isinstance(item, dict) else "download:final"
+        is_intake = scope.startswith("intake") or "intake" in file_id
+        allowed = can_generate_intake if is_intake else can_generate_final
+        if allowed:
+            token_obj = create_secure_download_token_v104(
+                order_id=order_id,
+                file_id=file_id,
+                customer_email=customer_email,
+                scope=scope,
+                expires_hours=expiry_hours,
+                provider=provider,
+            )
+            validation = validate_secure_download_token_v104(token_obj["token"])
+            secure_links.append({
+                "label": label,
+                "file_id": file_id,
+                "scope": scope,
+                "status": "token_created",
+                "expires_at": token_obj["expires_at"],
+                "token_preview": token_obj["token"][:24] + "...",
+                "server_side_validation": validation.get("valid") is True,
+                "raw_path_exposed": False,
+                "card_data_stored": False,
+                "dev_secret_warning": token_obj.get("dev_secret_warning", False),
+            })
+        else:
+            secure_links.append({
+                "label": label,
+                "file_id": file_id,
+                "scope": scope,
+                "status": "locked",
+                "reason": decision,
+                "raw_path_exposed": False,
+                "card_data_stored": False,
+            })
+        validation_checks.append({
+            "check": f"{label} access",
+            "status": "pass" if allowed else "locked",
+            "evidence": access_state,
+        })
+
+    token_count = sum(1 for x in secure_links if x.get("status") == "token_created")
+    dev_warning = any(x.get("dev_secret_warning") for x in secure_links)
+    if dev_warning:
+        risk_level = "medium" if risk_level == "low" else risk_level
+
+    guardrails = [
+        {"guardrail": "No raw storage paths in customer-facing links", "status": "active"},
+        {"guardrail": "No card data stored in EdgeTwin", "status": "active"},
+        {"guardrail": "Server-side token validation required before file serving", "status": "required"},
+        {"guardrail": "Refund/dispute/failed payment locks downloads", "status": "active"},
+        {"guardrail": "Download links expire automatically", "status": "active"},
+        {"guardrail": "Set EDGETWIN_DOWNLOAD_SECRET before live public hosting", "status": "warning" if dev_warning else "active"},
+    ]
+
+    customer_access_markdown = f"""# Secure Customer Access — V104
+
+**Project:** {project_name}  
+**Order:** {order_id}  
+**Customer:** {customer_email}  
+**Payment status:** {payment_status}  
+**Delivery status:** {delivery_status}  
+**Decision:** {decision}  
+**Access state:** {access_state}  
+
+## What the customer sees
+
+- If payment and delivery are ready, download links are unlocked with signed expiring tokens.
+- If only a deposit is paid, intake/upload access can be unlocked while final delivery remains locked.
+- If payment failed, was refunded, or is disputed, downloads stay locked.
+
+## Important
+
+These are token manifests, not raw file paths. In live hosting, a private server endpoint must validate the token before returning the file.
+"""
+
+    return {
+        "version": "V104",
+        "module": "Secure Download Link Layer",
+        "project_name": project_name,
+        "customer_email": customer_email,
+        "order_id": str(order_id),
+        "provider": provider,
+        "payment_status": payment_status,
+        "delivery_status": delivery_status,
+        "download_decision": decision,
+        "access_state": access_state,
+        "risk_level": risk_level,
+        "token_count": token_count,
+        "expiry_hours": int(expiry_hours),
+        "secure_links": secure_links,
+        "validation_checks": validation_checks,
+        "guardrails": guardrails,
+        "customer_access_markdown": customer_access_markdown,
+        "portal_decision_seen": portal_snapshot.get("portal_decision"),
+        "payment_provider_safe_fields_only": True,
+        "raw_paths_exposed": False,
+        "card_data_stored": False,
+        "live_requirements": [
+            "Use EDGETWIN_DOWNLOAD_SECRET in hosting secrets.",
+            "Validate token server-side before serving files.",
+            "Serve files from private storage, not public static folders.",
+            "Expire links and lock after refund/dispute.",
+            "Keep Stripe/Paddle secrets outside source code.",
+        ],
+    }
+
+
+def create_secure_download_links_v104_bundle(project_name, snapshot):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("secure_download_links_v104.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_secure_access_v104.md", str(snapshot.get("customer_access_markdown", "")))
+        zf.writestr("secure_links_v104.csv", pd.DataFrame(snapshot.get("secure_links", [])).to_csv(index=False))
+        zf.writestr("validation_checks_v104.csv", pd.DataFrame(snapshot.get("validation_checks", [])).to_csv(index=False))
+        zf.writestr("guardrails_v104.csv", pd.DataFrame(snapshot.get("guardrails", [])).to_csv(index=False))
+        zf.writestr("server_contract_v104.json", json.dumps({
+            "endpoint_example": "/download?token=<signed-token>",
+            "required_server_steps": [
+                "parse token",
+                "verify HMAC signature",
+                "verify expiry",
+                "verify order payment still paid/confirmed",
+                "verify file_id belongs to order/customer",
+                "stream private file",
+            ],
+            "never_do": [
+                "do not expose storage paths",
+                "do not trust browser success URLs alone",
+                "do not unlock after refund or dispute",
+                "do not store card details",
+            ],
+        }, indent=2, ensure_ascii=False))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "EdgeTwin Secure Download Links V104", ln=True)
+        pdf.set_font("Arial", "", 10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('download_decision')}\nAccess: {snapshot.get('access_state')}\nTokens: {snapshot.get('token_count')}\n\nSigned expiring token manifests are prepared. Live hosting must validate tokens server-side before serving private files.")
+        zf.writestr("secure_download_links_v104.pdf", safe_pdf_output(pdf))
+    return buffer.getvalue()
+
+
+# ============================================================
+# V105 - PRIVATE DELIVERY ENDPOINT + AUDIT LOG
+# ============================================================
+
+def _v105_safe_hash(value, length=16):
+    return hashlib.sha256(str(value or "").encode("utf-8", errors="replace")).hexdigest()[:int(length)]
+
+
+def _v105_utc_now():
+    return datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+
+def _v105_endpoint_decision(validation, payment_status, delivery_status, require_ready_delivery=True):
+    ps = str(payment_status or "").lower()
+    ds = str(delivery_status or "").lower()
+    reason = str((validation or {}).get("reason", "unknown"))
+    if not (validation or {}).get("valid"):
+        if reason == "expired":
+            return 410, "TOKEN_EXPIRED", "denied"
+        if reason == "bad_signature":
+            return 401, "BAD_SIGNATURE", "denied"
+        return 401, "INVALID_TOKEN", "denied"
+    if ps in {"failed", "refunded", "disputed", "cancelled"}:
+        return 403, "PAYMENT_STATUS_LOCK", "denied"
+    if ps not in {"paid", "confirmed"}:
+        return 402, "PAYMENT_REQUIRED", "denied"
+    if require_ready_delivery and ds not in {"ready", "delivered", "unlocked"}:
+        return 423, "DELIVERY_NOT_READY", "denied"
+    return 200, "PRIVATE_STREAM_ALLOWED", "allowed"
+
+
+def _v105_audit_event(kind, order_id, customer_email, token_payload=None, http_status=None, decision=None, reason=None, ip_hash="demo_ip_hash"):
+    payload = token_payload if isinstance(token_payload, dict) else {}
+    return {
+        "event_id": str(uuid.uuid4()),
+        "timestamp": _v105_utc_now(),
+        "kind": str(kind),
+        "order_id": str(order_id or payload.get("order_id") or "ORDER-UNKNOWN"),
+        "customer_hash": _v105_safe_hash(str(customer_email or "").strip().lower()),
+        "token_id": payload.get("token_id", "n/a"),
+        "file_id": payload.get("file_id", "n/a"),
+        "scope": payload.get("scope", "n/a"),
+        "http_status": int(http_status or 0),
+        "decision": str(decision or "unknown"),
+        "reason": str(reason or "unknown"),
+        "ip_hash": str(ip_hash or "unknown"),
+        "raw_path_exposed": False,
+        "card_data_stored": False,
+    }
+
+
+def build_private_delivery_endpoint_v105_snapshot(
+    project_name="EdgeTwin_Project",
+    customer_email="customer@example.com",
+    order_id="ORDER-DEMO-105",
+    provider="manual",
+    payment_status="paid",
+    delivery_status="ready",
+    secure_snapshot=None,
+    endpoint_mode="simulation",
+    enable_audit_log=True,
+    require_webhook_truth=True,
+    private_storage_only=True,
+    rate_limit_enabled=True,
+):
+    """Prepare the server-side private delivery endpoint contract behind V104 tokens."""
+    secure_snapshot = secure_snapshot if isinstance(secure_snapshot, dict) else {}
+
+    token_obj = create_secure_download_token_v104(order_id=order_id, file_id="final_delivery_bundle", customer_email=customer_email, scope="download:final", expires_hours=168, provider=provider)
+    valid_token = token_obj["token"]
+    validation = validate_secure_download_token_v104(valid_token)
+    primary_http, primary_reason, primary_decision = _v105_endpoint_decision(validation, payment_status, delivery_status)
+
+    expired_obj = create_secure_download_token_v104(order_id=order_id, file_id="final_delivery_bundle", customer_email=customer_email, scope="download:final", expires_hours=1, provider=provider, issued_at=datetime.datetime.utcnow() - datetime.timedelta(hours=3))
+    expired_validation = validate_secure_download_token_v104(expired_obj["token"])
+    bad_token = valid_token[:-2] + "xx" if len(valid_token) > 4 else "bad.token"
+    bad_validation = validate_secure_download_token_v104(bad_token)
+
+    endpoint_scenarios = [
+        ("valid_paid_ready_request", validation, payment_status, delivery_status),
+        ("expired_token_request", expired_validation, payment_status, delivery_status),
+        ("bad_signature_request", bad_validation, payment_status, delivery_status),
+        ("refunded_order_request", validation, "refunded", delivery_status),
+        ("paid_but_delivery_generating", validation, "paid", "generating"),
+    ]
+
+    endpoint_checks = []
+    audit_events = []
+    for name, val, ps, ds in endpoint_scenarios:
+        http, reason, decision = _v105_endpoint_decision(val, ps, ds)
+        expected_safe = (name == "valid_paid_ready_request" and http == primary_http) or (name != "valid_paid_ready_request" and http != 200)
+        endpoint_checks.append({"scenario": name, "http_status": http, "decision": decision, "reason": reason, "payment_status": ps, "delivery_status": ds, "safe_result": bool(expected_safe), "raw_path_exposed": False, "card_data_stored": False})
+        if enable_audit_log:
+            audit_events.append(_v105_audit_event(kind="download_request", order_id=order_id, customer_email=customer_email, token_payload=(val or {}).get("payload"), http_status=http, decision=decision, reason=reason))
+
+    secret_ready = not _v104_download_secret().startswith("DEV_ONLY")
+    all_safety_checks_ok = all(x.get("safe_result") for x in endpoint_checks)
+    required_flags_ok = bool(require_webhook_truth and private_storage_only and rate_limit_enabled and enable_audit_log)
+    ready_for_live = bool(secret_ready and all_safety_checks_ok and required_flags_ok and primary_http == 200)
+
+    go_live_requirements = [
+        {"requirement": "Set EDGETWIN_DOWNLOAD_SECRET in hosting secrets", "status": "pass" if secret_ready else "missing"},
+        {"requirement": "Use webhook-backed payment status as source of truth", "status": "pass" if require_webhook_truth else "missing"},
+        {"requirement": "Serve files from private storage, not static public folders", "status": "pass" if private_storage_only else "missing"},
+        {"requirement": "Audit every allowed and denied download attempt", "status": "pass" if enable_audit_log else "missing"},
+        {"requirement": "Rate-limit repeated token attempts", "status": "pass" if rate_limit_enabled else "missing"},
+        {"requirement": "Lock downloads after refund/dispute/failed payment", "status": "pass"},
+        {"requirement": "Never store card data in EdgeTwin", "status": "pass"},
+        {"requirement": "Never expose raw storage paths to customer", "status": "pass"},
+    ]
+    missing_count = sum(1 for x in go_live_requirements if x.get("status") != "pass")
+
+    if primary_http == 200 and missing_count == 0:
+        endpoint_decision = "LIVE_PRIVATE_DELIVERY_READY"
+        risk_level = "low"
+    elif primary_http == 200:
+        endpoint_decision = "IMPLEMENTATION_READY_NEEDS_LIVE_SECRET_OR_BACKEND"
+        risk_level = "medium"
+    else:
+        endpoint_decision = "DELIVERY_ENDPOINT_LOCKED"
+        risk_level = "high" if str(payment_status).lower() in {"failed", "refunded", "disputed"} else "medium"
+
+    server_contract = {
+        "version": "V105",
+        "recommended_endpoint": "/api/private-download?token=<signed-token>",
+        "method": "GET",
+        "input": ["signed_download_token", "customer_session_or_order_context_optional"],
+        "server_side_steps": [
+            "Parse token body and signature.",
+            "Verify HMAC signature using EDGETWIN_DOWNLOAD_SECRET.",
+            "Reject expired tokens.",
+            "Look up order_id and file_id server-side.",
+            "Re-check payment status from webhook-backed order table.",
+            "Re-check delivery status and file ownership.",
+            "Write audit log for allowed and denied attempts.",
+            "Stream private file bytes without exposing raw storage path.",
+        ],
+        "deny_conditions": ["expired token", "bad signature", "unknown order/file", "unpaid, failed, refunded or disputed payment", "delivery not ready", "too many attempts / rate limit"],
+        "stores_card_data": False,
+        "exposes_raw_storage_paths": False,
+    }
+
+    customer_flow_markdown = f"""# Private Delivery Endpoint — V105
+
+**Project:** {project_name}  
+**Order:** {order_id}  
+**Provider:** {provider}  
+**Payment status:** {payment_status}  
+**Delivery status:** {delivery_status}  
+**Endpoint decision:** {endpoint_decision}  
+
+## Customer experience
+
+1. Customer buys or confirms the pack.
+2. Payment provider confirms payment through webhook/manual confirmation.
+3. V104 creates a signed expiring access token.
+4. V105 validates the token server-side before any file is sent.
+5. If payment/delivery are still safe, the private file is streamed.
+6. Every request is written to a safe audit log.
+
+## Why this matters
+
+The customer gets a modern download experience, but EdgeTwin does not expose raw file paths, does not store card data and does not unlock files after refund/dispute/payment failure.
+"""
+
+    return {
+        "version": "V105", "module": "Private Delivery Endpoint + Audit Log", "project_name": project_name,
+        "customer_email": customer_email, "customer_hash": _v105_safe_hash(str(customer_email).strip().lower()),
+        "order_id": str(order_id), "provider": provider, "payment_status": payment_status, "delivery_status": delivery_status,
+        "endpoint_mode": endpoint_mode, "endpoint_decision": endpoint_decision, "primary_http_status": int(primary_http),
+        "primary_reason": primary_reason, "primary_decision": primary_decision, "risk_level": risk_level,
+        "audit_event_count": len(audit_events), "endpoint_checks": endpoint_checks, "audit_events": audit_events,
+        "server_contract": server_contract, "go_live_requirements": go_live_requirements,
+        "ready_for_live_private_delivery": ready_for_live, "implementation_ready": all_safety_checks_ok,
+        "secure_links_v104_seen": int(secure_snapshot.get("token_count", 0) or 0),
+        "no_card_data_stored": True, "raw_paths_exposed": False, "customer_flow_markdown": customer_flow_markdown,
+    }
+
+
+def create_private_delivery_endpoint_v105_bundle(project_name, snapshot):
+    buffer = io.BytesIO()
+    pseudocode = "\n".join([
+        "# EdgeTwin V105 private delivery endpoint pseudocode",
+        "# Do not expose raw file paths. Do not trust browser success URLs.",
+        "",
+        "def private_download_endpoint(token, order_store, private_file_store, audit_log):",
+        "    validation = validate_secure_download_token_v104(token)",
+        "    if not validation.get('valid'):",
+        "        audit_log.write_denied(validation)",
+        "        return 401, 'invalid or expired token'",
+        "    payload = validation['payload']",
+        "    order = order_store.get(payload['order_id'])",
+        "    if order.payment_status not in {'paid', 'confirmed'}:",
+        "        audit_log.write_denied(payload)",
+        "        return 403, 'payment not valid'",
+        "    if order.delivery_status not in {'ready', 'delivered', 'unlocked'}:",
+        "        audit_log.write_denied(payload)",
+        "        return 423, 'delivery not ready'",
+        "    file_ref = order.get_private_file(payload['file_id'])",
+        "    audit_log.write_allowed(payload)",
+        "    return private_file_store.stream(file_ref)",
+    ])
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("private_delivery_endpoint_v105.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_private_delivery_flow_v105.md", str(snapshot.get("customer_flow_markdown", "")))
+        zf.writestr("endpoint_checks_v105.csv", pd.DataFrame(snapshot.get("endpoint_checks", [])).to_csv(index=False))
+        zf.writestr("audit_log_sample_v105.csv", pd.DataFrame(snapshot.get("audit_events", [])).to_csv(index=False))
+        zf.writestr("go_live_requirements_v105.csv", pd.DataFrame(snapshot.get("go_live_requirements", [])).to_csv(index=False))
+        zf.writestr("server_contract_v105.json", json.dumps(_json_safe(snapshot.get("server_contract", {})), indent=2, ensure_ascii=False))
+        zf.writestr("download_endpoint_pseudocode_v105.py", pseudocode)
+        pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, "EdgeTwin Private Delivery Endpoint V105", ln=True)
+        pdf.set_font("Arial", "", 10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('endpoint_decision')}\nHTTP: {snapshot.get('primary_http_status')}\nAudit events: {snapshot.get('audit_event_count')}\n\nV105 prepares the backend contract for token validation, payment/delivery re-check, audit logging and private file streaming.")
+        zf.writestr("private_delivery_endpoint_v105.pdf", safe_pdf_output(pdf))
+    return buffer.getvalue()
+
+# ============================================================
+# V106 - ORDER DATABASE + FULFILLMENT STATE MACHINE
+# ============================================================
+
+def _v106_utc_now():
+    return datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+
+def _v106_norm(value, default="created"):
+    value = str(value or default).strip().lower().replace(" ", "_")
+    aliases = {"unpaid": "awaiting_payment", "confirmed": "paid", "payment_confirmed": "paid", "locked": "awaiting_payment", "unlocked": "intake_unlocked", "delivery_ready": "ready", "done": "delivered", "failed": "awaiting_payment"}
+    value = aliases.get(value, value)
+    allowed = {"created","quoted","awaiting_payment","deposit_paid","paid","intake_unlocked","data_received","generating","ready","delivered","archived","blocked_review","refunded","disputed","cancelled"}
+    return value if value in allowed else default
+
+
+def _v106_target_state(quote_status, payment_status, delivery_status, data_status, security_status, customer_acknowledged_scope):
+    quote_status = str(quote_status or "draft").lower()
+    payment_status = str(payment_status or "unpaid").lower()
+    delivery_status = str(delivery_status or "locked").lower()
+    data_status = str(data_status or "not_received").lower()
+    security_status = str(security_status or "ready").lower()
+    if payment_status in {"refunded", "refund", "chargeback_refunded"}:
+        return "refunded"
+    if payment_status in {"disputed", "chargeback", "under_dispute"}:
+        return "disputed"
+    if security_status in {"failed", "unsafe", "blocked", "missing_secret", "public_raw_paths"}:
+        return "blocked_review"
+    if quote_status in {"draft", "missing", "not_ready"}:
+        return "created"
+    if quote_status in {"quoted", "ready"} and payment_status in {"unpaid", "failed", "cancelled"}:
+        return "awaiting_payment" if customer_acknowledged_scope else "quoted"
+    if payment_status == "deposit_paid":
+        return "intake_unlocked" if delivery_status in {"unlocked", "intake_unlocked"} else "deposit_paid"
+    if payment_status in {"paid", "confirmed"}:
+        if delivery_status in {"delivered"}:
+            return "delivered"
+        if delivery_status in {"ready"}:
+            return "ready"
+        if delivery_status in {"generating"}:
+            return "generating"
+        if data_status in {"received", "valid", "ready"}:
+            return "data_received"
+        return "paid"
+    return "created"
+
+
+def _v106_access_for_state(state):
+    state = _v106_norm(state)
+    matrix = {
+        "created": {"preview": True, "quote": False, "payment": False, "intake": False, "download": False},
+        "quoted": {"preview": True, "quote": True, "payment": False, "intake": False, "download": False},
+        "awaiting_payment": {"preview": True, "quote": True, "payment": True, "intake": False, "download": False},
+        "deposit_paid": {"preview": True, "quote": True, "payment": True, "intake": True, "download": False},
+        "paid": {"preview": True, "quote": True, "payment": True, "intake": True, "download": False},
+        "intake_unlocked": {"preview": True, "quote": True, "payment": True, "intake": True, "download": False},
+        "data_received": {"preview": True, "quote": True, "payment": True, "intake": True, "download": False},
+        "generating": {"preview": True, "quote": True, "payment": True, "intake": True, "download": False},
+        "ready": {"preview": True, "quote": True, "payment": True, "intake": True, "download": True},
+        "delivered": {"preview": True, "quote": True, "payment": True, "intake": True, "download": True},
+        "archived": {"preview": False, "quote": False, "payment": False, "intake": False, "download": False},
+        "blocked_review": {"preview": True, "quote": False, "payment": False, "intake": False, "download": False},
+        "refunded": {"preview": False, "quote": False, "payment": False, "intake": False, "download": False},
+        "disputed": {"preview": False, "quote": False, "payment": False, "intake": False, "download": False},
+        "cancelled": {"preview": False, "quote": False, "payment": False, "intake": False, "download": False},
+    }
+    return matrix.get(state, matrix["blocked_review"])
+
+
+def _v106_next_action(state):
+    return {
+        "created": "Complete quote/order details.", "quoted": "Ask customer to acknowledge scope before payment.", "awaiting_payment": "Send checkout/payment link or wait for webhook confirmation.", "deposit_paid": "Unlock intake/upload, but keep final delivery locked.", "paid": "Start intake/data validation or generation flow.", "intake_unlocked": "Wait for customer input or uploaded data.", "data_received": "Run Data Quality Gate and build the pack.", "generating": "Generate report/bundle and run release guards.", "ready": "Create secure V104 link and serve through V105 endpoint.", "delivered": "Keep audit record and prepare follow-up/upsell.", "archived": "No active customer action.", "blocked_review": "Founder review required before continuing.", "refunded": "Keep locked; archive after refund process is complete.", "disputed": "Keep locked; review dispute before any access.", "cancelled": "Keep locked; archive if no further action.",
+    }.get(_v106_norm(state), "Review order state.")
+
+
+def build_order_fulfillment_v106_snapshot(project_name="EdgeTwin Project", customer_email="customer@example.com", order_id="ORDER-DEMO-V106", pack_name="Professional Pilot Pack", amount_eur=2500, quote_status="quoted", payment_status="paid", delivery_status="ready", data_status="received", security_status="ready", customer_acknowledged_scope=True, quote_snapshot=None, payment_snapshot=None, portal_snapshot=None, endpoint_snapshot=None, use_private_endpoint=True, store_no_card_data=True):
+    quote_snapshot = quote_snapshot or {}; payment_snapshot = payment_snapshot or {}; portal_snapshot = portal_snapshot or {}; endpoint_snapshot = endpoint_snapshot or {}
+    state = _v106_target_state(quote_status, payment_status, delivery_status, data_status, security_status, customer_acknowledged_scope)
+    access = _v106_access_for_state(state)
+    blockers = []; review_queue = []
+    if not store_no_card_data:
+        blockers.append("Do not store card/bank details in EdgeTwin; use Stripe/Paddle/manual confirmation only.")
+    if not customer_acknowledged_scope and state in {"quoted", "awaiting_payment"}:
+        review_queue.append("Customer must acknowledge scope before payment/unlock.")
+    if str(payment_status).lower() in {"refunded", "disputed"}:
+        blockers.append("Payment is refunded/disputed; lock all delivery access.")
+    if str(security_status).lower() not in {"ready", "ok", "staging_ready"}:
+        blockers.append("Security/private delivery readiness is not sufficient.")
+    if use_private_endpoint and not endpoint_snapshot:
+        review_queue.append("V105 endpoint contract should be generated before live private download.")
+    timeline = [
+        {"step": 1, "state": "created", "customer_access": "preview only", "system_action": "Create order shell from marketplace/custom pack."},
+        {"step": 2, "state": "quoted", "customer_access": "quote visible", "system_action": "Lock scope, price range and safe claims."},
+        {"step": 3, "state": "awaiting_payment", "customer_access": "checkout/payment link", "system_action": "Wait for provider webhook/manual paid confirmation."},
+        {"step": 4, "state": "deposit_paid", "customer_access": "intake/upload", "system_action": "Allow intake only; keep final delivery locked."},
+        {"step": 5, "state": "paid", "customer_access": "intake + generation queue", "system_action": "Start data validation/generation."},
+        {"step": 6, "state": "generating", "customer_access": "status updates", "system_action": "Build bundle and run release/download guards."},
+        {"step": 7, "state": "ready", "customer_access": "secure download", "system_action": "Create signed link and serve through private endpoint."},
+        {"step": 8, "state": "delivered", "customer_access": "download/audit record", "system_action": "Log delivery and prepare follow-up."},
+    ]
+    transition_policy = [
+        {"from": "created", "allowed_next": "quoted, blocked_review, cancelled"}, {"from": "quoted", "allowed_next": "awaiting_payment, blocked_review, cancelled"}, {"from": "awaiting_payment", "allowed_next": "deposit_paid, paid, cancelled, blocked_review"}, {"from": "deposit_paid", "allowed_next": "intake_unlocked, paid, refunded, disputed, blocked_review"}, {"from": "paid", "allowed_next": "intake_unlocked, data_received, generating, ready, refunded, disputed, blocked_review"}, {"from": "generating", "allowed_next": "ready, blocked_review"}, {"from": "ready", "allowed_next": "delivered, refunded, disputed, blocked_review"}, {"from": "delivered", "allowed_next": "archived, refunded, disputed, blocked_review"},
+    ]
+    sqlite_schema = {"orders": ["order_id", "customer_email", "pack_name", "amount_eur", "currency", "state", "payment_status", "delivery_status", "provider", "created_at", "updated_at", "metadata_json"], "order_events": ["id", "order_id", "event_type", "from_state", "to_state", "allowed", "reason", "created_at", "actor", "metadata_json"], "forbidden_fields": ["card_number", "cvc", "cvv", "full_bank_details", "raw_secret_keys"]}
+    customer_status_markdown = f"""# Order status — V106\n\n**Project:** {project_name}  \n**Order:** {order_id}  \n**Pack:** {pack_name}  \n**Current state:** {state}  \n**Next action:** {_v106_next_action(state)}\n\n## What the customer can access now\n\n- Preview: {'yes' if access.get('preview') else 'no'}\n- Quote/payment page: {'yes' if access.get('quote') or access.get('payment') else 'no'}\n- Intake/upload: {'yes' if access.get('intake') else 'no'}\n- Final download: {'yes' if access.get('download') else 'no'}\n\n## Safety promise\n\nEdgeTwin stores order, payment status and delivery status. It does **not** store card numbers or CVC data. Final download remains locked after refund, dispute, failed payment or security block.\n"""
+    controls = [
+        {"control": "No card data stored", "pass": bool(store_no_card_data), "reason": "Payment details stay with Stripe/Paddle/provider."},
+        {"control": "State machine controls access", "pass": state in {"created","quoted","awaiting_payment","deposit_paid","paid","intake_unlocked","data_received","generating","ready","delivered","archived","blocked_review","refunded","disputed","cancelled"}, "reason": state},
+        {"control": "Refund/dispute lock", "pass": str(payment_status).lower() not in {"refunded","disputed"} or not access.get("download"), "reason": payment_status},
+        {"control": "Private endpoint handoff", "pass": (not use_private_endpoint) or bool(endpoint_snapshot) or state != "ready", "reason": "V105 required before live file serving."},
+        {"control": "Scope acknowledged before payment", "pass": bool(customer_acknowledged_scope) or state in {"created","quoted","blocked_review"}, "reason": "Prevents payment against unclear scope."},
+    ]
+    controls_ok = all(bool(c.get("pass")) for c in controls)
+    ready_for_live_order_flow = controls_ok and not blockers
+    return {"version": "V106", "module": "Order Database + Fulfillment State Machine", "created_at": _v106_utc_now(), "project_name": project_name, "customer_email": customer_email, "order_id": order_id, "pack_name": pack_name, "amount_eur": float(amount_eur or 0), "quote_status": quote_status, "payment_status": payment_status, "delivery_status": delivery_status, "data_status": data_status, "security_status": security_status, "order_state": state, "customer_access": access, "next_action": _v106_next_action(state), "blockers": blockers, "review_queue": review_queue, "timeline": timeline, "transition_policy": transition_policy, "sqlite_schema": sqlite_schema, "controls": controls, "controls_ok": controls_ok, "ready_for_live_order_flow": ready_for_live_order_flow, "customer_status_markdown": customer_status_markdown, "input_links": {"quote_id": quote_snapshot.get("quote_id") or quote_snapshot.get("order_id"), "payment_order_id": payment_snapshot.get("order_id"), "portal_state": portal_snapshot.get("portal_decision") or portal_snapshot.get("access_decision"), "private_endpoint_decision": endpoint_snapshot.get("endpoint_decision")}, "decision": "ORDER FULFILLMENT READY" if ready_for_live_order_flow else "ORDER FLOW NEEDS REVIEW", "important_boundary": "V106 is not SaaS. It is the order/fulfillment backbone for pack sales, payment unlock, customer portal and private delivery."}
+
+
+def create_order_fulfillment_v106_bundle(project_name, snapshot):
+    bio = io.BytesIO()
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("order_fulfillment_v106.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("customer_order_status_v106.md", str(snapshot.get("customer_status_markdown", "")))
+        zf.writestr("order_timeline_v106.csv", pd.DataFrame(snapshot.get("timeline", [])).to_csv(index=False))
+        zf.writestr("transition_policy_v106.csv", pd.DataFrame(snapshot.get("transition_policy", [])).to_csv(index=False))
+        zf.writestr("order_controls_v106.csv", pd.DataFrame(snapshot.get("controls", [])).to_csv(index=False))
+        zf.writestr("sqlite_schema_v106.json", json.dumps(_json_safe(snapshot.get("sqlite_schema", {})), indent=2, ensure_ascii=False))
+        zf.writestr("no_card_data_boundary_v106.md", "# No-card-data boundary\n\nEdgeTwin stores payment status and provider IDs only. Card numbers, CVC/CVV and raw provider secrets must never be stored in the order database.\n")
+        pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, "EdgeTwin Order Fulfillment V106", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nOrder: {snapshot.get('order_id')}\nState: {snapshot.get('order_state')}\nDecision: {snapshot.get('decision')}\nNext action: {snapshot.get('next_action')}\n\nV106 connects quote, payment, portal, secure links and private delivery into one controlled order state machine without storing card data.")
+        zf.writestr("order_fulfillment_v106.pdf", safe_pdf_output(pdf))
+    bio.seek(0)
+    return bio.getvalue()
+
+
+# ============================================================
+# V107 - AI COPILOT ADAPTER (CONTROLLED, POLICY-BOUND)
+# ============================================================
+
+_V107_FORBIDDEN_CLAIM_WORDS = [
+    "guarantee", "guaranteed", "100%", "99% accuracy", "production-ready", "legally approved",
+    "compliance certified", "safety certified", "replaces human", "no human review", "always predicts",
+    "garantie", "gegarandeerd", "100% accuraat", "productieklaar", "juridisch goedgekeurd",
+]
+
+
+def _v107_redact(text):
+    text = str(text or "")
+    text = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[email-redacted]", text)
+    text = re.sub(r"\b(?:\+?\d[\d\s().-]{7,}\d)\b", "[phone-redacted]", text)
+    text = re.sub(r"\b(?:\d[ -]*?){13,19}\b", "[card-redacted]", text)
+    return text[:4000]
+
+
+def _v107_guess_pack(text, desired_outcome=""):
+    body = (str(text or "") + " " + str(desired_outcome or "")).lower()
+    if any(w in body for w in ["real data", "field data", "maintenance history", "historie", "gelabel", "labelled", "labeled"]):
+        return "Real-Data Evidence Pack"
+    if any(w in body for w in ["custom", "maatwerk", "eigen modules", "hardware", "bom", "sensor"]):
+        return "Premium Custom Pack"
+    if any(w in body for w in ["pilot", "management", "proof", "evidence", "bewijs", "downtime", "predictive"]):
+        return "Professional Pilot Pack"
+    return "Starter Diagnostic Pack"
+
+
+def _v107_addons(text):
+    body = str(text or "").lower()
+    addons = []
+    if any(w in body for w in ["excel", "json", "log", "csv", "plc", "extra data", "maintenance history", "onderhoud"]):
+        addons.append("Extra data source / file type")
+    if any(w in body for w in ["logo", "brand", "branding", "english", "dutch", "german", "taal", "nederlands", "engels", "duits"]):
+        addons.append("Extra language or customer branding")
+    if any(w in body for w in ["hardware", "sensor", "bom", "gateway", "node"]):
+        addons.append("Hardware/BOM reference module")
+    if any(w in body for w in ["extra use", "second use", "energy", "downtime", "multiple", "variant"]):
+        addons.append("Extra use-case variant")
+    if any(w in body for w in ["call", "meeting", "review", "uitleg", "founder"]):
+        addons.append("Founder review call")
+    return addons
+
+
+def _v107_missing_inputs(text):
+    body = str(text or "").lower()
+    missing = []
+    if not any(w in body for w in ["csv", "excel", "json", "log", "data", "dataset"]):
+        missing.append("sample data format or example file")
+    if not any(w in body for w in ["machine", "asset", "sensor", "process", "node", "device"]):
+        missing.append("asset/process type")
+    if not any(w in body for w in ["goal", "predict", "detect", "reduce", "downtime", "kwaliteit", "storing", "anomaly"]):
+        missing.append("desired business/technical outcome")
+    if not any(w in body for w in ["label", "failure", "maintenance", "normal", "abnormal", "historie", "field"]):
+        missing.append("whether normal/abnormal labels or maintenance history exist")
+    return missing
+
+
+def _v107_risk_flags(text, include_customer_data=False, allow_external_api=False, store_prompts=False):
+    body = str(text or "").lower()
+    flags = []
+    for word in _V107_FORBIDDEN_CLAIM_WORDS:
+        if word.lower() in body:
+            flags.append("risky claim requested: " + word)
+    if include_customer_data and allow_external_api:
+        flags.append("raw customer data would leave EdgeTwin; require explicit customer/data policy approval")
+    if store_prompts:
+        flags.append("prompt storage enabled; check privacy and retention rules")
+    high_stakes_terms = ["safety", "medical", "legal", "compliance", "certified", "production"]
+    if any(w in body for w in high_stakes_terms) or re.search(r"\bce\b", body):
+        flags.append("regulated/high-stakes wording detected")
+    return flags
+
+
+def build_ai_copilot_adapter_v107_snapshot(project_name="EdgeTwin Project", customer_message="", desired_outcome="", copilot_mode="pack_recommendation", provider="offline_rules", allow_external_api=False, store_prompts=False, include_customer_data=False, client_snapshot=None, custom_snapshot=None, policy_snapshot=None, quote_snapshot=None, fulfillment_snapshot=None, allowed_tasks=None):
+    client_snapshot = client_snapshot or {}; custom_snapshot = custom_snapshot or {}; policy_snapshot = policy_snapshot or {}; quote_snapshot = quote_snapshot or {}; fulfillment_snapshot = fulfillment_snapshot or {}
+    allowed_tasks = allowed_tasks or []
+    redacted_message = _v107_redact(customer_message)
+    recommended_pack = _v107_guess_pack(redacted_message, desired_outcome)
+    suggested_addons = _v107_addons(redacted_message + " " + str(desired_outcome or ""))
+    missing_inputs = _v107_missing_inputs(redacted_message + " " + str(desired_outcome or ""))
+    risk_flags = _v107_risk_flags(redacted_message, include_customer_data=include_customer_data, allow_external_api=allow_external_api, store_prompts=store_prompts)
+    blocked_actions = [
+        {"action": "approve payment", "blocked": True, "reason": "Only V102/V99/V106 may trust provider webhook/manual payment truth."},
+        {"action": "guarantee accuracy", "blocked": True, "reason": "Requires representative labelled field validation and customer approval."},
+        {"action": "make legal/compliance certification claim", "blocked": True, "reason": "Needs external legal/compliance review."},
+        {"action": "delete customer data", "blocked": True, "reason": "Requires explicit retention/delete workflow and audit."},
+        {"action": "send customer email automatically", "blocked": True, "reason": "V107 may draft only unless a later approved outbound-mail gate exists."},
+    ]
+    prompt_policy = [
+        {"rule": "Use structured output", "pass": True, "reason": "The copilot returns a schema EdgeTwin can validate."},
+        {"rule": "No card data", "pass": True, "reason": "Payment details stay with provider; V107 only sees order/status metadata."},
+        {"rule": "No raw customer data by default", "pass": not include_customer_data, "reason": "Use redacted summary unless explicit data policy allows more."},
+        {"rule": "No dangerous claims", "pass": not any("risky claim" in f for f in risk_flags), "reason": "; ".join(risk_flags) if risk_flags else "No dangerous wording detected."},
+        {"rule": "AI drafts, EdgeTwin decides", "pass": True, "reason": "Policy/state machines remain source of truth."},
+    ]
+    high_risk = bool(risk_flags) or (allow_external_api and include_customer_data)
+    auto_action_allowed = (not high_risk) and provider in {"offline_rules", "manual_review", "openai_ready"}
+    decision = "COPILOT READY - DRAFTS ONLY" if auto_action_allowed else "COPILOT NEEDS FOUNDER/DATA REVIEW"
+    risk_level = "low" if not risk_flags else ("medium" if len(risk_flags) <= 2 else "high")
+    score = 100
+    if missing_inputs: score -= min(12, len(missing_inputs) * 3)
+    if risk_flags: score -= min(25, len(risk_flags) * 7)
+    if allow_external_api and include_customer_data: score -= 10
+    score = max(0, int(score))
+    safe_claim = "EdgeTwin can prepare a pilot/evidence pack with data-quality checks, trust notes, assumptions, limitations and concrete next steps. It does not guarantee production accuracy without further validation on representative real-world data."
+    customer_summary = f"""# AI Copilot Draft — V107\n\n**Recommended pack:** {recommended_pack}  \n**Suggested add-ons:** {', '.join(suggested_addons) if suggested_addons else 'none detected yet'}  \n**Risk level:** {risk_level}  \n\n## Safe customer explanation\n\n{safe_claim}\n\n## What is still needed\n\n{chr(10).join('- ' + m for m in missing_inputs) if missing_inputs else '- No critical missing input detected for a first-pass recommendation.'}\n\n## Important boundary\n\nThe AI copilot drafts and recommends. EdgeTwin policy, payment webhooks, order state and founder/legal approval gates remain the source of truth.\n"""
+    structured_output = {
+        "recommended_pack": recommended_pack,
+        "suggested_addons": suggested_addons,
+        "missing_inputs": missing_inputs,
+        "risk_flags": risk_flags,
+        "safe_customer_claim": safe_claim,
+        "next_best_action": "Generate V98 quote from this recommendation" if not missing_inputs else "Ask the missing-input questions before final quote",
+        "founder_review_required": bool(high_risk),
+    }
+    integration_contract = {
+        "provider_modes": ["offline_rules", "openai_ready", "manual_review"],
+        "api_key_storage": "environment/secrets only; never in project JSON or SQLite",
+        "input_contract": {"customer_message": "redacted string", "allowed_tasks": "list[str]", "context_snapshots": "lightweight metadata only"},
+        "output_schema": {"recommended_pack": "str", "suggested_addons": "list[str]", "missing_inputs": "list[str]", "risk_flags": "list[str]", "safe_customer_claim": "str", "founder_review_required": "bool"},
+        "source_of_truth": ["V95 policy approval", "V96 pricing assurance", "V102 payment adapter", "V106 fulfillment state machine"],
+        "never_let_ai_do": ["approve payment", "sign contract", "delete data", "make legal/compliance claims", "guarantee accuracy", "serve private downloads"],
+    }
+    return {
+        "version": "V107", "module": "AI Copilot Adapter", "created_at": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "project_name": project_name, "copilot_mode": copilot_mode, "provider": provider, "allow_external_api": bool(allow_external_api),
+        "store_prompts": bool(store_prompts), "include_customer_data": bool(include_customer_data), "allowed_tasks": allowed_tasks,
+        "redacted_customer_message": redacted_message if store_prompts else "not stored by policy",
+        "recommended_pack": recommended_pack, "suggested_addons": suggested_addons, "missing_inputs": missing_inputs, "risk_flags": risk_flags,
+        "blocked_actions": blocked_actions, "prompt_policy": prompt_policy, "structured_output": structured_output,
+        "integration_contract": integration_contract, "safe_customer_summary": customer_summary,
+        "auto_action_allowed": bool(auto_action_allowed), "risk_level": risk_level, "copilot_score": score, "decision": decision,
+        "context_seen": {"client_input_v94": bool(client_snapshot), "custom_pack_v97": bool(custom_snapshot), "policy_v95": bool(policy_snapshot), "quote_v98": bool(quote_snapshot), "fulfillment_v106": bool(fulfillment_snapshot)},
+        "important_boundary": "V107 is a copilot adapter. It drafts and recommends; it does not become the source of truth for payments, legal claims, production accuracy or private delivery.",
+    }
+
+
+def create_ai_copilot_adapter_v107_bundle(project_name, snapshot):
+    bio = io.BytesIO()
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("ai_copilot_adapter_v107.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("ai_copilot_customer_summary_v107.md", str(snapshot.get("safe_customer_summary", "")))
+        zf.writestr("ai_structured_output_v107.json", json.dumps(_json_safe(snapshot.get("structured_output", {})), indent=2, ensure_ascii=False))
+        zf.writestr("prompt_policy_v107.csv", pd.DataFrame(snapshot.get("prompt_policy", [])).to_csv(index=False))
+        zf.writestr("blocked_ai_actions_v107.csv", pd.DataFrame(snapshot.get("blocked_actions", [])).to_csv(index=False))
+        zf.writestr("integration_contract_v107.json", json.dumps(_json_safe(snapshot.get("integration_contract", {})), indent=2, ensure_ascii=False))
+        zf.writestr("provider_adapter_stub_v107.py", """# EdgeTwin V107 provider adapter stub\n# Keep API keys in environment/secrets. Never store them in SQLite/project JSON.\n\ndef call_ai_provider(payload):\n    # Later: call OpenAI/other provider with structured output.\n    # Today: return EdgeTwin-validated offline recommendation only.\n    return {\"status\": \"stub_ready\", \"payload\": payload}\n""")
+        pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, "EdgeTwin AI Copilot Adapter V107", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nRecommended pack: {snapshot.get('recommended_pack')}\nRisk: {snapshot.get('risk_level')}\nScore: {snapshot.get('copilot_score')}\n\nV107 adds a controlled AI copilot layer for summaries, pack suggestions, missing-input questions and safe customer copy. It does not approve payments, legal claims, production accuracy or private delivery.")
+        zf.writestr("ai_copilot_adapter_v107.pdf", safe_pdf_output(pdf))
+    bio.seek(0)
+    return bio.getvalue()
+
+
+# ============================================================
+# V108 - CLAIM SAFETY & PROMPT POLICY PACK
+# ============================================================
+
+def build_claim_safety_prompt_policy_v108_snapshot(project_name="EdgeTwin Project", proposed_customer_claim="", customer_context="", pack_type="Professional Pilot Pack", channel="quote_or_report", copilot_snapshot=None, allow_external_ai=False, include_raw_customer_data=False):
+    from claim_safety_policy_v108 import build_claim_safety_prompt_policy_snapshot
+    return build_claim_safety_prompt_policy_snapshot(
+        project_name=project_name,
+        proposed_customer_claim=proposed_customer_claim,
+        customer_context=customer_context,
+        pack_type=pack_type,
+        channel=channel,
+        copilot_snapshot=copilot_snapshot or {},
+        allow_external_ai=allow_external_ai,
+        include_raw_customer_data=include_raw_customer_data,
+    )
+
+
+def create_claim_safety_prompt_policy_v108_bundle(project_name, snapshot):
+    bio = io.BytesIO()
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("claim_safety_prompt_policy_v108.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("safe_rewrite_v108.md", str(snapshot.get("safe_rewrite", "")))
+        zf.writestr("prompt_guard_v108.json", json.dumps(_json_safe(snapshot.get("prompt_guard", {})), indent=2, ensure_ascii=False))
+        zf.writestr("policy_flags_v108.csv", pd.DataFrame(snapshot.get("policy_flags", [])).to_csv(index=False))
+        zf.writestr("safe_claim_library_v108.csv", pd.DataFrame(snapshot.get("safe_claim_library", [])).to_csv(index=False))
+        zf.writestr("prompt_policy_rules_v108.csv", pd.DataFrame(snapshot.get("prompt_policy_rules", [])).to_csv(index=False))
+        zf.writestr("customer_safe_claim_snippets_v108.md", "\n\n".join([f"## {item.get('name')}\n{item.get('claim')}\n\nUse when: {item.get('use_when')}" for item in snapshot.get("safe_claim_library", [])]))
+        zf.writestr("copilot_prompt_policy_stub_v108.txt", str(snapshot.get("prompt_guard", {}).get("system_boundary", "")))
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "EdgeTwin Claim Safety & Prompt Policy V108", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nRisk: {snapshot.get('risk_level')}\nScore: {snapshot.get('claim_score')}\nAuto publish allowed: {snapshot.get('auto_publish_allowed')}\nFounder review required: {snapshot.get('founder_review_required')}\n\nSafe rewrite:\n{snapshot.get('safe_rewrite')}\n\nBoundary: {snapshot.get('important_boundary')}")
+        zf.writestr("claim_safety_prompt_policy_v108.pdf", safe_pdf_output(pdf))
+    bio.seek(0)
+    return bio.getvalue()
+
+
+# ============================================================
+# V109 - SYNTHETIC DATA OPTIMIZER / GOLDEN SCENARIO DATA
+# ============================================================
+
+def build_synthetic_data_optimizer_v109_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=1500, seed=109, noise_level=0.06, missing_rate=0.015, drift_strength=0.05, imbalance_factor=1.0, include_edge_cases=True):
+    from synthetic_data_optimizer_v109 import build_synthetic_data_optimizer_v109_snapshot as _build
+    return _build(
+        project_name=project_name,
+        pack_key=pack_key,
+        rows=rows,
+        seed=seed,
+        noise_level=noise_level,
+        missing_rate=missing_rate,
+        drift_strength=drift_strength,
+        imbalance_factor=imbalance_factor,
+        include_edge_cases=include_edge_cases,
+    )
+
+
+def create_synthetic_data_optimizer_v109_bundle(project_name, snapshot, dataset_df=None):
+    from synthetic_data_optimizer_v109 import generate_scenario_dataset, score_synthetic_dataset
+    bio = io.BytesIO()
+    manifest = snapshot.get("manifest", {}) if isinstance(snapshot, dict) else {}
+    if dataset_df is None or not isinstance(dataset_df, pd.DataFrame) or dataset_df.empty:
+        dataset_df, manifest = generate_scenario_dataset(
+            pack_key=manifest.get("pack_key", snapshot.get("pack_key", "rotating_machinery") if isinstance(snapshot, dict) else "rotating_machinery"),
+            rows=manifest.get("rows", 1500),
+            seed=manifest.get("seed", 109),
+            noise_level=manifest.get("noise_level", 0.06),
+            missing_rate=manifest.get("missing_rate_requested", 0.015),
+            drift_strength=manifest.get("drift_strength", 0.05),
+            imbalance_factor=manifest.get("imbalance_factor", 1.0),
+            include_edge_cases=manifest.get("include_edge_cases", True),
+        )
+    quality = score_synthetic_dataset(dataset_df, manifest)
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("synthetic_data_optimizer_v109.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("synthetic_dataset_v109.csv", dataset_df.to_csv(index=False))
+        zf.writestr("synthetic_dataset_manifest_v109.json", json.dumps(_json_safe(manifest), indent=2, ensure_ascii=False))
+        zf.writestr("synthetic_quality_report_v109.json", json.dumps(_json_safe(quality), indent=2, ensure_ascii=False))
+        zf.writestr("stress_profiles_v109.csv", pd.DataFrame(snapshot.get("stress_profiles", [])).to_csv(index=False))
+        zf.writestr("validation_contract_v109.json", json.dumps(_json_safe(snapshot.get("validation_contract", {})), indent=2, ensure_ascii=False))
+        zf.writestr("README_V109_SYNTHETIC_DATA.md", f"""# EdgeTwin Synthetic Data Optimizer V109
+
+Project: {project_name}
+Decision: {snapshot.get('decision')}
+Synthetic quality score: {snapshot.get('synthetic_quality_score')}
+Dataset hash: {manifest.get('dataset_hash')}
+
+## What this proves
+- End-to-end workflow behavior.
+- Data-quality gate behavior under controlled noise/missingness/drift.
+- Regression checks with known ground-truth labels.
+- Customer demo realism before real customer data is available.
+
+## What this does not prove
+- Production accuracy.
+- Compliance/legal certification.
+- Field reliability for a specific customer without customer data validation.
+
+Boundary: {snapshot.get('important_boundary')}
+""")
+        pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "EdgeTwin Synthetic Data Optimizer V109", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nScore: {snapshot.get('synthetic_quality_score')}\nPack: {snapshot.get('pack_title')}\nRows: {manifest.get('rows')}\nDataset hash: {manifest.get('dataset_hash')}\n\nV109 upgrades synthetic testdata into scenario-based golden data with labels, controlled noise, missingness, drift and edge cases. It supports demos/regression/data-quality gates, but does not prove production accuracy without real customer validation.")
+        zf.writestr("synthetic_data_optimizer_v109.pdf", safe_pdf_output(pdf))
+    bio.seek(0)
+    return bio.getvalue()
+
+
+# ============================================================
+# V110 - SYNTHETIC→REAL BRIDGE / CONSENT-CONTROLLED LEARNING
+# ============================================================
+
+def build_synthetic_real_bridge_v110_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=110, consent_mode="profile_only", purpose="pilot readiness / synthetic calibration", real_df=None):
+    from synthetic_real_bridge_v110 import build_synthetic_real_bridge_v110_snapshot as _build
+    return _build(
+        project_name=project_name,
+        pack_key=pack_key,
+        rows=rows,
+        seed=seed,
+        consent_mode=consent_mode,
+        purpose=purpose,
+        real_df=real_df,
+    )
+
+
+def create_synthetic_real_bridge_v110_bundle(project_name, snapshot, calibrated_df=None):
+    import io, json, zipfile
+    import pandas as pd
+    from fpdf import FPDF
+    from synthetic_real_bridge_v110 import build_synthetic_real_bridge_v110_snapshot
+    bio = io.BytesIO()
+    if calibrated_df is None or not isinstance(calibrated_df, pd.DataFrame) or calibrated_df.empty:
+        snapshot, calibrated_df = build_synthetic_real_bridge_v110_snapshot(project_name=project_name)
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("synthetic_real_bridge_v110.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("calibrated_synthetic_dataset_v110.csv", calibrated_df.to_csv(index=False))
+        zf.writestr("real_data_profile_v110.json", json.dumps(_json_safe(snapshot.get("real_profile", {})), indent=2, ensure_ascii=False))
+        zf.writestr("consent_learning_policy_v110.json", json.dumps(_json_safe(snapshot.get("learning_policy", {})), indent=2, ensure_ascii=False))
+        zf.writestr("recommendations_v110.csv", pd.DataFrame(snapshot.get("recommendations", [])).to_csv(index=False))
+        zf.writestr("README_V110_SYNTHETIC_REAL_BRIDGE.md", f"""# EdgeTwin Synthetic→Real Bridge V110
+
+Project: {project_name}
+Decision: {snapshot.get('decision')}
+Realism score: {snapshot.get('realism_score')}
+Consent mode: {snapshot.get('consent', {}).get('mode')}
+Raw customer rows in bundle: {snapshot.get('raw_customer_rows_in_bundle')}
+
+## What this does
+- Makes synthetic data more realistic using scenario stress plus aggregate real-data profiles when available.
+- Keeps raw customer rows out of reusable bundles by default.
+- Creates a learning policy for consent-controlled product improvement.
+
+## What this does not do
+- It does not prove production accuracy.
+- It does not certify legal/compliance readiness.
+- It does not allow cross-customer reuse without explicit permission.
+
+Boundary: {snapshot.get('important_boundary')}
+""")
+        pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "EdgeTwin Synthetic to Real Bridge V110", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nRealism score: {snapshot.get('realism_score')}\nConsent mode: {snapshot.get('consent', {}).get('mode')}\nRaw customer rows in bundle: {snapshot.get('raw_customer_rows_in_bundle')}\n\n{snapshot.get('customer_safe_summary')}\n\nBoundary: {snapshot.get('important_boundary')}")
+        zf.writestr("synthetic_real_bridge_v110.pdf", safe_pdf_output(pdf))
+    bio.seek(0)
+    return bio.getvalue()
+
+# ============================================================
+# V111 - SYNTHETIC RELIABILITY LAB / GOLDEN REGRESSION TRUST
+# ============================================================
+
+def build_synthetic_reliability_lab_v111_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=111, real_df=None, use_real_profile=True, stress_profile_keys=None):
+    from synthetic_reliability_lab_v111 import build_synthetic_reliability_lab_v111_snapshot as _build
+    return _build(
+        project_name=project_name,
+        pack_key=pack_key,
+        rows=rows,
+        seed=seed,
+        real_df=real_df,
+        use_real_profile=use_real_profile,
+        stress_profile_keys=stress_profile_keys,
+    )
+
+
+def create_synthetic_reliability_lab_v111_bundle(project_name, snapshot, datasets=None):
+    import io, json, zipfile
+    import pandas as pd
+    from fpdf import FPDF
+    from synthetic_reliability_lab_v111 import build_synthetic_reliability_lab_v111_snapshot
+    bio = io.BytesIO()
+    if not isinstance(datasets, dict) or not datasets:
+        snapshot, datasets = build_synthetic_reliability_lab_v111_snapshot(project_name=project_name)
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("synthetic_reliability_lab_v111.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("stress_profiles_v111.csv", pd.DataFrame(snapshot.get("stress_profiles", [])).to_csv(index=False))
+        zf.writestr("recommendations_v111.csv", pd.DataFrame(snapshot.get("recommendations", [])).to_csv(index=False))
+        zf.writestr("red_team_checks_v111.csv", pd.DataFrame(snapshot.get("red_team_checks_realistic_messy", [])).to_csv(index=False))
+        zf.writestr("validation_contract_v111.json", json.dumps(_json_safe(snapshot.get("validation_contract", {})), indent=2, ensure_ascii=False))
+        zf.writestr("privacy_similarity_risk_v111.json", json.dumps(_json_safe(snapshot.get("privacy_similarity_risk", {})), indent=2, ensure_ascii=False))
+        zf.writestr("fidelity_to_real_v111.json", json.dumps(_json_safe(snapshot.get("fidelity_to_real", {})), indent=2, ensure_ascii=False))
+        for name, df in (datasets or {}).items():
+            if isinstance(df, pd.DataFrame) and not df.empty:
+                zf.writestr(f"synthetic_dataset_{name}_v111.csv", df.to_csv(index=False))
+        zf.writestr("README_V111_SYNTHETIC_RELIABILITY_LAB.md", f"""# EdgeTwin Synthetic Reliability Lab V111
+
+Project: {project_name}
+Decision: {snapshot.get('decision')}
+Synthetic reliability score: {snapshot.get('synthetic_reliability_score')}
+Pack: {snapshot.get('pack_title')}
+
+## What V111 improves
+- Synthetic data is tested across multiple stress profiles, not only a clean demo case.
+- Known-label coverage, timestamp health, correlation stability and red-team checks are measured.
+- Optional real-data comparison is handled as a controlled fidelity/similarity check.
+- Privacy/similarity red flags are reported before reusable templates are allowed.
+
+## What this proves
+- Regression/demonstration reliability.
+- Data-quality gate behavior under controlled messiness.
+- Whether synthetic data is strong enough for customer demo, pack QA and internal tests.
+
+## What this does not prove
+- Production accuracy.
+- Legal/compliance certification.
+- Real field reliability for a specific customer without representative labelled validation.
+
+Boundary: {snapshot.get('important_boundary')}
+""")
+        pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "EdgeTwin Synthetic Reliability Lab V111", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nScore: {snapshot.get('synthetic_reliability_score')}\nPack: {snapshot.get('pack_title')}\nStress profiles: {len(snapshot.get('stress_profiles', []))}\n\n{snapshot.get('customer_safe_summary')}\n\nBoundary: {snapshot.get('important_boundary')}")
+        zf.writestr("synthetic_reliability_lab_v111.pdf", safe_pdf_output(pdf))
+    bio.seek(0)
+    return bio.getvalue()
+
+
+# ============================================================
+# V112 - DATASET VALIDATION & BENCHMARK HARNESS
+# ============================================================
+
+def build_dataset_benchmark_harness_v112_snapshot(project_name="EdgeTwin Project", pack_key="rotating_machinery", rows=2500, seed=112, benchmark_profile="pilot_evidence_ready", real_df=None, include_v111_stress=True):
+    from dataset_benchmark_harness_v112 import build_dataset_benchmark_harness_v112_snapshot as _build
+    return _build(
+        project_name=project_name,
+        pack_key=pack_key,
+        rows=rows,
+        seed=seed,
+        benchmark_profile=benchmark_profile,
+        real_df=real_df,
+        include_v111_stress=include_v111_stress,
+    )
+
+
+def create_dataset_benchmark_harness_v112_bundle(project_name, snapshot, datasets=None):
+    import io, json, zipfile
+    import pandas as pd
+    from fpdf import FPDF
+    from dataset_benchmark_harness_v112 import build_dataset_benchmark_harness_v112_snapshot, build_v112_summary_table
+    bio = io.BytesIO()
+    if not isinstance(datasets, dict) or not datasets:
+        snapshot, datasets = build_dataset_benchmark_harness_v112_snapshot(project_name=project_name)
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("dataset_benchmark_harness_v112.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
+        zf.writestr("benchmark_summary_v112.csv", build_v112_summary_table(snapshot).to_csv(index=False))
+        zf.writestr("recommendations_v112.csv", pd.DataFrame(snapshot.get("recommendations", [])).to_csv(index=False))
+        for v in snapshot.get("validations", []):
+            name = str(v.get("dataset_name", "dataset")).replace("/", "_").replace("\\", "_")
+            zf.writestr(f"validation_{name}_v112.json", json.dumps(_json_safe(v), indent=2, ensure_ascii=False))
+        for name, df in (datasets or {}).items():
+            if isinstance(df, pd.DataFrame) and not df.empty:
+                zf.writestr(f"benchmark_dataset_{name}_v112.csv", df.to_csv(index=False))
+        zf.writestr("README_V112_DATASET_BENCHMARK_HARNESS.md", f"""# EdgeTwin Dataset Validation & Benchmark Harness V112
+
+Project: {project_name}
+Decision: {snapshot.get('decision')}
+Benchmark harness score: {snapshot.get('benchmark_harness_score')}
+Pack: {snapshot.get('pack_title')}
+Dataset validations: {snapshot.get('dataset_count')}
+
+## What V112 does
+- Applies one repeatable validation harness to synthetic and customer-sample datasets.
+- Checks schema, timestamps, labels, missingness, numeric signal health and leakage-like red flags.
+- Creates a benchmark matrix for demo, regression, pack QA and pilot-preparation readiness.
+- Integrates V111 synthetic reliability as a supporting signal.
+
+## What this proves
+- Dataset/workflow readiness for the selected benchmark profile.
+- Whether synthetic data is strong enough for internal tests and controlled customer demos.
+- Whether uploaded customer samples need discovery/data-readiness wording instead of higher claims.
+
+## What this does not prove
+- Production accuracy.
+- Legal/compliance certification.
+- Real field reliability for a customer without representative labelled validation.
+
+Boundary: {snapshot.get('important_boundary')}
+""")
+        pdf = FPDF(); pdf.add_page(); pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "EdgeTwin Dataset Benchmark Harness V112", ln=True)
+        pdf.set_font("Arial", size=10)
+        pdf.multi_cell(0, 6, f"Project: {project_name}\nDecision: {snapshot.get('decision')}\nScore: {snapshot.get('benchmark_harness_score')}\nPack: {snapshot.get('pack_title')}\nDatasets: {snapshot.get('dataset_count')}\n\n{snapshot.get('customer_safe_summary')}\n\nBoundary: {snapshot.get('important_boundary')}")
+        zf.writestr("dataset_benchmark_harness_v112.pdf", safe_pdf_output(pdf))
+    bio.seek(0)
+    return bio.getvalue()
+
+
+# ============================================================
+# V117 - ONE PERFECT CUSTOMER FLOW
+# ============================================================
+
+def build_one_perfect_customer_flow_v117_snapshot(*args, **kwargs):
+    from customer_flow_v117 import build_one_perfect_customer_flow_v117_snapshot as _build
+    return _build(*args, **kwargs)
+
+
+def create_one_perfect_customer_flow_v117_bundle(snapshot):
+    from customer_flow_v117 import create_one_perfect_customer_flow_v117_bundle as _bundle
+    return _bundle(snapshot)
+
+
+# ============================================================
+# V118 - GUIDED CUSTOM CUSTOMER BUILDER
+# ============================================================
+
+def build_guided_custom_customer_builder_v118_snapshot(*args, **kwargs):
+    from guided_custom_customer_builder_v118 import build_guided_custom_customer_builder_v118_snapshot as _build
+    return _build(*args, **kwargs)
+
+
+def create_guided_custom_customer_builder_v118_bundle(snapshot):
+    from guided_custom_customer_builder_v118 import create_guided_custom_customer_builder_v118_bundle as _bundle
+    return _bundle(snapshot)
