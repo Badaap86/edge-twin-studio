@@ -27,7 +27,7 @@ import buyer_data_room_pro as buyer_dataroom
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio V124", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -559,7 +559,7 @@ if st.sidebar.button("Save project", use_container_width=True, key="sidebar_save
         "release_guard_v83_snapshot": st.session_state.release_guard_v83_snapshot,
     }
 
-    # V81: central state registry prevents important gates/snapshots from being forgotten.
+    #: central state registry prevents important gates/snapshots from being forgotten.
     settings.update(
         state_registry.collect_persisted_settings(
             st.session_state,
@@ -734,10 +734,10 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 
 
 # ============================================================
-# HEADER / ORGANIZED NAVIGATION V45.2
+# HEADER / ORGANIZED NAVIGATION
 # ============================================================
 
-st.title("EdgeTwin Studio V99")
+st.title("EdgeTwin Studio")
 st.caption(
     "Pack Commerce Release Candidate: no SaaS required, sell downloadable/custom packs first, keep full founder control, privacy-safe learning, real upload intake and checkout readiness. "
     "V80 adds Trust Ledger and Decision Traceability: one evidence receipt explaining what data, gates, risks, approvals and claims support each customer deliverable."
@@ -784,7 +784,7 @@ st.markdown("""
 FOUNDER_NAV_GROUPS = {'1. Start & Guided Flow': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'smart_intake_v77_tab', 'home', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab', 'onboarding_tab', 'golden_demo_tab', 'workspace_tab'], '2. Build Pilot': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'wizard_tab', 'fusion_tab', 'canvas_tab', 'packs_tab', 'marketplace_tab', 'optimizer_tab'], '3. Validate & Trust': ['audit_tab', 'reliability_calibration_v67_tab', 'real_upload_v56_tab', 'real_bridge_tab', 'field_learning_v52_tab', 'normality_tab', 'trust_tab', 'field_validation_tab', 'field_evidence_v2_tab', 'success_gate_tab'], '4. Deploy & Export': ['deployment_tab', 'edge_impulse_tab', 'ei_classifier_tab', 'edge_starter_tab', 'hardware_reference_v59_tab', 'reports_tab', 'api_tab'], '5. Sell & Deliver': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'deliverable_qa_v75_tab', 'customer_journey_v73_tab', 'customer_status_v72_tab', 'outcome_assurance_v70_tab', 'customer_support_v71_tab', 'ip_moat_v65_tab', 'buyer_dataroom_v64_tab', 'case_study_v63_tab', 'roi_value_v62_tab', 'traction_proof_v61_tab', 'founder_ops_v49_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab', 'quote_to_cash_tab', 'monetization_tab', 'paid_export_tab', 'license_cert_tab', 'paid_pilot_v45_tab', 'delivery_tab', 'customer_success_tab', 'closed_beta_tab', 'beta_launch_tab'], '6. Operator & Admin': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'smart_intake_v77_tab', 'product_consolidation_v76_tab', 'deliverable_qa_v75_tab', 'quality_guardian_v74_tab', 'customer_journey_v73_tab', 'zero_touch_v69_tab', 'customer_status_v72_tab', 'customer_support_v71_tab', 'outcome_assurance_v70_tab', 'automation_orchestrator_v68_tab', 'continuous_improvement_v66_tab', 'launch_stabilization_v60_1_tab', 'commercial_release_v60_tab', 'product_readiness_tab', 'cloud_architecture_v58_tab', 'hardening_tab', 'governance_tab', 'scalability_tab', 'operational_tab', 'observability_tab', 'admin_tab', 'hardware_tab']}
 CUSTOMER_NAV_GROUPS = {'1. Start': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'smart_intake_v77_tab', 'product_consolidation_v76_tab', 'customer_journey_v73_tab', 'zero_touch_v69_tab', 'customer_home_v50_tab', 'automation_orchestrator_v68_tab', 'launch_experience_v53_tab', 'launch_assets_v54_tab', 'first_customer_beta_v55_tab'], '2. Create pilot': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'wizard_tab', 'real_upload_v56_tab'], '3. Review readiness': ['customer_review_v50_tab', 'reliability_calibration_v67_tab', 'field_learning_v52_tab'], '4. Download / handoff': ['pilot_factory_v79_tab', 'one_click_pilot_v78_tab', 'deliverable_qa_v75_tab', 'customer_status_v72_tab', 'outcome_assurance_v70_tab', 'customer_support_v71_tab', 'reports_tab', 'delivery_tab'], '5. Request proposal': ['roi_value_v62_tab', 'lead_intake_v48_tab', 'pricing_offer_tab', 'proposal_sow_tab', 'checkout_v57_tab']}
 NAV_GROUPS = CUSTOMER_NAV_GROUPS if st.session_state.workspace_mode_v50 == 'Customer Mode' else FOUNDER_NAV_GROUPS
-NAV_LABELS = {'pilot_factory_v79_tab': '🏭 Pilot Factory V79', 'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning V52', 'launch_experience_v53_tab': '🚀 Launch Experience V53', 'launch_assets_v54_tab': '🌐 Launch Assets V54', 'first_customer_beta_v55_tab': '🧪 First Customer Beta V55', 'real_upload_v56_tab': '📥 Real Upload V56', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready V40', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake V48', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'checkout_v57_tab': '🛒 Checkout V57', 'cloud_architecture_v58_tab': '☁️ Cloud Architecture V58', 'hardware_reference_v59_tab': '🧪 Hardware Reference V59', 'traction_proof_v61_tab': '📈 Traction Proof V61', 'roi_value_v62_tab': '💰 ROI Value V62', 'reliability_calibration_v67_tab': '🎚️ Reliability Calibration V67', 'zero_touch_v69_tab': '🧭 Zero-Touch Value V69', 'outcome_assurance_v70_tab': '✅ Outcome Assurance V70', 'customer_support_v71_tab': '🧑‍💻 Support Autopilot V71', 'customer_journey_v73_tab': '🧭 Customer Journey V73', 'one_click_pilot_v78_tab': '⚡ One-Click Pilot V78', 'smart_intake_v77_tab': '🧠 Smart Intake V77', 'product_consolidation_v76_tab': '🧩 Product Consolidation V76', 'deliverable_qa_v75_tab': '📦 Deliverable QA V75', 'quality_guardian_v74_tab': '🛡️ Quality Guardian V74', 'customer_status_v72_tab': '📍 Customer Status V72', 'automation_orchestrator_v68_tab': '🤖 Automation V68', 'continuous_improvement_v66_tab': '♻️ Improvement Flywheel V66', 'ip_moat_v65_tab': '🧬 IP & Moat V65', 'buyer_dataroom_v64_tab': '🗂️ Buyer Data Room V64', 'case_study_v63_tab': '🧾 Case Study V63', 'launch_stabilization_v60_1_tab': '🧊 Launch Stabilizer V60.1', 'commercial_release_v60_tab': '🚦 Commercial Release V60', 'quote_to_cash_tab': '🧾 Quote-to-Cash V47', 'paid_pilot_v45_tab': '🤝 Paid Pilot V45', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
+NAV_LABELS = {'pilot_factory_v79_tab': '🏭 Pilot Factory', 'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning', 'launch_experience_v53_tab': '🚀 Launch Experience', 'launch_assets_v54_tab': '🌐 Launch Assets', 'first_customer_beta_v55_tab': '🧪 First Customer Beta', 'real_upload_v56_tab': '📥 Real Upload', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'checkout_v57_tab': '🛒 Checkout', 'cloud_architecture_v58_tab': '☁️ Cloud Architecture', 'hardware_reference_v59_tab': '🧪 Hardware Reference', 'traction_proof_v61_tab': '📈 Traction Proof', 'roi_value_v62_tab': '💰 ROI Value', 'reliability_calibration_v67_tab': '🎚️ Reliability Calibration', 'zero_touch_v69_tab': '🧭 Zero-Touch Value', 'outcome_assurance_v70_tab': '✅ Outcome Assurance', 'customer_support_v71_tab': '🧑‍💻 Support Autopilot', 'customer_journey_v73_tab': '🧭 Customer Journey', 'one_click_pilot_v78_tab': '⚡ One-Click Pilot', 'smart_intake_v77_tab': '🧠 Smart Intake', 'product_consolidation_v76_tab': '🧩 Product Consolidation', 'deliverable_qa_v75_tab': '📦 Deliverable QA', 'quality_guardian_v74_tab': '🛡️ Quality Guardian', 'customer_status_v72_tab': '📍 Customer Status', 'automation_orchestrator_v68_tab': '🤖 Automation', 'continuous_improvement_v66_tab': '♻️ Improvement Flywheel', 'ip_moat_v65_tab': '🧬 IP & Moat', 'buyer_dataroom_v64_tab': '🗂️ Buyer Data Room', 'case_study_v63_tab': '🧾 Case Study', 'launch_stabilization_v60_1_tab': '🧊 Launch Stabilizer', 'commercial_release_v60_tab': '🚦 Commercial Release', 'quote_to_cash_tab': '🧾 Quote-to-Cash', 'paid_pilot_v45_tab': '🤝 Paid Pilot', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
 NAV_LABELS.update({'customer_home_v50_tab': '✨ Customer Start', 'customer_review_v50_tab': '✅ Readiness & Next Step'})
 NAV_HINTS = {
     "1. Start & Guided Flow": "For demos, guided onboarding, golden demo proof and project lifecycle overview.",
@@ -801,7 +801,7 @@ NAV_HINTS = {
 }
 
 
-# V80 navigation: keep the trust ledger visible in the simplified customer route and founder cockpit.
+# navigation: keep the trust ledger visible in the simplified customer route and founder cockpit.
 def _v80_add_nav(group_name, page_key, position=0):
     try:
         pages = NAV_GROUPS.get(group_name)
@@ -810,44 +810,44 @@ def _v80_add_nav(group_name, page_key, position=0):
     except Exception:
         pass
 
-NAV_LABELS["trust_ledger_v80_tab"] = "📒 Trust Ledger V80"
-NAV_LABELS["autonomy_controller_v82_tab"] = "🧠 Autonomy Controller V82"
-NAV_LABELS["release_guard_v83_tab"] = "🧪 Release Guard V83"
-NAV_LABELS["ultimate_product_v90_tab"] = "👑 Ultimate Product Brain V90"
-NAV_LABELS["pilot_launch_os_v91_tab"] = "🚦 Pilot Launch OS V91"
-NAV_LABELS["customer_demo_os_v92_tab"] = "🎬 Customer Demo OS V92"
-NAV_LABELS["pack_commerce_os_v93_tab"] = "📦 Pack Commerce OS V93"
-NAV_LABELS["client_input_autopilot_v94_tab"] = "🤖 Client Input Autopilot V94"
-NAV_LABELS["policy_approval_engine_v95_tab"] = "✅ Policy Approval Engine V95"
-NAV_LABELS["pricing_assurance_os_v96_tab"] = "💶 Pricing & Assurance OS V96"
-NAV_LABELS["custom_pack_builder_v97_tab"] = "🧩 Custom Pack Builder V97"
-NAV_LABELS["order_quote_builder_v98_tab"] = "🧾 Order Quote Builder V98"
-NAV_LABELS["payment_unlock_delivery_v99_tab"] = "🔓 Payment Unlock + Delivery V99"
-NAV_LABELS["marketplace_entitlement_v100_tab"] = "🛒 Marketplace Entitlement V100"
-NAV_LABELS["public_hosting_v101_tab"] = "🌐 Public Hosting Kit V101"
-NAV_LABELS["payment_provider_adapter_v102_tab"] = "💳 Payment Provider Adapter V102"
-NAV_LABELS["customer_portal_lite_v103_tab"] = "🧑‍💼 Customer Portal Lite V103"
-NAV_LABELS["secure_download_links_v104_tab"] = "🔐 Secure Download Links V104"
-NAV_LABELS["delivery_endpoint_tab"] = "🛡️ Private Delivery Endpoint V105"
-NAV_LABELS["order_fulfillment_v106_tab"] = "📚 Order Fulfillment V106"
-NAV_LABELS["ai_copilot_adapter_tab"] = "🤖 AI Copilot Adapter V107"
-NAV_LABELS["claim_safety_prompt_policy_v108_tab"] = "🧯 Claim Safety Policy V108"
-NAV_LABELS["synthetic_data_optimizer_tab"] = "🧬 Synthetic Data Optimizer V109"
-NAV_LABELS["synthetic_real_bridge_tab"] = "🌉 Synthetic→Real Bridge V110"
-NAV_LABELS["synthetic_reliability_lab_tab"] = "🧪 Synthetic Reliability Lab V111"
-NAV_LABELS["dataset_benchmark_harness_tab"] = "📏 Dataset Benchmark Harness V112"
-NAV_LABELS["public_benchmark_dataset_v113_tab"] = "🎧 Public Benchmark Dataset Adapter V113"
-NAV_LABELS["dataset_import_wizard_v114_tab"] = "🗂️ Dataset Import Wizard V114"
-NAV_LABELS["dataset_to_synthetic_tab"] = "🔁 Synthetic Calibration Loop V115"
-NAV_LABELS["self_selling_tab"] = "🧲 Self-Selling Conversion V116"
-NAV_LABELS["one_perfect_customer_flow_tab"] = "🛣️ One Perfect Customer Flow V117"
-NAV_LABELS["guided_custom_customer_builder_tab"] = "🧭 Guided Custom Builder V118"
-NAV_LABELS["customer_facing_landing_portal_tab"] = "🌍 Customer Landing Portal V119"
-NAV_LABELS["product_release_candidate_tab"] = "🚀 Product RC V120"
-NAV_LABELS["golden_dataset_library_tab"] = "🏆 Golden Dataset Library V121"
-NAV_LABELS["data_quality_gate_pro_tab"] = "🚦 Data Quality Gate Pro V122"
-NAV_LABELS["first_customer_intake_pack_tab"] = "🧾 First Customer Intake Pack V123"
-NAV_LABELS["buyer_data_room_pro_tab"] = "🏢 Buyer Data Room Pro V124"
+NAV_LABELS["trust_ledger_v80_tab"] = "📒 Trust Ledger"
+NAV_LABELS["autonomy_controller_v82_tab"] = "🧠 Autonomy Controller"
+NAV_LABELS["release_guard_v83_tab"] = "🧪 Release Guard"
+NAV_LABELS["ultimate_product_v90_tab"] = "👑 Ultimate Product Brain"
+NAV_LABELS["pilot_launch_os_v91_tab"] = "🚦 Pilot Launch OS"
+NAV_LABELS["customer_demo_os_v92_tab"] = "🎬 Customer Demo OS"
+NAV_LABELS["pack_commerce_os_v93_tab"] = "📦 Pack Commerce OS"
+NAV_LABELS["client_input_autopilot_v94_tab"] = "🤖 Client Input Autopilot"
+NAV_LABELS["policy_approval_engine_v95_tab"] = "✅ Policy Approval Engine"
+NAV_LABELS["pricing_assurance_os_v96_tab"] = "💶 Pricing & Assurance OS"
+NAV_LABELS["custom_pack_builder_v97_tab"] = "🧩 Custom Pack Builder"
+NAV_LABELS["order_quote_builder_v98_tab"] = "🧾 Order Quote Builder"
+NAV_LABELS["payment_unlock_delivery_v99_tab"] = "🔓 Payment Unlock + Delivery"
+NAV_LABELS["marketplace_entitlement_v100_tab"] = "🛒 Marketplace Entitlement"
+NAV_LABELS["public_hosting_v101_tab"] = "🌐 Public Hosting Kit"
+NAV_LABELS["payment_provider_adapter_v102_tab"] = "💳 Payment Provider Adapter"
+NAV_LABELS["customer_portal_lite_v103_tab"] = "🧑‍💼 Customer Portal Lite"
+NAV_LABELS["secure_download_links_v104_tab"] = "🔐 Secure Download Links"
+NAV_LABELS["delivery_endpoint_tab"] = "🛡️ Private Delivery Endpoint"
+NAV_LABELS["order_fulfillment_v106_tab"] = "📚 Order Fulfillment"
+NAV_LABELS["ai_copilot_adapter_tab"] = "🤖 AI Copilot Adapter"
+NAV_LABELS["claim_safety_prompt_policy_v108_tab"] = "🧯 Claim Safety Policy"
+NAV_LABELS["synthetic_data_optimizer_tab"] = "🧬 Synthetic Data Optimizer"
+NAV_LABELS["synthetic_real_bridge_tab"] = "🌉 Synthetic→Real Bridge"
+NAV_LABELS["synthetic_reliability_lab_tab"] = "🧪 Synthetic Reliability Lab"
+NAV_LABELS["dataset_benchmark_harness_tab"] = "📏 Dataset Benchmark Harness"
+NAV_LABELS["public_benchmark_dataset_v113_tab"] = "🎧 Public Benchmark Dataset Adapter"
+NAV_LABELS["dataset_import_wizard_v114_tab"] = "🗂️ Dataset Import Wizard"
+NAV_LABELS["dataset_to_synthetic_tab"] = "🔁 Synthetic Calibration Loop"
+NAV_LABELS["self_selling_tab"] = "🧲 Self-Selling Conversion"
+NAV_LABELS["one_perfect_customer_flow_tab"] = "🛣️ One Perfect Customer Flow"
+NAV_LABELS["guided_custom_customer_builder_tab"] = "🧭 Guided Custom Builder"
+NAV_LABELS["customer_facing_landing_portal_tab"] = "🌍 Customer Landing Portal"
+NAV_LABELS["product_release_candidate_tab"] = "🚀 Product Release Candidate"
+NAV_LABELS["golden_dataset_library_tab"] = "🏆 Golden Dataset Library"
+NAV_LABELS["data_quality_gate_pro_tab"] = "🚦 Data Quality Gate Pro"
+NAV_LABELS["first_customer_intake_pack_tab"] = "🧾 First Customer Intake Pack"
+NAV_LABELS["buyer_data_room_pro_tab"] = "🏢 Buyer Data Room Pro"
 _v80_add_nav("6. Operator & Admin", "public_hosting_v101_tab", 0)
 _v80_add_nav("6. Operator & Admin", "payment_provider_adapter_v102_tab", 0)
 _v80_add_nav("6. Operator & Admin", "customer_portal_lite_v103_tab", 0)
@@ -971,6 +971,72 @@ _v80_add_nav("5. Sell & Deliver", "pack_commerce_os_v93_tab", 1)
 _v80_add_nav("5. Sell & Deliver", "trust_ledger_v80_tab", 1)
 _v80_add_nav("6. Operator & Admin", "trust_ledger_v80_tab", 1)
 
+
+# ============================================================
+# V125 CUSTOMER UI CLEANUP
+# ============================================================
+# Keep the full founder cockpit available, but make Customer Mode feel like one clean
+# product flow instead of a technical lab with many versioned tools.
+CUSTOMER_LAUNCH_FLOW = {
+    "1. Start": [
+        "customer_facing_landing_portal_tab",
+        "one_perfect_customer_flow_tab",
+    ],
+    "2. Choose / build pack": [
+        "guided_custom_customer_builder_tab",
+        "first_customer_intake_pack_tab",
+    ],
+    "3. Check data readiness": [
+        "data_quality_gate_pro_tab",
+        "dataset_to_synthetic_tab",
+        "synthetic_reliability_lab_tab",
+    ],
+    "4. Evidence room": [
+        "buyer_data_room_pro_tab",
+        "product_release_candidate_tab",
+    ],
+    "5. Quote / delivery": [
+        "customer_portal_lite_v103_tab",
+        "payment_unlock_delivery_v99_tab",
+        "secure_download_links_v104_tab",
+    ],
+}
+
+FOUNDER_FOCUS_FLOW = [
+    "customer_facing_landing_portal_tab",
+    "one_perfect_customer_flow_tab",
+    "guided_custom_customer_builder_tab",
+    "data_quality_gate_pro_tab",
+    "buyer_data_room_pro_tab",
+    "product_release_candidate_tab",
+]
+
+if st.session_state.workspace_mode_v50 == "Customer Mode":
+    NAV_GROUPS = CUSTOMER_LAUNCH_FLOW
+else:
+    NAV_GROUPS.setdefault("0. Customer Launch Flow", [])
+    for _page in reversed(FOUNDER_FOCUS_FLOW):
+        if _page not in NAV_GROUPS["0. Customer Launch Flow"]:
+            NAV_GROUPS["0. Customer Launch Flow"].insert(0, _page)
+
+NAV_HINTS.update({
+    "0. Customer Launch Flow": "Founder shortcut: the clean route a customer should experience.",
+    "1. Start": "Customer-facing entry point: explain the value, show the route and avoid technical overload.",
+    "2. Choose / build pack": "Let the customer pick a standard or guided custom pack while EdgeTwin controls scope and risk.",
+    "3. Check data readiness": "Check whether the data is good enough for demo, pilot evidence, or needs improvement.",
+    "4. Evidence room": "Prepare the buyer-ready evidence bundle, limitations, scope and next steps.",
+    "5. Quote / delivery": "Move from quote/payment status to intake, secure delivery and download readiness.",
+})
+
+# Remove development version numbers from user-facing labels. Internal keys/function names keep
+# their version history, but customers see product names instead of V109/V120-style labels.
+def _clean_nav_label(label: str) -> str:
+    label = str(label)
+    label = re.sub(r"\s+V\d+(?:\.\d+)?\b", "", label)
+    return label.replace("Product RC", "Product Release Candidate")
+
+NAV_LABELS = {k: _clean_nav_label(v) for k, v in NAV_LABELS.items()}
+
 st.sidebar.markdown("---")
 st.sidebar.subheader("Workspace navigation")
 nav_group = st.sidebar.radio(
@@ -996,7 +1062,7 @@ if st.session_state.workspace_mode_v50 == "Customer Mode":
     )
 else:
     st.info(NAV_HINTS.get(nav_group, "Choose a workflow step from the sidebar."))
-with st.expander("Why V51 stays simple for customers", expanded=False):
+with st.expander("Why Customer Mode stays simple for customers", expanded=False):
     st.write(
         "Customer Mode is intentionally calm: the buyer sees the route, readiness and next step. "
         "The full Dataset Doctor, Reliability Engine, Synthetic-to-Real Bridge, trust gates, reports, pricing and delivery logic still run behind the scenes. "
@@ -1100,7 +1166,7 @@ def render_home():
 
 
 # ============================================================
-# V19.1 USE CASE WIZARD / AUTO PILOT GENERATOR
+# USE CASE WIZARD / AUTO PILOT GENERATOR
 # ============================================================
 
 def render_wizard_tab():
@@ -1186,7 +1252,7 @@ def render_wizard_tab():
             "Customer has real sensor data already",
             value=False,
             key=f"wizard_has_real_data_{use_case}",
-            help="V19.1 records this in the reliability estimate. V21 will use uploads to build synthetic variants around real signal fingerprints.",
+            help="V19.1 records this in the reliability estimate. will use uploads to build synthetic variants around real signal fingerprints.",
         )
 
     with st.expander("Optional: upload example real files for early inspection", expanded=False):
@@ -1206,7 +1272,7 @@ def render_wizard_tab():
             real_df = pd.DataFrame(feature_rows)
             st.write("Early real-file feature inspection")
             st.dataframe(real_df, use_container_width=True)
-            st.caption("These uploads are inspected now. In V21 they will become the basis for Synthetic-to-Real generation.")
+            st.caption("These uploads are inspected now. In they will become the basis for Synthetic-to-Real generation.")
             has_real_data = True
 
     config = core.build_use_case_config(
@@ -1527,7 +1593,7 @@ def render_audit_tab():
 
 
 # ============================================================
-# V20 SMART DATASET OPTIMIZER
+# SMART DATASET OPTIMIZER
 # ============================================================
 
 def render_optimizer_tab():
@@ -1673,7 +1739,7 @@ def render_optimizer_tab():
 
 
 # ============================================================
-# V21 SYNTHETIC-TO-REAL BRIDGE
+# SYNTHETIC-TO-REAL BRIDGE
 # ============================================================
 
 def render_real_bridge_tab():
@@ -1921,11 +1987,11 @@ def render_real_bridge_tab():
                 key="real_bridge_download_bundle_v21",
             )
     else:
-        st.info("Upload real WAV/CSV data to create the V21 bridge. This is the strongest trust feature before paid pilot bundles.")
+        st.info("Upload real WAV/CSV data to create the bridge. This is the strongest trust feature before paid pilot bundles.")
 
 
 # ============================================================
-# V20.1 TRUST CENTER / COMMERCIAL READINESS
+# TRUST CENTER / COMMERCIAL READINESS
 # ============================================================
 
 def render_trust_tab():
@@ -2031,7 +2097,7 @@ def render_trust_tab():
         st.markdown("---")
         st.subheader("Reliability Engine 2.0")
         v1, v2, v3, v4 = st.columns(4)
-        v1.metric("Trust Score V2", f"{rel2.get('trust_score_v2', 0)}%")
+        v1.metric("Trust Score", f"{rel2.get('trust_score_v2', 0)}%")
         v2.metric("Readiness Stage", rel2.get("readiness_stage", "Unknown"))
         v3.metric("Production Risk", rel2.get("production_risk_level", "Unknown"))
         v4.metric("Real Samples Needed", rel2.get("total_real_samples_needed", 0))
@@ -2113,7 +2179,7 @@ def render_trust_tab():
 
 
 # ============================================================
-# V22 DEPLOYMENT PLANNER
+# DEPLOYMENT PLANNER
 # ============================================================
 
 def render_deployment_tab():
@@ -2303,7 +2369,7 @@ def render_deployment_tab():
 
 
 # ============================================================
-# V23 PROFESSIONAL REPORTS 2.0
+# PROFESSIONAL REPORTS 2.0
 # ============================================================
 
 def render_reports_tab():
@@ -2321,7 +2387,7 @@ def render_reports_tab():
 
     status_cols = st.columns(5)
     status_cols[0].metric("Dataset", "Yes" if has_dataset else "No")
-    status_cols[1].metric("Reliability V2", "Yes" if has_reliability else "No")
+    status_cols[1].metric("Reliability", "Yes" if has_reliability else "No")
     status_cols[2].metric("Trust", "Yes" if has_trust else "No")
     status_cols[3].metric("Real Bridge", "Yes" if has_bridge else "No")
     status_cols[4].metric("Deployment", "Yes" if has_deployment else "No")
@@ -2445,7 +2511,7 @@ def render_reports_tab():
 
 
 # ============================================================
-# V24.1 PRODUCT HARDENING & VALIDATION SUITE
+# PRODUCT HARDENING & VALIDATION SUITE
 # ============================================================
 
 def render_hardening_tab():
@@ -2515,7 +2581,7 @@ def render_hardening_tab():
         if len(blockers):
             st.dataframe(blockers, use_container_width=True)
         else:
-            st.success("No critical/high blockers detected by the V24.1 scan.")
+            st.success("No critical/high blockers detected by the scan.")
 
         dscan = snap.get("dataset_scan", {}) or {}
         st.subheader("Dataset safety")
@@ -2568,7 +2634,7 @@ def render_hardening_tab():
 
 
 # ============================================================
-# V24.2 BETA LAUNCH READINESS
+# BETA LAUNCH READINESS
 # ============================================================
 
 def render_beta_launch_tab():
@@ -2649,7 +2715,7 @@ def render_beta_launch_tab():
         for item in blockers:
             st.error(f"{item.get('area')} / {item.get('check')}: {item.get('next_step')}")
     else:
-        st.success("No high/critical beta launch blockers detected by V24.2.")
+        st.success("No high/critical beta launch blockers detected by.")
 
     st.subheader("Package cards")
     package_df = pd.DataFrame(snapshot.get("package_cards", []))
@@ -2694,7 +2760,7 @@ def render_beta_launch_tab():
 
 
 # ============================================================
-# V24 SAAS-LIGHT / MONETIZATION GATE
+# SAAS-LIGHT / MONETIZATION GATE
 # ============================================================
 
 def render_monetization_tab():
@@ -2804,7 +2870,7 @@ def render_monetization_tab():
 
 
 # ============================================================
-# V25 API AUTOMATION
+# API AUTOMATION
 # ============================================================
 
 def render_api_tab():
@@ -2951,7 +3017,7 @@ def render_api_tab():
 
 
 # ============================================================
-# V26 INDUSTRY PACK MARKETPLACE / PACK BUILDER
+# INDUSTRY PACK MARKETPLACE / PACK BUILDER
 # ============================================================
 
 def render_marketplace_tab():
@@ -3178,7 +3244,7 @@ def render_marketplace_tab():
 
 
 # ============================================================
-# V26.1 NORMAL VS ABNORMAL BASELINE ENGINE
+# NORMAL VS ABNORMAL BASELINE ENGINE
 # ============================================================
 
 def render_normality_tab():
@@ -3337,7 +3403,7 @@ def render_normality_tab():
 
 
 # ============================================================
-# V26.2 EDGE IMPULSE ANOMALY EXPORT
+# EDGE IMPULSE ANOMALY EXPORT
 # ============================================================
 
 def render_edge_impulse_tab():
@@ -3509,7 +3575,7 @@ def render_edge_impulse_tab():
 
 
 # ============================================================
-# V26.3 EDGE IMPULSE CLASSIFIER EXPORT
+# EDGE IMPULSE CLASSIFIER EXPORT
 # ============================================================
 
 def render_ei_classifier_tab():
@@ -3520,7 +3586,7 @@ def render_ei_classifier_tab():
     )
 
     st.info(
-        "Use V26.2 for K-means anomaly baseline. Use this tab for labelled event classification with train/test CSV exports and feature recommendations."
+        "Use for K-means anomaly baseline. Use this tab for labelled event classification with train/test CSV exports and feature recommendations."
     )
 
     if not isinstance(st.session_state.dataset, pd.DataFrame) or len(st.session_state.dataset) == 0:
@@ -3828,7 +3894,7 @@ def render_success_gate_tab():
 
 
 # ============================================================
-# V27 GOLDEN DEMO SUITE / CUSTOMER PAIN PROOF MATRIX
+# GOLDEN DEMO SUITE / CUSTOMER PAIN PROOF MATRIX
 # ============================================================
 
 def render_golden_demo_tab():
@@ -3974,7 +4040,7 @@ def render_golden_demo_tab():
 
 
 # ============================================================
-# V28 CLOSED BETA LAUNCH KIT
+# CLOSED BETA LAUNCH KIT
 # ============================================================
 
 def render_closed_beta_tab():
@@ -4123,7 +4189,7 @@ def render_closed_beta_tab():
 
 
 # ============================================================
-# V29 PAID EXPORT & LICENSE GATE
+# PAID EXPORT & LICENSE GATE
 # ============================================================
 
 def render_paid_export_tab():
@@ -4206,7 +4272,7 @@ def render_paid_export_tab():
 
 
 # ============================================================
-# V30 REAL FIELD VALIDATION PACK
+# REAL FIELD VALIDATION PACK
 # ============================================================
 
 def render_field_validation_tab():
@@ -4333,7 +4399,7 @@ def render_field_validation_tab():
 
 
 # ============================================================
-# V39 FIELD EVIDENCE 2.0 / ACCEPTANCE GATE
+# FIELD EVIDENCE 2.0 / ACCEPTANCE GATE
 # ============================================================
 
 def render_field_evidence_v2_tab():
@@ -4457,7 +4523,7 @@ def render_field_evidence_v2_tab():
         st.info("Build this gate after you have at least a basic dataset and preferably uploaded real field files.")
 
 # ============================================================
-# V31 EDGE DEPLOYMENT STARTER KIT
+# EDGE DEPLOYMENT STARTER KIT
 # ============================================================
 
 def render_edge_starter_tab():
@@ -4541,7 +4607,7 @@ def render_edge_starter_tab():
 
 
 # ============================================================
-# V31.2 STORAGE / SCALABILITY RECOVERY
+# STORAGE / SCALABILITY RECOVERY
 # ============================================================
 
 def render_scalability_tab():
@@ -4604,7 +4670,7 @@ def render_scalability_tab():
 
 
 # ============================================================
-# V32 OPERATIONAL CONTROL CENTER
+# OPERATIONAL CONTROL CENTER
 # ============================================================
 
 def render_operational_tab():
@@ -4756,7 +4822,7 @@ def render_operational_tab():
 
 
 # ============================================================
-# V33 PRODUCTION SAFETY & ERROR OBSERVATORY
+# PRODUCTION SAFETY & ERROR OBSERVATORY
 # ============================================================
 
 def render_observability_tab():
@@ -4919,7 +4985,7 @@ def render_observability_tab():
 
 
 # ============================================================
-# V34 CUSTOMER ASSURANCE & DATA GOVERNANCE CENTER
+# CUSTOMER ASSURANCE & DATA GOVERNANCE CENTER
 # ============================================================
 
 def render_governance_tab():
@@ -5054,7 +5120,7 @@ def render_governance_tab():
 
 
 # ============================================================
-# V35 CUSTOMER ONBOARDING & GUIDED SUCCESS FLOW
+# CUSTOMER ONBOARDING & GUIDED SUCCESS FLOW
 # ============================================================
 
 def render_onboarding_tab():
@@ -5203,7 +5269,7 @@ def render_onboarding_tab():
 
 
 # ============================================================
-# V36 CUSTOMER WORKSPACE / PROJECT LIFECYCLE
+# CUSTOMER WORKSPACE / PROJECT LIFECYCLE
 # ============================================================
 
 def render_workspace_tab():
@@ -5325,7 +5391,7 @@ def render_workspace_tab():
 
 
 # ============================================================
-# V37 ADMIN DASHBOARD / USAGE TRACKING
+# ADMIN DASHBOARD / USAGE TRACKING
 # ============================================================
 
 def render_admin_tab():
@@ -5515,7 +5581,7 @@ def render_admin_tab():
 
 
 # ============================================================
-# V38 COMMERCIAL LICENSE CERTIFICATE / PAID EXPORT LOCKING
+# COMMERCIAL LICENSE CERTIFICATE / PAID EXPORT LOCKING
 # ============================================================
 
 def render_license_cert_tab():
@@ -5668,7 +5734,7 @@ def render_license_cert_tab():
 
 
 # ============================================================
-# V40 FULL PRODUCT READINESS GATE
+# FULL PRODUCT READINESS GATE
 # ============================================================
 
 def render_product_readiness_tab():
@@ -5740,7 +5806,7 @@ def render_product_readiness_tab():
 
         if st.session_state.product_readiness_v40_bundle:
             st.download_button(
-                "Download V40 Product Readiness Bundle",
+                "Download Product Readiness Bundle",
                 st.session_state.product_readiness_v40_bundle,
                 file_name=f"{st.session_state.project_name}_v40_product_readiness_bundle.zip",
                 mime="application/zip",
@@ -5757,7 +5823,7 @@ def render_product_readiness_tab():
                 for item in blockers:
                     st.error(item)
             else:
-                st.success("No must-fix blockers detected by the V40 gate.")
+                st.success("No must-fix blockers detected by the gate.")
         with tabs_v40[2]:
             warnings = snap.get("warnings", [])
             if warnings:
@@ -5776,11 +5842,11 @@ def render_product_readiness_tab():
             for item in snap.get("next_actions", []):
                 st.info(item)
     else:
-        st.info("Run the V40 gate after you have generated a dataset and, ideally, run Reliability, Trust, Hardening, Governance, Field Evidence and License checks.")
+        st.info("Run the gate after you have generated a dataset and, ideally, run Reliability, Trust, Hardening, Governance, Field Evidence and License checks.")
 
 
 # ============================================================
-# V42 CUSTOMER DELIVERY PORTAL / DELIVERABLES CENTER
+# CUSTOMER DELIVERY PORTAL / DELIVERABLES CENTER
 # ============================================================
 
 def render_delivery_tab():
@@ -5947,7 +6013,7 @@ def render_delivery_tab():
 
 
 # ============================================================
-# V43 CUSTOMER SUCCESS FEEDBACK LOOP
+# CUSTOMER SUCCESS FEEDBACK LOOP
 # ============================================================
 
 def render_customer_success_tab():
@@ -6111,7 +6177,7 @@ def render_customer_success_tab():
 
 
 # ============================================================
-# V44 PRICING VALIDATION / OFFER BUILDER
+# PRICING VALIDATION / OFFER BUILDER
 # ============================================================
 
 def render_pricing_offer_tab():
@@ -6279,11 +6345,11 @@ def render_pricing_offer_tab():
 
 
 # ============================================================
-# V46 PROPOSAL & STATEMENT OF WORK GENERATOR
+# PROPOSAL & STATEMENT OF WORK GENERATOR
 # ============================================================
 
 def render_proposal_sow_tab():
-    st.header("Proposal & Statement of Work Generator V46")
+    st.header("Proposal & Statement of Work Generator")
     st.write(
         "V46 turns the selected offer into a customer-ready proposal and scoped statement of work. "
         "It keeps expectations clear: what is included, what is excluded, what evidence exists, "
@@ -6369,7 +6435,7 @@ def render_proposal_sow_tab():
                 st.session_state.user.get("id"),
                 st.session_state.project_id,
                 st.session_state.project_name,
-                "Proposal & SOW V46",
+                "Proposal & SOW",
                 st.session_state.selected_plan,
                 status=snapshot.get("decision", "created"),
                 notes=snapshot.get("safe_status_line", ""),
@@ -6445,15 +6511,15 @@ def render_proposal_sow_tab():
         with proposal_tabs[7]:
             st.json(snap)
     else:
-        st.info("Use this after Pricing Offer V44 and before Paid Pilot V45 delivery. It creates a clear customer proposal and SOW so the scope cannot drift.")
+        st.info("Use this after Pricing Offer and before Paid Pilot delivery. It creates a clear customer proposal and SOW so the scope cannot drift.")
 
 
 # ============================================================
-# V45 PAID PILOT LAUNCH READINESS
+# PAID PILOT LAUNCH READINESS
 # ============================================================
 
 def render_paid_pilot_v45_tab():
-    st.header("Paid Pilot Launch Readiness V45")
+    st.header("Paid Pilot Launch Readiness")
     st.write(
         "This gate decides whether the current offer can safely become a paid pilot. "
         "It connects pricing, license/certificate, delivery, security, governance, field evidence and product readiness into one revenue-ready decision."
@@ -6550,7 +6616,7 @@ def render_paid_pilot_v45_tab():
                 st.session_state.user.get("id"),
                 st.session_state.project_id,
                 st.session_state.project_name,
-                "Paid Pilot Launch Pack V45",
+                "Paid Pilot Launch Pack",
                 st.session_state.selected_plan,
                 status=snapshot.get("decision", "created"),
                 notes=snapshot.get("safe_status_line", ""),
@@ -6610,7 +6676,7 @@ def render_paid_pilot_v45_tab():
         with v45_tabs[6]:
             st.json(snap)
     else:
-        st.info("Use this after the Pricing Offer. V45 decides whether it is safe to move from quote/demo to a real paid pilot delivery.")
+        st.info("Use this after the Pricing Offer. decides whether it is safe to move from quote/demo to a real paid pilot delivery.")
 
 # ============================================================
 # SIGNAL CANVAS
@@ -6720,11 +6786,11 @@ def render_hardware_tab():
 
 
 # ============================================================
-# V47 QUOTE-TO-CASH / INVOICE READINESS CENTER
+# QUOTE-TO-CASH / INVOICE READINESS CENTER
 # ============================================================
 
 def render_quote_to_cash_tab():
-    st.header("Quote-to-Cash & Invoice Readiness V47")
+    st.header("Quote-to-Cash & Invoice Readiness")
     st.write(
         "This gate turns a scoped paid pilot offer into a clean commercial handoff: quote, invoice readiness, payment checklist, line items, safe terms and delivery gating. "
         "It does not process payments and is not legal/tax/accounting advice."
@@ -6812,7 +6878,7 @@ def render_quote_to_cash_tab():
 
         if st.session_state.quote_to_cash_bundle:
             st.download_button(
-                "Download Quote-to-Cash Bundle V47",
+                "Download Quote-to-Cash Bundle",
                 st.session_state.quote_to_cash_bundle,
                 file_name=f"{st.session_state.project_name}_quote_to_cash_v47.zip",
                 mime="application/zip",
@@ -6846,15 +6912,15 @@ def render_quote_to_cash_tab():
         with tabs[5]:
             st.json(snap)
     else:
-        st.info("Use this after Pricing Offer V44 and Proposal/SOW V46. V47 prepares quote, invoice readiness and payment checklist without processing payments.")
+        st.info("Use this after Pricing Offer and Proposal/SOW. prepares quote, invoice readiness and payment checklist without processing payments.")
 
 
 # ============================================================
-# V48 CUSTOMER LEAD INTAKE / QUALIFICATION CENTER
+# CUSTOMER LEAD INTAKE / QUALIFICATION CENTER
 # ============================================================
 
 def render_lead_intake_v48_tab():
-    st.header("Customer Lead Intake & Qualification V48")
+    st.header("Customer Lead Intake & Qualification")
     st.write(
         "This turns an interested customer into a clean next action: qualify the use case, check readiness, flag risks, "
         "prepare discovery questions and route the lead to demo, proposal, paid pilot or nurture."
@@ -6983,7 +7049,7 @@ def render_lead_intake_v48_tab():
 
         if st.session_state.lead_intake_v48_bundle:
             st.download_button(
-                "Download Lead Intake Bundle V48",
+                "Download Lead Intake Bundle",
                 st.session_state.lead_intake_v48_bundle,
                 file_name=f"{st.session_state.project_name}_lead_intake_v48.zip",
                 mime="application/zip",
@@ -7024,26 +7090,26 @@ def render_lead_intake_v48_tab():
         with tabs[5]:
             st.json(snap)
     else:
-        st.info("Use this before Pricing Offer/SOW. V48 helps avoid bad-fit leads and turns serious leads into a clean next step.")
+        st.info("Use this before Pricing Offer/SOW. helps avoid bad-fit leads and turns serious leads into a clean next step.")
 
 
 # ============================================================
-# V49 FOUNDER OPS / FOLLOW-UP AUTOMATION CENTER
+# FOUNDER OPS / FOLLOW-UP AUTOMATION CENTER
 # ============================================================
 
 def render_founder_ops_v49_tab():
-    st.header("Founder Ops & Customer Follow-up V49")
+    st.header("Founder Ops & Customer Follow-up")
     st.write(
         "This page turns customer interest into a practical founder task queue: what to do now, what to automate, "
         "what to ask the customer, and what not to spend time on. Built for one busy founder, not a big sales team."
     )
 
     snapshot_status = {
-        "Lead Intake V48": bool(st.session_state.lead_intake_v48_snapshot),
-        "Pricing Offer V44": bool(st.session_state.pricing_offer_snapshot),
-        "Proposal/SOW V46": bool(st.session_state.proposal_sow_snapshot),
-        "Quote-to-Cash V47": bool(st.session_state.quote_to_cash_snapshot),
-        "Paid Pilot V45": bool(st.session_state.paid_pilot_v45_snapshot),
+        "Lead Intake": bool(st.session_state.lead_intake_v48_snapshot),
+        "Pricing Offer": bool(st.session_state.pricing_offer_snapshot),
+        "Proposal/SOW": bool(st.session_state.proposal_sow_snapshot),
+        "Quote-to-Cash": bool(st.session_state.quote_to_cash_snapshot),
+        "Paid Pilot": bool(st.session_state.paid_pilot_v45_snapshot),
         "Delivery Portal": bool(st.session_state.customer_delivery_snapshot),
         "Customer Success": bool(st.session_state.customer_success_snapshot),
     }
@@ -7169,7 +7235,7 @@ def render_founder_ops_v49_tab():
 
         if st.session_state.founder_ops_v49_bundle:
             st.download_button(
-                "Download Founder Ops Bundle V49",
+                "Download Founder Ops Bundle",
                 st.session_state.founder_ops_v49_bundle,
                 file_name=f"{st.session_state.project_name}_founder_ops_v49.zip",
                 mime="application/zip",
@@ -7209,11 +7275,11 @@ def render_founder_ops_v49_tab():
         with tabs[6]:
             st.json(snap)
     else:
-        st.info("Use this after Lead Intake or any customer conversation. V49 helps you protect your time and keep next actions controlled.")
+        st.info("Use this after Lead Intake or any customer conversation. helps you protect your time and keep next actions controlled.")
 
 
 # ============================================================
-# V50 CUSTOMER MODE / SIMPLIFIED CUSTOMER ROUTE
+# CUSTOMER MODE / SIMPLIFIED CUSTOMER ROUTE
 # ============================================================
 
 
@@ -7236,7 +7302,7 @@ def _build_v51_customer_snapshot():
         lead_intake_snapshot=st.session_state.lead_intake_v48_snapshot,
     )
     st.session_state.customer_ui_v51_snapshot = snap
-    # Keep V50 snapshot populated for backwards compatibility with saved projects/bundles.
+    # Keep snapshot populated for backwards compatibility with saved projects/bundles.
     st.session_state.customer_mode_v50_snapshot = snap.get("base_v50_snapshot", snap)
     return snap
 
@@ -7271,7 +7337,7 @@ def _build_v50_customer_snapshot():
 
 
 def render_customer_home_v50_tab():
-    st.header("Customer Start — Clean Pilot Route V51")
+    st.header("Customer Start — Clean Pilot Route")
     snap = _build_v51_customer_snapshot()
 
     _render_v51_status_badges(snap)
@@ -7341,7 +7407,7 @@ def render_customer_home_v50_tab():
         st.write("These are internal/customer-success details. Keep this collapsed during normal buyer demos.")
         st.json({k: v for k, v in snap.items() if k not in ["base_v50_snapshot"]})
 
-    if st.button("Build Customer UI Bundle V51", type="primary", use_container_width=True, key="v51_build_customer_ui_bundle"):
+    if st.button("Build Customer UI Bundle", type="primary", use_container_width=True, key="v51_build_customer_ui_bundle"):
         st.session_state.customer_ui_v51_bundle = core.create_customer_ui_v51_bundle(
             st.session_state.project_name,
             snap,
@@ -7351,7 +7417,7 @@ def render_customer_home_v50_tab():
 
     if st.session_state.customer_ui_v51_bundle:
         st.download_button(
-            "Download Customer UI Bundle V51",
+            "Download Customer UI Bundle",
             st.session_state.customer_ui_v51_bundle,
             file_name=f"{st.session_state.project_name}_customer_ui_v51.zip",
             mime="application/zip",
@@ -7361,7 +7427,7 @@ def render_customer_home_v50_tab():
 
 
 def render_customer_review_v50_tab():
-    st.header("Readiness & Next Step — Customer View V51")
+    st.header("Readiness & Next Step — Customer View")
     snap = _build_v51_customer_snapshot()
 
     _render_v51_status_badges(snap)
@@ -7407,11 +7473,11 @@ def render_customer_review_v50_tab():
 
 
 # ============================================================
-# V53 — Launch-Ready Customer Experience
+# — Launch-Ready Customer Experience
 # ============================================================
 
 def render_launch_experience_v53_tab():
-    st.header("Launch-Ready Customer Experience V53")
+    st.header("Launch-Ready Customer Experience")
     st.write(
         "Create customer-facing copy, safe status badges, demo script and launch-readiness evidence. "
         "This does not weaken the engine; it translates the full EdgeTwin workflow into a calmer buyer experience."
@@ -7462,11 +7528,11 @@ def render_launch_experience_v53_tab():
         include_field_validation_notice = st.checkbox("Show field validation notice", value=True, key="v53_include_field_validation_notice")
 
     if len(dataset_df) == 0:
-        st.info("No dataset loaded yet. V53 can still create launch copy, but a generated pilot dataset makes the experience stronger.")
+        st.info("No dataset loaded yet. can still create launch copy, but a generated pilot dataset makes the experience stronger.")
     else:
         st.success(f"Dataset detected: {len(dataset_df)} rows, {len(dataset_df.columns)} columns.")
 
-    if st.button("Build Launch-Ready Experience V53", type="primary", use_container_width=True, key="v53_build_launch_experience"):
+    if st.button("Build Launch-Ready Experience", type="primary", use_container_width=True, key="v53_build_launch_experience"):
         snap = core.build_launch_ready_customer_experience_v53(
             project_name=st.session_state.project_name,
             dataset_df=dataset_df,
@@ -7561,7 +7627,7 @@ def render_launch_experience_v53_tab():
 
         if st.session_state.launch_experience_v53_bundle:
             st.download_button(
-                "Download Launch-Ready Customer Experience Bundle V53",
+                "Download Launch-Ready Customer Experience Bundle",
                 st.session_state.launch_experience_v53_bundle,
                 file_name=f"{st.session_state.project_name}_launch_ready_customer_experience_v53.zip",
                 mime="application/zip",
@@ -7573,11 +7639,11 @@ def render_launch_experience_v53_tab():
 
 
 # ============================================================
-# V52 — Privacy-Safe Field Learning System
+# — Privacy-Safe Field Learning System
 # ============================================================
 
 def render_field_learning_v52_tab():
-    st.header("Privacy-Safe Field Learning V52")
+    st.header("Privacy-Safe Field Learning")
     st.write(
         "Use real customer field data without making privacy or trust mistakes. "
         "By default, customer data stays private. EdgeTwin can learn only from safe extracted features when explicit opt-in is selected."
@@ -7622,11 +7688,11 @@ def render_field_learning_v52_tab():
     )
 
     if len(dataset_df) == 0:
-        st.info("No dataset loaded yet. Generate a pilot dataset or upload real customer data first. V52 can still create the privacy policy/checklist.")
+        st.info("No dataset loaded yet. Generate a pilot dataset or upload real customer data first. can still create the privacy policy/checklist.")
     else:
         st.success(f"Dataset detected: {len(dataset_df)} rows, {len(dataset_df.columns)} columns.")
 
-    if st.button("Build Privacy-Safe Learning Plan V52", type="primary", use_container_width=True, key="v52_build_privacy_learning"):
+    if st.button("Build Privacy-Safe Learning Plan", type="primary", use_container_width=True, key="v52_build_privacy_learning"):
         snap = core.build_privacy_safe_field_learning_v52(
             project_name=st.session_state.project_name,
             dataset_df=dataset_df,
@@ -7699,7 +7765,7 @@ def render_field_learning_v52_tab():
 
         if st.session_state.field_learning_v52_bundle:
             st.download_button(
-                "Download Privacy-Safe Field Learning Bundle V52",
+                "Download Privacy-Safe Field Learning Bundle",
                 st.session_state.field_learning_v52_bundle,
                 file_name=f"{st.session_state.project_name}_privacy_safe_field_learning_v52.zip",
                 mime="application/zip",
@@ -7714,11 +7780,11 @@ def render_field_learning_v52_tab():
 
 
 # ============================================================
-# V54 — Public Launch Page & Sales Assets
+# — Public Launch Page & Sales Assets
 # ============================================================
 
 def render_launch_assets_v54_tab():
-    st.header("Public Launch Page & Sales Assets V54")
+    st.header("Public Launch Page & Sales Assets")
     st.write(
         "Create simple customer-facing website copy, offer cards, outreach email, LinkedIn message and launch checklist. "
         "This helps you explain the product without manually rewriting the story for every lead."
@@ -7781,9 +7847,9 @@ def render_launch_assets_v54_tab():
     if len(dataset_df) > 0:
         st.success(f"Dataset detected: {len(dataset_df)} rows, {len(dataset_df.columns)} columns.")
     else:
-        st.info("No dataset loaded yet. V54 can still create launch assets, but a generated pilot dataset makes the offer stronger.")
+        st.info("No dataset loaded yet. can still create launch assets, but a generated pilot dataset makes the offer stronger.")
 
-    if st.button("Build Public Launch Assets V54", type="primary", use_container_width=True, key="v54_build_launch_assets"):
+    if st.button("Build Public Launch Assets", type="primary", use_container_width=True, key="v54_build_launch_assets"):
         snap = core.build_public_launch_assets_v54(
             project_name=st.session_state.project_name,
             dataset_df=dataset_df,
@@ -7871,7 +7937,7 @@ def render_launch_assets_v54_tab():
 
         if st.session_state.launch_assets_v54_bundle:
             st.download_button(
-                "Download Public Launch Assets Bundle V54",
+                "Download Public Launch Assets Bundle",
                 st.session_state.launch_assets_v54_bundle,
                 file_name=f"{st.session_state.project_name}_public_launch_assets_v54.zip",
                 mime="application/zip",
@@ -7883,11 +7949,11 @@ def render_launch_assets_v54_tab():
 
 
 # ============================================================
-# V55 — First Customer Beta Script / Test Run Planner
+# — First Customer Beta Script / Test Run Planner
 # ============================================================
 
 def render_first_customer_beta_v55_tab():
-    st.header("First Customer Beta Script V55")
+    st.header("First Customer Beta Script")
     st.write(
         "Build a structured first-customer beta/demo plan so every conversation follows the same safe route: "
         "problem, pilot package, readiness, boundaries, next step and feedback."
@@ -7945,7 +8011,7 @@ def render_first_customer_beta_v55_tab():
     else:
         st.info("No dataset loaded. The beta script will focus on discovery and demo flow rather than evidence delivery.")
 
-    if st.button("Build First Customer Beta Script V55", type="primary", use_container_width=True, key="v55_build_beta_script"):
+    if st.button("Build First Customer Beta Script", type="primary", use_container_width=True, key="v55_build_beta_script"):
         snap = core.build_first_customer_beta_script_v55(
             project_name=st.session_state.project_name,
             dataset_df=dataset_df,
@@ -8036,7 +8102,7 @@ def render_first_customer_beta_v55_tab():
 
         if st.session_state.first_customer_beta_v55_bundle:
             st.download_button(
-                "Download First Customer Beta Script Bundle V55",
+                "Download First Customer Beta Script Bundle",
                 st.session_state.first_customer_beta_v55_bundle,
                 file_name=f"{st.session_state.project_name}_first_customer_beta_script_v55.zip",
                 mime="application/zip",
@@ -8048,11 +8114,11 @@ def render_first_customer_beta_v55_tab():
 
 
 # ============================================================
-# V56 — Real Upload Experience 2.0 / Customer Data Intake
+# — Real Upload Experience 2.0 / Customer Data Intake
 # ============================================================
 
 def render_real_upload_v56_tab():
-    st.header("Real Upload Experience V56")
+    st.header("Real Upload Experience")
     st.write(
         "Upload real WAV/CSV field files in a controlled, privacy-first way. "
         "EdgeTwin inspects the files, extracts safe feature-level evidence and tells you what is usable, missing or risky before downstream trust/report flows."
@@ -8132,7 +8198,7 @@ def render_real_upload_v56_tab():
 
     expected_labels = [x.strip().replace(" ", "_") for x in expected_labels_text.replace(";", ",").split(",") if x.strip()]
 
-    if st.button("Build Real Upload Intake Plan V56", type="primary", use_container_width=True, key="v56_build_upload_intake"):
+    if st.button("Build Real Upload Intake Plan", type="primary", use_container_width=True, key="v56_build_upload_intake"):
         feature_df = pd.DataFrame(feature_rows)
         snapshot = core.inspect_real_upload_records_v56(
             upload_records=upload_records,
@@ -8199,7 +8265,7 @@ def render_real_upload_v56_tab():
 
         if st.session_state.real_upload_v56_bundle:
             st.download_button(
-                "Download Real Upload Experience Bundle V56",
+                "Download Real Upload Experience Bundle",
                 st.session_state.real_upload_v56_bundle,
                 file_name=f"{st.session_state.project_name}_real_upload_experience_v56.zip",
                 mime="application/zip",
@@ -8212,11 +8278,11 @@ def render_real_upload_v56_tab():
 
 
 # ============================================================
-# V57 — Checkout & Paid Download Readiness / Payment Prep
+# — Checkout & Paid Download Readiness / Payment Prep
 # ============================================================
 
 def render_checkout_v57_tab():
-    st.header("Checkout & Paid Download Readiness V57")
+    st.header("Checkout & Paid Download Readiness")
     st.write(
         "Prepare a controlled checkout/invoice step for paid pilot bundles. "
         "V57 does not process payments directly; it checks whether scope, license, privacy and delivery conditions are ready before payment or paid download unlock."
@@ -8254,7 +8320,7 @@ def render_checkout_v57_tab():
         refund_policy_acknowledged = st.checkbox("Refund/cancellation policy acknowledged", value=False, key="v57_refund_ack")
         st.info("For first paid pilots, manual invoice/payment link is safer than fully automated checkout. Stripe can come later after scope and terms are stable.")
 
-    if st.button("Build Checkout Readiness V57", type="primary", use_container_width=True, key="v57_build_checkout"):
+    if st.button("Build Checkout Readiness", type="primary", use_container_width=True, key="v57_build_checkout"):
         snapshot = core.build_checkout_readiness_v57(
             project_name=st.session_state.project_name,
             customer_name=customer_name,
@@ -8328,7 +8394,7 @@ def render_checkout_v57_tab():
 
         if st.session_state.checkout_v57_bundle:
             st.download_button(
-                "Download Checkout Readiness Bundle V57",
+                "Download Checkout Readiness Bundle",
                 st.session_state.checkout_v57_bundle,
                 file_name=f"{st.session_state.project_name}_checkout_readiness_v57.zip",
                 mime="application/zip",
@@ -8341,11 +8407,11 @@ def render_checkout_v57_tab():
 
 
 # ============================================================
-# V58 — Cloud Production Architecture & Migration Planner
+# — Cloud Production Architecture & Migration Planner
 # ============================================================
 
 def render_cloud_architecture_v58_tab():
-    st.header("Cloud Production Architecture & Migration Planner V58")
+    st.header("Cloud Production Architecture & Migration Planner")
     st.write(
         "Plan the safe move from local/private beta to paid pilots, public SaaS or enterprise/on-prem. "
         "This does not force heavy cloud infrastructure too early; it tells you when SQLite/local storage is enough and when PostgreSQL/object storage/FastAPI become necessary."
@@ -8382,7 +8448,7 @@ def render_cloud_architecture_v58_tab():
         needs_api = st.checkbox("Public/partner API needed", value=False, key="v58_needs_api")
         needs_stripe = st.checkbox("Stripe / paid checkout needed soon", value=False, key="v58_needs_stripe")
 
-    if st.button("Build Cloud Production Plan V58", type="primary", use_container_width=True, key="v58_build_architecture"):
+    if st.button("Build Cloud Production Plan", type="primary", use_container_width=True, key="v58_build_architecture"):
         snapshot = core.build_cloud_production_architecture_v58(
             project_name=st.session_state.project_name,
             target_stage=target_stage,
@@ -8456,7 +8522,7 @@ def render_cloud_architecture_v58_tab():
 
         if st.session_state.cloud_architecture_v58_bundle:
             st.download_button(
-                "Download Cloud Architecture Bundle V58",
+                "Download Cloud Architecture Bundle",
                 st.session_state.cloud_architecture_v58_bundle,
                 file_name=f"{st.session_state.project_name}_cloud_architecture_v58.zip",
                 mime="application/zip",
@@ -8468,11 +8534,11 @@ def render_cloud_architecture_v58_tab():
 
 
 # ============================================================
-# V59 — Hardware Reference Demo / Edge Node Proof Kit
+# — Hardware Reference Demo / Edge Node Proof Kit
 # ============================================================
 
 def render_hardware_reference_v59_tab():
-    st.header("Hardware Reference Demo / Edge Node Proof Kit V59")
+    st.header("Hardware Reference Demo / Edge Node Proof Kit")
     st.write(
         "Use this when you want a minimal, controlled hardware proof without turning your life into months of manual field testing. "
         "It plans the EdgeTwin → Edge Impulse/export → edge node → controlled demo loop."
@@ -8519,7 +8585,7 @@ def render_hardware_reference_v59_tab():
         has_deployment_plan = st.checkbox("Deployment plan prepared", value=bool(st.session_state.get("deployment_plan") or st.session_state.get("edge_deployment_starter_snapshot")), key="v59_has_deployment")
         has_privacy_plan = st.checkbox("Privacy-safe learning plan prepared", value=bool(st.session_state.get("field_learning_v52_snapshot")), key="v59_has_privacy_plan")
 
-    if st.button("Build Hardware Reference Demo Plan V59", type="primary", use_container_width=True, key="v59_build_reference_demo"):
+    if st.button("Build Hardware Reference Demo Plan", type="primary", use_container_width=True, key="v59_build_reference_demo"):
         snap = core.build_hardware_reference_demo_v59(
             project_name=st.session_state.project_name,
             demo_type=demo_type,
@@ -8585,7 +8651,7 @@ def render_hardware_reference_v59_tab():
 
         if st.session_state.hardware_reference_v59_bundle:
             st.download_button(
-                "Download Hardware Reference Demo Bundle V59",
+                "Download Hardware Reference Demo Bundle",
                 st.session_state.hardware_reference_v59_bundle,
                 file_name=f"{st.session_state.project_name}_hardware_reference_v59.zip",
                 mime="application/zip",
@@ -8599,11 +8665,11 @@ def render_hardware_reference_v59_tab():
 
 
 # ============================================================
-# V61 — Traction & Proof Dashboard / Buyer Evidence System
+# — Traction & Proof Dashboard / Buyer Evidence System
 # ============================================================
 
 def render_traction_proof_v61_tab():
-    st.header("Traction & Proof Dashboard V61")
+    st.header("Traction & Proof Dashboard")
     st.write(
         "Track the evidence that makes EdgeTwin valuable: real leads, demos, proposals, paid pilots, real-data uploads, "
         "customer feedback and buyer-readiness signals. This is not a valuation tool; it is a proof discipline."
@@ -8612,7 +8678,7 @@ def render_traction_proof_v61_tab():
     with st.expander("Why this matters", expanded=True):
         st.markdown(
             """
-            Features alone do not create strategic value. Proof does. V61 helps you move from *great product* to
+            Features alone do not create strategic value. Proof does. helps you move from *great product* to
             *credible business evidence*: who is interested, who pays, what data arrives, what value is proven,
             and what still needs to be collected before bigger launch or partner conversations.
             """
@@ -8659,7 +8725,7 @@ def render_traction_proof_v61_tab():
         help="Add honest notes: who reacted, what confused them, what they would pay for, and what proof is still missing.",
     )
 
-    if st.button("Build Traction & Proof Dashboard V61", type="primary", use_container_width=True, key="v61_build_traction_proof"):
+    if st.button("Build Traction & Proof Dashboard", type="primary", use_container_width=True, key="v61_build_traction_proof"):
         snapshot = core.build_traction_proof_dashboard_v61(
             project_name=st.session_state.project_name,
             period_name=period_name,
@@ -8752,7 +8818,7 @@ def render_traction_proof_v61_tab():
 
         if st.session_state.get("traction_proof_v61_bundle"):
             st.download_button(
-                "Download Traction & Proof Bundle V61",
+                "Download Traction & Proof Bundle",
                 st.session_state.traction_proof_v61_bundle,
                 file_name=f"{st.session_state.project_name}_traction_proof_v61.zip",
                 mime="application/zip",
@@ -8763,11 +8829,11 @@ def render_traction_proof_v61_tab():
     st.caption("V61 is for evidence discipline. It does not guarantee valuation, investment, acquisition or production accuracy.")
 
 # ============================================================
-# V60.1 — Launch Stabilization & Strategic Moat Gate
+# — Launch Stabilization & Strategic Moat Gate
 # ============================================================
 
 def render_launch_stabilization_v60_1_tab():
-    st.header("Launch Stabilization & Strategic Moat Gate V60.1")
+    st.header("Launch Stabilization & Strategic Moat Gate")
     st.write(
         "This gate freezes the product into a safer public-beta / paid-pilot shape and checks whether EdgeTwin is building strategic value, not just features. "
         "It is not a valuation promise or acquisition guarantee; it is a practical readiness and moat checklist."
@@ -8808,7 +8874,7 @@ def render_launch_stabilization_v60_1_tab():
             key="v60_1_buyer_target",
         )
 
-    if st.button("Build Launch Stabilization Plan V60.1", type="primary", use_container_width=True, key="v60_1_build_launch_stabilization"):
+    if st.button("Build Launch Stabilization Plan", type="primary", use_container_width=True, key="v60_1_build_launch_stabilization"):
         snapshot = core.build_launch_stabilization_and_moat_v60_1(
             project_name=st.session_state.project_name,
             release_target=release_target,
@@ -8893,7 +8959,7 @@ def render_launch_stabilization_v60_1_tab():
 
         if st.session_state.launch_stabilization_v60_1_bundle:
             st.download_button(
-                "Download Launch Stabilization Bundle V60.1",
+                "Download Launch Stabilization Bundle",
                 st.session_state.launch_stabilization_v60_1_bundle,
                 file_name=f"{st.session_state.project_name}_launch_stabilization_v60_1.zip",
                 mime="application/zip",
@@ -8904,11 +8970,11 @@ def render_launch_stabilization_v60_1_tab():
     st.caption("V60.1 is about stability, defensibility and strategic value. It does not guarantee acquisition interest, valuation or legal readiness.")
 
 # ============================================================
-# V60 — Commercial Release Candidate / Final Launch Gate
+# — Commercial Release Candidate / Final Launch Gate
 # ============================================================
 
 def render_commercial_release_v60_tab():
-    st.header("Commercial Release Candidate / Final Launch Gate V60")
+    st.header("Commercial Release Candidate / Final Launch Gate")
     st.write(
         "This is the final commercial gate before showing EdgeTwin as a launch-ready paid-pilot product. "
         "It combines product readiness, security, delivery, pricing, checkout, privacy-safe learning, real upload intake, cloud architecture and hardware reference proof."
@@ -8933,7 +8999,7 @@ def render_commercial_release_v60_tab():
         legal_review_done = st.checkbox("Legal/terms review done", value=False, key="v60_legal_done")
         payment_provider_connected = st.checkbox("Real payment provider connected", value=False, key="v60_payment_connected")
 
-    if st.button("Build Commercial Release Candidate V60", type="primary", use_container_width=True, key="v60_build_release_candidate"):
+    if st.button("Build Commercial Release Candidate", type="primary", use_container_width=True, key="v60_build_release_candidate"):
         snapshot = core.build_commercial_release_candidate_v60(
             project_name=st.session_state.project_name,
             release_target=release_target,
@@ -9012,7 +9078,7 @@ def render_commercial_release_v60_tab():
 
         if st.session_state.commercial_release_v60_bundle:
             st.download_button(
-                "Download Commercial Release Candidate Bundle V60",
+                "Download Commercial Release Candidate Bundle",
                 st.session_state.commercial_release_v60_bundle,
                 file_name=f"{st.session_state.project_name}_commercial_release_candidate_v60.zip",
                 mime="application/zip",
@@ -9024,11 +9090,11 @@ def render_commercial_release_v60_tab():
 
 
 # ============================================================
-# V62 — ROI & Value Proof Center / Customer Business Case
+# — ROI & Value Proof Center / Customer Business Case
 # ============================================================
 
 def render_roi_value_v62_tab():
-    st.header("ROI & Value Proof Center V62")
+    st.header("ROI & Value Proof Center")
     st.write(
         "Turn the technical pilot output into a customer business case: time saved, cost avoided, risk reduced, "
         "payback logic and safe value claims. This helps justify pilot pricing without overpromising production accuracy."
@@ -9064,7 +9130,7 @@ def render_roi_value_v62_tab():
         real_data_available = st.checkbox("Customer has real data or can upload sample files", value=bool(st.session_state.get("real_upload_v56_snapshot")), key="v62_real_data_available")
         privacy_learning_allowed = st.checkbox("Privacy-safe feature learning is allowed", value=False, key="v62_privacy_learning_allowed")
 
-    with st.expander("Evidence snapshots used by V62", expanded=False):
+    with st.expander("Evidence snapshots used by", expanded=False):
         evidence_snapshots = {
             "traction_proof_v61": st.session_state.get("traction_proof_v61_snapshot"),
             "real_upload_v56": st.session_state.get("real_upload_v56_snapshot"),
@@ -9083,7 +9149,7 @@ def render_roi_value_v62_tab():
         key="v62_evidence_notes",
     )
 
-    if st.button("Build ROI & Value Case V62", type="primary", use_container_width=True, key="v62_build_roi_value_case"):
+    if st.button("Build ROI & Value Case", type="primary", use_container_width=True, key="v62_build_roi_value_case"):
         snapshot = core.build_roi_value_case_v62(
             project_name=st.session_state.project_name,
             customer_segment=customer_segment,
@@ -9147,7 +9213,7 @@ def render_roi_value_v62_tab():
 
         if st.session_state.get("roi_value_v62_bundle"):
             st.download_button(
-                "Download ROI & Value Proof Bundle V62",
+                "Download ROI & Value Proof Bundle",
                 st.session_state.roi_value_v62_bundle,
                 file_name=f"{st.session_state.project_name}_roi_value_proof_v62.zip",
                 mime="application/zip",
@@ -9159,11 +9225,11 @@ def render_roi_value_v62_tab():
 
 
 # ============================================================
-# V63 — Case Study & Customer Proof Pack / Buyer Evidence Story
+# — Case Study & Customer Proof Pack / Buyer Evidence Story
 # ============================================================
 
 def render_case_study_v63_tab():
-    st.header("Case Study & Customer Proof Pack V63")
+    st.header("Case Study & Customer Proof Pack")
     st.write(
         "Turn pilot outcomes, ROI assumptions and customer feedback into safe proof assets: an anonymised case study, "
         "testimonial request, buyer evidence summary and follow-up story. This helps EdgeTwin prove value without overclaiming."
@@ -9209,20 +9275,20 @@ def render_case_study_v63_tab():
         anonymise_customer = st.checkbox("Anonymise customer/company details", value=True, key="v63_anonymise_customer")
         include_roi = st.checkbox("Include ROI/value proof", value=bool(st.session_state.get("roi_value_v62_snapshot")), key="v63_include_roi")
 
-    with st.expander("Evidence snapshots used by V63", expanded=False):
+    with st.expander("Evidence snapshots used by", expanded=False):
         evidence = {
-            "ROI Value V62": bool(st.session_state.get("roi_value_v62_snapshot")),
-            "Traction Proof V61": bool(st.session_state.get("traction_proof_v61_snapshot")),
-            "Real Upload V56": bool(st.session_state.get("real_upload_v56_snapshot")),
-            "Privacy Learning V52": bool(st.session_state.get("field_learning_v52_snapshot")),
+            "ROI Value": bool(st.session_state.get("roi_value_v62_snapshot")),
+            "Traction Proof": bool(st.session_state.get("traction_proof_v61_snapshot")),
+            "Real Upload": bool(st.session_state.get("real_upload_v56_snapshot")),
+            "Privacy Learning": bool(st.session_state.get("field_learning_v52_snapshot")),
             "Proposal / SOW": bool(st.session_state.get("proposal_sow_snapshot")),
-            "Checkout V57": bool(st.session_state.get("checkout_v57_snapshot")),
+            "Checkout": bool(st.session_state.get("checkout_v57_snapshot")),
             "Delivery Portal": bool(st.session_state.get("customer_delivery_snapshot")),
-            "Hardware Reference V59": bool(st.session_state.get("hardware_reference_v59_snapshot")),
+            "Hardware Reference": bool(st.session_state.get("hardware_reference_v59_snapshot")),
         }
         st.dataframe(pd.DataFrame([{"Evidence": k, "Available": v} for k, v in evidence.items()]), use_container_width=True)
 
-    if st.button("Build Case Study Proof Pack V63", type="primary", use_container_width=True, key="v63_build_case_study"):
+    if st.button("Build Case Study Proof Pack", type="primary", use_container_width=True, key="v63_build_case_study"):
         snapshot = core.build_case_study_proof_pack_v63(
             project_name=st.session_state.project_name,
             customer_segment=customer_segment,
@@ -9292,7 +9358,7 @@ def render_case_study_v63_tab():
 
         if st.session_state.get("case_study_v63_bundle"):
             st.download_button(
-                "Download Case Study Proof Pack V63",
+                "Download Case Study Proof Pack",
                 st.session_state.case_study_v63_bundle,
                 file_name=f"{st.session_state.project_name}_case_study_proof_v63.zip",
                 mime="application/zip",
@@ -9306,11 +9372,11 @@ def render_case_study_v63_tab():
 
 
 # ============================================================
-# V64 BUYER DATA ROOM / STRATEGIC PARTNER READINESS
+# BUYER DATA ROOM / STRATEGIC PARTNER READINESS
 # ============================================================
 
 def render_buyer_dataroom_v64_tab():
-    st.header("Buyer Data Room V64")
+    st.header("Buyer Data Room")
     st.write(
         "Turn EdgeTwin proof into a structured partner/buyer evidence room. "
         "This does not promise a buyout; it shows what proof is ready, what is missing, and what should stay confidential."
@@ -9362,20 +9428,20 @@ def render_buyer_dataroom_v64_tab():
 
     with st.expander("Evidence already available in this workspace", expanded=False):
         evidence = {
-            "Traction Proof V61": bool(st.session_state.get("traction_proof_v61_snapshot")),
-            "ROI Value V62": bool(st.session_state.get("roi_value_v62_snapshot")),
-            "Case Study V63": bool(st.session_state.get("case_study_v63_snapshot")),
-            "Privacy Learning V52": bool(st.session_state.get("field_learning_v52_snapshot")),
-            "Real Upload V56": bool(st.session_state.get("real_upload_v56_snapshot")),
-            "Checkout V57": bool(st.session_state.get("checkout_v57_snapshot")),
-            "Cloud Architecture V58": bool(st.session_state.get("cloud_architecture_v58_snapshot")),
-            "Hardware Reference V59": bool(st.session_state.get("hardware_reference_v59_snapshot")),
-            "Commercial Release V60": bool(st.session_state.get("commercial_release_v60_snapshot")),
-            "Launch Stabilizer V60.1": bool(st.session_state.get("launch_stabilization_v60_1_snapshot")),
+            "Traction Proof": bool(st.session_state.get("traction_proof_v61_snapshot")),
+            "ROI Value": bool(st.session_state.get("roi_value_v62_snapshot")),
+            "Case Study": bool(st.session_state.get("case_study_v63_snapshot")),
+            "Privacy Learning": bool(st.session_state.get("field_learning_v52_snapshot")),
+            "Real Upload": bool(st.session_state.get("real_upload_v56_snapshot")),
+            "Checkout": bool(st.session_state.get("checkout_v57_snapshot")),
+            "Cloud Architecture": bool(st.session_state.get("cloud_architecture_v58_snapshot")),
+            "Hardware Reference": bool(st.session_state.get("hardware_reference_v59_snapshot")),
+            "Commercial Release": bool(st.session_state.get("commercial_release_v60_snapshot")),
+            "Launch Stabilizer": bool(st.session_state.get("launch_stabilization_v60_1_snapshot")),
         }
         st.dataframe(pd.DataFrame([{"Evidence": k, "Available": v} for k, v in evidence.items()]), use_container_width=True)
 
-    if st.button("Build Buyer Data Room V64", type="primary", use_container_width=True, key="v64_build_buyer_dataroom"):
+    if st.button("Build Buyer Data Room", type="primary", use_container_width=True, key="v64_build_buyer_dataroom"):
         snapshot = core.build_buyer_dataroom_v64(
             project_name=st.session_state.project_name,
             strategic_goal=strategic_goal,
@@ -9455,7 +9521,7 @@ def render_buyer_dataroom_v64_tab():
 
         if st.session_state.get("buyer_dataroom_v64_bundle"):
             st.download_button(
-                "Download Buyer Data Room V64",
+                "Download Buyer Data Room",
                 st.session_state.buyer_dataroom_v64_bundle,
                 file_name=f"{st.session_state.project_name}_buyer_dataroom_v64.zip",
                 mime="application/zip",
@@ -9469,11 +9535,11 @@ def render_buyer_dataroom_v64_tab():
 
 
 # ============================================================
-# V65 — IP & Moat Registry / Defensibility Center
+# — IP & Moat Registry / Defensibility Center
 # ============================================================
 
 def render_ip_moat_v65_tab():
-    st.header("IP & Moat Registry / Defensibility Center V65")
+    st.header("IP & Moat Registry / Defensibility Center")
     st.write(
         "This internal founder page helps organize what makes EdgeTwin strategically defensible: product workflow, engine logic, privacy-safe learning, proof loops, data rights, tests, and transfer readiness. "
         "It is not legal/IP/patent advice, but it helps avoid chaos before partner, investor or buyer conversations."
@@ -9545,17 +9611,17 @@ def render_ip_moat_v65_tab():
     }
 
     evidence_snapshots = {
-        "Privacy Learning V52": bool(st.session_state.get("field_learning_v52_snapshot")),
-        "Real Upload V56": bool(st.session_state.get("real_upload_v56_snapshot")),
-        "Cloud Architecture V58": bool(st.session_state.get("cloud_architecture_v58_snapshot")),
-        "Hardware Reference V59": bool(st.session_state.get("hardware_reference_v59_snapshot")),
-        "Traction V61": bool(st.session_state.get("traction_proof_v61_snapshot")),
-        "ROI V62": bool(st.session_state.get("roi_value_v62_snapshot")),
-        "Case Study V63": bool(st.session_state.get("case_study_v63_snapshot")),
-        "Buyer Data Room V64": bool(st.session_state.get("buyer_dataroom_v64_snapshot")),
+        "Privacy Learning": bool(st.session_state.get("field_learning_v52_snapshot")),
+        "Real Upload": bool(st.session_state.get("real_upload_v56_snapshot")),
+        "Cloud Architecture": bool(st.session_state.get("cloud_architecture_v58_snapshot")),
+        "Hardware Reference": bool(st.session_state.get("hardware_reference_v59_snapshot")),
+        "Traction": bool(st.session_state.get("traction_proof_v61_snapshot")),
+        "ROI": bool(st.session_state.get("roi_value_v62_snapshot")),
+        "Case Study": bool(st.session_state.get("case_study_v63_snapshot")),
+        "Buyer Data Room": bool(st.session_state.get("buyer_dataroom_v64_snapshot")),
     }
 
-    if st.button("Build IP & Moat Registry V65", type="primary", use_container_width=True, key="v65_build_ip_moat"):
+    if st.button("Build IP & Moat Registry", type="primary", use_container_width=True, key="v65_build_ip_moat"):
         snapshot = core.build_ip_moat_registry_v65(
             st.session_state.project_name,
             product_summary,
@@ -9621,7 +9687,7 @@ def render_ip_moat_v65_tab():
 
         if st.session_state.get("ip_moat_v65_bundle"):
             st.download_button(
-                "Download IP & Moat Registry V65",
+                "Download IP & Moat Registry",
                 st.session_state.ip_moat_v65_bundle,
                 file_name=f"{st.session_state.project_name}_ip_moat_v65.zip",
                 mime="application/zip",
@@ -9634,11 +9700,11 @@ def render_ip_moat_v65_tab():
 
 
 # ============================================================
-# V66 — Continuous Improvement & Quality Flywheel
+# — Continuous Improvement & Quality Flywheel
 # ============================================================
 
 def render_continuous_improvement_v66_tab():
-    st.header("Continuous Improvement & Quality Flywheel V66")
+    st.header("Continuous Improvement & Quality Flywheel")
     st.write(
         "V66 is the internal system for making EdgeTwin better without creating feature chaos. "
         "It turns bugs, customer friction, proof gaps, founder workload and reliability signals into a focused improvement backlog."
@@ -9731,7 +9797,7 @@ def render_continuous_improvement_v66_tab():
         },
     }
 
-    if st.button("Build Continuous Improvement Plan V66", type="primary", use_container_width=True, key="v66_build_improvement_plan"):
+    if st.button("Build Continuous Improvement Plan", type="primary", use_container_width=True, key="v66_build_improvement_plan"):
         snapshot = core.build_continuous_improvement_flywheel_v66(
             project_name=st.session_state.project_name,
             release_target=release_target,
@@ -9793,7 +9859,7 @@ def render_continuous_improvement_v66_tab():
 
         if st.session_state.get("continuous_improvement_v66_bundle"):
             st.download_button(
-                "Download Continuous Improvement Bundle V66",
+                "Download Continuous Improvement Bundle",
                 st.session_state.continuous_improvement_v66_bundle,
                 file_name=f"{st.session_state.project_name}_continuous_improvement_v66.zip",
                 mime="application/zip",
@@ -9807,11 +9873,11 @@ def render_continuous_improvement_v66_tab():
 
 
 # ============================================================
-# V67 — Reliability Calibration & Benchmarking Center
+# — Reliability Calibration & Benchmarking Center
 # ============================================================
 
 def render_reliability_calibration_v67_tab():
-    st.header("Reliability Calibration & Benchmarking V67")
+    st.header("Reliability Calibration & Benchmarking")
     st.write(
         "V67 turns synthetic datasets, real uploads, privacy-safe learning and field evidence into a clearer reliability decision. "
         "It keeps customer-facing confidence honest: pilot-ready is not production-certified."
@@ -9883,7 +9949,7 @@ def render_reliability_calibration_v67_tab():
         "paid_pilot": st.session_state.get("paid_pilot_v45_snapshot") or {},
     }
 
-    if st.button("Build Reliability Calibration Plan V67", type="primary", use_container_width=True, key="v67_build_calibration"):
+    if st.button("Build Reliability Calibration Plan", type="primary", use_container_width=True, key="v67_build_calibration"):
         snapshot = core.build_reliability_calibration_v67(
             project_name=st.session_state.project_name,
             dataset_df=dataset_df,
@@ -9947,7 +10013,7 @@ def render_reliability_calibration_v67_tab():
 
         if st.session_state.get("reliability_calibration_v67_bundle"):
             st.download_button(
-                "Download Reliability Calibration Bundle V67",
+                "Download Reliability Calibration Bundle",
                 st.session_state.reliability_calibration_v67_bundle,
                 file_name=f"{st.session_state.project_name}_reliability_calibration_v67.zip",
                 mime="application/zip",
@@ -9960,7 +10026,7 @@ def render_reliability_calibration_v67_tab():
 
 
 def render_automation_orchestrator_v68_tab():
-    st.header("Automation Orchestrator V68")
+    st.header("Automation Orchestrator")
     st.write(
         "This checks how much of the EdgeTwin customer journey is already automatic, what still needs founder approval, "
         "and which next action should run before a paid pilot or customer handoff."
@@ -10008,7 +10074,7 @@ def render_automation_orchestrator_v68_tab():
         "ip_moat_v65": st.session_state.get("ip_moat_v65_snapshot"),
     }
 
-    if st.button("Build Automation Orchestrator Plan V68", type="primary", use_container_width=True, key="v68_build_automation_plan"):
+    if st.button("Build Automation Orchestrator Plan", type="primary", use_container_width=True, key="v68_build_automation_plan"):
         snapshot = core.build_automation_orchestrator_v68(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -10069,7 +10135,7 @@ def render_automation_orchestrator_v68_tab():
 
         if st.session_state.get("automation_orchestrator_v68_bundle"):
             st.download_button(
-                "Download Automation Orchestrator Bundle V68",
+                "Download Automation Orchestrator Bundle",
                 st.session_state.automation_orchestrator_v68_bundle,
                 file_name=f"{st.session_state.project_name}_automation_orchestrator_v68.zip",
                 mime="application/zip",
@@ -10081,11 +10147,11 @@ def render_automation_orchestrator_v68_tab():
 
 
 # ============================================================
-# V69 — Zero-Touch Customer Value Concierge
+# — Zero-Touch Customer Value Concierge
 # ============================================================
 
 def render_zero_touch_v69_tab():
-    st.header("Zero-Touch Customer Value Concierge V69")
+    st.header("Zero-Touch Customer Value Concierge")
     st.write(
         "V69 is designed for your time problem and the customer's clarity problem: it turns the full EdgeTwin engine into one simple, guided route. "
         "The customer sees what they get, why it is worth paying for, what is ready, what is not ready, and what happens next."
@@ -10148,7 +10214,7 @@ def render_zero_touch_v69_tab():
         "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
     }
 
-    if st.button("Build Zero-Touch Value Route V69", type="primary", use_container_width=True, key="v69_build_zero_touch"):
+    if st.button("Build Zero-Touch Value Route", type="primary", use_container_width=True, key="v69_build_zero_touch"):
         snapshot = core.build_zero_touch_customer_value_v69(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -10220,7 +10286,7 @@ def render_zero_touch_v69_tab():
 
         if st.session_state.get("zero_touch_v69_bundle"):
             st.download_button(
-                "Download Zero-Touch Value Bundle V69",
+                "Download Zero-Touch Value Bundle",
                 st.session_state.zero_touch_v69_bundle,
                 file_name=f"{st.session_state.project_name}_zero_touch_value_v69.zip",
                 mime="application/zip",
@@ -10233,11 +10299,11 @@ def render_zero_touch_v69_tab():
 
 
 # ============================================================
-# V70 — Outcome Assurance & Customer Success Autopilot
+# — Outcome Assurance & Customer Success Autopilot
 # ============================================================
 
 def render_outcome_assurance_v70_tab():
-    st.header("Outcome Assurance & Customer Success Autopilot V70")
+    st.header("Outcome Assurance & Customer Success Autopilot")
     st.write(
         "V70 makes the customer delivery simple and clear: what they receive, why it matters, what is still not production-ready, "
         "and what follow-up can be automated so the founder does not become the support desk."
@@ -10291,7 +10357,7 @@ def render_outcome_assurance_v70_tab():
         "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
     }
 
-    if st.button("Build Outcome Assurance Plan V70", type="primary", use_container_width=True, key="v70_build_outcome_assurance"):
+    if st.button("Build Outcome Assurance Plan", type="primary", use_container_width=True, key="v70_build_outcome_assurance"):
         snapshot = core.build_outcome_assurance_v70(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -10306,7 +10372,7 @@ def render_outcome_assurance_v70_tab():
         )
         st.session_state.outcome_assurance_v70_snapshot = snapshot
         st.session_state.outcome_assurance_v70_bundle = core.create_outcome_assurance_v70_bundle(st.session_state.project_name, snapshot)
-        st.success("Outcome Assurance V70 generated.")
+        st.success("Outcome Assurance generated.")
 
     snapshot = st.session_state.get("outcome_assurance_v70_snapshot")
     if snapshot:
@@ -10357,7 +10423,7 @@ def render_outcome_assurance_v70_tab():
 
         if st.session_state.get("outcome_assurance_v70_bundle"):
             st.download_button(
-                "Download Outcome Assurance Bundle V70",
+                "Download Outcome Assurance Bundle",
                 st.session_state.outcome_assurance_v70_bundle,
                 file_name=f"{st.session_state.project_name}_outcome_assurance_v70.zip",
                 mime="application/zip",
@@ -10370,11 +10436,11 @@ def render_outcome_assurance_v70_tab():
 
 
 # ============================================================
-# V71 — Customer Support Autopilot / Self-Service Deflection Center
+# — Customer Support Autopilot / Self-Service Deflection Center
 # ============================================================
 
 def render_customer_support_v71_tab():
-    st.header("Customer Support Autopilot V71")
+    st.header("Customer Support Autopilot")
     st.write(
         "Turns common customer questions into controlled self-service answers, clear next steps and safe escalation gates. "
         "Goal: customers understand what they paid for, while founder time stays protected."
@@ -10435,7 +10501,7 @@ def render_customer_support_v71_tab():
         "customer_delivery": st.session_state.get("customer_delivery_snapshot"),
     }
 
-    if st.button("Build Support Autopilot Plan V71", type="primary", use_container_width=True, key="v71_build_support_autopilot"):
+    if st.button("Build Support Autopilot Plan", type="primary", use_container_width=True, key="v71_build_support_autopilot"):
         snapshot = core.build_customer_support_autopilot_v71(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -10452,7 +10518,7 @@ def render_customer_support_v71_tab():
         )
         st.session_state.customer_support_v71_snapshot = snapshot
         st.session_state.customer_support_v71_bundle = core.create_customer_support_autopilot_v71_bundle(st.session_state.project_name, snapshot)
-        st.success("Customer Support Autopilot V71 generated.")
+        st.success("Customer Support Autopilot generated.")
 
     snapshot = st.session_state.get("customer_support_v71_snapshot")
     if snapshot:
@@ -10512,7 +10578,7 @@ def render_customer_support_v71_tab():
 
         if st.session_state.get("customer_support_v71_bundle"):
             st.download_button(
-                "Download Customer Support Autopilot Bundle V71",
+                "Download Customer Support Autopilot Bundle",
                 st.session_state.customer_support_v71_bundle,
                 file_name=f"{st.session_state.project_name}_customer_support_v71.zip",
                 mime="application/zip",
@@ -10525,11 +10591,11 @@ def render_customer_support_v71_tab():
 
 
 # ============================================================
-# V72 — Customer Status Portal / Project State & Next-Step Tracker
+# — Customer Status Portal / Project State & Next-Step Tracker
 # ============================================================
 
 def render_customer_status_v72_tab():
-    st.header("Customer Status Portal V72")
+    st.header("Customer Status Portal")
     st.write(
         "V72 gives the customer one calm status screen: what is ready, what is blocked, what they need to do next, "
         "what EdgeTwin is preparing, and when founder approval is required. This reduces repeated support questions."
@@ -10602,7 +10668,7 @@ def render_customer_status_v72_tab():
 
     dataset_df = st.session_state.dataset if isinstance(st.session_state.get("dataset"), pd.DataFrame) else pd.DataFrame()
 
-    if st.button("Build Customer Status Portal V72", type="primary", use_container_width=True, key="v72_build_customer_status"):
+    if st.button("Build Customer Status Portal", type="primary", use_container_width=True, key="v72_build_customer_status"):
         snapshot = core.build_customer_status_portal_v72(
             project_name=st.session_state.project_name,
             dataset_df=dataset_df,
@@ -10620,7 +10686,7 @@ def render_customer_status_v72_tab():
         )
         st.session_state.customer_status_v72_snapshot = snapshot
         st.session_state.customer_status_v72_bundle = core.create_customer_status_portal_v72_bundle(st.session_state.project_name, snapshot)
-        st.success("Customer Status Portal V72 generated.")
+        st.success("Customer Status Portal generated.")
 
     snapshot = st.session_state.get("customer_status_v72_snapshot")
     if snapshot:
@@ -10677,7 +10743,7 @@ def render_customer_status_v72_tab():
 
         if st.session_state.get("customer_status_v72_bundle"):
             st.download_button(
-                "Download Customer Status Portal Bundle V72",
+                "Download Customer Status Portal Bundle",
                 st.session_state.customer_status_v72_bundle,
                 file_name=f"{st.session_state.project_name}_customer_status_v72.zip",
                 mime="application/zip",
@@ -10688,11 +10754,11 @@ def render_customer_status_v72_tab():
     st.caption("V72 is a customer-facing status portal. It keeps the project simple and transparent without promising production performance, legal compliance or fully automated paid delivery.")
 
 # ============================================================
-# V73 — Unified Customer Journey / One-Page Value Cockpit
+# — Unified Customer Journey / One-Page Value Cockpit
 # ============================================================
 
 def render_customer_journey_v73_tab():
-    st.header("Unified Customer Journey V73")
+    st.header("Unified Customer Journey")
     st.write(
         "V73 turns EdgeTwin into one calm customer cockpit: value, status, readiness, missing inputs, next step and escalation gates. "
         "The customer sees a simple path, while the deeper OMEGA-X engine checks stay behind the scenes."
@@ -10744,7 +10810,7 @@ def render_customer_journey_v73_tab():
         founder_touch_target = st.slider("Founder time target per customer (minutes)", 0, 120, 15, 5, key="v73_founder_touch_target")
 
     st.markdown("---")
-    if st.button("Build Unified Customer Journey V73", type="primary", use_container_width=True, key="v73_build_customer_journey"):
+    if st.button("Build Unified Customer Journey", type="primary", use_container_width=True, key="v73_build_customer_journey"):
         snapshot = core.build_unified_customer_journey_v73(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -10758,7 +10824,7 @@ def render_customer_journey_v73_tab():
         )
         st.session_state.customer_journey_v73_snapshot = snapshot
         st.session_state.customer_journey_v73_bundle = core.create_unified_customer_journey_v73_bundle(st.session_state.project_name, snapshot)
-        st.success("Unified Customer Journey V73 generated.")
+        st.success("Unified Customer Journey generated.")
 
     snapshot = st.session_state.get("customer_journey_v73_snapshot")
     if snapshot:
@@ -10823,7 +10889,7 @@ def render_customer_journey_v73_tab():
 
         if st.session_state.get("customer_journey_v73_bundle"):
             st.download_button(
-                "Download Unified Customer Journey Bundle V73",
+                "Download Unified Customer Journey Bundle",
                 st.session_state.customer_journey_v73_bundle,
                 file_name=f"{st.session_state.project_name}_customer_journey_v73.zip",
                 mime="application/zip",
@@ -10835,11 +10901,11 @@ def render_customer_journey_v73_tab():
 
 
 # ============================================================
-# V74 — End-to-End Quality Guardian / Self-Test & Failure Recovery
+# — End-to-End Quality Guardian / Self-Test & Failure Recovery
 # ============================================================
 
 def render_quality_guardian_v74_tab():
-    st.header("End-to-End Quality Guardian V74")
+    st.header("End-to-End Quality Guardian")
     st.write(
         "V74 is the reliability layer for the whole product: it checks the critical customer/founder route, "
         "looks for missing evidence/gates, and creates a safe recovery plan before a customer sees a broken or overpromised flow."
@@ -10904,7 +10970,7 @@ def render_quality_guardian_v74_tab():
     }
     expected_pages = list(_PAGE_RENDERERS.keys()) if "_PAGE_RENDERERS" in globals() else []
 
-    if st.button("Run End-to-End Quality Guardian V74", type="primary", use_container_width=True, key="v74_run_quality_guardian"):
+    if st.button("Run End-to-End Quality Guardian", type="primary", use_container_width=True, key="v74_run_quality_guardian"):
         snapshot = core.build_end_to_end_quality_guardian_v74(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -10918,7 +10984,7 @@ def render_quality_guardian_v74_tab():
         )
         st.session_state.quality_guardian_v74_snapshot = snapshot
         st.session_state.quality_guardian_v74_bundle = core.create_quality_guardian_v74_bundle(st.session_state.project_name, snapshot)
-        st.success("Quality Guardian V74 self-test generated.")
+        st.success("Quality Guardian self-test generated.")
 
     snapshot = st.session_state.get("quality_guardian_v74_snapshot")
     if snapshot:
@@ -10974,7 +11040,7 @@ def render_quality_guardian_v74_tab():
 
         if st.session_state.get("quality_guardian_v74_bundle"):
             st.download_button(
-                "Download Quality Guardian Bundle V74",
+                "Download Quality Guardian Bundle",
                 st.session_state.quality_guardian_v74_bundle,
                 file_name=f"{st.session_state.project_name}_quality_guardian_v74.zip",
                 mime="application/zip",
@@ -10989,11 +11055,11 @@ def render_quality_guardian_v74_tab():
 
 
 # ============================================================
-# V75 — Deliverable QA & Value Lock / Customer Output Assurance
+# — Deliverable QA & Value Lock / Customer Output Assurance
 # ============================================================
 
 def render_deliverable_qa_v75_tab():
-    st.header("Deliverable QA & Value Lock V75")
+    st.header("Deliverable QA & Value Lock")
     st.write(
         "V75 is the last quality gate before a customer receives a bundle, report or paid handoff. "
         "It checks if the output is clear, useful, safe, privacy-aware and worth the money — and blocks weak delivery when evidence is missing."
@@ -11051,7 +11117,7 @@ def render_deliverable_qa_v75_tab():
         "quality_guardian_v74_bundle": st.session_state.get("quality_guardian_v74_bundle") is not None,
     }
 
-    if st.button("Run Deliverable QA & Value Lock V75", type="primary", use_container_width=True, key="v75_run_deliverable_qa"):
+    if st.button("Run Deliverable QA & Value Lock", type="primary", use_container_width=True, key="v75_run_deliverable_qa"):
         snapshot = core.build_deliverable_qa_value_lock_v75(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -11063,7 +11129,7 @@ def render_deliverable_qa_v75_tab():
         )
         st.session_state.deliverable_qa_v75_snapshot = snapshot
         st.session_state.deliverable_qa_v75_bundle = core.create_deliverable_qa_v75_bundle(st.session_state.project_name, snapshot)
-        st.success("Deliverable QA V75 generated.")
+        st.success("Deliverable QA generated.")
 
     snapshot = st.session_state.get("deliverable_qa_v75_snapshot")
     if snapshot:
@@ -11118,7 +11184,7 @@ def render_deliverable_qa_v75_tab():
 
         if st.session_state.get("deliverable_qa_v75_bundle"):
             st.download_button(
-                "Download Deliverable QA Bundle V75",
+                "Download Deliverable QA Bundle",
                 st.session_state.deliverable_qa_v75_bundle,
                 file_name=f"{st.session_state.project_name}_deliverable_qa_v75.zip",
                 mime="application/zip",
@@ -11126,21 +11192,21 @@ def render_deliverable_qa_v75_tab():
                 key="v75_download_deliverable_qa_bundle",
             )
     else:
-        st.info("Run V75 before you deliver a paid pilot package. It protects the customer from unclear outputs and protects you from manual support/rework.")
+        st.info("Run before you deliver a paid pilot package. It protects the customer from unclear outputs and protects you from manual support/rework.")
 
     st.caption("V75 approves pilot deliverables only when value, evidence, privacy, payment/scope and customer clarity are good enough. It still does not replace field validation or legal/security review.")
 
 # ============================================================
-# ORGANIZED PAGE DISPATCHER V45.2
+# ORGANIZED PAGE DISPATCHER
 # ============================================================
 
 
 # ============================================================
-# V76 — Product Consolidation & Flow Simplifier
+# — Product Consolidation & Flow Simplifier
 # ============================================================
 
 def render_product_consolidation_v76_tab():
-    st.header("Product Consolidation & Flow Simplifier V76")
+    st.header("Product Consolidation & Flow Simplifier")
     st.write(
         "V76 makes EdgeTwin feel like one calm product instead of many separate tools. "
         "The engine stays powerful, but customers see a clear route and founder-only modules stay behind the cockpit."
@@ -11216,7 +11282,7 @@ def render_product_consolidation_v76_tab():
 
     st.caption("V76 consolidates the experience; it does not weaken the engine or remove founder controls.")
 
-    if st.button("Build Product Consolidation Plan V76", type="primary", use_container_width=True, key="v76_build_consolidation_plan"):
+    if st.button("Build Product Consolidation Plan", type="primary", use_container_width=True, key="v76_build_consolidation_plan"):
         snapshot = core.build_product_consolidation_flow_simplifier_v76(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -11232,7 +11298,7 @@ def render_product_consolidation_v76_tab():
         )
         st.session_state.product_consolidation_v76_snapshot = snapshot
         st.session_state.product_consolidation_v76_bundle = core.create_product_consolidation_v76_bundle(st.session_state.project_name, snapshot)
-        st.success("Product Consolidation Plan V76 generated.")
+        st.success("Product Consolidation Plan generated.")
 
     snapshot = st.session_state.get("product_consolidation_v76_snapshot")
     if snapshot:
@@ -11296,7 +11362,7 @@ def render_product_consolidation_v76_tab():
 
         if st.session_state.get("product_consolidation_v76_bundle"):
             st.download_button(
-                "Download Product Consolidation Bundle V76",
+                "Download Product Consolidation Bundle",
                 st.session_state.product_consolidation_v76_bundle,
                 file_name=f"{st.session_state.project_name}_product_consolidation_v76.zip",
                 mime="application/zip",
@@ -11308,11 +11374,11 @@ def render_product_consolidation_v76_tab():
 
 
 # ============================================================
-# V77 — Smart Intake Router / Minimal Customer Input Engine
+# — Smart Intake Router / Minimal Customer Input Engine
 # ============================================================
 
 def render_smart_intake_v77_tab():
-    st.header("Smart Intake Router V77")
+    st.header("Smart Intake Router")
     st.write(
         "V77 reduces customer friction: the customer gives a small amount of information, "
         "and EdgeTwin recommends the safest route, required data, package level and founder approval gates."
@@ -11396,7 +11462,7 @@ def render_smart_intake_v77_tab():
         "checkout_v57": st.session_state.get("checkout_v57_snapshot"),
     }
 
-    if st.button("Build Smart Intake Route V77", type="primary", use_container_width=True, key="v77_build_smart_intake"):
+    if st.button("Build Smart Intake Route", type="primary", use_container_width=True, key="v77_build_smart_intake"):
         snapshot = core.build_smart_intake_router_v77(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -11414,7 +11480,7 @@ def render_smart_intake_v77_tab():
         )
         st.session_state.smart_intake_v77_snapshot = snapshot
         st.session_state.smart_intake_v77_bundle = core.create_smart_intake_v77_bundle(st.session_state.project_name, snapshot)
-        st.success("Smart Intake Route V77 generated.")
+        st.success("Smart Intake Route generated.")
 
     snapshot = st.session_state.get("smart_intake_v77_snapshot")
     if snapshot:
@@ -11473,7 +11539,7 @@ def render_smart_intake_v77_tab():
 
         if st.session_state.get("smart_intake_v77_bundle"):
             st.download_button(
-                "Download Smart Intake Bundle V77",
+                "Download Smart Intake Bundle",
                 st.session_state.smart_intake_v77_bundle,
                 file_name=f"{st.session_state.project_name}_smart_intake_v77.zip",
                 mime="application/zip",
@@ -11485,11 +11551,11 @@ def render_smart_intake_v77_tab():
 
 
 # ============================================================
-# V78 — One-Click Pilot Assembler / Autonomous Fulfillment Preview
+# — One-Click Pilot Assembler / Autonomous Fulfillment Preview
 # ============================================================
 
 def render_one_click_pilot_v78_tab():
-    st.header("One-Click Pilot Assembler V78")
+    st.header("One-Click Pilot Assembler")
     st.write(
         "V78 turns the simplified intake route into one customer-ready pilot package. "
         "The customer sees one clear outcome; EdgeTwin quietly checks data, privacy, reliability, value, proposal and delivery gates."
@@ -11504,9 +11570,9 @@ def render_one_click_pilot_v78_tab():
 
     smart = st.session_state.get("smart_intake_v77_snapshot") or {}
     if smart:
-        st.success(f"Using Smart Intake V77 route: {smart.get('recommended_package', 'recommended package')} — {smart.get('decision', 'route available')}")
+        st.success(f"Using Smart Intake route: {smart.get('recommended_package', 'recommended package')} — {smart.get('decision', 'route available')}")
     else:
-        st.info("Tip: run Smart Intake V77 first for the strongest auto-route. V78 can still create a safe package from the current project state.")
+        st.info("Tip: run Smart Intake first for the strongest auto-route. can still create a safe package from the current project state.")
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -11556,7 +11622,7 @@ def render_one_click_pilot_v78_tab():
         "pricing_offer": st.session_state.get("pricing_offer_snapshot"),
     }
 
-    if st.button("Assemble One-Click Pilot Package V78", type="primary", use_container_width=True, key="v78_assemble_one_click_package"):
+    if st.button("Assemble One-Click Pilot Package", type="primary", use_container_width=True, key="v78_assemble_one_click_package"):
         snapshot = core.build_one_click_pilot_package_v78(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -11573,7 +11639,7 @@ def render_one_click_pilot_v78_tab():
         )
         st.session_state.one_click_pilot_v78_snapshot = snapshot
         st.session_state.one_click_pilot_v78_bundle = core.create_one_click_pilot_v78_bundle(st.session_state.project_name, snapshot)
-        st.success("One-Click Pilot Package V78 assembled.")
+        st.success("One-Click Pilot Package assembled.")
 
     snapshot = st.session_state.get("one_click_pilot_v78_snapshot")
     if snapshot:
@@ -11637,7 +11703,7 @@ def render_one_click_pilot_v78_tab():
 
         if st.session_state.get("one_click_pilot_v78_bundle"):
             st.download_button(
-                "Download One-Click Pilot Bundle V78",
+                "Download One-Click Pilot Bundle",
                 st.session_state.one_click_pilot_v78_bundle,
                 file_name=f"{st.session_state.project_name}_one_click_pilot_v78.zip",
                 mime="application/zip",
@@ -11650,11 +11716,11 @@ def render_one_click_pilot_v78_tab():
 
 
 # ============================================================
-# V79 — Pilot Factory Control Tower / Lifecycle State Machine
+# — Pilot Factory Control Tower / Lifecycle State Machine
 # ============================================================
 
 def render_pilot_factory_v79_tab():
-    st.header("Pilot Factory Control Tower V79")
+    st.header("Pilot Factory Control Tower")
     st.write(
         "V79 keeps the whole EdgeTwin journey aligned as one lifecycle: intake, data, readiness, privacy, proposal, checkout, delivery and support. "
         "The customer sees one simple status and next step; Founder Mode keeps the approval gates visible."
@@ -11733,7 +11799,7 @@ def render_pilot_factory_v79_tab():
         "proposal_sow": st.session_state.get("proposal_sow_snapshot"),
     }
 
-    if st.button("Build Pilot Factory Control Plan V79", type="primary", use_container_width=True, key="v79_build_factory"):
+    if st.button("Build Pilot Factory Control Plan", type="primary", use_container_width=True, key="v79_build_factory"):
         snapshot = core.build_pilot_factory_v79(
             project_name=st.session_state.project_name,
             dataset_df=st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -11749,7 +11815,7 @@ def render_pilot_factory_v79_tab():
         )
         st.session_state.pilot_factory_v79_snapshot = snapshot
         st.session_state.pilot_factory_v79_bundle = core.create_pilot_factory_v79_bundle(st.session_state.project_name, snapshot)
-        st.success("Pilot Factory Control Plan V79 created.")
+        st.success("Pilot Factory Control Plan created.")
 
     snapshot = st.session_state.get("pilot_factory_v79_snapshot")
     if snapshot:
@@ -11789,7 +11855,7 @@ def render_pilot_factory_v79_tab():
 
         if st.session_state.get("pilot_factory_v79_bundle"):
             st.download_button(
-                "Download Pilot Factory Bundle V79",
+                "Download Pilot Factory Bundle",
                 st.session_state.pilot_factory_v79_bundle,
                 file_name=f"{st.session_state.project_name}_pilot_factory_v79.zip",
                 mime="application/zip",
@@ -11801,11 +11867,11 @@ def render_pilot_factory_v79_tab():
 
 
 # ============================================================
-# V80 — Trust Ledger & Decision Traceability
+# — Trust Ledger & Decision Traceability
 # ============================================================
 
 def render_trust_ledger_v80_tab():
-    st.header("Trust Ledger & Decision Traceability V80")
+    st.header("Trust Ledger & Decision Traceability")
     st.write(
         "V80 creates one customer-safe evidence receipt for the whole pilot: what data was used, "
         "which gates passed, what is still blocked, what can be claimed safely and where founder approval is required."
@@ -11869,11 +11935,11 @@ def render_trust_ledger_v80_tab():
         "visibility": visibility,
     }
 
-    if st.button("Build Trust Ledger V80", type="primary", use_container_width=True, key="v80_build_trust_ledger"):
+    if st.button("Build Trust Ledger", type="primary", use_container_width=True, key="v80_build_trust_ledger"):
         snapshot = core.build_trust_ledger_v80(context)
         st.session_state.trust_ledger_v80_snapshot = snapshot
         st.session_state.trust_ledger_v80_bundle = core.create_trust_ledger_v80_bundle(st.session_state.project_name, snapshot)
-        st.success("Trust Ledger V80 created.")
+        st.success("Trust Ledger created.")
 
     snapshot = st.session_state.get("trust_ledger_v80_snapshot")
     if snapshot:
@@ -11916,7 +11982,7 @@ def render_trust_ledger_v80_tab():
 
         if st.session_state.get("trust_ledger_v80_bundle"):
             st.download_button(
-                "Download Trust Ledger Bundle V80",
+                "Download Trust Ledger Bundle",
                 st.session_state.trust_ledger_v80_bundle,
                 file_name=f"{st.session_state.project_name}_trust_ledger_v80.zip",
                 mime="application/zip",
@@ -11928,7 +11994,7 @@ def render_trust_ledger_v80_tab():
 
 
 # ============================================================
-# V82 — Autonomy Controller & Reliability Brain
+# — Autonomy Controller & Reliability Brain
 # ============================================================
 
 def _v82_snapshot_map():
@@ -11954,7 +12020,7 @@ def _v82_snapshot_map():
 
 
 def render_autonomy_controller_v82_tab():
-    st.header("Autonomy Controller & Reliability Brain V82")
+    st.header("Autonomy Controller & Reliability Brain")
     st.write(
         "V82 is the safety brain for making EdgeTwin as automatic as possible without becoming reckless. "
         "It checks the current project, decides what EdgeTwin may do automatically, what needs founder approval, "
@@ -11996,11 +12062,11 @@ def render_autonomy_controller_v82_tab():
         "block_paid_delivery_below_threshold": block_paid_delivery,
     }
 
-    if st.button("Run Autonomy Controller V82", type="primary", use_container_width=True, key="v82_run_controller"):
+    if st.button("Run Autonomy Controller", type="primary", use_container_width=True, key="v82_run_controller"):
         snapshot = core.build_autonomy_controller_v82_snapshot(context)
         st.session_state.autonomy_controller_v82_snapshot = snapshot
         st.session_state.autonomy_controller_v82_bundle = core.create_autonomy_controller_v82_bundle(st.session_state.project_name, snapshot)
-        st.success("Autonomy Controller V82 completed.")
+        st.success("Autonomy Controller completed.")
 
     snapshot = st.session_state.get("autonomy_controller_v82_snapshot")
     if snapshot:
@@ -12051,12 +12117,12 @@ def render_autonomy_controller_v82_tab():
             for item in snapshot.get("claims_to_avoid", []):
                 st.error(item)
 
-        with st.expander("Advanced — raw V82 JSON", expanded=False):
+        with st.expander("Advanced — raw JSON", expanded=False):
             st.json(snapshot)
 
         if st.session_state.get("autonomy_controller_v82_bundle"):
             st.download_button(
-                "Download Autonomy Controller Bundle V82",
+                "Download Autonomy Controller Bundle",
                 st.session_state.autonomy_controller_v82_bundle,
                 file_name=f"{st.session_state.project_name}_autonomy_controller_v82.zip",
                 mime="application/zip",
@@ -12078,7 +12144,7 @@ def _v83_snapshot_map():
 
 
 def render_release_guard_v83_tab():
-    st.header("Release Guard & Regression Pack V83")
+    st.header("Release Guard & Regression Pack")
     st.write(
         "V83 is the automatic release safety layer. It checks whether the current build has enough proof, "
         "whether core storage/state/autonomy gates are present, and whether customer or paid delivery should be allowed."
@@ -12114,7 +12180,7 @@ def render_release_guard_v83_tab():
         "snapshots": _v83_snapshot_map(),
     })
 
-    if st.button("Run Release Guard V83", type="primary", use_container_width=True, key="v83_run_release_guard"):
+    if st.button("Run Release Guard", type="primary", use_container_width=True, key="v83_run_release_guard"):
         snapshot = core.build_release_guard_v83_snapshot({
             "project_name": st.session_state.project_name,
             "dataset_df": st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame(),
@@ -12133,7 +12199,7 @@ def render_release_guard_v83_tab():
         })
         st.session_state.release_guard_v83_snapshot = snapshot
         st.session_state.release_guard_v83_bundle = core.create_release_guard_v83_bundle(st.session_state.project_name, snapshot)
-        st.success("Release Guard V83 completed.")
+        st.success("Release Guard completed.")
 
     snapshot = st.session_state.get("release_guard_v83_snapshot")
     if snapshot:
@@ -12176,12 +12242,12 @@ def render_release_guard_v83_tab():
         with st.expander("Customer-safe summary", expanded=False):
             st.json(snapshot.get("customer_safe_summary", {}))
 
-        with st.expander("Advanced — raw V83 JSON", expanded=False):
+        with st.expander("Advanced — raw JSON", expanded=False):
             st.json(snapshot)
 
         if st.session_state.get("release_guard_v83_bundle"):
             st.download_button(
-                "Download Release Guard Bundle V83",
+                "Download Release Guard Bundle",
                 st.session_state.release_guard_v83_bundle,
                 file_name=f"{st.session_state.project_name}_release_guard_v83.zip",
                 mime="application/zip",
@@ -12192,7 +12258,7 @@ def render_release_guard_v83_tab():
     st.caption("V83 is designed to block unsafe releases automatically while still letting low-risk evidence and customer-status work continue.")
 
 
-# V90 — Ultimate Product Brain / Product Machine
+# — Ultimate Product Brain / Product Machine
 
 def _v90_snapshot_map():
     snapshots = _v83_snapshot_map()
@@ -12204,7 +12270,7 @@ def _v90_snapshot_map():
 
 
 def render_ultimate_product_v90_tab():
-    st.header("Ultimate Product Brain V90")
+    st.header("Ultimate Product Brain")
     st.write(
         "V90 combines the engine, Trust Ledger, State Registry, Autonomy Controller, Release Guard and a safe self-healing executor. "
         "It is designed to automate repeatable work while blocking money/legal/privacy/production-risk actions until founder approval."
@@ -12239,7 +12305,7 @@ def render_ultimate_product_v90_tab():
         "snapshots": snapshots,
     })
 
-    if st.button("Run Ultimate Product Brain V90", type="primary", use_container_width=True, key="v90_run_brain"):
+    if st.button("Run Ultimate Product Brain", type="primary", use_container_width=True, key="v90_run_brain"):
         snapshot = core.build_ultimate_product_brain_v90_snapshot({
             "project_name": st.session_state.project_name,
             "dataset_df": dataset_df,
@@ -12254,7 +12320,7 @@ def render_ultimate_product_v90_tab():
         })
         st.session_state.ultimate_product_v90_snapshot = snapshot
         st.session_state.ultimate_product_v90_bundle = core.create_ultimate_product_v90_bundle(st.session_state.project_name, snapshot)
-        st.success("Ultimate Product Brain V90 completed.")
+        st.success("Ultimate Product Brain completed.")
 
     snapshot = st.session_state.get("ultimate_product_v90_snapshot")
     if snapshot:
@@ -12292,19 +12358,19 @@ def render_ultimate_product_v90_tab():
             st.warning("V90 found blockers before this should be released further.")
             st.dataframe(pd.DataFrame(blockers), use_container_width=True)
         else:
-            st.success("No V90 blockers detected for the selected target.")
+            st.success("No blockers detected for the selected target.")
 
         st.markdown("### Next best action")
         st.info(snapshot.get("next_best_action", ""))
 
         with st.expander("Customer-safe status", expanded=False):
             st.json(snapshot.get("customer_safe_status", {}))
-        with st.expander("Advanced — raw V90 JSON", expanded=False):
+        with st.expander("Advanced — raw JSON", expanded=False):
             st.json(snapshot)
 
         if st.session_state.get("ultimate_product_v90_bundle"):
             st.download_button(
-                "Download Ultimate Product Bundle V90",
+                "Download Ultimate Product Bundle",
                 st.session_state.ultimate_product_v90_bundle,
                 file_name=f"{st.session_state.project_name}_ultimate_product_v90.zip",
                 mime="application/zip",
@@ -12316,7 +12382,7 @@ def render_ultimate_product_v90_tab():
 
 
 
-# V91 — Pilot Launch OS / Founder-to-Customer Execution Layer
+# — Pilot Launch OS / Founder-to-Customer Execution Layer
 
 def _v91_snapshot_map():
     snapshots = _v90_snapshot_map()
@@ -12328,7 +12394,7 @@ def _v91_snapshot_map():
 
 
 def render_pilot_launch_os_v91_tab():
-    st.header("Pilot Launch OS V91")
+    st.header("Pilot Launch OS")
     st.write(
         "V91 answers the real next question: not more features, but how EdgeTwin becomes a sellable, founder-safe paid pilot. "
         "The analysis engine stays powerful; this layer controls the customer route, claims, demo flow and first paid-pilot operating plan."
@@ -12368,7 +12434,7 @@ def render_pilot_launch_os_v91_tab():
     registry_status = state_registry.get_registry_status(st.session_state, settings)
     snapshots = _v91_snapshot_map()
 
-    if st.button("Build Pilot Launch OS V91", type="primary", use_container_width=True, key="v91_run_launch_os"):
+    if st.button("Build Pilot Launch OS", type="primary", use_container_width=True, key="v91_run_launch_os"):
         snapshot = core.build_pilot_launch_os_v91_snapshot({
             "project_name": st.session_state.project_name,
             "dataset_df": dataset_df,
@@ -12384,7 +12450,7 @@ def render_pilot_launch_os_v91_tab():
         })
         st.session_state.pilot_launch_os_v91_snapshot = snapshot
         st.session_state.pilot_launch_os_v91_bundle = core.create_pilot_launch_os_v91_bundle(st.session_state.project_name, snapshot)
-        st.success("Pilot Launch OS V91 completed.")
+        st.success("Pilot Launch OS completed.")
 
     snapshot = st.session_state.get("pilot_launch_os_v91_snapshot")
     if snapshot:
@@ -12404,7 +12470,7 @@ def render_pilot_launch_os_v91_tab():
             st.warning("V91 found launch blockers or founder-control warnings.")
             st.dataframe(pd.DataFrame(blockers), use_container_width=True)
         else:
-            st.success("No V91 launch blockers detected for the selected route.")
+            st.success("No launch blockers detected for the selected route.")
 
         tabs = st.tabs(["Next 24h", "Customer flow", "Launch week", "Offer guardrails", "Full snapshot"])
         with tabs[0]:
@@ -12421,7 +12487,7 @@ def render_pilot_launch_os_v91_tab():
 
         if st.session_state.get("pilot_launch_os_v91_bundle"):
             st.download_button(
-                "Download Pilot Launch OS Bundle V91",
+                "Download Pilot Launch OS Bundle",
                 st.session_state.pilot_launch_os_v91_bundle,
                 file_name=f"{st.session_state.project_name}_pilot_launch_os_v91.zip",
                 mime="application/zip",
@@ -12433,7 +12499,7 @@ def render_pilot_launch_os_v91_tab():
 
 
 
-# V92 — Customer Demo OS / One-Click Proof Flow
+# — Customer Demo OS / One-Click Proof Flow
 
 def _v92_snapshot_map():
     snapshots = _v91_snapshot_map()
@@ -12445,7 +12511,7 @@ def _v92_snapshot_map():
 
 
 def render_customer_demo_os_v92_tab():
-    st.header("Customer Demo OS V92")
+    st.header("Customer Demo OS")
     st.write(
         "V92 turns the powerful engine and product brain into one tight customer-safe proof flow. "
         "This is the demo route: one use case, one result, one evidence bundle and one controlled paid-pilot ask."
@@ -12486,7 +12552,7 @@ def render_customer_demo_os_v92_tab():
     dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
     snapshots = _v92_snapshot_map()
 
-    if st.button("Build Customer Demo OS V92", type="primary", use_container_width=True, key="v92_run_customer_demo_os"):
+    if st.button("Build Customer Demo OS", type="primary", use_container_width=True, key="v92_run_customer_demo_os"):
         snapshot = core.build_customer_demo_os_v92_snapshot({
             "project_name": st.session_state.project_name,
             "dataset_df": dataset_df,
@@ -12500,7 +12566,7 @@ def render_customer_demo_os_v92_tab():
         })
         st.session_state.customer_demo_os_v92_snapshot = snapshot
         st.session_state.customer_demo_os_v92_bundle = core.create_customer_demo_os_v92_bundle(st.session_state.project_name, snapshot)
-        st.success("Customer Demo OS V92 completed.")
+        st.success("Customer Demo OS completed.")
 
     snapshot = st.session_state.get("customer_demo_os_v92_snapshot")
     if snapshot:
@@ -12518,7 +12584,7 @@ def render_customer_demo_os_v92_tab():
             st.warning("V92 found demo blockers or control warnings.")
             st.dataframe(pd.DataFrame(blockers), use_container_width=True)
         else:
-            st.success("No V92 blockers detected for a controlled customer demo.")
+            st.success("No blockers detected for a controlled customer demo.")
 
         tabs = st.tabs(["Demo script", "Proof cards", "Acceptance criteria", "Objections", "One pager", "Full snapshot"])
         with tabs[0]:
@@ -12536,7 +12602,7 @@ def render_customer_demo_os_v92_tab():
 
         if st.session_state.get("customer_demo_os_v92_bundle"):
             st.download_button(
-                "Download Customer Demo OS Bundle V92",
+                "Download Customer Demo OS Bundle",
                 st.session_state.customer_demo_os_v92_bundle,
                 file_name=f"{st.session_state.project_name}_customer_demo_os_v92.zip",
                 mime="application/zip",
@@ -12547,7 +12613,7 @@ def render_customer_demo_os_v92_tab():
     st.caption("V92 is the buyer-facing proof flow: simple demo, honest claims, one controlled paid-pilot next step.")
 
 
-# V93 — Pack Commerce OS / Sell Packs Before SaaS
+# — Pack Commerce OS / Sell Packs Before SaaS
 
 def _v93_snapshot_map():
     snapshots = _v92_snapshot_map()
@@ -12559,7 +12625,7 @@ def _v93_snapshot_map():
 
 
 def render_pack_commerce_os_v93_tab():
-    st.header("Pack Commerce OS V93")
+    st.header("Pack Commerce OS")
     st.write(
         "V93 turns EdgeTwin into a pack-first business: sell downloadable packs and founder-approved custom packs now, "
         "keep SaaS for later, and let customers configure scope without giving up your control."
@@ -12618,7 +12684,7 @@ def render_pack_commerce_os_v93_tab():
     dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
     snapshots = _v93_snapshot_map()
 
-    if st.button("Build Pack Commerce OS V93", type="primary", use_container_width=True, key="v93_run_pack_commerce_os"):
+    if st.button("Build Pack Commerce OS", type="primary", use_container_width=True, key="v93_run_pack_commerce_os"):
         snapshot = core.build_pack_commerce_os_v93_snapshot({
             "project_name": st.session_state.project_name,
             "dataset_df": dataset_df,
@@ -12636,7 +12702,7 @@ def render_pack_commerce_os_v93_tab():
         })
         st.session_state.pack_commerce_os_v93_snapshot = snapshot
         st.session_state.pack_commerce_os_v93_bundle = core.create_pack_commerce_os_v93_bundle(st.session_state.project_name, snapshot)
-        st.success("Pack Commerce OS V93 completed.")
+        st.success("Pack Commerce OS completed.")
 
     snapshot = st.session_state.get("pack_commerce_os_v93_snapshot")
     if snapshot:
@@ -12656,7 +12722,7 @@ def render_pack_commerce_os_v93_tab():
             st.warning("V93 found pack-commerce blockers or founder-control warnings.")
             st.dataframe(pd.DataFrame(blockers), use_container_width=True)
         else:
-            st.success("No V93 blockers detected for pack-first selling.")
+            st.success("No blockers detected for pack-first selling.")
 
         tabs = st.tabs(["Pack menu", "Custom builder", "Price ladder", "Delivery checklist", "Claims", "Customer copy", "Full snapshot"])
         with tabs[0]:
@@ -12676,7 +12742,7 @@ def render_pack_commerce_os_v93_tab():
 
         if st.session_state.get("pack_commerce_os_v93_bundle"):
             st.download_button(
-                "Download Pack Commerce OS Bundle V93",
+                "Download Pack Commerce OS Bundle",
                 st.session_state.pack_commerce_os_v93_bundle,
                 file_name=f"{st.session_state.project_name}_pack_commerce_os_v93.zip",
                 mime="application/zip",
@@ -12688,7 +12754,7 @@ def render_pack_commerce_os_v93_tab():
 
 
 
-# V94 — Client Input Autopilot / customer-input-to-pack automation
+# — Client Input Autopilot / customer-input-to-pack automation
 
 def _v94_snapshot_map():
     snapshots = _v93_snapshot_map()
@@ -12700,7 +12766,7 @@ def _v94_snapshot_map():
 
 
 def render_client_input_autopilot_v94_tab():
-    st.header("Client Input Autopilot V94")
+    st.header("Client Input Autopilot")
     st.write(
         "V94 is built for your current reality: customers provide input, EdgeTwin automatically recommends the right pack, "
         "builds the scope, prepares the quote range and creates the handoff bundle. You only approve price, scope and claims."
@@ -12788,7 +12854,7 @@ def render_client_input_autopilot_v94_tab():
     dataset_df = st.session_state.dataset if isinstance(st.session_state.dataset, pd.DataFrame) else pd.DataFrame()
     snapshots = _v94_snapshot_map()
 
-    if st.button("Run Client Input Autopilot V94", type="primary", use_container_width=True, key="v94_run_client_input_autopilot"):
+    if st.button("Run Client Input Autopilot", type="primary", use_container_width=True, key="v94_run_client_input_autopilot"):
         customer_inputs = {
             "customer_name": customer_name,
             "company": company,
@@ -12813,7 +12879,7 @@ def render_client_input_autopilot_v94_tab():
         })
         st.session_state.client_input_autopilot_v94_snapshot = snapshot
         st.session_state.client_input_autopilot_v94_bundle = core.create_client_input_autopilot_v94_bundle(st.session_state.project_name, snapshot)
-        st.success("Client Input Autopilot V94 completed.")
+        st.success("Client Input Autopilot completed.")
 
     snapshot = st.session_state.get("client_input_autopilot_v94_snapshot")
     if snapshot:
@@ -12873,7 +12939,7 @@ def render_client_input_autopilot_v94_tab():
 
         if st.session_state.get("client_input_autopilot_v94_bundle"):
             st.download_button(
-                "Download Client Input Autopilot Bundle V94",
+                "Download Client Input Autopilot Bundle",
                 st.session_state.client_input_autopilot_v94_bundle,
                 file_name=f"{st.session_state.project_name}_client_input_autopilot_v94.zip",
                 mime="application/zip",
@@ -12885,7 +12951,7 @@ def render_client_input_autopilot_v94_tab():
 
 
 # ============================================================
-# V95 — Policy Approval Engine
+# — Policy Approval Engine
 # ============================================================
 
 def _v95_snapshot_map():
@@ -12897,7 +12963,7 @@ def _v95_snapshot_map():
 
 
 def render_policy_approval_engine_v95_tab():
-    st.header("Policy Approval Engine V95")
+    st.header("Policy Approval Engine")
     st.write(
         "V95 reduces founder approvals by using pre-approved pricing, scope and claim policies. "
         "EdgeTwin may auto-approve safe standard packs, while exceptions stay blocked or founder-reviewed."
@@ -12905,7 +12971,7 @@ def render_policy_approval_engine_v95_tab():
 
     v94_snapshot = st.session_state.get("client_input_autopilot_v94_snapshot") or {}
     if not v94_snapshot:
-        st.info("Tip: run Client Input Autopilot V94 first. V95 can still run with safe defaults, but it becomes stronger with real customer intake.")
+        st.info("Tip: run Client Input Autopilot first. can still run with safe defaults, but it becomes stronger with real customer intake.")
 
     st.markdown("#### Approval policy settings")
     c1, c2, c3 = st.columns(3)
@@ -12939,7 +13005,7 @@ def render_policy_approval_engine_v95_tab():
         key="v95_safe_claim_templates",
     )
 
-    if st.button("Run Policy Approval Engine V95", type="primary", use_container_width=True, key="v95_run_policy_approval"):
+    if st.button("Run Policy Approval Engine", type="primary", use_container_width=True, key="v95_run_policy_approval"):
         snapshot = core.build_policy_approval_engine_v95_snapshot({
             "project_name": st.session_state.project_name,
             "snapshots": _v95_snapshot_map(),
@@ -12956,7 +13022,7 @@ def render_policy_approval_engine_v95_tab():
         })
         st.session_state.policy_approval_engine_v95_snapshot = snapshot
         st.session_state.policy_approval_engine_v95_bundle = core.create_policy_approval_engine_v95_bundle(st.session_state.project_name, snapshot)
-        st.success("Policy Approval Engine V95 completed.")
+        st.success("Policy Approval Engine completed.")
 
     snapshot = st.session_state.get("policy_approval_engine_v95_snapshot")
     if snapshot:
@@ -13004,7 +13070,7 @@ def render_policy_approval_engine_v95_tab():
 
         if st.session_state.get("policy_approval_engine_v95_bundle"):
             st.download_button(
-                "Download Policy Approval Engine Bundle V95",
+                "Download Policy Approval Engine Bundle",
                 st.session_state.policy_approval_engine_v95_bundle,
                 file_name=f"{st.session_state.project_name}_policy_approval_engine_v95.zip",
                 mime="application/zip",
@@ -13016,7 +13082,7 @@ def render_policy_approval_engine_v95_tab():
 
 
 # ============================================================
-# V96 — Pricing & Assurance OS
+# — Pricing & Assurance OS
 # ============================================================
 
 def _v96_snapshot_map():
@@ -13028,7 +13094,7 @@ def _v96_snapshot_map():
 
 
 def render_pricing_assurance_os_v96_tab():
-    st.header("Pricing & Assurance OS V96")
+    st.header("Pricing & Assurance OS")
     st.write(
         "V96 turns EdgeTwin into a pack-first commercial product: standard prices, clear deliverables, "
         "reliability boundaries and safe customer claims. SaaS can come later."
@@ -13037,9 +13103,9 @@ def render_pricing_assurance_os_v96_tab():
     v94_snapshot = st.session_state.get("client_input_autopilot_v94_snapshot") or {}
     v95_snapshot = st.session_state.get("policy_approval_engine_v95_snapshot") or {}
     if not v94_snapshot:
-        st.info("Run V94 first for customer input. V96 can still show the default price catalog.")
+        st.info("Run first for customer input. can still show the default price catalog.")
     if not v95_snapshot:
-        st.info("Run V95 first for policy auto-approval. V96 will still use safe defaults.")
+        st.info("Run first for policy auto-approval. will still use safe defaults.")
 
     pack_options = {
         "Auto-pick from customer input": None,
@@ -13052,7 +13118,7 @@ def render_pricing_assurance_os_v96_tab():
     selected_label = st.selectbox("Pricing pack mode", list(pack_options.keys()), index=0, key="v96_selected_pack_label")
     selected_pack_id = pack_options[selected_label]
 
-    if st.button("Run Pricing & Assurance OS V96", type="primary", use_container_width=True, key="v96_run_pricing_assurance"):
+    if st.button("Run Pricing & Assurance OS", type="primary", use_container_width=True, key="v96_run_pricing_assurance"):
         snapshot = core.build_pricing_assurance_os_v96_snapshot({
             "project_name": st.session_state.project_name,
             "snapshots": _v96_snapshot_map(),
@@ -13062,7 +13128,7 @@ def render_pricing_assurance_os_v96_tab():
         })
         st.session_state.pricing_assurance_os_v96_snapshot = snapshot
         st.session_state.pricing_assurance_os_v96_bundle = core.create_pricing_assurance_os_v96_bundle(st.session_state.project_name, snapshot)
-        st.success("Pricing & Assurance OS V96 completed.")
+        st.success("Pricing & Assurance OS completed.")
 
     snapshot = st.session_state.get("pricing_assurance_os_v96_snapshot")
     if snapshot:
@@ -13115,7 +13181,7 @@ def render_pricing_assurance_os_v96_tab():
 
         if st.session_state.get("pricing_assurance_os_v96_bundle"):
             st.download_button(
-                "Download Pricing & Assurance Bundle V96",
+                "Download Pricing & Assurance Bundle",
                 st.session_state.pricing_assurance_os_v96_bundle,
                 file_name=f"{st.session_state.project_name}_pricing_assurance_os_v96.zip",
                 mime="application/zip",
@@ -13127,7 +13193,7 @@ def render_pricing_assurance_os_v96_tab():
 
 
 # ============================================================
-# V97 — Custom Pack Builder / Client Self-Configuration
+# — Custom Pack Builder / Client Self-Configuration
 # ============================================================
 
 def _v97_snapshot_map():
@@ -13140,7 +13206,7 @@ def _v97_snapshot_map():
 
 
 def render_custom_pack_builder_v97_tab():
-    st.header("Custom Pack Builder V97")
+    st.header("Custom Pack Builder")
     st.write(
         "V97 lets the customer configure their own custom pack from safe building blocks. "
         "EdgeTwin calculates scope, price, delivery risk, auto-approval status and what still needs founder review."
@@ -13189,7 +13255,7 @@ def render_custom_pack_builder_v97_tab():
         key="v97_customer_note",
     )
 
-    if st.button("Build Custom Pack V97", type="primary", use_container_width=True, key="v97_build_custom_pack"):
+    if st.button("Build Custom Pack", type="primary", use_container_width=True, key="v97_build_custom_pack"):
         snapshot = core.build_custom_pack_builder_v97_snapshot({
             "project_name": st.session_state.project_name,
             "company": company,
@@ -13208,7 +13274,7 @@ def render_custom_pack_builder_v97_tab():
         })
         st.session_state.custom_pack_builder_v97_snapshot = snapshot
         st.session_state.custom_pack_builder_v97_bundle = core.create_custom_pack_builder_v97_bundle(st.session_state.project_name, snapshot)
-        st.success("Custom Pack Builder V97 completed.")
+        st.success("Custom Pack Builder completed.")
 
     snapshot = st.session_state.get("custom_pack_builder_v97_snapshot")
     if snapshot:
@@ -13260,7 +13326,7 @@ def render_custom_pack_builder_v97_tab():
 
         if st.session_state.get("custom_pack_builder_v97_bundle"):
             st.download_button(
-                "Download Custom Pack Builder Bundle V97",
+                "Download Custom Pack Builder Bundle",
                 st.session_state.custom_pack_builder_v97_bundle,
                 file_name=f"{st.session_state.project_name}_custom_pack_builder_v97.zip",
                 mime="application/zip",
@@ -13274,12 +13340,12 @@ def render_custom_pack_builder_v97_tab():
 
 
 
-# V100 — Marketplace Entitlement OS / Curated Packs + Custom Packs + Paid Unlock + Buyer Data Room
+# — Marketplace Entitlement OS / Curated Packs + Custom Packs + Paid Unlock + Buyer Data Room
 
 def render_marketplace_entitlement_v100_tab():
-    st.header("Marketplace Entitlement OS V100")
+    st.header("Marketplace Entitlement OS")
     st.info(
-        "Doel: Gemini's goede marketplace-idee samenbrengen met onze V93-V99 commerce/autopilot laag: curated industry packs, custom packs, plan/payment unlock, one-click pilot material en Buyer Data Room in één klantflow."
+        "Doel: Gemini's goede marketplace-idee samenbrengen met onze-V99 commerce/autopilot laag: curated industry packs, custom packs, plan/payment unlock, one-click pilot material en Buyer Data Room in één klantflow."
     )
 
     catalog = core.get_marketplace_entitlement_v100_catalog()
@@ -13319,11 +13385,11 @@ def render_marketplace_entitlement_v100_tab():
     if v99_snapshot:
         st.success(f"V99 payment/unlock snapshot gevonden: {v99_snapshot.get('decision', 'status onbekend')} — {v99_snapshot.get('unlock_level', 'locked')}")
     elif v98_snapshot:
-        st.warning("V98 quote is aanwezig, maar V99 payment unlock is nog niet opgebouwd. V100 kan entitlement simuleren, maar live unlock hoort later via V99/webhook.")
+        st.warning("V98 quote is aanwezig, maar payment unlock is nog niet opgebouwd. kan entitlement simuleren, maar live unlock hoort later via/webhook.")
     else:
-        st.caption("Tip: V97→V98→V99 maakt de commerciële flow sterker, maar V100 kan ook direct een marketplace entitlement blueprint maken.")
+        st.caption("Tip:→V98→V99 maakt de commerciële flow sterker, maar kan ook direct een marketplace entitlement blueprint maken.")
 
-    if st.button("Build Marketplace Entitlement V100", type="primary", use_container_width=True, key="v100_build_marketplace_entitlement"):
+    if st.button("Build Marketplace Entitlement", type="primary", use_container_width=True, key="v100_build_marketplace_entitlement"):
         snapshot = core.build_marketplace_entitlement_v100_snapshot({
             "project_name": st.session_state.project_name,
             "marketplace_mode": marketplace_mode,
@@ -13345,7 +13411,7 @@ def render_marketplace_entitlement_v100_tab():
         })
         st.session_state.marketplace_entitlement_v100_snapshot = snapshot
         st.session_state.marketplace_entitlement_v100_bundle = core.create_marketplace_entitlement_v100_bundle(st.session_state.project_name, snapshot)
-        st.success("Marketplace Entitlement OS V100 completed.")
+        st.success("Marketplace Entitlement OS completed.")
 
     snapshot = st.session_state.get("marketplace_entitlement_v100_snapshot")
     if snapshot:
@@ -13385,7 +13451,7 @@ def render_marketplace_entitlement_v100_tab():
 
         if st.session_state.get("marketplace_entitlement_v100_bundle"):
             st.download_button(
-                "Download Marketplace Entitlement Bundle V100",
+                "Download Marketplace Entitlement Bundle",
                 st.session_state.marketplace_entitlement_v100_bundle,
                 file_name=f"{st.session_state.project_name}_marketplace_entitlement_v100.zip",
                 mime="application/zip",
@@ -13396,10 +13462,10 @@ def render_marketplace_entitlement_v100_tab():
     st.caption("V100 is de lijmlaag: curated packs + custom packs + monetization/plan lock + payment unlock + buyer data room + one-click pilot handoff.")
 
 
-# V99 — Payment Unlock + Delivery Workbench / Paid Access Automation
+# — Payment Unlock + Delivery Workbench / Paid Access Automation
 
 def render_payment_unlock_delivery_v99_tab():
-    st.header("Payment Unlock + Delivery Workbench V99")
+    st.header("Payment Unlock + Delivery Workbench")
     st.info(
         "Doel: dezelfde service-flow als digitale downloads: klant kiest pack, betaalt, EdgeTwin unlockt automatisch intake/download/delivery wanneer payment + quote gates veilig zijn. Geen kaartgegevens opslaan, geen contract/refund/legal claims automatiseren."
     )
@@ -13408,7 +13474,7 @@ def render_payment_unlock_delivery_v99_tab():
     v98_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
 
     if not v98_snapshot:
-        st.warning("V98 quote/order snapshot is nog niet aanwezig. Run V98 eerst voor de beste automatische betaling→unlock flow.")
+        st.warning("V98 quote/order snapshot is nog niet aanwezig. Run eerst voor de beste automatische betaling→unlock flow.")
     else:
         st.success(f"V98 quote gevonden: {v98_snapshot.get('quote_id', 'quote')} — {v98_snapshot.get('price_display', 'prijs onbekend')} — {v98_snapshot.get('quote_status', 'status onbekend')}")
 
@@ -13437,7 +13503,7 @@ def render_payment_unlock_delivery_v99_tab():
 
     st.caption("Tip: in live Stripe/Paddle mode hoort 'webhook/payment event received' door de server gezet te worden, niet door de klant of browserpagina.")
 
-    if st.button("Build Payment Unlock V99", type="primary", use_container_width=True, key="v99_build_payment_unlock"):
+    if st.button("Build Payment Unlock", type="primary", use_container_width=True, key="v99_build_payment_unlock"):
         snapshot = core.build_payment_unlock_delivery_v99_snapshot({
             "project_name": st.session_state.project_name,
             "order_quote_builder_v98_snapshot": v98_snapshot,
@@ -13454,7 +13520,7 @@ def render_payment_unlock_delivery_v99_tab():
         })
         st.session_state.payment_unlock_delivery_v99_snapshot = snapshot
         st.session_state.payment_unlock_delivery_v99_bundle = core.create_payment_unlock_delivery_v99_bundle(st.session_state.project_name, snapshot)
-        st.success("Payment Unlock + Delivery V99 completed.")
+        st.success("Payment Unlock + Delivery completed.")
 
     snapshot = st.session_state.get("payment_unlock_delivery_v99_snapshot")
     if snapshot:
@@ -13501,7 +13567,7 @@ def render_payment_unlock_delivery_v99_tab():
 
         if st.session_state.get("payment_unlock_delivery_v99_bundle"):
             st.download_button(
-                "Download Payment Unlock + Delivery Bundle V99",
+                "Download Payment Unlock + Delivery Bundle",
                 st.session_state.payment_unlock_delivery_v99_bundle,
                 file_name=f"{st.session_state.project_name}_payment_unlock_delivery_v99.zip",
                 mime="application/zip",
@@ -13512,19 +13578,19 @@ def render_payment_unlock_delivery_v99_tab():
     st.caption("V99 maakt de MP3-achtige serviceflow mogelijk: betaalstatus bevestigd → intake/download/delivery vrijgeven. Live betalingen koppel je later via Stripe/Paddle webhooks.")
 
 
-# V98 — Order Intake + Quote Builder / Pack-to-Quote Automation
+# — Order Intake + Quote Builder / Pack-to-Quote Automation
 
 def render_order_quote_builder_v98_tab():
-    st.header("Order Quote Builder V98")
+    st.header("Order Quote Builder")
     st.info(
-        "Doel: klant kiest custom pack in V97; EdgeTwin zet dit automatisch om naar quote/order-ready scope, prijs, safe claims, review queue en delivery boundary. Geen SaaS, geen automatische betaling, geen contract signing."
+        "Doel: klant kiest custom pack in; EdgeTwin zet dit automatisch om naar quote/order-ready scope, prijs, safe claims, review queue en delivery boundary. Geen SaaS, geen automatische betaling, geen contract signing."
     )
 
     catalog = core.get_order_quote_builder_v98_catalog()
     v97_snapshot = st.session_state.get("custom_pack_builder_v97_snapshot") or {}
 
     if not v97_snapshot:
-        st.warning("V97 custom pack snapshot is nog niet aanwezig. V98 kan een basisquote maken, maar run V97 eerst voor de beste automatische prijs/scope.")
+        st.warning("V97 custom pack snapshot is nog niet aanwezig. kan een basisquote maken, maar run eerst voor de beste automatische prijs/scope.")
     else:
         st.success(f"V97 input gevonden: {v97_snapshot.get('pack_name', 'Custom pack')} — {v97_snapshot.get('price_display', 'prijs onbekend')}")
 
@@ -13554,7 +13620,7 @@ def render_order_quote_builder_v98_tab():
         key="v98_quote_note",
     )
 
-    if st.button("Build Order Quote V98", type="primary", use_container_width=True, key="v98_build_order_quote"):
+    if st.button("Build Order Quote", type="primary", use_container_width=True, key="v98_build_order_quote"):
         snapshot = core.build_order_quote_builder_v98_snapshot({
             "project_name": st.session_state.project_name,
             "company": company,
@@ -13572,7 +13638,7 @@ def render_order_quote_builder_v98_tab():
         })
         st.session_state.order_quote_builder_v98_snapshot = snapshot
         st.session_state.order_quote_builder_v98_bundle = core.create_order_quote_builder_v98_bundle(st.session_state.project_name, snapshot)
-        st.success("Order Quote Builder V98 completed.")
+        st.success("Order Quote Builder completed.")
 
     snapshot = st.session_state.get("order_quote_builder_v98_snapshot")
     if snapshot:
@@ -13613,7 +13679,7 @@ def render_order_quote_builder_v98_tab():
 
         if st.session_state.get("order_quote_builder_v98_bundle"):
             st.download_button(
-                "Download Order Quote Bundle V98",
+                "Download Order Quote Bundle",
                 st.session_state.order_quote_builder_v98_bundle,
                 file_name=f"{st.session_state.project_name}_order_quote_builder_v98.zip",
                 mime="application/zip",
@@ -13625,7 +13691,7 @@ def render_order_quote_builder_v98_tab():
 
 
 def render_public_hosting_v101_tab():
-    st.header("🌐 Public Hosting Kit V101")
+    st.header("🌐 Public Hosting Kit")
     st.caption("Deploy EdgeTwin as a hosted web app without turning it into a full SaaS platform yet.")
 
     col1, col2, col3 = st.columns(3)
@@ -13652,7 +13718,7 @@ def render_public_hosting_v101_tab():
         {"stage": "4", "mode": "SaaS later", "use": "Accounts, subscriptions, tenant isolation", "risk": "High"},
     ]))
 
-    st.subheader("Files included in this V101 zip")
+    st.subheader("Files included in this zip")
     st.write([
         "Dockerfile — container deployment for Render/Fly/VPS.",
         "Procfile — simple web process command for platforms that support it.",
@@ -13685,10 +13751,10 @@ def render_public_hosting_v101_tab():
     st.session_state.public_hosting_v101_snapshot = snapshot
     st.json(snapshot)
 
-    if st.button("Create V101 hosting checklist", use_container_width=True, key="v101_create_hosting_checklist"):
-        checklist = """# EdgeTwin V101 Hosting Checklist\n\n- Choose host: Render or Railway first.\n- Deploy from GitHub repo.\n- Set start command: streamlit run app.py --server.address=0.0.0.0 --server.port=$PORT --server.headless=true\n- Set EDGETWIN_STORAGE_ROOT to persistent storage if available.\n- Keep payments manual first.\n- Do not upload sensitive customer data until privacy/security review is complete.\n- Use V99 Payment Unlock logic before connecting Stripe/Paddle webhooks.\n"""
+    if st.button("Create hosting checklist", use_container_width=True, key="v101_create_hosting_checklist"):
+        checklist = """# EdgeTwin Hosting Checklist\n\n- Choose host: Render or Railway first.\n- Deploy from GitHub repo.\n- Set start command: streamlit run app.py --server.address=0.0.0.0 --server.port=$PORT --server.headless=true\n- Set EDGETWIN_STORAGE_ROOT to persistent storage if available.\n- Keep payments manual first.\n- Do not upload sensitive customer data until privacy/security review is complete.\n- Use Payment Unlock logic before connecting Stripe/Paddle webhooks.\n"""
         st.download_button(
-            "Download V101 Hosting Checklist",
+            "Download Hosting Checklist",
             checklist.encode("utf-8"),
             file_name="edgetwin_v101_hosting_checklist.md",
             mime="text/markdown",
@@ -13697,10 +13763,10 @@ def render_public_hosting_v101_tab():
 
 
 def render_payment_provider_adapter_v102_tab():
-    st.header("💳 Payment Provider Adapter V102")
+    st.header("💳 Payment Provider Adapter")
     st.caption("Prepare automatic payment verification and unlock logic without storing card details inside EdgeTwin.")
 
-    st.info("V102 is the bridge between V98 quote, V99 unlock/delivery and a future Stripe/Paddle/manual payment event. It does not process card data itself.")
+    st.info("V102 is the bridge between quote, unlock/delivery and a future Stripe/Paddle/manual payment event. It does not process card data itself.")
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -13763,14 +13829,14 @@ def render_payment_provider_adapter_v102_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V102 payment adapter bundle", use_container_width=True, key="v102_create_bundle"):
+    if st.button("Create payment adapter bundle", use_container_width=True, key="v102_create_bundle"):
         st.session_state.payment_provider_adapter_v102_bundle = core.create_payment_provider_adapter_v102_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot
         )
 
     if st.session_state.get("payment_provider_adapter_v102_bundle"):
         st.download_button(
-            "Download Payment Provider Adapter Bundle V102",
+            "Download Payment Provider Adapter Bundle",
             st.session_state.payment_provider_adapter_v102_bundle,
             file_name=f"{st.session_state.project_name}_payment_provider_adapter_v102.zip",
             mime="application/zip",
@@ -13782,7 +13848,7 @@ def render_payment_provider_adapter_v102_tab():
 
 
 def render_customer_portal_lite_v103_tab():
-    st.header("🧑‍💼 Customer Portal Lite V103")
+    st.header("🧑‍💼 Customer Portal Lite")
     st.caption("A simple customer-facing portal page: pack, payment, intake, delivery and download status in one place. No full SaaS required.")
 
     default_customer_email = (
@@ -13869,21 +13935,21 @@ def render_customer_portal_lite_v103_tab():
         st.table(action_df)
     with tabs[3]:
         st.json(snapshot.get("download_manifest", {}))
-        st.info("In live mode these download URLs should be signed/expiring links. V103 prepares the manifest only; it does not expose real private files.")
+        st.info("In live mode these download URLs should be signed/expiring links. prepares the manifest only; it does not expose real private files.")
     with tabs[4]:
         st.table(guardrail_df)
         st.warning("V103 is portal-lite, not full SaaS. It does not replace proper auth, legal review, privacy review or production validation.")
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V103 customer portal bundle", use_container_width=True, key="v103_create_bundle"):
+    if st.button("Create customer portal bundle", use_container_width=True, key="v103_create_bundle"):
         st.session_state.customer_portal_lite_v103_bundle = core.create_customer_portal_lite_v103_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot
         )
 
     if st.session_state.get("customer_portal_lite_v103_bundle"):
         st.download_button(
-            "Download Customer Portal Lite Bundle V103",
+            "Download Customer Portal Lite Bundle",
             st.session_state.customer_portal_lite_v103_bundle,
             file_name=f"{st.session_state.project_name}_customer_portal_lite_v103.zip",
             mime="application/zip",
@@ -13896,7 +13962,7 @@ def render_customer_portal_lite_v103_tab():
 
 
 def render_secure_download_links_v104_tab():
-    st.header("🔐 Secure Download Links V104")
+    st.header("🔐 Secure Download Links")
     st.caption("Generate signed, expiring download/intake tokens after payment/delivery readiness. This is the missing safety layer between portal status and real customer downloads.")
 
     portal_snapshot = st.session_state.get("customer_portal_lite_v103_snapshot") or {}
@@ -13984,14 +14050,14 @@ def render_secure_download_links_v104_tab():
     with tabs[4]:
         st.json(snapshot)
 
-    if st.button("Create V104 secure download bundle", use_container_width=True, key="v104_create_bundle"):
+    if st.button("Create secure download bundle", use_container_width=True, key="v104_create_bundle"):
         st.session_state.secure_download_links_v104_bundle = core.create_secure_download_links_v104_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot
         )
 
     if st.session_state.get("secure_download_links_v104_bundle"):
         st.download_button(
-            "Download Secure Download Links Bundle V104",
+            "Download Secure Download Links Bundle",
             st.session_state.secure_download_links_v104_bundle,
             file_name=f"{st.session_state.project_name}_secure_download_links_v104.zip",
             mime="application/zip",
@@ -13999,13 +14065,13 @@ def render_secure_download_links_v104_tab():
             key="v104_download_secure_links_bundle",
         )
 
-    st.caption("V104 turns V99/V102/V103 into a safer digital-product style delivery flow: paid → signed expiring token → private download/intake access.")
+    st.caption("V104 turns/V102/V103 into a safer digital-product style delivery flow: paid → signed expiring token → private download/intake access.")
 
 
 
 def render_delivery_endpoint_tab():
-    st.header("🛡️ Private Delivery Endpoint V105")
-    st.caption("Prepare the real server-side layer behind V104 signed links: validate token, re-check payment/delivery status, audit the request, then stream a private file only when safe.")
+    st.header("🛡️ Private Delivery Endpoint")
+    st.caption("Prepare the real server-side layer behind signed links: validate token, re-check payment/delivery status, audit the request, then stream a private file only when safe.")
 
     secure_snapshot = st.session_state.get("secure_download_links_v104_snapshot") or {}
     portal_snapshot = st.session_state.get("customer_portal_lite_v103_snapshot") or {}
@@ -14072,18 +14138,18 @@ def render_delivery_endpoint_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V105 private delivery endpoint bundle", use_container_width=True, key="v105_create_bundle"):
+    if st.button("Create private delivery endpoint bundle", use_container_width=True, key="v105_create_bundle"):
         st.session_state.delivery_endpoint_bundle = core.create_delivery_endpoint_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
 
     if st.session_state.get("delivery_endpoint_bundle"):
-        st.download_button("Download Private Delivery Endpoint Bundle V105", st.session_state.delivery_endpoint_bundle, file_name=f"{st.session_state.project_name}_delivery_endpoint.zip", mime="application/zip", use_container_width=True, key="v105_download_private_delivery_endpoint_bundle")
+        st.download_button("Download Private Delivery Endpoint Bundle", st.session_state.delivery_endpoint_bundle, file_name=f"{st.session_state.project_name}_delivery_endpoint.zip", mime="application/zip", use_container_width=True, key="v105_download_private_delivery_endpoint_bundle")
 
-    st.caption("V105 closes the loop after V104: token manifest → private endpoint validation → payment/delivery re-check → audit log → private file stream.")
+    st.caption("V105 closes the loop after: token manifest → private endpoint validation → payment/delivery re-check → audit log → private file stream.")
 
 
 
 def render_order_fulfillment_v106_tab():
-    st.header("📚 Order Fulfillment V106")
+    st.header("📚 Order Fulfillment")
     st.caption("One order state machine from quote → payment → intake → generation → secure private delivery. No full SaaS, no card data stored in EdgeTwin.")
 
     quote_snapshot = st.session_state.get("order_quote_builder_v98_snapshot") or {}
@@ -14110,7 +14176,7 @@ def render_order_fulfillment_v106_tab():
     with c3:
         security_status = st.selectbox("Security status", ["ready", "staging_ready", "missing_secret", "unsafe", "blocked"], index=0, key="v106_security_status")
         customer_acknowledged_scope = st.checkbox("Customer acknowledged scope", value=True, key="v106_scope_ack")
-        use_private_endpoint = st.checkbox("Use V105 private delivery endpoint", value=True, key="v106_use_endpoint")
+        use_private_endpoint = st.checkbox("Use private delivery endpoint", value=True, key="v106_use_endpoint")
         store_no_card_data = st.checkbox("No card data stored in EdgeTwin", value=True, key="v106_no_card_data")
 
     snapshot = core.build_order_fulfillment_v106_snapshot(project_name=st.session_state.get("project_name", "EdgeTwin_Project"), customer_email=customer_email, order_id=order_id, pack_name=pack_name, amount_eur=amount_eur, quote_status=quote_status, payment_status=payment_status, delivery_status=delivery_status, data_status=data_status, security_status=security_status, customer_acknowledged_scope=customer_acknowledged_scope, quote_snapshot=quote_snapshot, payment_snapshot=payment_snapshot, portal_snapshot=portal_snapshot, endpoint_snapshot=endpoint_snapshot, use_private_endpoint=use_private_endpoint, store_no_card_data=store_no_card_data)
@@ -14144,18 +14210,18 @@ def render_order_fulfillment_v106_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V106 order fulfillment bundle", use_container_width=True, key="v106_create_bundle"):
+    if st.button("Create order fulfillment bundle", use_container_width=True, key="v106_create_bundle"):
         st.session_state.order_fulfillment_v106_bundle = core.create_order_fulfillment_v106_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
 
     if st.session_state.get("order_fulfillment_v106_bundle"):
-        st.download_button("Download Order Fulfillment Bundle V106", st.session_state.order_fulfillment_v106_bundle, file_name=f"{st.session_state.project_name}_order_fulfillment_v106.zip", mime="application/zip", use_container_width=True, key="v106_download_order_fulfillment_bundle")
+        st.download_button("Download Order Fulfillment Bundle", st.session_state.order_fulfillment_v106_bundle, file_name=f"{st.session_state.project_name}_order_fulfillment_v106.zip", mime="application/zip", use_container_width=True, key="v106_download_order_fulfillment_bundle")
 
-    st.caption("V106 is the missing backbone between V98 quote, V102 payment adapter, V103 portal, V104 secure links and V105 private delivery.")
+    st.caption("V106 is the missing backbone between quote, payment adapter, portal, secure links and private delivery.")
 
 
 
 def render_ai_copilot_adapter_tab():
-    st.header("🤖 AI Copilot Adapter V107")
+    st.header("🤖 AI Copilot Adapter")
     st.caption("Controlled AI layer for summaries, pack suggestions, safe customer copy and founder-review notes. No blind approvals, no card data, no legal/accuracy guarantees.")
 
     client_snapshot = st.session_state.get("client_input_autopilot_v94_snapshot") or {}
@@ -14228,17 +14294,17 @@ def render_ai_copilot_adapter_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V107 AI Copilot bundle", use_container_width=True, key="v107_create_bundle"):
+    if st.button("Create AI Copilot bundle", use_container_width=True, key="v107_create_bundle"):
         st.session_state.ai_copilot_adapter_bundle = core.create_ai_copilot_adapter_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
 
     if st.session_state.get("ai_copilot_adapter_bundle"):
-        st.download_button("Download AI Copilot Adapter Bundle V107", st.session_state.ai_copilot_adapter_bundle, file_name=f"{st.session_state.project_name}_ai_copilot_adapter.zip", mime="application/zip", use_container_width=True, key="v107_download_ai_copilot_bundle")
+        st.download_button("Download AI Copilot Adapter Bundle", st.session_state.ai_copilot_adapter_bundle, file_name=f"{st.session_state.project_name}_ai_copilot_adapter.zip", mime="application/zip", use_container_width=True, key="v107_download_ai_copilot_bundle")
 
     st.caption("V107 adds a controlled AI assistant layer: helpful for language and recommendations, never a replacement for payment webhooks, policy approval, legal review or production validation.")
 
 
 def render_claim_safety_prompt_policy_v108_tab():
-    st.header("🧯 Claim Safety & Prompt Policy Pack V108")
+    st.header("🧯 Claim Safety & Prompt Policy Pack")
     st.caption("A conservative safety gate for customer claims, AI prompts, sales copy and report text. It blocks hard production/accuracy/legal/compliance promises unless validated and approved.")
 
     copilot_snapshot = st.session_state.get("ai_copilot_adapter_snapshot") or {}
@@ -14277,7 +14343,7 @@ def render_claim_safety_prompt_policy_v108_tab():
     tabs = st.tabs(["Safe rewrite", "Risk flags", "Safe claim library", "Prompt guard", "Policy rules", "Full snapshot"])
     with tabs[0]:
         if snapshot.get("auto_publish_allowed"):
-            st.success("This claim passes V108 standard-pack claim policy.")
+            st.success("This claim passes standard-pack claim policy.")
         elif snapshot.get("decision", "").startswith("BLOCK"):
             st.error("This claim is blocked until rewritten or reviewed.")
         else:
@@ -14299,17 +14365,17 @@ def render_claim_safety_prompt_policy_v108_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V108 Claim Safety bundle", use_container_width=True, key="v108_create_bundle"):
+    if st.button("Create Claim Safety bundle", use_container_width=True, key="v108_create_bundle"):
         st.session_state.claim_safety_prompt_policy_v108_bundle = core.create_claim_safety_prompt_policy_v108_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot)
 
     if st.session_state.get("claim_safety_prompt_policy_v108_bundle"):
-        st.download_button("Download Claim Safety & Prompt Policy Bundle V108", st.session_state.claim_safety_prompt_policy_v108_bundle, file_name=f"{st.session_state.project_name}_claim_safety_prompt_policy_v108.zip", mime="application/zip", use_container_width=True, key="v108_download_claim_policy_bundle")
+        st.download_button("Download Claim Safety & Prompt Policy Bundle", st.session_state.claim_safety_prompt_policy_v108_bundle, file_name=f"{st.session_state.project_name}_claim_safety_prompt_policy_v108.zip", mime="application/zip", use_container_width=True, key="v108_download_claim_policy_bundle")
 
     st.caption("V108 keeps AI and sales copy useful but bounded: pilot/evidence language is allowed; production/accuracy/legal/compliance guarantees are blocked unless separately validated and approved.")
 
 
 def render_synthetic_data_optimizer_tab():
-    st.header("🧬 Synthetic Data Optimizer V109")
+    st.header("🧬 Synthetic Data Optimizer")
     st.caption("Build scenario-based golden synthetic data for demos, regression tests and Data Quality Gates. This improves synthetic data without pretending it replaces real customer field validation.")
 
     try:
@@ -14390,17 +14456,17 @@ def render_synthetic_data_optimizer_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V109 Synthetic Data bundle", use_container_width=True, key="v109_create_bundle"):
+    if st.button("Create Synthetic Data bundle", use_container_width=True, key="v109_create_bundle"):
         st.session_state.synthetic_data_optimizer_bundle = core.create_synthetic_data_optimizer_bundle(st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, dataset_df)
 
     if st.session_state.get("synthetic_data_optimizer_bundle"):
-        st.download_button("Download Synthetic Data Optimizer Bundle V109", st.session_state.synthetic_data_optimizer_bundle, file_name=f"{st.session_state.project_name}_synthetic_data_optimizer.zip", mime="application/zip", use_container_width=True, key="v109_download_bundle")
+        st.download_button("Download Synthetic Data Optimizer Bundle", st.session_state.synthetic_data_optimizer_bundle, file_name=f"{st.session_state.project_name}_synthetic_data_optimizer.zip", mime="application/zip", use_container_width=True, key="v109_download_bundle")
 
     st.caption("V109 makes synthetic testdata better and more honest: scenario-based, labeled, noisy, drifted, partially missing and ready for regression/data-quality gates — but still not a substitute for real customer validation.")
 
 
 def render_synthetic_real_bridge_tab():
-    st.header("🌉 Synthetic→Real Bridge V110")
+    st.header("🌉 Synthetic→Real Bridge")
     st.caption("Make synthetic data more like real customer data, without mixing raw customer data into EdgeTwin unless explicit permission and policy allow it.")
 
     try:
@@ -14427,11 +14493,11 @@ def render_synthetic_real_bridge_tab():
 
     uploaded = st.file_uploader("Optional customer sample CSV for calibration profile", type=["csv"], key="v110_customer_csv")
     real_df = None
-    upload_note = "No customer CSV uploaded. V110 will generate synthetic-real target guidance only."
+    upload_note = "No customer CSV uploaded. will generate synthetic-real target guidance only."
     if uploaded is not None:
         try:
             real_df = pd.read_csv(uploaded)
-            upload_note = f"Loaded customer sample: {len(real_df):,} rows, {len(real_df.columns):,} columns. Raw rows are not included in the V110 bridge bundle by default."
+            upload_note = f"Loaded customer sample: {len(real_df):,} rows, {len(real_df.columns):,} columns. Raw rows are not included in the bridge bundle by default."
             st.success(upload_note)
             st.dataframe(real_df.head(20), use_container_width=True)
         except Exception as exc:
@@ -14467,7 +14533,7 @@ def render_synthetic_real_bridge_tab():
     with tabs[2]:
         st.json(snapshot.get("real_profile", {}))
     with tabs[3]:
-        st.warning("Real customer data may only be used according to consent, contract/purpose, minimization and retention rules. V110 stores profiles by default, not raw uploaded rows.")
+        st.warning("Real customer data may only be used according to consent, contract/purpose, minimization and retention rules. stores profiles by default, not raw uploaded rows.")
         st.json(snapshot.get("consent", {}))
         st.json(snapshot.get("learning_policy", {}))
     with tabs[4]:
@@ -14475,14 +14541,14 @@ def render_synthetic_real_bridge_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V110 Synthetic→Real Bridge bundle", use_container_width=True, key="v110_create_bundle"):
+    if st.button("Create Synthetic→Real Bridge bundle", use_container_width=True, key="v110_create_bundle"):
         st.session_state.synthetic_real_bridge_bundle = core.create_synthetic_real_bridge_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, calibrated_df
         )
 
     if st.session_state.get("synthetic_real_bridge_bundle"):
         st.download_button(
-            "Download Synthetic→Real Bridge Bundle V110",
+            "Download Synthetic→Real Bridge Bundle",
             st.session_state.synthetic_real_bridge_bundle,
             file_name=f"{st.session_state.project_name}_synthetic_real_bridge.zip",
             mime="application/zip",
@@ -14494,7 +14560,7 @@ def render_synthetic_real_bridge_tab():
 
 
 def render_synthetic_reliability_lab_tab():
-    st.header("🧪 Synthetic Reliability Lab V111")
+    st.header("🧪 Synthetic Reliability Lab")
     st.caption("Make synthetic testdata measurable: stress coverage, label coverage, timestamp health, correlation stability, real-profile fidelity and privacy/similarity red flags.")
 
     try:
@@ -14530,7 +14596,7 @@ def render_synthetic_reliability_lab_tab():
             st.error(f"Could not read CSV: {exc}")
             real_df = None
     else:
-        st.info("No customer CSV uploaded. V111 will evaluate synthetic reliability without real-fidelity checks.")
+        st.info("No customer CSV uploaded. will evaluate synthetic reliability without real-fidelity checks.")
 
     snapshot, datasets = core.build_synthetic_reliability_lab_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
@@ -14565,7 +14631,7 @@ def render_synthetic_reliability_lab_tab():
         st.json(snapshot.get("label_coverage_realistic_messy", {}))
         st.json(snapshot.get("timestamp_health_realistic_messy", {}))
     with tabs[4]:
-        st.warning("Real customer data may only be used with permission. V111 can compare aggregate/fidelity signals, but synthetic data still cannot prove production accuracy.")
+        st.warning("Real customer data may only be used with permission. can compare aggregate/fidelity signals, but synthetic data still cannot prove production accuracy.")
         st.json(snapshot.get("privacy_similarity_risk", {}))
         st.json(snapshot.get("fidelity_to_real", {}))
     with tabs[5]:
@@ -14573,14 +14639,14 @@ def render_synthetic_reliability_lab_tab():
     with tabs[6]:
         st.json(snapshot)
 
-    if st.button("Create V111 Synthetic Reliability Lab bundle", use_container_width=True, key="v111_create_bundle"):
+    if st.button("Create Synthetic Reliability Lab bundle", use_container_width=True, key="v111_create_bundle"):
         st.session_state.synthetic_reliability_lab_bundle = core.create_synthetic_reliability_lab_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, datasets
         )
 
     if st.session_state.get("synthetic_reliability_lab_bundle"):
         st.download_button(
-            "Download Synthetic Reliability Lab Bundle V111",
+            "Download Synthetic Reliability Lab Bundle",
             st.session_state.synthetic_reliability_lab_bundle,
             file_name=f"{st.session_state.project_name}_synthetic_reliability_lab.zip",
             mime="application/zip",
@@ -14592,8 +14658,8 @@ def render_synthetic_reliability_lab_tab():
 
 
 def render_dataset_benchmark_harness_tab():
-    st.header("📏 Dataset Benchmark Harness V112")
-    st.caption("Validate synthetic and customer-sample datasets through one repeatable benchmark gate: schema, timestamps, labels, missingness, numeric health, leakage probes and V111 reliability.")
+    st.header("📏 Dataset Benchmark Harness")
+    st.caption("Validate synthetic and customer-sample datasets through one repeatable benchmark gate: schema, timestamps, labels, missingness, numeric health, leakage probes and reliability.")
 
     try:
         from synthetic_data_optimizer import SCENARIO_LIBRARY
@@ -14611,8 +14677,8 @@ def render_dataset_benchmark_harness_tab():
         benchmark_profile = st.selectbox("Benchmark profile", list(BENCHMARK_PROFILES.keys()), index=list(BENCHMARK_PROFILES.keys()).index("pilot_evidence_ready") if "pilot_evidence_ready" in BENCHMARK_PROFILES else 0, key="v112_benchmark_profile")
         seed = st.number_input("Seed", min_value=1, max_value=2000000000, value=112, step=1, key="v112_seed")
     with c3:
-        include_v111_stress = st.checkbox("Include V111 stress/reliability signal", value=True, key="v112_include_v111")
-        st.info("Use V112 as the shared gate for synthetic data, customer samples, regression and pack QA.")
+        include_v111_stress = st.checkbox("Include stress/reliability signal", value=True, key="v112_include_v111")
+        st.info("Use as the shared gate for synthetic data, customer samples, regression and pack QA.")
 
     uploaded = st.file_uploader("Optional customer sample CSV for same-harness validation", type=["csv"], key="v112_customer_csv")
     real_df = None
@@ -14625,7 +14691,7 @@ def render_dataset_benchmark_harness_tab():
             st.error(f"Could not read CSV: {exc}")
             real_df = None
     else:
-        st.info("No customer sample uploaded. V112 will benchmark synthetic/golden datasets only.")
+        st.info("No customer sample uploaded. will benchmark synthetic/golden datasets only.")
 
     snapshot, datasets = core.build_dataset_benchmark_harness_snapshot(
         project_name=st.session_state.get("project_name", "EdgeTwin_Project"),
@@ -14668,14 +14734,14 @@ def render_dataset_benchmark_harness_tab():
     with tabs[5]:
         st.json(snapshot)
 
-    if st.button("Create V112 Dataset Benchmark Harness bundle", use_container_width=True, key="v112_create_bundle"):
+    if st.button("Create Dataset Benchmark Harness bundle", use_container_width=True, key="v112_create_bundle"):
         st.session_state.dataset_benchmark_harness_bundle = core.create_dataset_benchmark_harness_bundle(
             st.session_state.get("project_name", "EdgeTwin_Project"), snapshot, datasets
         )
 
     if st.session_state.get("dataset_benchmark_harness_bundle"):
         st.download_button(
-            "Download Dataset Benchmark Harness Bundle V112",
+            "Download Dataset Benchmark Harness Bundle",
             st.session_state.dataset_benchmark_harness_bundle,
             file_name=f"{st.session_state.project_name}_dataset_benchmark_harness.zip",
             mime="application/zip",
@@ -14687,7 +14753,7 @@ def render_dataset_benchmark_harness_tab():
 
 
 def render_public_benchmark_dataset_v113_tab():
-    st.header("🎧 Public Benchmark Dataset Adapter V113")
+    st.header("🎧 Public Benchmark Dataset Adapter")
     st.caption("Use public/open datasets such as ESC-50 as benchmark/demo/reference assets without confusing them with customer production validation.")
 
     catalog = public_benchmark.get_public_benchmark_catalog_v113()
@@ -14720,7 +14786,7 @@ def render_public_benchmark_dataset_v113_tab():
         except Exception as exc:
             st.error(f"Could not read metadata CSV: {exc}")
 
-    if st.button("Build V113 Public Benchmark Dataset Card", use_container_width=True, key="v113_build_card"):
+    if st.button("Build Public Benchmark Dataset Card", use_container_width=True, key="v113_build_card"):
         snapshot = public_benchmark.build_public_benchmark_snapshot(
             dataset_id=dataset_id,
             metadata_df=metadata_df,
@@ -14766,7 +14832,7 @@ def render_public_benchmark_dataset_v113_tab():
 
         if st.session_state.get("public_benchmark_bundle"):
             st.download_button(
-                "Download Public Benchmark Dataset Bundle V113",
+                "Download Public Benchmark Dataset Bundle",
                 st.session_state.public_benchmark_bundle,
                 file_name=f"{st.session_state.project_name}_public_benchmark_dataset_v113.zip",
                 mime="application/zip",
@@ -14778,7 +14844,7 @@ def render_public_benchmark_dataset_v113_tab():
 
 
 def render_dataset_import_wizard_v114_tab():
-    st.header("🗂️ Dataset Library Import Wizard V114")
+    st.header("🗂️ Dataset Library Import Wizard")
     st.caption("Register ESC-50/public datasets, golden synthetic sets and customer-consented samples without mixing raw data into SQLite or paid bundles.")
 
     dirs = dataset_import.ensure_dataset_library_dirs()
@@ -14816,7 +14882,7 @@ def render_dataset_import_wizard_v114_tab():
     with st.expander("Policy for selected source type", expanded=False):
         st.json(policies[source_type])
 
-    if st.button("Register dataset in V114 library", use_container_width=True, key="v114_register_dataset"):
+    if st.button("Register dataset in library", use_container_width=True, key="v114_register_dataset"):
         manifest = dataset_import.build_dataset_import_manifest_v114(
             dataset_name=dataset_name,
             known_dataset_id=known_dataset_id,
@@ -14861,7 +14927,7 @@ def render_dataset_import_wizard_v114_tab():
         with tabs[4]:
             if st.session_state.get("dataset_import_bundle"):
                 st.download_button(
-                    "Download Dataset Import Bundle V114",
+                    "Download Dataset Import Bundle",
                     st.session_state.dataset_import_bundle,
                     file_name=f"{st.session_state.project_name}_dataset_import.zip",
                     mime="application/zip",
@@ -14873,7 +14939,7 @@ def render_dataset_import_wizard_v114_tab():
 
 
 def render_dataset_to_synthetic_tab():
-    st.header("🔁 Dataset-to-Synthetic Calibration Loop V115")
+    st.header("🔁 Dataset-to-Synthetic Calibration Loop")
     st.caption("Turn imported/public/customer-approved dataset profiles into stronger synthetic candidates for demo, regression and pilot-readiness. No production accuracy claims.")
 
     from synthetic_data_optimizer import SCENARIO_LIBRARY
@@ -14907,7 +14973,7 @@ def render_dataset_to_synthetic_tab():
     with st.expander("Selected consent policy", expanded=False):
         st.json(synthetic_calibration.CONSENT_MODES.get(consent_mode, {}))
 
-    if st.button("Run V115 calibration loop", use_container_width=True, key="v115_run_loop"):
+    if st.button("Run calibration loop", use_container_width=True, key="v115_run_loop"):
         snapshot, datasets = synthetic_calibration.build_dataset_to_synthetic_calibration_snapshot(
             project_name=st.session_state.project_name,
             pack_key=pack_key,
@@ -14966,7 +15032,7 @@ def render_dataset_to_synthetic_tab():
         with tabs[4]:
             if st.session_state.get("synthetic_calibration_bundle"):
                 st.download_button(
-                    "Download Synthetic Calibration Loop Bundle V115",
+                    "Download Synthetic Calibration Loop Bundle",
                     st.session_state.synthetic_calibration_bundle,
                     file_name=f"{st.session_state.project_name}_dataset_to_synthetic.zip",
                     mime="application/zip",
@@ -14981,7 +15047,7 @@ def render_dataset_to_synthetic_tab():
 
 
 def render_product_release_candidate_tab():
-    st.header("🚀 Product Release Candidate V120")
+    st.header("🚀 Product Release Candidate")
     st.caption("One controlled customer-test release candidate: landing → custom → quote/payment handoff → delivery, with safe claims and data trust checks.")
 
     with st.form("v120_release_candidate_form"):
@@ -15005,7 +15071,7 @@ def render_product_release_candidate_tab():
             has_real_data = st.checkbox("Customer has real-data sample", value=False)
             hosted_ready = st.checkbox("Public/private hosting ready", value=False)
             payment_ready = st.checkbox("Payment handoff/link ready", value=False)
-        submitted = st.form_submit_button("Build Product RC V120", use_container_width=True)
+        submitted = st.form_submit_button("Build Product Release Candidate", use_container_width=True)
 
     if submitted:
         snapshot = release_candidate.build_product_release_candidate_snapshot(
@@ -15056,7 +15122,7 @@ def render_product_release_candidate_tab():
 
         if st.session_state.get("product_release_candidate_bundle"):
             st.download_button(
-                "Download V120 Release Candidate Bundle",
+                "Download Release Candidate Bundle",
                 st.session_state.product_release_candidate_bundle,
                 file_name="edgetwin_v120_release_candidate_bundle.zip",
                 mime="application/zip",
@@ -15066,7 +15132,7 @@ def render_product_release_candidate_tab():
     st.caption("V120 is a founder-led pack product release candidate. It is not full SaaS and does not make production/accuracy/legal/compliance guarantees.")
 
 def render_customer_facing_landing_portal_tab():
-    st.header("🌍 Customer-Facing Landing Portal V119")
+    st.header("🌍 Customer-Facing Landing Portal")
     st.caption("One clean public/private customer front door: packs, guided custom route, proof, quote/payment handoff and safe claims without exposing the technical cockpit.")
 
     with st.form("v119_landing_portal_form"):
@@ -15086,7 +15152,7 @@ def render_customer_facing_landing_portal_tab():
             has_real_data = st.checkbox("Customer has real/sample data", value=False)
             public_mode = st.selectbox("Portal mode", ["private_demo_link", "public_landing", "founder_internal_preview"], index=0)
             payment_mode = st.selectbox("Payment/CTA mode", ["quote_ready", "payment_link_ready", "deposit_paid", "paid", "confirmed", "demo_only"], index=1)
-        submitted = st.form_submit_button("Build Customer Landing Portal V119", use_container_width=True)
+        submitted = st.form_submit_button("Build Customer Landing Portal", use_container_width=True)
 
     if submitted:
         snapshot = landing_portal.build_customer_facing_landing_portal_snapshot(
@@ -15146,7 +15212,7 @@ def render_customer_facing_landing_portal_tab():
         with tabs[6]:
             if st.session_state.get("customer_facing_landing_portal_bundle"):
                 st.download_button(
-                    "Download Customer Landing Portal Bundle V119",
+                    "Download Customer Landing Portal Bundle",
                     st.session_state.customer_facing_landing_portal_bundle,
                     file_name=f"{st.session_state.project_name}_customer_landing_portal.zip",
                     mime="application/zip",
@@ -15158,7 +15224,7 @@ def render_customer_facing_landing_portal_tab():
 
 
 def render_guided_custom_customer_builder_tab():
-    st.header("🧭 Guided Custom Customer Builder V118")
+    st.header("🧭 Guided Custom Customer Builder")
     st.caption("Customer-facing custom route: the customer chooses what they need, EdgeTwin recommends modules, calculates price/scope/risk and only escalates exceptions.")
 
     with st.form("v118_guided_custom_builder_form"):
@@ -15192,7 +15258,7 @@ def render_guided_custom_customer_builder_tab():
         with g3:
             wants_reusable_template = st.checkbox("Make reusable template", value=True, key="v118_reusable")
 
-        submitted = st.form_submit_button("Build Guided Custom Pack V118", use_container_width=True)
+        submitted = st.form_submit_button("Build Guided Custom Pack", use_container_width=True)
 
     if submitted:
         snapshot = custom_customer.build_guided_custom_customer_builder_snapshot(
@@ -15248,7 +15314,7 @@ def render_guided_custom_customer_builder_tab():
         with tabs[6]:
             if st.session_state.get("guided_custom_customer_builder_bundle"):
                 st.download_button(
-                    "Download Guided Custom Builder Bundle V118",
+                    "Download Guided Custom Builder Bundle",
                     st.session_state.guided_custom_customer_builder_bundle,
                     file_name=f"{st.session_state.project_name}_guided_custom_builder_v118.zip",
                     mime="application/zip",
@@ -15259,7 +15325,7 @@ def render_guided_custom_customer_builder_tab():
     st.caption("V118 lets customers self-configure custom packs inside safety policy. It does not promise production accuracy, compliance certification or unreviewed high-risk custom work.")
 
 def render_one_perfect_customer_flow_tab():
-    st.header("🛣️ One Perfect Customer Flow V117")
+    st.header("🛣️ One Perfect Customer Flow")
     st.caption("One calm customer route: problem → pack → data readiness → proof → quote/payment → delivery. No production/accuracy/legal/compliance guarantees.")
 
     with st.form("v117_one_perfect_flow_form"):
@@ -15283,7 +15349,7 @@ def render_one_perfect_customer_flow_tab():
             upload_status = st.selectbox("Upload/intake status", customer_flow.UPLOAD_STATUSES, index=2, key="v117_upload")
         with g3:
             delivery_status = st.selectbox("Delivery status", customer_flow.DELIVERY_STATUSES, index=0, key="v117_delivery")
-        submitted = st.form_submit_button("Build One Perfect Customer Flow V117", use_container_width=True)
+        submitted = st.form_submit_button("Build One Perfect Customer Flow", use_container_width=True)
 
     if submitted:
         snapshot = customer_flow.build_one_perfect_customer_flow_snapshot(
@@ -15344,7 +15410,7 @@ def render_one_perfect_customer_flow_tab():
         with tabs[6]:
             if st.session_state.get("one_perfect_customer_flow_bundle"):
                 st.download_button(
-                    "Download One Perfect Customer Flow Bundle V117",
+                    "Download One Perfect Customer Flow Bundle",
                     st.session_state.one_perfect_customer_flow_bundle,
                     file_name=f"{st.session_state.project_name}_one_perfect_customer_flow.zip",
                     mime="application/zip",
@@ -15356,7 +15422,7 @@ def render_one_perfect_customer_flow_tab():
 
 
 def render_self_selling_tab():
-    st.header("🧲 Self-Selling Conversion Engine V116")
+    st.header("🧲 Self-Selling Conversion Engine")
     st.caption("Make EdgeTwin explain its value, justify the price, handle objections and guide customers toward payment without unsafe guarantees.")
 
     with st.form("v116_self_selling_form"):
@@ -15382,7 +15448,7 @@ def render_self_selling_tab():
         with b3:
             payment_ready = st.checkbox("Payment/unlock route prepared", value=True)
             download_ready = st.checkbox("Download/delivery route prepared", value=True)
-        submitted = st.form_submit_button("Build Self-Selling Conversion Pack V116", use_container_width=True)
+        submitted = st.form_submit_button("Build Self-Selling Conversion Pack", use_container_width=True)
 
     if submitted:
         snapshot = self_selling_module.build_self_selling_snapshot(
@@ -15445,7 +15511,7 @@ def render_self_selling_tab():
         with tabs[6]:
             if st.session_state.get("self_selling_bundle"):
                 st.download_button(
-                    "Download Self-Selling Conversion Bundle V116",
+                    "Download Self-Selling Conversion Bundle",
                     st.session_state.self_selling_bundle,
                     file_name=f"{st.session_state.project_name}_self_selling.zip",
                     mime="application/zip",
@@ -15457,7 +15523,7 @@ def render_self_selling_tab():
 
 
 def render_buyer_data_room_pro_tab():
-    st.header("🏢 Buyer Data Room Pro V124")
+    st.header("🏢 Buyer Data Room Pro")
     st.caption("Assemble a manager-friendly buyer room with quote, evidence, data-quality status, safe claims and delivery manifest.")
     with st.form("v124_buyer_room_form"):
         c1, c2 = st.columns(2)
@@ -15472,7 +15538,7 @@ def render_buyer_data_room_pro_tab():
             wants_custom = st.checkbox("Customer wants guided custom", value=False, key="v124_custom")
             payment_status = st.selectbox("Payment status", ["quote_ready", "deposit_paid", "paid", "manual_paid_confirmed", "unpaid", "failed", "refunded", "disputed"], index=0, key="v124_payment")
             delivery_status = st.selectbox("Delivery status", ["intake_ready", "generating", "ready", "delivered", "locked", "waiting_for_data"], index=0, key="v124_delivery")
-        submitted = st.form_submit_button("Build Buyer Data Room V124", use_container_width=True)
+        submitted = st.form_submit_button("Build Buyer Data Room", use_container_width=True)
     if submitted:
         snapshot = buyer_dataroom.build_buyer_data_room_pro_snapshot(
             company=company,
@@ -15513,11 +15579,11 @@ def render_buyer_data_room_pro_tab():
             st.json(snap.get("download_manifest", {}))
         with tabs[4]:
             if st.session_state.get("buyer_data_room_pro_bundle"):
-                st.download_button("Download Buyer Data Room Bundle V124", st.session_state.buyer_data_room_pro_bundle, file_name=f"{st.session_state.project_name}_buyer_data_room_v124.zip", mime="application/zip", use_container_width=True, key="v124_download")
+                st.download_button("Download Buyer Data Room Bundle", st.session_state.buyer_data_room_pro_bundle, file_name=f"{st.session_state.project_name}_buyer_data_room_v124.zip", mime="application/zip", use_container_width=True, key="v124_download")
 
 
 def render_first_customer_intake_pack_tab():
-    st.header("🧾 First Customer Intake Pack V123")
+    st.header("🧾 First Customer Intake Pack")
     st.caption("Collect just enough customer input to recommend a pack, request the right upload/sample and avoid over-scoping.")
     with st.form("v123_intake_form"):
         c1, c2 = st.columns(2)
@@ -15533,7 +15599,7 @@ def render_first_customer_intake_pack_tab():
             has_sample_data = st.checkbox("Has sample data", value=True, key="v123_sample")
             wants_custom = st.checkbox("Wants guided custom", value=False, key="v123_custom")
             consent_mode = st.selectbox("Consent mode", ["customer_profile_only", "customer_no_learning", "customer_synthetic_calibration", "customer_reusable_template_consent"], index=0, key="v123_consent")
-        submitted = st.form_submit_button("Build First Customer Intake V123", use_container_width=True)
+        submitted = st.form_submit_button("Build First Customer Intake", use_container_width=True)
     if submitted:
         snapshot = first_intake.build_first_customer_intake_pack_snapshot(
             company=company,
@@ -15563,11 +15629,11 @@ def render_first_customer_intake_pack_tab():
         with tabs[3]: st.json(snap.get("data_quality_snapshot", {}))
         with tabs[4]:
             if st.session_state.get("first_customer_intake_pack_bundle"):
-                st.download_button("Download First Customer Intake Bundle V123", st.session_state.first_customer_intake_pack_bundle, file_name=f"{st.session_state.project_name}_first_customer_intake_v123.zip", mime="application/zip", use_container_width=True, key="v123_download")
+                st.download_button("Download First Customer Intake Bundle", st.session_state.first_customer_intake_pack_bundle, file_name=f"{st.session_state.project_name}_first_customer_intake_v123.zip", mime="application/zip", use_container_width=True, key="v123_download")
 
 
 def render_data_quality_gate_pro_tab():
-    st.header("🚦 Data Quality Gate Pro V122")
+    st.header("🚦 Data Quality Gate Pro")
     st.caption("Automatically decide whether data is good enough for demo, Starter, Professional Pilot, Real-Data Evidence, or blocked bad input.")
     with st.form("v122_quality_form"):
         c1, c2 = st.columns(2)
@@ -15578,7 +15644,7 @@ def render_data_quality_gate_pro_tab():
         with c2:
             target_pack = st.selectbox("Target pack", ["Starter Diagnostic Pack", "Professional Pilot Pack", "Real-Data Evidence Pack", "Guided Custom Pack"], index=1, key="v122_pack")
             customer_claim_request = st.text_area("Customer claim request to check", "pilot/evidence readiness only", height=80, key="v122_claim")
-        submitted = st.form_submit_button("Run Data Quality Gate V122", use_container_width=True)
+        submitted = st.form_submit_button("Run Data Quality Gate", use_container_width=True)
     if submitted:
         snapshot = data_quality.build_data_quality_gate_pro_snapshot(
             use_case=use_case,
@@ -15601,11 +15667,11 @@ def render_data_quality_gate_pro_tab():
         st.json(q)
         st.info(snap.get("safe_boundary"))
         if st.session_state.get("data_quality_gate_pro_bundle"):
-            st.download_button("Download Data Quality Gate Bundle V122", st.session_state.data_quality_gate_pro_bundle, file_name=f"{st.session_state.project_name}_data_quality_gate_v122.zip", mime="application/zip", use_container_width=True, key="v122_download")
+            st.download_button("Download Data Quality Gate Bundle", st.session_state.data_quality_gate_pro_bundle, file_name=f"{st.session_state.project_name}_data_quality_gate_v122.zip", mime="application/zip", use_container_width=True, key="v122_download")
 
 
 def render_golden_dataset_library_tab():
-    st.header("🏆 Golden Dataset Library + Version Lock V121")
+    st.header("🏆 Golden Dataset Library + Version Lock")
     st.caption("Lock approved golden datasets with version, hash, profile and expected benchmark contract for regression safety.")
     with st.form("v121_golden_form"):
         c1, c2 = st.columns(2)
@@ -15617,7 +15683,7 @@ def render_golden_dataset_library_tab():
             source_type = st.selectbox("Source type", ["golden_synthetic", "public_benchmark", "customer_profile_calibrated"], index=0, key="v121_source")
             license_or_consent = st.text_input("License/consent", "internal synthetic benchmark - reusable", key="v121_license")
             expected_benchmark_score = st.slider("Expected benchmark minimum", 0, 100, 90, key="v121_expected")
-        submitted = st.form_submit_button("Lock Golden Dataset V121", use_container_width=True)
+        submitted = st.form_submit_button("Lock Golden Dataset", use_container_width=True)
     if submitted:
         snapshot = golden_dataset.build_golden_dataset_library_snapshot(
             dataset_name=dataset_name,
@@ -15639,7 +15705,7 @@ def render_golden_dataset_library_tab():
         st.json({"profile": snap.get("profile"), "version_lock_contract": snap.get("version_lock_contract"), "review_flags": snap.get("review_flags")})
         st.info(snap.get("safe_boundary"))
         if st.session_state.get("golden_dataset_library_bundle"):
-            st.download_button("Download Golden Dataset Bundle V121", st.session_state.golden_dataset_library_bundle, file_name=f"{st.session_state.project_name}_golden_dataset.zip", mime="application/zip", use_container_width=True, key="v121_download")
+            st.download_button("Download Golden Dataset Bundle", st.session_state.golden_dataset_library_bundle, file_name=f"{st.session_state.project_name}_golden_dataset.zip", mime="application/zip", use_container_width=True, key="v121_download")
 
 
 _PAGE_RENDERERS = {
