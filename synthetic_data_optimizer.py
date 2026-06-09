@@ -379,7 +379,7 @@ def score_synthetic_dataset(df: pd.DataFrame, manifest: Optional[Dict[str, Any]]
     }
 
 
-def build_synthetic_data_optimizer_v109_snapshot(
+def build_synthetic_data_optimizer_snapshot(
     project_name: str = "EdgeTwin Project",
     pack_key: str = "rotating_machinery",
     rows: int = 1500,
@@ -460,5 +460,5 @@ __all__ = [
     "SCENARIO_LIBRARY",
     "generate_scenario_dataset",
     "score_synthetic_dataset",
-    "build_synthetic_data_optimizer_v109_snapshot",
+    "build_synthetic_data_optimizer_snapshot",
 ]
