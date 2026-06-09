@@ -22,7 +22,7 @@ from typing import Any, Dict, List
 
 from fpdf import FPDF
 
-import self_selling_conversion_v116 as v116
+import self_selling as v116
 
 VERSION = "117.0"
 MODULE = "One Perfect Customer Flow"
@@ -196,7 +196,7 @@ def _score_flow(conversion_score: int, data_score: int, payment_status: str, del
     return int(max(0, min(100, round(raw))))
 
 
-def build_one_perfect_customer_flow_v117_snapshot(
+def build_one_perfect_customer_flow_snapshot(
     project_name: str = "EdgeTwin Project",
     customer_segment: str = "industrial maintenance / machine operations teams",
     customer_problem: str = "We have machine or sensor data but do not know if it is ready for a predictive maintenance pilot.",
@@ -213,7 +213,7 @@ def build_one_perfect_customer_flow_v117_snapshot(
     delivery_status: str = "locked",
 ) -> Dict[str, Any]:
     """Build the single customer journey that hides internal complexity and sells safely."""
-    conversion = v116.build_self_selling_conversion_v116_snapshot(
+    conversion = v116.build_self_selling_snapshot(
         project_name=project_name,
         customer_segment=customer_segment,
         customer_problem=customer_problem,
@@ -391,7 +391,7 @@ def _markdown_page(snapshot: Dict[str, Any]) -> str:
     return "\n".join(_safe_text(x) for x in lines)
 
 
-def create_one_perfect_customer_flow_v117_bundle(snapshot: Dict[str, Any]) -> bytes:
+def create_one_perfect_customer_flow_bundle(snapshot: Dict[str, Any]) -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("v117_one_perfect_customer_flow_snapshot.json", json.dumps(snapshot, indent=2, ensure_ascii=False))
@@ -410,5 +410,5 @@ def create_one_perfect_customer_flow_v117_bundle(snapshot: Dict[str, Any]) -> by
 
 
 if __name__ == "__main__":
-    snap = build_one_perfect_customer_flow_v117_snapshot()
+    snap = build_one_perfect_customer_flow_snapshot()
     print(json.dumps({"decision": snap["decision"], "score": snap["customer_flow_score"], "pack": snap["selected_pack"].get("name")}, indent=2))
