@@ -23,7 +23,9 @@ from typing import Any, Dict, List
 import pandas as pd
 from fpdf import FPDF
 
-VERSION = "118.0"
+from commercial_readiness_pack import get_commercial_readiness_snapshot, render_markdown as render_commercial_readiness_markdown
+
+VERSION = "132.0"
 MODULE = "Guided Custom Customer Builder"
 
 SAFE_BOUNDARY = (
@@ -235,10 +237,22 @@ def build_guided_custom_customer_builder_snapshot(
     }
     questions = _customer_questions(selected_modules, data_readiness)
 
+    commercial = get_commercial_readiness_snapshot()
+
     snapshot = {
         "version": VERSION,
         "module": MODULE,
         "created_at": _now(),
+        "commercial_readiness": commercial,
+        "positioning": {
+            "category": commercial.get("product_category"),
+            "short_pitch": commercial.get("short_pitch"),
+            "safe_external_claim": commercial.get("safe_external_claim"),
+            "not_positioned_as": commercial.get("not_positioned_as", []),
+        },
+        "recommended_main_offer": commercial.get("hero_offer", "Professional Pilot Pack"),
+        "privacy_and_data_rules": commercial.get("data_minimisation_rules", []),
+        "buyer_data_room_template": commercial.get("buyer_data_room_sections", []),
         "project_name": project_name,
         "company": company,
         "industry": industry,
@@ -317,7 +331,7 @@ def create_guided_custom_customer_builder_bundle(snapshot: Dict[str, Any]) -> by
     mem = io.BytesIO()
     with zipfile.ZipFile(mem, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("guided_custom_customer_builder.json", json.dumps(_json_safe(snapshot), indent=2, ensure_ascii=False))
-        zf.writestr("customer_custom_pack_summary_v118.md", "\n".join([
+        zf.writestr("customer_custom_pack_summary.md", "\n".join([
             f"# {snapshot.get('pack_name', 'EdgeTwin Custom Pack')} — {snapshot.get('company', 'Customer')}",
             "",
             f"**Decision:** {snapshot.get('decision')}",
@@ -331,17 +345,20 @@ def create_guided_custom_customer_builder_bundle(snapshot: Dict[str, Any]) -> by
             SAFE_BOUNDARY,
         ]))
         for name, rows in [
-            ("selected_modules_v118.csv", snapshot.get("selected_modules", [])),
-            ("pricing_lines_v118.csv", snapshot.get("pricing_lines", [])),
-            ("deliverables_v118.csv", snapshot.get("deliverables", [])),
-            ("customer_questions_v118.csv", snapshot.get("customer_questions", [])),
-            ("review_flags_v118.csv", snapshot.get("review_flags", [])),
+            ("selected_modules.csv", snapshot.get("selected_modules", [])),
+            ("pricing_lines.csv", snapshot.get("pricing_lines", [])),
+            ("deliverables.csv", snapshot.get("deliverables", [])),
+            ("customer_questions.csv", snapshot.get("customer_questions", [])),
+            ("risk_flags.csv", snapshot.get("review_flags", [])),
         ]:
             if rows:
                 zf.writestr(name, pd.DataFrame(rows).to_csv(index=False))
-        zf.writestr("scope_lock_v118.json", json.dumps(_json_safe(snapshot.get("scope_lock", {})), indent=2, ensure_ascii=False))
-        zf.writestr("reusable_template_v118.json", json.dumps(_json_safe(snapshot.get("reusable_template", {})), indent=2, ensure_ascii=False))
-        zf.writestr("auto_approval_boundary_v118.json", json.dumps(_json_safe(snapshot.get("auto_approval_boundary", {})), indent=2, ensure_ascii=False))
+        zf.writestr("scope_lock.json", json.dumps(_json_safe(snapshot.get("scope_lock", {})), indent=2, ensure_ascii=False))
+        zf.writestr("reusable_template.json", json.dumps(_json_safe(snapshot.get("reusable_template", {})), indent=2, ensure_ascii=False))
+        zf.writestr("auto_approval_boundary.json", json.dumps(_json_safe(snapshot.get("auto_approval_boundary", {})), indent=2, ensure_ascii=False))
+        zf.writestr("COMMERCIAL_POSITIONING_PACK.md", render_commercial_readiness_markdown(snapshot.get("commercial_readiness")))
+        zf.writestr("DATA_MINIMISATION_RULES.md", "# Data minimisation rules\n\n" + "\n".join([f"- {x}" for x in snapshot.get("privacy_and_data_rules", [])]) + "\n")
+        zf.writestr("BUYER_DATA_ROOM_TEMPLATE.md", "# Buyer Data Room template\n\n" + "\n".join([f"- **{x.get('section')}** — {x.get('purpose')}" for x in snapshot.get("buyer_data_room_template", [])]) + "\n")
 
         pdf = FPDF()
         pdf.add_page()
