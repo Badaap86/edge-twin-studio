@@ -7,7 +7,8 @@ Purpose:
   or safety-critical hardware obligations.
 
 This module does not process payment cards. Stripe/Paddle/manual payment providers are expected
-outside this module. It prepares the checkout/order snapshot and unlock rules.
+outside this module. It prepares the checkout/order snapshot, request-payment-link mode,
+commercial positioning, privacy/data rules, Buyer Data Room checklist and unlock rules.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ import pandas as pd
 from fpdf import FPDF
 
 from no_gezeik_policy import evaluate_simple_risk_policy, get_customer_plain_rules
+from commercial_readiness_pack import get_commercial_readiness_snapshot, render_markdown as render_commercial_readiness_markdown
 
 MODULE = "Custom Pack Checkout Autopilot"
 
@@ -114,6 +116,39 @@ MODULE_CATALOG = [
         "customer_value": "Gives practical reference guidance for sensors, gateway, data capture and deployment cautions.",
         "delivery": "Reference BOM notes and deployment checklist. Not certified engineering.",
     },
+
+    {
+        "module_id": "data_coverage_engine",
+        "label": "Data Coverage Engine",
+        "price_eur": 650,
+        "automation": "automatic",
+        "customer_value": "Routes the customer safely when they have good data, limited data, or no data yet.",
+        "delivery": "2-minute readiness snapshot, data ladder and recommended next pack route.",
+    },
+    {
+        "module_id": "synthetic_evidence_expansion",
+        "label": "Synthetic Evidence Expansion",
+        "price_eur": 1500,
+        "automation": "automatic_when_real_data_is_limited",
+        "customer_value": "Uses limited real data as the basis and adds synthetic scenarios for coverage and stress testing only.",
+        "delivery": "Real-vs-synthetic separation, scenario coverage notes and safe boundary statement.",
+    },
+    {
+        "module_id": "hardware_firmware_starter",
+        "label": "Hardware Profile + Firmware Starter",
+        "price_eur": 1500,
+        "automation": "automatic_for_approved_hardware_profiles",
+        "customer_value": "Gives customers without enough data a practical route to collect pilot-ready measurements.",
+        "delivery": "Approved hardware profile, config template, wiring checklist, CSV schema and pilot firmware starter pack.",
+    },
+    {
+        "module_id": "field_data_kit_plan",
+        "label": "Field Data Kit measurement plan",
+        "price_eur": 2500,
+        "automation": "automatic_plan_reference_only",
+        "customer_value": "Turns missing data into a controlled baseline learning and measurement plan.",
+        "delivery": "Measurement period, sensor plan, baseline-learning route, label strategy and EdgeTwin import checklist.",
+    },
     {
         "module_id": "reusable_custom_template",
         "label": "Reusable custom pack template",
@@ -173,6 +208,14 @@ def _recommended_modules(problem: str, desired_outcome: str, data_readiness: str
         mods.add("extra_use_case_variant")
     if any(x in text for x in ["sensor", "gateway", "hardware", "bom", "node", "device"]):
         mods.add("hardware_bom_reference")
+    if any(x in text for x in ["no data", "geen data", "limited data", "beperkte data", "not enough data", "te weinig data", "coverage", "dataset starter"]):
+        mods.add("data_coverage_engine")
+    if any(x in text for x in ["synthetic", "synthetisch", "few labels", "few failures", "weinig labels", "weinig storingen", "coverage booster"]):
+        mods.add("synthetic_evidence_expansion")
+    if any(x in text for x in ["firmware", "code", "pinout", "rak3312", "omega", "field data kit", "collect data", "data verzamelen"]):
+        mods.add("hardware_firmware_starter")
+    if any(x in text for x in ["measurement plan", "meetplan", "baseline", "logging", "4 weeks", "8 weeks", "field test"]):
+        mods.add("field_data_kit_plan")
     if any(x in text for x in ["repeat", "template", "many", "reusable", "scale"]):
         mods.add("reusable_custom_template")
     return [m["module_id"] for m in MODULE_CATALOG if m["module_id"] in mods]
@@ -231,12 +274,16 @@ def build_custom_pack_checkout_snapshot(
     automatic_modules = list(selected_modules)
     auto_ready = not policy.get("blocked", False)
     deposit_pct = float(BASE_PACKS[base_pack]["deposit_pct"])
-    if payment_mode == "deposit":
+    if payment_mode == "request_payment_link":
+        amount_due_now = 0
+    elif payment_mode == "deposit":
         amount_due_now = int(round(subtotal * deposit_pct))
     else:
         amount_due_now = subtotal
 
     checkout_status = "AUTO_CHECKOUT_READY" if auto_ready else "CHECKOUT_BLOCKED_UNTIL_SAFE_REWRITE"
+    commercial = get_commercial_readiness_snapshot()
+
     delivery_unlock = {
         "after_payment_confirmed": [
             "create_order",
@@ -270,6 +317,17 @@ def build_custom_pack_checkout_snapshot(
         "data_readiness": data_readiness,
         "selected_modules": selected_modules,
         "automatic_modules": automatic_modules,
+        "commercial_readiness": commercial,
+        "recommended_main_offer": commercial.get("hero_offer", "Professional Pilot Pack"),
+        "privacy_and_data_rules": commercial.get("data_minimisation_rules", []),
+        "buyer_data_room_template": commercial.get("buyer_data_room_sections", []),
+        "first_customer_actions": commercial.get("first_customer_actions", []),
+        "positioning": {
+            "category": commercial.get("product_category"),
+            "short_pitch": commercial.get("short_pitch"),
+            "safe_external_claim": commercial.get("safe_external_claim"),
+            "not_positioned_as": commercial.get("not_positioned_as", []),
+        },
         "pricing": {
             "currency": "EUR",
             "base_price_eur": base_price,
@@ -290,7 +348,7 @@ def build_custom_pack_checkout_snapshot(
         "delivery_unlock": delivery_unlock,
         "safe_boundary": SAFE_BOUNDARY,
         "value_summary": value_summary,
-        "customer_next_step": "Proceed to checkout" if auto_ready else "Rewrite unsafe claims or reduce scope before checkout",
+        "customer_next_step": ("Request payment link / invoice" if payment_mode == "request_payment_link" and auto_ready else ("Proceed to checkout" if auto_ready else "Rewrite unsafe claims or reduce scope before checkout")),
     }
     snapshot["snapshot_hash"] = _sha(snapshot)
     return snapshot
@@ -334,6 +392,10 @@ def create_custom_pack_checkout_bundle(snapshot: Dict[str, Any]) -> bytes:
         z.writestr("safe_notes.csv", pd.DataFrame(snapshot.get("safe_notes", [])).to_csv(index=False))
         z.writestr("blockers.csv", pd.DataFrame(snapshot.get("blockers", [])).to_csv(index=False))
         z.writestr("custom_pack_checkout_summary.pdf", _pdf_bytes(snapshot))
+        z.writestr("COMMERCIAL_POSITIONING_PACK.md", render_commercial_readiness_markdown(snapshot.get("commercial_readiness")))
+        z.writestr("DATA_MINIMISATION_RULES.md", "# Data minimisation rules\n\n" + "\n".join([f"- {x}" for x in snapshot.get("privacy_and_data_rules", [])]) + "\n")
+        z.writestr("BUYER_DATA_ROOM_TEMPLATE.md", "# Buyer Data Room template\n\n" + "\n".join([f"- **{x.get('section')}** — {x.get('purpose')}" for x in snapshot.get("buyer_data_room_template", [])]) + "\n")
+        z.writestr("FIRST_CUSTOMER_ACTIONS.md", "# First customer actions\n\n" + "\n".join([f"- {x}" for x in snapshot.get("first_customer_actions", [])]) + "\n")
     return buf.getvalue()
 
 
@@ -346,6 +408,11 @@ def _markdown(snapshot: Dict[str, Any]) -> str:
         f"**Project:** {snapshot.get('project_name')}",
         f"**Recommended pack:** {snapshot.get('base_pack')}",
         f"**Checkout status:** {snapshot.get('checkout_status')}",
+        "",
+        "## Positioning",
+        snapshot.get("positioning", {}).get("short_pitch", ""),
+        "",
+        f"**Recommended main offer:** {snapshot.get('recommended_main_offer', 'Professional Pilot Pack')}",
         "",
         "## Price",
         f"- Subtotal: EUR {pricing.get('subtotal_eur')}",
@@ -375,6 +442,12 @@ def render_streamlit_tab(st) -> Tuple[Dict[str, Any] | None, bytes | None]:
     st.header("Custom Pack Checkout")
     st.caption("Automatic custom-pack pricing, safe scope and payment handoff. Standard custom packs stay automated unless unsafe claims or high-risk scope appear.")
 
+    commercial = get_commercial_readiness_snapshot()
+    st.info(commercial.get("short_pitch"))
+    cpos1, cpos2 = st.columns(2)
+    cpos1.metric("Main offer", commercial.get("hero_offer", "Professional Pilot Pack"))
+    cpos2.metric("Product category", commercial.get("product_category", "Industrial AI readiness & evidence"))
+
     col1, col2 = st.columns(2)
     with col1:
         company = st.text_input("Company", value="Customer")
@@ -391,7 +464,7 @@ def render_streamlit_tab(st) -> Tuple[Dict[str, Any] | None, bytes | None]:
         )
     with col2:
         problem = st.text_area("Customer problem / use-case", value="We have machine data and want to know if it is ready for a controlled pilot.", height=140)
-        payment_mode = st.radio("Payment mode", ["full_payment", "deposit"], horizontal=True)
+        payment_mode = st.radio("Payment mode", ["request_payment_link", "deposit", "full_payment"], horizontal=True, help="Use request_payment_link until company registration, invoice/VAT and payment provider are ready.")
 
     recommended = _recommended_modules(problem, desired_outcome, data_readiness)
     selected = []
@@ -434,6 +507,19 @@ def render_streamlit_tab(st) -> Tuple[Dict[str, Any] | None, bytes | None]:
     with st.expander("Simple rules", expanded=False):
         for rule in snapshot.get("plain_rules", []):
             st.write(f"- {rule}")
+
+    with st.expander("Customer-safe positioning", expanded=False):
+        st.write(snapshot.get("positioning", {}).get("safe_external_claim", ""))
+        st.write("Do not position EdgeTwin as:")
+        for item in snapshot.get("positioning", {}).get("not_positioned_as", []):
+            st.write(f"- {item}")
+
+    with st.expander("Privacy / data-minimisation rules", expanded=False):
+        for rule in snapshot.get("privacy_and_data_rules", []):
+            st.write(f"- {rule}")
+
+    with st.expander("Buyer Data Room template", expanded=False):
+        st.dataframe(pd.DataFrame(snapshot.get("buyer_data_room_template", [])), use_container_width=True)
 
     st.markdown("### Customer value")
     st.write(snapshot["value_summary"])
