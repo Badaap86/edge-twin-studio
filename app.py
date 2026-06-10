@@ -26,6 +26,18 @@ import data_quality_gate_pro as data_quality
 import first_customer_intake_pack as first_intake
 import buyer_data_room_pro as buyer_dataroom
 import custom_pack_checkout
+import data_coverage_engine
+import hardware_firmware_starter_pack as firmware_starter
+import hardware_profile_matrix
+import readiness_snapshot
+import demo_evidence_room
+import final_customer_flow
+import release_qa_gate
+import founding_customer_launch
+import market_wedge_simplification
+import pilot_dataset_system
+import synthetic_to_real_evidence_bridge
+import custom_acoustic_dataset_builder
 
 warnings.filterwarnings("ignore")
 
@@ -321,6 +333,12 @@ def init_state():
         "custom_pack_checkout_snapshot": None,
         "custom_pack_checkout_bundle": None,
         "synthetic_calibration_dataset": pd.DataFrame(),
+        "pilot_dataset_system_snapshot": None,
+        "pilot_dataset_system_bundle": None,
+        "synthetic_to_real_evidence_bridge_snapshot": None,
+        "synthetic_to_real_evidence_bridge_bundle": None,
+        "custom_acoustic_dataset_builder_snapshot": None,
+        "custom_acoustic_dataset_builder_bundle": None,
     }
 
     for key, val in defaults.items():
@@ -437,6 +455,9 @@ def reset_generated_bundles():
     st.session_state.trust_ledger_v80_bundle = None
     st.session_state.autonomy_controller_v82_bundle = None
     st.session_state.release_guard_v83_bundle = None
+    st.session_state.pilot_dataset_system_bundle = None
+    st.session_state.synthetic_to_real_evidence_bridge_bundle = None
+    st.session_state.custom_acoustic_dataset_builder_bundle = None
 
 
 def run_demo(demo_name):
@@ -830,8 +851,8 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 
 st.title("EdgeTwin Studio")
 st.caption(
-    "Customer-ready pack commerce for industrial AI: sell downloadable/custom pilot evidence packs first, "
-    "keep founder control, protect privacy, and guide customers from intake to quote, delivery and evidence."
+    "Industrial AI readiness & evidence for rotating assets: proof before implementation, "
+    "data-readiness before AI investment, and a safe route from data situation to evidence pack."
 )
 
 st.markdown("""
@@ -934,11 +955,24 @@ NAV_LABELS["self_selling_tab"] = "🧲 Self-Selling Conversion"
 NAV_LABELS["one_perfect_customer_flow_tab"] = "🛣️ One Perfect Customer Flow"
 NAV_LABELS["guided_custom_customer_builder_tab"] = "🧭 Guided Custom Builder"
 NAV_LABELS["custom_pack_checkout_tab"] = "💶 Custom Pack Checkout"
+NAV_LABELS["data_coverage_engine_tab"] = "🧩 Data Coverage Engine"
+NAV_LABELS["pilot_dataset_system_tab"] = "🧬 Pilot Dataset System"
+NAV_LABELS["synthetic_to_real_evidence_bridge_tab"] = "🌉 Synthetic-to-Real Evidence Bridge"
+NAV_LABELS["custom_acoustic_dataset_builder_tab"] = "🎧 Custom Acoustic Dataset Builder"
+NAV_LABELS["hardware_firmware_starter_tab"] = "🛠️ Hardware/Firmware Starter"
+NAV_LABELS["hardware_profile_matrix_tab"] = "🧱 Hardware Profile Matrix"
+NAV_LABELS["readiness_snapshot_tab"] = "⚡ Readiness Snapshot"
+NAV_LABELS["demo_evidence_room_tab"] = "🏢 Demo Evidence Room"
 NAV_LABELS["customer_facing_landing_portal_tab"] = "🌍 Customer Landing Portal"
 NAV_LABELS["product_release_candidate_tab"] = "🚀 Product Release Candidate"
 NAV_LABELS["golden_dataset_library_tab"] = "🏆 Golden Dataset Library"
 NAV_LABELS["data_quality_gate_pro_tab"] = "🚦 Data Quality Gate Pro"
 NAV_LABELS["first_customer_intake_pack_tab"] = "🧾 First Customer Intake Pack"
+
+NAV_LABELS["ultimate_customer_flow_tab"] = "🚀 Ultimate Customer Flow"
+NAV_LABELS["release_qa_gate_tab"] = "✅ Release QA Gate"
+NAV_LABELS["founding_customer_launch_tab"] = "📣 Founding Customer Launch"
+NAV_LABELS["market_wedge_simplification_tab"] = "🎯 First Customer Focus"
 NAV_LABELS["buyer_data_room_pro_tab"] = "🏢 Buyer Data Room Pro"
 _v80_add_nav("6. Operator & Admin", "public_hosting_v101_tab", 0)
 _v80_add_nav("6. Operator & Admin", "payment_provider_adapter_v102_tab", 0)
@@ -1007,6 +1041,16 @@ _v80_add_nav("2. Build Pilot", "public_benchmark_dataset_v113_tab", 0)
 _v80_add_nav("3. Review readiness", "public_benchmark_dataset_v113_tab", 0)
 _v80_add_nav("6. Operator & Admin", "public_benchmark_dataset_v113_tab", 0)
 
+_v80_add_nav("2. Build Pilot", "pilot_dataset_system_tab", 0)
+_v80_add_nav("3. Review readiness", "pilot_dataset_system_tab", 0)
+_v80_add_nav("6. Operator & Admin", "pilot_dataset_system_tab", 0)
+_v80_add_nav("2. Build Pilot", "synthetic_to_real_evidence_bridge_tab", 0)
+_v80_add_nav("3. Review readiness", "synthetic_to_real_evidence_bridge_tab", 0)
+_v80_add_nav("6. Operator & Admin", "synthetic_to_real_evidence_bridge_tab", 0)
+_v80_add_nav("2. Build Pilot", "custom_acoustic_dataset_builder_tab", 0)
+_v80_add_nav("3. Review readiness", "custom_acoustic_dataset_builder_tab", 0)
+_v80_add_nav("6. Operator & Admin", "custom_acoustic_dataset_builder_tab", 0)
+
 _v80_add_nav("1. Start", "ai_copilot_adapter_tab", 1)
 
 _v80_add_nav("5. Sell & Deliver", "secure_download_links_v104_tab", 0)
@@ -1071,32 +1115,49 @@ _v80_add_nav("6. Operator & Admin", "trust_ledger_v80_tab", 1)
 # product flow instead of a technical lab with many versioned tools.
 CUSTOMER_LAUNCH_FLOW = {
     "1. Start": [
-        "customer_facing_landing_portal_tab",
-        "one_perfect_customer_flow_tab",
+        "market_wedge_simplification_tab",
+        "readiness_snapshot_tab",
+        "demo_evidence_room_tab",
     ],
-    "2. Choose / build pack": [
-        "guided_custom_customer_builder_tab",
+    "2. Choose pack": [
+        "ultimate_customer_flow_tab",
         "custom_pack_checkout_tab",
-        "first_customer_intake_pack_tab",
-    ],
-    "3. Check data readiness": [
-        "data_quality_gate_pro_tab",
-    ],
-    "4. Evidence room": [
-        "buyer_data_room_pro_tab",
-    ],
-    "5. Quote / delivery": [
         "clean_quote_delivery_tab",
+    ],
+    "3. Evidence": [
+        "pilot_dataset_system_tab",
+        "synthetic_to_real_evidence_bridge_tab",
+        "custom_acoustic_dataset_builder_tab",
+        "data_quality_gate_pro_tab",
+        "buyer_data_room_pro_tab",
+        "data_coverage_engine_tab",
+    ],
+    "4. Controlled add-ons": [
+        "hardware_profile_matrix_tab",
+        "hardware_firmware_starter_tab",
+        "founding_customer_launch_tab",
     ],
 }
 
 FOUNDER_FOCUS_FLOW = [
+    "ultimate_customer_flow_tab",
     "customer_facing_landing_portal_tab",
+    "readiness_snapshot_tab",
     "one_perfect_customer_flow_tab",
     "guided_custom_customer_builder_tab",
     "custom_pack_checkout_tab",
+    "hardware_profile_matrix_tab",
+    "hardware_firmware_starter_tab",
+    "pilot_dataset_system_tab",
+    "synthetic_to_real_evidence_bridge_tab",
+    "custom_acoustic_dataset_builder_tab",
+    "data_coverage_engine_tab",
     "data_quality_gate_pro_tab",
+    "demo_evidence_room_tab",
     "buyer_data_room_pro_tab",
+    "clean_quote_delivery_tab",
+    "founding_customer_launch_tab",
+    "release_qa_gate_tab",
     "product_release_candidate_tab",
 ]
 
@@ -1110,11 +1171,11 @@ else:
 
 NAV_HINTS.update({
     "0. Customer Launch Flow": "Founder shortcut: the clean route a customer should experience.",
-    "1. Start": "Customer-facing entry point: explain the value, show the route and avoid technical overload.",
-    "2. Choose / build pack": "Let the customer pick a standard or guided custom pack while EdgeTwin controls scope and risk.",
-    "3. Check data readiness": "Check whether the data is good enough for demo, pilot evidence, or needs improvement.",
-    "4. Evidence room": "Prepare the buyer-ready evidence bundle, limitations, scope and next steps.",
-    "5. Quote / delivery": "Move from quote/payment status to intake, secure delivery and download readiness.",
+    "1. Start": "Customer-facing entry point: one clean route from data situation to pack, evidence and next step.",
+    "2. Choose / build pack": "Let the customer pick a standard/custom pack, or prepare an approved hardware/firmware starter when data must be collected first.",
+    "3. Check data readiness": "Route good data, limited data or no data into the safest next evidence step with a simple score.",
+    "4. Evidence room": "Show a demo evidence room and prepare the buyer-ready evidence bundle, limitations, scope and next steps.",
+    "5. Quote / delivery": "Move from quote/payment status to intake, secure delivery and founding-customer launch follow-up.",
 })
 
 # Remove development version numbers from user-facing labels. Internal keys/function names keep
@@ -1151,6 +1212,12 @@ if st.session_state.workspace_mode_v50 == "Customer Mode":
     )
 else:
     st.info(NAV_HINTS.get(nav_group, "Choose a workflow step from the sidebar."))
+
+NAV_HINTS["1. Start"] = "First-customer focus: three simple packs, bearing/motor-health wedge, readiness snapshot and demo evidence room."
+NAV_HINTS["2. Choose pack"] = "Turn the customer's data situation into one of three buyable packs, then request quote/payment link when ready."
+NAV_HINTS["3. Evidence"] = "Run Pilot Dataset System, data quality, evidence room and data coverage checks without overclaiming production performance."
+NAV_HINTS["4. Controlled add-ons"] = "Hardware, firmware, synthetic expansion and Field Data Kit routes stay controlled add-ons, not the main sales story."
+
 with st.expander("Why Customer Mode stays simple for customers", expanded=False):
     st.write(
         "Customer Mode is intentionally calm: the buyer sees the route, readiness and next step. "
@@ -15908,6 +15975,78 @@ def render_clean_quote_delivery_tab():
 
 
 
+def render_readiness_snapshot_tab():
+    """2-minute customer-facing readiness check and pack route."""
+    snapshot, bundle = readiness_snapshot.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.readiness_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.readiness_snapshot_bundle = bundle
+
+
+def render_demo_evidence_room_tab():
+    """Demo evidence room so customers see what a paid pack delivers."""
+    evidence, bundle = demo_evidence_room.render_streamlit_tab(st)
+    if evidence is not None:
+        st.session_state.demo_evidence_room = evidence
+    if bundle is not None:
+        st.session_state.demo_evidence_room_bundle = bundle
+
+
+def render_pilot_dataset_system_tab():
+    """No-data customer route: starter datasets, evidence passport and real-data bridge."""
+    snapshot, bundle = pilot_dataset_system.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.pilot_dataset_system_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.pilot_dataset_system_bundle = bundle
+
+
+def render_synthetic_to_real_evidence_bridge_tab():
+    """Advanced safe route from starter/synthetic data toward real customer evidence."""
+    snapshot, bundle = synthetic_to_real_evidence_bridge.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.synthetic_to_real_evidence_bridge_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.synthetic_to_real_evidence_bridge_bundle = bundle
+
+
+def render_custom_acoustic_dataset_builder_tab():
+    """Customer-configurable acoustic/audio dataset and evidence bridge."""
+    snapshot, bundle = custom_acoustic_dataset_builder.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.custom_acoustic_dataset_builder_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.custom_acoustic_dataset_builder_bundle = bundle
+
+
+def render_data_coverage_engine_tab():
+    """Customer-facing data ladder: good data, limited data, or no data."""
+    snapshot, bundle = data_coverage_engine.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.data_coverage_engine_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.data_coverage_engine_bundle = bundle
+
+
+def render_hardware_profile_matrix_tab():
+    """Customer-facing use-case to sensor/hardware profile recommendation."""
+    snapshot, bundle = hardware_profile_matrix.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.hardware_profile_matrix_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.hardware_profile_matrix_bundle = bundle
+
+
+def render_hardware_firmware_starter_tab():
+    """Approved hardware profile and pilot firmware starter bundle."""
+    snapshot, bundle = firmware_starter.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.hardware_firmware_starter_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.hardware_firmware_starter_bundle = bundle
+
+
 def render_custom_pack_checkout_tab():
     """Customer-facing automated custom-pack pricing and payment handoff."""
     snapshot, bundle = custom_pack_checkout.render_streamlit_tab(st)
@@ -15917,7 +16056,56 @@ def render_custom_pack_checkout_tab():
         st.session_state.custom_pack_checkout_bundle = bundle
 
 
+
+def render_ultimate_customer_flow_tab():
+    """One clean customer route to reduce confusion and sell the next step."""
+    snapshot, bundle = final_customer_flow.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.ultimate_customer_flow_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.ultimate_customer_flow_bundle = bundle
+
+
+
+def render_market_wedge_simplification_tab():
+    """First-customer wedge simplifier: three packs outside, full engine inside."""
+    snapshot, bundle = market_wedge_simplification.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.market_wedge_simplification_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.market_wedge_simplification_bundle = bundle
+
+def render_release_qa_gate_tab():
+    """Internal final QA before first-customer use."""
+    snapshot, bundle = release_qa_gate.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.release_qa_gate_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.release_qa_gate_bundle = bundle
+
+
+def render_founding_customer_launch_tab():
+    """Warm-network launch pack for the first 3 founding customers."""
+    snapshot, bundle = founding_customer_launch.render_streamlit_tab(st)
+    if snapshot is not None:
+        st.session_state.founding_customer_launch_snapshot = snapshot
+    if bundle is not None:
+        st.session_state.founding_customer_launch_bundle = bundle
+
+
 _PAGE_RENDERERS = {
+    'market_wedge_simplification_tab': render_market_wedge_simplification_tab,
+    'ultimate_customer_flow_tab': render_ultimate_customer_flow_tab,
+    'release_qa_gate_tab': render_release_qa_gate_tab,
+    'founding_customer_launch_tab': render_founding_customer_launch_tab,
+    'readiness_snapshot_tab': render_readiness_snapshot_tab,
+    'demo_evidence_room_tab': render_demo_evidence_room_tab,
+    'pilot_dataset_system_tab': render_pilot_dataset_system_tab,
+    'synthetic_to_real_evidence_bridge_tab': render_synthetic_to_real_evidence_bridge_tab,
+    'custom_acoustic_dataset_builder_tab': render_custom_acoustic_dataset_builder_tab,
+    'data_coverage_engine_tab': render_data_coverage_engine_tab,
+    'hardware_profile_matrix_tab': render_hardware_profile_matrix_tab,
+    'hardware_firmware_starter_tab': render_hardware_firmware_starter_tab,
     'custom_pack_checkout_tab': render_custom_pack_checkout_tab,
     'clean_quote_delivery_tab': render_clean_quote_delivery_tab,
     'buyer_data_room_pro_tab': render_buyer_data_room_pro_tab,
