@@ -172,10 +172,18 @@ def install_css() -> None:
     --et-radius-md: 18px;
 }
 
+/* Extra top clearance fixes the Streamlit cloud header overlap,
+   so the top brand/header is fully visible instead of showing only a clipped edge. */
 .block-container {
-    padding-top: 1.6rem;
+    padding-top: 4.4rem !important;
     padding-bottom: 4rem;
     max-width: 1220px;
+}
+
+/* Keep Streamlit's own toolbar usable, but stop it from visually cutting into the app. */
+[data-testid="stHeader"] {
+    background: rgba(10, 13, 20, 0.88) !important;
+    backdrop-filter: blur(12px);
 }
 
 section[data-testid="stSidebar"] {
@@ -193,7 +201,11 @@ section[data-testid="stSidebar"] h3 {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-top: 0.25rem;
+    margin-bottom: 1.15rem;
+    padding: 0.35rem 0.05rem 0.2rem 0.05rem;
+    min-height: 48px;
+    overflow: visible;
 }
 
 .et-brand {
