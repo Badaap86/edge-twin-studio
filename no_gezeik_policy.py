@@ -151,4 +151,5 @@ def get_customer_plain_rules() -> List[str]:
         "No legal, compliance or safety certification is promised automatically.",
         "Refunds, disputes and failed payments lock delivery/download until resolved.",
         "Human involvement is only for true exceptions, not normal custom packs.",
+        "Until company registration, invoice/VAT and payment provider are ready, use Request payment link / invoice mode instead of Pay now.",
     ]
