@@ -41,7 +41,7 @@ import custom_acoustic_dataset_builder
 
 warnings.filterwarnings("ignore")
 
-st.set_page_config(page_title="EdgeTwin Studio", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="EdgeTwin Studio", page_icon="⚙️", layout="wide", initial_sidebar_state="expanded")
 
 core.init_db()
 
@@ -126,195 +126,437 @@ def _install_customer_text_cleaner():
 _install_customer_text_cleaner()
 
 
+
 # ============================================================
-# EDGE TWIN V145.2 WEBSITE SKIN - FULL V144 FUNCTIONS PRESERVED
+# EDGE TWIN V145.3 PREMIUM UI SKIN - FULL V144 FUNCTIONS PRESERVED
 # ============================================================
-# This is a visual/flow layer only. It does not remove the original
-# render_* tools, navigation groups, snapshots, bundles or backend calls.
+# Visual layer only: it keeps the original v1.44 render_* tools, navigation
+# keys, snapshots, bundles, database calls and backend logic intact.
 
 EDGE_WEBSITE_CSS = """
 <style>
 :root {
-    --et-bg: #0b0f17;
-    --et-card: rgba(255,255,255,0.045);
-    --et-card-strong: rgba(255,255,255,0.07);
-    --et-border: rgba(145,155,180,0.24);
-    --et-border-soft: rgba(145,155,180,0.14);
-    --et-muted: rgba(238,242,255,0.72);
-    --et-text: rgba(255,255,255,0.94);
-    --et-blue: #8fb2ff;
-    --et-green: #5ee2a0;
-    --et-radius-lg: 24px;
+    --et-bg-0: #070b12;
+    --et-bg-1: #0b1020;
+    --et-panel: rgba(16, 22, 36, 0.78);
+    --et-panel-2: rgba(255,255,255,0.055);
+    --et-panel-3: rgba(255,255,255,0.085);
+    --et-border: rgba(159, 178, 215, 0.22);
+    --et-border-strong: rgba(162, 185, 230, 0.34);
+    --et-text: rgba(255,255,255,0.96);
+    --et-muted: rgba(229,235,255,0.72);
+    --et-soft: rgba(229,235,255,0.58);
+    --et-blue: #9cbcff;
+    --et-blue-2: #6f9bff;
+    --et-green: #61e6ac;
+    --et-warn: #ffd166;
+    --et-red: #ff6f91;
+    --et-radius-xl: 30px;
+    --et-radius-lg: 22px;
     --et-radius-md: 16px;
+    --et-shadow: 0 28px 90px rgba(0,0,0,0.34);
 }
 
 html, body, [data-testid="stAppViewContainer"] {
-    background: radial-gradient(circle at top right, rgba(80,135,255,0.08), transparent 28%),
-                radial-gradient(circle at 20% 20%, rgba(64,220,165,0.06), transparent 26%),
-                var(--et-bg);
+    background:
+        radial-gradient(circle at 13% 8%, rgba(91,133,255,0.18), transparent 26%),
+        radial-gradient(circle at 88% 15%, rgba(97,230,172,0.10), transparent 28%),
+        radial-gradient(circle at 50% 100%, rgba(110,80,255,0.10), transparent 34%),
+        linear-gradient(180deg, var(--et-bg-1), var(--et-bg-0) 48%, #05080e) !important;
+    color: var(--et-text);
+}
+
+[data-testid="stAppViewContainer"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 52px 52px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.46), transparent 72%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .block-container {
-    padding-top: 3.25rem !important;
+    padding-top: 3.9rem !important;
     padding-bottom: 5rem !important;
-    max-width: 1240px !important;
+    max-width: 1248px !important;
+    position: relative;
+    z-index: 1;
 }
 
 [data-testid="stHeader"] {
-    background: rgba(11,15,23,0.68) !important;
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(145,155,180,0.10);
+    height: 3.1rem;
+    background: rgba(7, 11, 18, 0.72) !important;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(159,178,215,0.12);
 }
 
+[data-testid="stToolbar"] {
+    right: 1.1rem !important;
+}
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+
 section[data-testid="stSidebar"] {
-    background: rgba(24,26,38,0.96) !important;
-    border-right: 1px solid rgba(145,155,180,0.15);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(111,155,255,0.15), transparent 32%),
+        linear-gradient(180deg, rgba(25,30,46,0.98), rgba(18,20,31,0.98)) !important;
+    border-right: 1px solid rgba(159,178,215,0.17);
+    box-shadow: 18px 0 58px rgba(0,0,0,0.23);
+}
+
+section[data-testid="stSidebar"] > div {
+    padding-top: 1.8rem;
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    letter-spacing: -0.03em;
 }
 
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
 section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] span {
-    font-size: 0.92rem;
+    font-size: 0.91rem;
 }
 
-.et-top-spacer {
-    height: 0.25rem;
+section[data-testid="stSidebar"] div[data-baseweb="input"] > div,
+section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+    border-radius: 13px !important;
+    border-color: rgba(159,178,215,0.22) !important;
+    background: rgba(5,8,14,0.58) !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stNotification"] {
+    border-radius: 14px;
+    border: 1px solid rgba(97,230,172,0.20);
+    background: rgba(97,230,172,0.10);
+}
+
+hr {
+    border-color: rgba(159,178,215,0.14) !important;
+}
+
+.et-shell-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.et-brand-chip, .et-mode-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.48rem 0.78rem;
+    border: 1px solid var(--et-border);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.048);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+    color: var(--et-muted);
+    font-size: 0.88rem;
+}
+
+.et-brand-dot {
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--et-green), var(--et-blue));
+    box-shadow: 0 0 0 5px rgba(97,230,172,0.09);
 }
 
 .et-hero {
     position: relative;
-    padding: 2.45rem 2.2rem 2.15rem 2.2rem;
-    border: 1px solid var(--et-border);
-    border-radius: var(--et-radius-lg);
+    padding: clamp(1.65rem, 3.8vw, 3.0rem);
+    border: 1px solid var(--et-border-strong);
+    border-radius: var(--et-radius-xl);
     background:
-        radial-gradient(circle at 0% 0%, rgba(113,150,255,0.22), transparent 34%),
-        radial-gradient(circle at 96% 88%, rgba(43,205,142,0.14), transparent 30%),
-        linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025));
-    margin: 0.5rem 0 1.15rem 0;
-    box-shadow: 0 22px 60px rgba(0,0,0,0.23);
+        radial-gradient(circle at 0% 0%, rgba(126,159,255,0.26), transparent 36%),
+        radial-gradient(circle at 100% 85%, rgba(70,220,154,0.16), transparent 32%),
+        linear-gradient(135deg, rgba(255,255,255,0.108), rgba(255,255,255,0.030));
+    box-shadow: var(--et-shadow);
     overflow: hidden;
+    margin-bottom: 1.05rem;
+}
+
+.et-hero:before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border-radius: calc(var(--et-radius-xl) - 1px);
+    background: linear-gradient(90deg, rgba(255,255,255,0.075), transparent 32%, rgba(255,255,255,0.025));
+    pointer-events: none;
 }
 
 .et-hero:after {
     content: "";
     position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(255,255,255,0.06), transparent 34%, rgba(255,255,255,0.015));
+    width: 360px;
+    height: 360px;
+    right: -120px;
+    top: -120px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: radial-gradient(circle, rgba(156,188,255,0.11), transparent 62%);
     pointer-events: none;
 }
 
-.et-kicker {
+.et-hero-inner {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    max-width: 945px;
+}
+
+.et-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     font-size: 0.78rem;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.17em;
     text-transform: uppercase;
     color: var(--et-blue);
-    font-weight: 800;
-    margin-bottom: 0.8rem;
+    font-weight: 900;
+    margin-bottom: 0.9rem;
+}
+
+.et-kicker:before {
+    content: "";
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: var(--et-green);
+    box-shadow: 0 0 18px rgba(97,230,172,0.75);
 }
 
 .et-hero h1 {
-    position: relative;
-    z-index: 1;
-    font-size: clamp(2.1rem, 4.2vw, 3.5rem);
-    line-height: 1.05;
-    max-width: 920px;
     margin: 0 0 1rem 0;
+    max-width: 980px;
     color: var(--et-text);
-    letter-spacing: -0.04em;
+    font-size: clamp(2.2rem, 4.4vw, 4.25rem);
+    line-height: 0.99;
+    letter-spacing: -0.058em;
 }
 
 .et-hero p {
-    position: relative;
-    z-index: 1;
-    font-size: 1.05rem;
-    line-height: 1.7;
-    max-width: 850px;
+    margin: 0 0 1.35rem 0;
+    max-width: 870px;
     color: var(--et-muted);
-    margin: 0 0 1.1rem 0;
+    font-size: 1.06rem;
+    line-height: 1.72;
+}
+
+.et-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.44rem;
 }
 
 .et-badge {
-    position: relative;
-    z-index: 1;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.32rem 0.72rem;
-    margin: 0.14rem 0.22rem 0.14rem 0;
+    padding: 0.38rem 0.78rem;
     border: 1px solid var(--et-border);
     border-radius: 999px;
-    background: rgba(255,255,255,0.045);
+    background: rgba(255,255,255,0.055);
     color: rgba(255,255,255,0.84);
     font-size: 0.86rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
-.et-card-grid {
+.et-action-strip {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1.2fr 1fr 1fr;
     gap: 1rem;
     margin: 1rem 0 1.15rem 0;
 }
 
-.et-card {
-    padding: 1.15rem 1.15rem 1.05rem 1.15rem;
-    border: 1px solid var(--et-border-soft);
-    border-radius: var(--et-radius-md);
-    background: var(--et-card);
-    min-height: 132px;
+.et-action-card,
+.et-stat-card,
+.et-note,
+.v51-hero,
+.v51-card,
+.v51-step {
+    border: 1px solid var(--et-border) !important;
+    border-radius: var(--et-radius-lg) !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.025)) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.055);
 }
 
-.et-card h3 {
-    margin: 0 0 0.55rem 0;
-    font-size: 1.05rem;
-    color: rgba(255,255,255,0.94);
+.et-action-card {
+    padding: 1.15rem 1.2rem;
+    min-height: 128px;
 }
 
-.et-card p {
+.et-action-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.06rem;
+    letter-spacing: -0.025em;
+}
+
+.et-action-card p {
+    margin: 0;
     color: var(--et-muted);
     font-size: 0.93rem;
-    line-height: 1.55;
-    margin: 0;
+    line-height: 1.58;
+}
+
+.et-status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin: 0 0 1.35rem 0;
+}
+
+.et-stat-card {
+    padding: 0.85rem 0.95rem;
+}
+
+.et-stat-label {
+    color: var(--et-soft);
+    font-size: 0.77rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 800;
+    margin-bottom: 0.35rem;
+}
+
+.et-stat-value {
+    color: var(--et-text);
+    font-size: 1.02rem;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.et-stat-sub {
+    color: var(--et-soft);
+    font-size: 0.82rem;
+    margin-top: 0.18rem;
 }
 
 .et-note {
-    padding: 0.95rem 1rem;
-    border: 1px solid rgba(94,226,160,0.20);
-    border-radius: 15px;
-    background: rgba(94,226,160,0.055);
+    padding: 0.92rem 1rem;
     color: var(--et-muted);
-    margin: 0.7rem 0 1.1rem 0;
+    margin: 0.6rem 0 1rem 0;
 }
 
 .et-note strong {
-    color: rgba(255,255,255,0.94);
+    color: var(--et-text);
+}
+
+.et-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.9rem 0 0.75rem 0;
+}
+
+.et-section-title h2, .et-section-title h3 {
+    margin: 0;
+}
+
+h1, h2, h3 {
+    letter-spacing: -0.035em;
+}
+
+p, li, label, span {
+    line-height: 1.55;
 }
 
 div[data-testid="stMetric"] {
-    border: 1px solid var(--et-border-soft);
-    border-radius: 16px;
-    padding: 0.8rem 0.9rem;
-    background: rgba(255,255,255,0.038);
+    border: 1px solid var(--et-border) !important;
+    border-radius: var(--et-radius-lg) !important;
+    padding: 0.92rem 1rem !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.070), rgba(255,255,255,0.025)) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.055);
 }
 
-button[kind="primary"], div.stButton > button:first-child {
-    border-radius: 12px !important;
+button[kind="primary"], div.stButton > button, div[data-testid="stDownloadButton"] > button {
+    border-radius: 14px !important;
+    border: 1px solid rgba(156,188,255,0.28) !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.10) !important;
+    transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+button[kind="primary"]:hover, div.stButton > button:hover, div[data-testid="stDownloadButton"] > button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(156,188,255,0.55) !important;
 }
 
 [data-testid="stExpander"] {
-    border: 1px solid var(--et-border-soft) !important;
-    border-radius: 16px !important;
+    border: 1px solid var(--et-border) !important;
+    border-radius: var(--et-radius-lg) !important;
     overflow: hidden;
-    background: rgba(255,255,255,0.025);
+    background: rgba(255,255,255,0.026) !important;
 }
 
-@media (max-width: 900px) {
-    .et-card-grid { grid-template-columns: 1fr; }
-    .et-hero { padding: 1.55rem 1.3rem; }
+[data-testid="stTabs"] button {
+    border-radius: 999px !important;
+}
+
+[data-testid="stDataFrame"], [data-testid="stTable"] {
+    border-radius: var(--et-radius-lg) !important;
+    overflow: hidden;
+}
+
+[data-testid="stFileUploader"] section {
+    border-radius: var(--et-radius-lg) !important;
+    border-color: rgba(156,188,255,0.28) !important;
+    background: rgba(255,255,255,0.035) !important;
+}
+
+/* Softer legacy v51 widgets */
+.v51-hero {
+    padding: 1.05rem 1.15rem !important;
+    margin-bottom: 1rem !important;
+}
+.v51-card {
+    padding: 1rem !important;
+    min-height: 150px !important;
+}
+.v51-badge {
+    display: inline-block;
+    padding: 0.25rem 0.62rem;
+    margin: 0.12rem 0.18rem 0.12rem 0;
+    border-radius: 999px;
+    border: 1px solid var(--et-border);
+    background: rgba(255,255,255,0.045);
+    font-size: 0.86rem;
+}
+.v51-step {
+    padding: 0.78rem 0.9rem !important;
+    margin: 0.45rem 0 !important;
+}
+.v51-small {
+    opacity: 0.78;
+    font-size: 0.92rem;
+}
+
+@media (max-width: 980px) {
+    .et-shell-top { flex-direction: column; align-items: flex-start; }
+    .et-action-strip, .et-status-grid { grid-template-columns: 1fr; }
+    .et-hero { padding: 1.55rem 1.3rem; border-radius: 22px; }
 }
 </style>
 """
+
+
+def _edge_count_rows(value):
+    try:
+        if isinstance(value, pd.DataFrame):
+            return len(value)
+    except Exception:
+        pass
+    return 0
 
 
 def install_edge_website_skin():
@@ -323,46 +565,87 @@ def install_edge_website_skin():
 
 def render_edge_website_header():
     mode = st.session_state.get("workspace_mode_v50", "Customer Mode")
+    project_name = st.session_state.get("project_name", "Untitled project")
+    dataset_rows = _edge_count_rows(st.session_state.get("dataset"))
+    fusion_rows = _edge_count_rows(st.session_state.get("fusion_df"))
+    bundle_ready = "Ready" if st.session_state.get("fusion_bundle") or st.session_state.get("enterprise_bundle") else "Not yet"
+
     if mode == "Customer Mode":
+        mode_label = "Customer route"
         subtitle = (
-            "A clean pilot-readiness route for industrial machine data: describe the situation, "
-            "check available evidence, identify gaps and export a safe next-step package."
+            "A premium, simple pilot-readiness route for industrial machine data: describe the situation, "
+            "check available evidence, identify gaps and export a customer-safe next-step package."
         )
         badges = ["Bearing wear", "Motor health", "Rotating equipment", "Dataset readiness", "Evidence packs", "Safe AI claims"]
+        action_1 = "Describe the machine, use-case and decision you need to make."
+        action_2 = "Upload data or run a controlled demo while the technical engines stay behind the scenes."
+        action_3 = "Export readiness, limitations, assumptions and next-step evidence without overclaiming."
     else:
+        mode_label = "Founder cockpit"
         subtitle = (
-            "Founder cockpit with the full v1.44 toolset preserved: customer flow, evidence engines, "
-            "dataset checks, delivery, pricing, admin and release-readiness tools."
+            "The full v1.44 operating system stays available: all tools, subtools, snapshots, bundles, "
+            "admin screens, pricing, delivery and release-readiness workflows remain inside the app."
         )
         badges = ["Full v1.44 functions", "Sub-tools preserved", "Founder cockpit", "Customer Mode", "Evidence OS", "Release checks"]
+        action_1 = "Use the clean customer flow as the front door while keeping every deep tool available."
+        action_2 = "Run dataset, synthetic-to-real, reliability, pricing, delivery and QA tools from one cockpit."
+        action_3 = "Package evidence, quote paths, delivery bundles and launch checks without losing control."
 
     badge_html = "".join([f'<span class="et-badge">{b}</span>' for b in badges])
     st.markdown(
         f"""
-        <div class="et-top-spacer"></div>
-        <div class="et-hero">
-            <div class="et-kicker">Industrial AI Readiness & Evidence Platform</div>
-            <h1>Know if your machine data is ready before you invest in AI.</h1>
-            <p>{subtitle}</p>
-            {badge_html}
+        <div class="et-shell-top">
+            <div class="et-brand-chip"><span class="et-brand-dot"></span><strong>EdgeTwin Studio</strong><span>Industrial AI Readiness</span></div>
+            <div class="et-mode-chip">Workspace: <strong>{mode_label}</strong></div>
         </div>
-        <div class="et-card-grid">
-            <div class="et-card">
-                <h3>1. Start simple</h3>
-                <p>Pick a customer route, readiness snapshot or demo evidence room without exposing unnecessary engineering complexity.</p>
+        <div class="et-hero">
+            <div class="et-hero-inner">
+                <div class="et-kicker">Premium Evidence Portal</div>
+                <h1>Know if your machine data is ready before you invest in AI.</h1>
+                <p>{subtitle}</p>
+                <div class="et-badge-row">{badge_html}</div>
             </div>
-            <div class="et-card">
-                <h3>2. Keep the engines</h3>
-                <p>The original tools, render functions, bundles and backend calls remain in the app instead of being replaced by a thin shell.</p>
+        </div>
+        <div class="et-action-strip">
+            <div class="et-action-card">
+                <h3>1. Start clean</h3>
+                <p>{action_1}</p>
             </div>
-            <div class="et-card">
-                <h3>3. Export evidence</h3>
-                <p>Move from data situation to readiness, limitations, quote/delivery route and customer-safe evidence packs.</p>
+            <div class="et-action-card">
+                <h3>2. Analyze safely</h3>
+                <p>{action_2}</p>
+            </div>
+            <div class="et-action-card">
+                <h3>3. Deliver evidence</h3>
+                <p>{action_3}</p>
+            </div>
+        </div>
+        <div class="et-status-grid">
+            <div class="et-stat-card">
+                <div class="et-stat-label">Project</div>
+                <div class="et-stat-value">{project_name}</div>
+                <div class="et-stat-sub">Current workspace</div>
+            </div>
+            <div class="et-stat-card">
+                <div class="et-stat-label">Dataset rows</div>
+                <div class="et-stat-value">{dataset_rows:,}</div>
+                <div class="et-stat-sub">Training / uploaded data</div>
+            </div>
+            <div class="et-stat-card">
+                <div class="et-stat-label">Fusion rows</div>
+                <div class="et-stat-value">{fusion_rows:,}</div>
+                <div class="et-stat-sub">Generated / fused signals</div>
+            </div>
+            <div class="et-stat-card">
+                <div class="et-stat-label">Evidence bundle</div>
+                <div class="et-stat-value">{bundle_ready}</div>
+                <div class="et-stat-sub">Export status</div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
 
 install_edge_website_skin()
 
@@ -1441,6 +1724,11 @@ nav_page_key = st.sidebar.selectbox(
 )
 
 st.markdown(f"### {NAV_LABELS.get(nav_page_key, nav_page_key)}")
+
+st.markdown(
+    f'<div class="et-note"><strong>Current step:</strong> {NAV_LABELS.get(nav_page_key, nav_page_key)} · <span>All original v1.44 engines remain available; this premium layer only improves the experience.</span></div>',
+    unsafe_allow_html=True,
+)
 if st.session_state.workspace_mode_v50 == "Customer Mode":
     nav_hint_text = NAV_HINTS.get(nav_group, "Choose the next customer step from the sidebar.")
     st.markdown(
