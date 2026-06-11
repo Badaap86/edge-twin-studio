@@ -10,3 +10,4 @@ uvicorn
 sqlalchemy
 bcrypt
 pyarrow
+openpyxl
