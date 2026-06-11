@@ -16963,7 +16963,12 @@ def _v152_read_uploaded_table(uploaded_file):
         return pd.read_csv(uploaded_file)
     if name.endswith(".xlsx") or name.endswith(".xls"):
         return pd.read_excel(uploaded_file)
-    raise ValueError("Only CSV and Excel files are supported.")
+    if name.endswith(".wav"):
+        if v152_autopilot is None:
+            raise ValueError("v152 Autopilot engine is not available, so WAV extraction cannot run.")
+        wav_bytes = uploaded_file.getvalue()
+        return v152_autopilot.wav_bytes_to_feature_dataframe(wav_bytes, filename=uploaded_file.name)
+    raise ValueError("Only CSV, Excel and WAV files are supported.")
 
 
 def render_v152_autopilot_approval_tab():
@@ -17004,7 +17009,8 @@ def render_v152_autopilot_approval_tab():
         c1, c2 = st.columns(2)
         with c1:
             st.subheader("Customer data")
-            uploaded = st.file_uploader("Upload machine/sensor/process data", type=["csv", "xlsx", "xls"], key="v152_upload_main")
+            st.caption("WAV files are automatically converted into acoustic feature rows: RMS, crest factor, dominant frequency, spectral centroid and more.")
+            uploaded = st.file_uploader("Upload machine/sensor/process data (CSV, Excel or WAV)", type=["csv", "xlsx", "xls", "wav"], key="v152_upload_main")
             if uploaded is not None:
                 try:
                     st.session_state.v152_customer_df = _v152_read_uploaded_table(uploaded)
@@ -17020,7 +17026,7 @@ def render_v152_autopilot_approval_tab():
             if not st.session_state.v152_customer_df.empty:
                 st.dataframe(st.session_state.v152_customer_df.head(100), use_container_width=True)
             else:
-                st.warning("No data loaded yet. Upload CSV/Excel or use an existing EdgeTwin project dataset.")
+                st.warning("No data loaded yet. Upload CSV/Excel/WAV or use an existing EdgeTwin project dataset.")
 
         with c2:
             st.subheader("Optional maintenance/event log")
