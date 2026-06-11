@@ -39,6 +39,11 @@ import pilot_dataset_system
 import synthetic_to_real_evidence_bridge
 import custom_acoustic_dataset_builder
 
+try:
+    import edgetwin_autopilot_engine as v152_autopilot
+except Exception:
+    v152_autopilot = None
+
 warnings.filterwarnings("ignore")
 
 st.set_page_config(page_title="EdgeTwin Studio", page_icon="⚙️", layout="wide", initial_sidebar_state="expanded")
@@ -128,10 +133,11 @@ _install_customer_text_cleaner()
 
 
 # ============================================================
-# EDGE TWIN V145.3 PREMIUM UI SKIN - FULL V144 FUNCTIONS PRESERVED
+# EDGE TWIN V149 PRE-WEBSITE UI + COMMERCIAL FLOW - FULL V144 FUNCTIONS PRESERVED
 # ============================================================
-# Visual layer only: it keeps the original v1.44 render_* tools, navigation
-# keys, snapshots, bundles, database calls and backend logic intact.
+# Visual/commercial layer only: it keeps the original v1.44 render_* tools, navigation
+# keys, snapshots, bundles, database calls and backend logic intact. V149 moves
+# the app toward a real website/portal without deleting the founder cockpit.
 
 EDGE_WEBSITE_CSS = """
 <style>
@@ -541,6 +547,150 @@ button[kind="primary"]:hover, div.stButton > button:hover, div[data-testid="stDo
     font-size: 0.92rem;
 }
 
+
+
+/* ================= V149 PRE-WEBSITE POLISH ================= */
+.et-v149-ribbon {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr 1fr;
+    gap: 0.75rem;
+    margin: 0.95rem 0 1.1rem 0;
+}
+.et-v149-ribbon-card {
+    border: 1px solid var(--et-border);
+    background: linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.026));
+    border-radius: 18px;
+    padding: 0.9rem 1rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.et-v149-ribbon-card strong {
+    display: block;
+    font-size: 0.92rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.18rem;
+}
+.et-v149-ribbon-card span {
+    color: var(--et-muted);
+    font-size: 0.86rem;
+}
+.et-v149-stage {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.34rem 0.67rem;
+    border-radius: 999px;
+    border: 1px solid rgba(97,230,172,0.28);
+    background: rgba(97,230,172,0.09);
+    color: rgba(230,255,245,0.92);
+    font-weight: 800;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+}
+.et-v149-stepper {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.55rem;
+    margin: 0.75rem 0 1.05rem 0;
+}
+.et-v149-step {
+    position: relative;
+    border: 1px solid rgba(159,178,215,0.18);
+    background: rgba(255,255,255,0.034);
+    border-radius: 16px;
+    padding: 0.78rem 0.8rem;
+    min-height: 86px;
+    overflow: hidden;
+}
+.et-v149-step.active {
+    border-color: rgba(111,155,255,0.54);
+    background: linear-gradient(135deg, rgba(111,155,255,0.18), rgba(97,230,172,0.08));
+    box-shadow: 0 18px 54px rgba(0,0,0,0.18);
+}
+.et-v149-step small {
+    display: inline-flex;
+    width: 1.55rem;
+    height: 1.55rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(111,155,255,0.16);
+    border: 1px solid rgba(111,155,255,0.26);
+    color: var(--et-blue);
+    font-weight: 900;
+    margin-bottom: 0.45rem;
+}
+.et-v149-step b {
+    display: block;
+    font-size: 0.90rem;
+    margin-bottom: 0.16rem;
+}
+.et-v149-step span {
+    color: var(--et-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+.et-v149-bridge {
+    border: 1px solid rgba(159,178,215,0.22);
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(111,155,255,0.14), transparent 36%),
+        linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.020));
+    padding: 1.0rem 1.1rem;
+    margin: 1rem 0;
+}
+.et-v149-bridge h3 {
+    margin: 0 0 0.35rem 0;
+    font-size: 1.05rem;
+}
+.et-v149-bridge p {
+    color: var(--et-muted);
+    margin: 0;
+    font-size: 0.91rem;
+}
+.et-v149-checklist {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.62rem;
+    margin-top: 0.85rem;
+}
+.et-v149-check {
+    padding: 0.75rem 0.8rem;
+    border: 1px solid rgba(159,178,215,0.18);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    font-size: 0.83rem;
+    color: var(--et-muted);
+}
+.et-v149-check.ready {
+    border-color: rgba(97,230,172,0.30);
+    background: rgba(97,230,172,0.075);
+    color: rgba(237,255,248,0.90);
+}
+.et-v149-check.warn {
+    border-color: rgba(255,209,102,0.30);
+    background: rgba(255,209,102,0.07);
+    color: rgba(255,245,215,0.92);
+}
+.et-v149-page-title {
+    border: 1px solid rgba(159,178,215,0.18);
+    border-radius: 18px;
+    padding: 0.92rem 1.05rem;
+    background: rgba(255,255,255,0.030);
+    margin: 0.55rem 0 0.8rem 0;
+}
+.et-v149-page-title h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+.et-v149-page-title p {
+    margin: 0.3rem 0 0 0;
+    color: var(--et-muted);
+    font-size: 0.9rem;
+}
+@media (max-width: 1100px) {
+    .et-v149-ribbon, .et-v149-stepper, .et-v149-checklist { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 980px) {
     .et-shell-top { flex-direction: column; align-items: flex-start; }
     .et-action-strip, .et-status-grid { grid-template-columns: 1fr; }
@@ -600,8 +750,8 @@ def render_edge_website_header():
         </div>
         <div class="et-hero">
             <div class="et-hero-inner">
-                <div class="et-kicker">Premium Evidence Portal</div>
-                <h1>Know if your machine data is ready before you invest in AI.</h1>
+                <div class="et-kicker">V149 Pre-Website Portal</div>
+                <h1>Industrial AI evidence, simplified into one customer-ready route.</h1>
                 <p>{subtitle}</p>
                 <div class="et-badge-row">{badge_html}</div>
             </div>
@@ -641,6 +791,124 @@ def render_edge_website_header():
                 <div class="et-stat-value">{bundle_ready}</div>
                 <div class="et-stat-sub">Export status</div>
             </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+EDGE_V149_STAGE = "v149 Pre-Website Launch"
+
+
+def _edge_has_any_bundle():
+    bundle_keys = [
+        "fusion_bundle", "enterprise_bundle", "professional_report_bundle",
+        "customer_delivery_bundle", "pricing_offer_bundle", "proposal_sow_bundle",
+        "buyer_dataroom_v64_bundle", "custom_pack_checkout_bundle",
+        "pilot_dataset_system_bundle", "synthetic_to_real_evidence_bridge_bundle",
+    ]
+    return any(bool(st.session_state.get(k)) for k in bundle_keys)
+
+
+def _edge_status_label(condition, ready_label="Ready", wait_label="Not yet"):
+    return ready_label if condition else wait_label
+
+
+def render_v149_launch_ribbon():
+    mode = st.session_state.get("workspace_mode_v50", "Customer Mode")
+    project_name = st.session_state.get("project_name", "Untitled project")
+    has_dataset = _edge_count_rows(st.session_state.get("dataset")) > 0 or _edge_count_rows(st.session_state.get("fusion_training_df")) > 0
+    has_evidence = bool(st.session_state.get("fusion_doctor")) or bool(st.session_state.get("last_demo_summary")) or bool(st.session_state.get("readiness_snapshot"))
+    has_bundle = _edge_has_any_bundle()
+    portal_role = "Customer-facing flow" if mode == "Customer Mode" else "Founder operating system"
+
+    st.markdown(
+        f"""
+        <div class="et-v149-ribbon">
+            <div class="et-v149-ribbon-card">
+                <div class="et-v149-stage">● {EDGE_V149_STAGE}</div>
+                <strong>{project_name}</strong>
+                <span>{portal_role}. Streamlit remains the app engine while the public website layer is prepared.</span>
+            </div>
+            <div class="et-v149-ribbon-card">
+                <strong>Commercial readiness</strong>
+                <span>{_edge_status_label(has_evidence, "Evidence route started", "Needs intake or demo")}</span>
+            </div>
+            <div class="et-v149-ribbon-card">
+                <strong>Delivery status</strong>
+                <span>{_edge_status_label(has_bundle, "Export/bundle available", "No final bundle yet")}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_v149_customer_stepper(nav_group, nav_page_key):
+    mode = st.session_state.get("workspace_mode_v50", "Customer Mode")
+    if mode == "Customer Mode":
+        steps = [
+            ("1", "Start", "Problem, wedge and readiness snapshot"),
+            ("2", "Intake", "Machine, signals and customer context"),
+            ("3", "Data check", "Upload, pilot data and quality gates"),
+            ("4", "Evidence", "Evidence room, risks and limitations"),
+            ("5", "Quote", "Pack, SOW and handoff"),
+        ]
+        active_idx = max(0, min(4, list(CUSTOMER_LAUNCH_FLOW.keys()).index(nav_group) if nav_group in CUSTOMER_LAUNCH_FLOW else 0))
+    else:
+        steps = [
+            ("1", "Customer flow", "Shortcut to launch route"),
+            ("2", "Build", "Datasets, packs and sensors"),
+            ("3", "Validate", "Quality, bridge and trust"),
+            ("4", "Deliver", "Reports, exports and portal"),
+            ("5", "Operate", "QA, admin and release control"),
+        ]
+        active_idx = 0 if str(nav_group).startswith("0.") else 1 if "Build" in nav_group else 2 if ("Validate" in nav_group or "Trust" in nav_group) else 3 if ("Deploy" in nav_group or "Sell" in nav_group) else 4
+
+    html = ['<div class="et-v149-stepper">']
+    for idx, (num, title, body) in enumerate(steps):
+        cls = "et-v149-step active" if idx == active_idx else "et-v149-step"
+        html.append(f'<div class="{cls}"><small>{num}</small><b>{title}</b><span>{body}</span></div>')
+    html.append('</div>')
+    st.markdown("".join(html), unsafe_allow_html=True)
+
+
+def render_v149_page_intro(nav_group, nav_page_key):
+    label = NAV_LABELS.get(nav_page_key, nav_page_key)
+    hint = NAV_HINTS.get(nav_group, "Choose the next step from the sidebar.")
+    st.markdown(
+        f"""
+        <div class="et-v149-page-title">
+            <h2>{label}</h2>
+            <p>{hint}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_v149_website_bridge_panel():
+    has_data = _edge_count_rows(st.session_state.get("dataset")) > 0 or _edge_count_rows(st.session_state.get("fusion_df")) > 0
+    has_readiness = bool(st.session_state.get("fusion_doctor")) or bool(st.session_state.get("readiness_snapshot")) or bool(st.session_state.get("data_quality_gate_pro_snapshot"))
+    has_commerce = bool(st.session_state.get("pricing_offer_snapshot")) or bool(st.session_state.get("proposal_sow_snapshot")) or bool(st.session_state.get("custom_pack_checkout_snapshot"))
+    has_delivery = _edge_has_any_bundle()
+    checks = [
+        ("Website story", True, "Home/problem/offer route"),
+        ("Data route", has_data, "Demo or upload data"),
+        ("Readiness proof", has_readiness, "Evidence and limits"),
+        ("Quote/delivery", has_commerce or has_delivery, "Paid handoff route"),
+    ]
+    cards = []
+    for title, ok, body in checks:
+        cls = "ready" if ok else "warn"
+        icon = "✓" if ok else "•"
+        cards.append(f'<div class="et-v149-check {cls}"><b>{icon} {title}</b><br>{body}</div>')
+    st.markdown(
+        f"""
+        <div class="et-v149-bridge">
+            <h3>Website transition board</h3>
+            <p>V149 keeps all Streamlit tools alive, but presents the product like the future public website: problem → intake → data check → evidence → quote/handoff.</p>
+            <div class="et-v149-checklist">{''.join(cards)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1058,9 +1326,22 @@ def run_auto_pilot(config):
 # ============================================================
 
 if "user" not in st.session_state:
-    st.title("EdgeTwin Studio")
-    st.caption("Powered by the OMEGA-X Synthetic Sensor Engine")
-    st.markdown("### Turn sensor ideas into Edge AI-ready datasets, reliability reports and hardware advice.")
+    st.markdown(
+        """
+        <div class="et-hero">
+            <div class="et-hero-inner">
+                <div class="et-kicker">V149 Secure Portal</div>
+                <h1>EdgeTwin Studio</h1>
+                <p>Industrial AI readiness, evidence packs and controlled pilot preparation for machine, vibration, audio and sensor data.</p>
+                <span class="et-badge">Customer portal</span>
+                <span class="et-badge">Founder cockpit</span>
+                <span class="et-badge">Evidence-first</span>
+                <span class="et-badge">No unsafe AI claims</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     login_tab, register_tab = st.tabs(["Login", "Create account"])
 
@@ -1096,8 +1377,8 @@ if "user" not in st.session_state:
 # SIDEBAR
 # ============================================================
 
-st.sidebar.title("EdgeTwin Studio")
-st.sidebar.caption("Powered by OMEGA-X Engine")
+st.sidebar.title("⚙️ EdgeTwin")
+st.sidebar.caption("v149 pre-website portal")
 st.sidebar.success(f"Logged in as {st.session_state.user['username']}")
 
 workspace_mode_v50 = st.sidebar.radio(
@@ -1374,6 +1655,7 @@ if st.sidebar.button("Logout", use_container_width=True, key="sidebar_logout"):
 # ============================================================
 
 render_edge_website_header()
+render_v149_launch_ribbon()
 
 st.markdown("""
 <style>
@@ -1418,6 +1700,23 @@ CUSTOMER_NAV_GROUPS = {'1. Start': ['pilot_factory_v79_tab', 'one_click_pilot_v7
 NAV_GROUPS = CUSTOMER_NAV_GROUPS if st.session_state.workspace_mode_v50 == 'Customer Mode' else FOUNDER_NAV_GROUPS
 NAV_LABELS = {'pilot_factory_v79_tab': '🏭 Pilot Factory', 'home': '🏠 Self-Selling Demo', 'wizard_tab': '🧭 Use Case Wizard', 'fusion_tab': '🧬 Sensor Fusion Studio', 'audit_tab': '🩺 Enterprise Audit', 'optimizer_tab': '🧪 Smart Optimizer', 'real_bridge_tab': '🔗 Real Bridge', 'field_learning_v52_tab': '🔐 Privacy Learning', 'launch_experience_v53_tab': '🚀 Launch Experience', 'launch_assets_v54_tab': '🌐 Launch Assets', 'first_customer_beta_v55_tab': '🧪 First Customer Beta', 'real_upload_v56_tab': '📥 Real Upload', 'trust_tab': '🛡️ Trust Center', 'deployment_tab': '🚀 Deployment Planner', 'reports_tab': '📑 Reports 2.0', 'hardening_tab': '🧰 Product Hardening', 'beta_launch_tab': '🧲 Beta Launch', 'monetization_tab': '💳 Monetization Gate', 'api_tab': '🔌 API Automation', 'marketplace_tab': '🛒 Pack Marketplace', 'normality_tab': '⚖️ Normality Engine', 'edge_impulse_tab': '📤 Edge Impulse Anomaly Export', 'ei_classifier_tab': '🎯 EI Classifier Export', 'success_gate_tab': '✅ Success Gate', 'golden_demo_tab': '🏆 Golden Demo', 'closed_beta_tab': '🚪 Closed Beta', 'paid_export_tab': '🔐 Paid Export', 'field_validation_tab': '🌍 Field Validation', 'field_evidence_v2_tab': '📡 Field Evidence 2.0', 'edge_starter_tab': '🧩 Edge Starter', 'scalability_tab': '📚 Storage/Scale', 'operational_tab': '🕹️ Control Center', 'observability_tab': '🛰️ Error Observatory', 'governance_tab': '🔒 Customer Assurance', 'onboarding_tab': '🧭 Guided Success', 'workspace_tab': '🏢 Workspace', 'admin_tab': '📊 Admin/Usage', 'license_cert_tab': '📜 License Cert', 'product_readiness_tab': '🏁 Product Ready', 'delivery_tab': '📦 Delivery Portal', 'customer_success_tab': '💬 Customer Success', 'lead_intake_v48_tab': '🎯 Lead Intake', 'pricing_offer_tab': '💶 Pricing Offer', 'proposal_sow_tab': '📝 Proposal / SOW', 'checkout_v57_tab': '🛒 Checkout', 'cloud_architecture_v58_tab': '☁️ Cloud Architecture', 'hardware_reference_v59_tab': '🧪 Hardware Reference', 'traction_proof_v61_tab': '📈 Traction Proof', 'roi_value_v62_tab': '💰 ROI Value', 'reliability_calibration_v67_tab': '🎚️ Reliability Calibration', 'zero_touch_v69_tab': '🧭 Zero-Touch Value', 'outcome_assurance_v70_tab': '✅ Outcome Assurance', 'customer_support_v71_tab': '🧑‍💻 Support Autopilot', 'customer_journey_v73_tab': '🧭 Customer Journey', 'one_click_pilot_v78_tab': '⚡ One-Click Pilot', 'smart_intake_v77_tab': '🧠 Smart Intake', 'product_consolidation_v76_tab': '🧩 Product Consolidation', 'deliverable_qa_v75_tab': '📦 Deliverable QA', 'quality_guardian_v74_tab': '🛡️ Quality Guardian', 'customer_status_v72_tab': '📍 Customer Status', 'automation_orchestrator_v68_tab': '🤖 Automation', 'continuous_improvement_v66_tab': '♻️ Improvement Flywheel', 'ip_moat_v65_tab': '🧬 IP & Moat', 'buyer_dataroom_v64_tab': '🗂️ Buyer Data Room', 'case_study_v63_tab': '🧾 Case Study', 'launch_stabilization_v60_1_tab': '🧊 Launch Stabilizer', 'commercial_release_v60_tab': '🚦 Commercial Release', 'quote_to_cash_tab': '🧾 Quote-to-Cash', 'paid_pilot_v45_tab': '🤝 Paid Pilot', 'canvas_tab': '📈 Signal Canvas', 'packs_tab': '📦 Industry Packs', 'hardware_tab': '🧱 Hardware Architect'}
 NAV_LABELS.update({'customer_home_v50_tab': '✨ Customer Start', 'customer_review_v50_tab': '✅ Readiness & Next Step'})
+NAV_LABELS.update({
+    "market_wedge_simplification_tab": "🎯 First Customer Focus",
+    "readiness_snapshot_tab": "⚡ Readiness Snapshot",
+    "demo_evidence_room_tab": "🏢 Demo Evidence Room",
+    "first_customer_intake_pack_tab": "🧾 Intake Pack",
+    "ultimate_customer_flow_tab": "🚀 Guided Customer Flow",
+    "real_upload_v56_tab": "📥 Upload Data",
+    "pilot_dataset_system_tab": "🧬 Pilot Dataset System",
+    "synthetic_to_real_evidence_bridge_tab": "🌉 Synthetic-to-Real Evidence",
+    "data_quality_gate_pro_tab": "🚦 Data Quality Gate",
+    "buyer_data_room_pro_tab": "🏢 Buyer Evidence Room",
+    "reports_tab": "📑 Evidence Reports",
+    "secure_download_links_v104_tab": "🔐 Secure Download",
+    "pricing_offer_tab": "💶 Pricing Offer",
+    "proposal_sow_tab": "📝 Proposal / SOW",
+    "clean_quote_delivery_tab": "🧾 Clean Quote Delivery",
+})
 NAV_HINTS = {
     "1. Start & Guided Flow": "For demos, guided onboarding, golden demo proof and project lifecycle overview.",
     "2. Build Pilot": "Generate datasets, choose sensors/use-cases, create packs and optimize weak datasets.",
@@ -1638,23 +1937,34 @@ CUSTOMER_LAUNCH_FLOW = {
         "market_wedge_simplification_tab",
         "readiness_snapshot_tab",
         "demo_evidence_room_tab",
+        "customer_facing_landing_portal_tab",
     ],
-    "2. Choose pack": [
+    "2. Intake": [
+        "first_customer_intake_pack_tab",
         "ultimate_customer_flow_tab",
-        "custom_pack_checkout_tab",
-        "clean_quote_delivery_tab",
+        "guided_custom_customer_builder_tab",
+        "one_perfect_customer_flow_tab",
     ],
-    "3. Evidence": [
+    "3. Data check": [
+        "real_upload_v56_tab",
         "pilot_dataset_system_tab",
         "synthetic_to_real_evidence_bridge_tab",
         "custom_acoustic_dataset_builder_tab",
         "data_quality_gate_pro_tab",
-        "buyer_data_room_pro_tab",
         "data_coverage_engine_tab",
     ],
-    "4. Controlled add-ons": [
-        "hardware_profile_matrix_tab",
-        "hardware_firmware_starter_tab",
+    "4. Evidence pack": [
+        "buyer_data_room_pro_tab",
+        "demo_evidence_room_tab",
+        "reports_tab",
+        "secure_download_links_v104_tab",
+        "delivery_endpoint_tab",
+    ],
+    "5. Quote / handoff": [
+        "custom_pack_checkout_tab",
+        "pricing_offer_tab",
+        "proposal_sow_tab",
+        "clean_quote_delivery_tab",
         "founding_customer_launch_tab",
     ],
 }
@@ -1707,6 +2017,41 @@ def _clean_nav_label(label: str) -> str:
 
 NAV_LABELS = {k: _clean_nav_label(v) for k, v in NAV_LABELS.items()}
 
+NAV_HINTS.update({
+    "1. Start": "Website-style front door: first-customer focus, readiness snapshot, demo evidence and clear positioning.",
+    "2. Intake": "Collect the customer's machine, signal, problem and decision context before analysis starts.",
+    "3. Data check": "Upload or generate pilot data, then run quality, coverage and synthetic-to-real checks without overclaiming.",
+    "4. Evidence pack": "Prepare the buyer-ready evidence room, reports, secure access, assumptions, gaps and limitations.",
+    "5. Quote / handoff": "Move from pack choice to pricing, SOW, clean quote delivery and founding-customer launch follow-up.",
+})
+
+
+# ============================================================
+# V152 AUTOPILOT APPROVAL NAVIGATION
+# ============================================================
+NAV_LABELS["v152_autopilot_approval_tab"] = "🧠 Autopilot Approval"
+
+if st.session_state.workspace_mode_v50 == "Customer Mode":
+    NAV_GROUPS.setdefault("3. Data check", [])
+    if "v152_autopilot_approval_tab" not in NAV_GROUPS["3. Data check"]:
+        NAV_GROUPS["3. Data check"].insert(0, "v152_autopilot_approval_tab")
+    NAV_GROUPS.setdefault("4. Evidence pack", [])
+    if "v152_autopilot_approval_tab" not in NAV_GROUPS["4. Evidence pack"]:
+        NAV_GROUPS["4. Evidence pack"].insert(0, "v152_autopilot_approval_tab")
+else:
+    NAV_GROUPS.setdefault("0. Customer Launch Flow", [])
+    if "v152_autopilot_approval_tab" not in NAV_GROUPS["0. Customer Launch Flow"]:
+        NAV_GROUPS["0. Customer Launch Flow"].insert(0, "v152_autopilot_approval_tab")
+    NAV_GROUPS.setdefault("3. Validate & Trust", [])
+    if "v152_autopilot_approval_tab" not in NAV_GROUPS["3. Validate & Trust"]:
+        NAV_GROUPS["3. Validate & Trust"].insert(0, "v152_autopilot_approval_tab")
+    NAV_GROUPS.setdefault("5. Sell & Deliver", [])
+    if "v152_autopilot_approval_tab" not in NAV_GROUPS["5. Sell & Deliver"]:
+        NAV_GROUPS["5. Sell & Deliver"].insert(0, "v152_autopilot_approval_tab")
+
+NAV_HINTS["3. Data check"] = "Upload or generate pilot data, then run quality, coverage, synthetic-to-real and v152 Autopilot approval checks without overclaiming."
+NAV_HINTS["4. Evidence pack"] = "Prepare the buyer-ready evidence room, reports, secure access, assumptions, gaps, limitations and v152 Evidence Pack."
+
 st.sidebar.markdown("---")
 st.sidebar.subheader("Workspace navigation")
 nav_group = st.sidebar.radio(
@@ -1723,25 +2068,10 @@ nav_page_key = st.sidebar.selectbox(
     key=f"workspace_nav_page_v50_{st.session_state.workspace_mode_v50}_{nav_group}",
 )
 
-st.markdown(f"### {NAV_LABELS.get(nav_page_key, nav_page_key)}")
-
-st.markdown(
-    f'<div class="et-note"><strong>Current step:</strong> {NAV_LABELS.get(nav_page_key, nav_page_key)} · <span>All original v1.44 engines remain available; this premium layer only improves the experience.</span></div>',
-    unsafe_allow_html=True,
-)
-if st.session_state.workspace_mode_v50 == "Customer Mode":
-    nav_hint_text = NAV_HINTS.get(nav_group, "Choose the next customer step from the sidebar.")
-    st.markdown(
-        f'<div class="v51-hero"><b>Simple customer route.</b><br><span class="v51-small">{nav_hint_text}</span></div>',
-        unsafe_allow_html=True,
-    )
-else:
-    st.info(NAV_HINTS.get(nav_group, "Choose a workflow step from the sidebar."))
-
-NAV_HINTS["1. Start"] = "First-customer focus: three simple packs, bearing/motor-health wedge, readiness snapshot and demo evidence room."
-NAV_HINTS["2. Choose pack"] = "Turn the customer's data situation into one of three buyable packs, then request quote/payment link when ready."
-NAV_HINTS["3. Evidence"] = "Run Pilot Dataset System, data quality, evidence room and data coverage checks without overclaiming production performance."
-NAV_HINTS["4. Controlled add-ons"] = "Hardware, firmware, synthetic expansion and Field Data Kit routes stay controlled add-ons, not the main sales story."
+render_v149_page_intro(nav_group, nav_page_key)
+render_v149_customer_stepper(nav_group, nav_page_key)
+if st.session_state.workspace_mode_v50 != "Customer Mode":
+    st.info("Founder Mode keeps the full cockpit available. Customer Mode shows the simplified website-style route.")
 
 with st.expander("Why Customer Mode stays simple for customers", expanded=False):
     st.write(
@@ -1749,6 +2079,8 @@ with st.expander("Why Customer Mode stays simple for customers", expanded=False)
         "The full Dataset Doctor, Reliability Engine, Synthetic-to-Real Bridge, trust gates, reports, pricing and delivery logic still run behind the scenes. "
         "Founder Mode keeps the complete operating system available for you without overwhelming customers."
     )
+
+render_v149_website_bridge_panel()
 
 def render_home():
     st.header("Choose the customer problem")
@@ -16618,7 +16950,266 @@ def render_founding_customer_launch_tab():
         st.session_state.founding_customer_launch_bundle = bundle
 
 
+
+# ============================================================
+# V152 AUTOPILOT APPROVAL TAB
+# ============================================================
+
+def _v152_read_uploaded_table(uploaded_file):
+    if uploaded_file is None:
+        return pd.DataFrame()
+    name = uploaded_file.name.lower()
+    if name.endswith(".csv"):
+        return pd.read_csv(uploaded_file)
+    if name.endswith(".xlsx") or name.endswith(".xls"):
+        return pd.read_excel(uploaded_file)
+    raise ValueError("Only CSV and Excel files are supported.")
+
+
+def render_v152_autopilot_approval_tab():
+    st.markdown("## 🧠 EdgeTwin Autopilot Approval")
+    st.caption("Customer-safe data-readiness, synthetic scenario support, Evidence Pack and founder Green/Yellow/Red approval.")
+
+    if v152_autopilot is None:
+        st.error("The v152 Autopilot engine could not be imported. Check that edgetwin_autopilot_engine.py is in the same folder.")
+        return
+
+    if "v152_customer_df" not in st.session_state:
+        st.session_state.v152_customer_df = pd.DataFrame()
+    if "v152_maintenance_df" not in st.session_state:
+        st.session_state.v152_maintenance_df = pd.DataFrame()
+    if "v152_synthetic_df" not in st.session_state:
+        st.session_state.v152_synthetic_df = pd.DataFrame()
+    if "v152_snapshot" not in st.session_state:
+        st.session_state.v152_snapshot = None
+    if "v152_report_markdown" not in st.session_state:
+        st.session_state.v152_report_markdown = ""
+
+    is_founder = st.session_state.get("workspace_mode_v50") == "Founder Mode"
+
+    st.info(
+        "Scope: EdgeTwin checks whether the provided machine/sensor/maintenance data is strong enough for a responsible AI, IoT or predictive-maintenance next step. "
+        "It does not guarantee failure prediction, machine safety, legal compliance or certification."
+    )
+
+    t1, t2, t3, t4, t5 = st.tabs([
+        "1. Upload / context",
+        "2. Scenario Builder",
+        "3. Autopilot Results",
+        "4. Evidence Pack",
+        "Founder Approval",
+    ])
+
+    with t1:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Customer data")
+            uploaded = st.file_uploader("Upload machine/sensor/process data", type=["csv", "xlsx", "xls"], key="v152_upload_main")
+            if uploaded is not None:
+                try:
+                    st.session_state.v152_customer_df = _v152_read_uploaded_table(uploaded)
+                    st.success(f"Loaded {len(st.session_state.v152_customer_df):,} rows.")
+                except Exception as e:
+                    st.error(f"Could not read uploaded file: {e}")
+
+            use_current_dataset = st.checkbox("Use current EdgeTwin project dataset if no file uploaded", value=True, key="v152_use_project_dataset")
+            if use_current_dataset and st.session_state.v152_customer_df.empty and isinstance(st.session_state.get("dataset"), pd.DataFrame) and not st.session_state.dataset.empty:
+                st.session_state.v152_customer_df = st.session_state.dataset.copy()
+                st.success(f"Using current project dataset: {len(st.session_state.v152_customer_df):,} rows.")
+
+            if not st.session_state.v152_customer_df.empty:
+                st.dataframe(st.session_state.v152_customer_df.head(100), use_container_width=True)
+            else:
+                st.warning("No data loaded yet. Upload CSV/Excel or use an existing EdgeTwin project dataset.")
+
+        with c2:
+            st.subheader("Optional maintenance/event log")
+            maintenance_upload = st.file_uploader("Upload maintenance log / event history", type=["csv", "xlsx", "xls"], key="v152_upload_log")
+            if maintenance_upload is not None:
+                try:
+                    st.session_state.v152_maintenance_df = _v152_read_uploaded_table(maintenance_upload)
+                    st.success(f"Loaded {len(st.session_state.v152_maintenance_df):,} maintenance/event rows.")
+                except Exception as e:
+                    st.error(f"Could not read maintenance file: {e}")
+
+            st.subheader("Use-case context")
+            project_name = st.text_input("Project / customer case", value=st.session_state.get("project_name", "EdgeTwin_Readiness_Case"), key="v152_project_name")
+            machine_type = st.text_input("Machine / process type", value="Rotating equipment / motor / pump", key="v152_machine_type")
+            decision_goal = st.selectbox(
+                "Decision goal",
+                [
+                    "AI / predictive-maintenance readiness",
+                    "IoT / sensor readiness",
+                    "Machine-health data quality",
+                    "ProductTrust / connected-product evidence",
+                    "Custom industrial evidence decision",
+                ],
+                key="v152_decision_goal",
+            )
+            business_problem = st.text_area(
+                "Business problem / decision question",
+                value="We want to know if the available machine, sensor or maintenance data is strong enough before investing in a pilot.",
+                height=110,
+                key="v152_business_problem",
+            )
+            data_period = st.text_input("Approximate data period", value="Unknown / uploaded file only", key="v152_data_period")
+            downtime_cost = st.number_input("Estimated downtime / wrong-decision risk (€)", min_value=0.0, value=15000.0, step=500.0, key="v152_downtime_cost")
+            has_failure_history = st.checkbox("Known failure/event history exists", value=False, key="v152_has_failure_history")
+
+            st.session_state.v152_context = {
+                "project_name": project_name,
+                "machine_type": machine_type,
+                "decision_goal": decision_goal,
+                "business_problem": business_problem,
+                "data_period": data_period,
+                "downtime_cost": downtime_cost,
+                "has_failure_history": has_failure_history,
+            }
+
+    with t2:
+        st.subheader("Customer-safe Scenario Builder")
+        st.write("Synthetic scenarios are allowed for exploration, demonstration and pilot planning. They must not be presented as proof of real failure prediction.")
+        c1, c2 = st.columns(2)
+        with c1:
+            n_rows = st.slider("Synthetic rows", 100, 3000, 300, 100, key="v152_synth_rows")
+            strength = st.slider("Scenario stress strength", 0.05, 0.50, 0.18, 0.01, key="v152_synth_strength")
+            if st.button("Generate customer-safe synthetic scenarios", type="primary", key="v152_generate_synth"):
+                st.session_state.v152_synthetic_df = v152_autopilot.generate_synthetic_scenarios(
+                    st.session_state.v152_customer_df,
+                    n_rows=n_rows,
+                    scenario_strength=strength,
+                )
+                st.success("Synthetic scenario data generated.")
+        with c2:
+            st.warning("Allowed: demo, exploration, pilot planning. Blocked: guaranteed failure prediction or machine diagnosis.")
+
+        if not st.session_state.v152_synthetic_df.empty:
+            st.dataframe(st.session_state.v152_synthetic_df.head(120), use_container_width=True)
+            st.download_button(
+                "Download synthetic scenario CSV",
+                st.session_state.v152_synthetic_df.to_csv(index=False).encode("utf-8"),
+                file_name="edgetwin_v152_customer_safe_synthetic_scenarios.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+    with t3:
+        st.subheader("Autopilot Results")
+        if st.button("Run v152 Autopilot Analysis", type="primary", use_container_width=True, key="v152_run_analysis"):
+            context = st.session_state.get("v152_context", {"project_name": st.session_state.get("project_name", "EdgeTwin_Readiness_Case")})
+            st.session_state.v152_snapshot = v152_autopilot.analyze_readiness(
+                st.session_state.v152_customer_df,
+                context,
+                st.session_state.v152_maintenance_df if not st.session_state.v152_maintenance_df.empty else None,
+            )
+            st.session_state.v152_report_markdown = v152_autopilot.build_markdown_report(st.session_state.v152_snapshot)
+            st.success("v152 Autopilot analysis completed.")
+
+        snap = st.session_state.v152_snapshot
+        if snap:
+            scores = snap["scores"]
+            approval = snap["approval"]
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Data quality", f"{scores.get('data_quality_score', 0)}%")
+            m2.metric("Context", f"{scores.get('maintenance_context_score', 0)}%")
+            m3.metric("Evidence strength", f"{scores.get('evidence_strength_score', 0)}%")
+            m4.metric("Decision", snap.get("decision", "Unknown").replace("_", " "))
+
+            status = approval.get("status", "RED")
+            if status == "GREEN":
+                st.success(f"🟢 GREEN — {approval.get('founder_action', '')}")
+            elif status == "YELLOW":
+                st.warning(f"🟡 YELLOW — {approval.get('founder_action', '')}")
+            else:
+                st.error(f"🔴 RED — {approval.get('founder_action', '')}")
+
+            st.info(snap.get("allowed_conclusion", ""))
+
+            with st.expander("Missing evidence / gaps", expanded=True):
+                gaps = snap.get("missing_evidence", [])
+                if gaps:
+                    for gap in gaps:
+                        st.write(f"- {gap}")
+                else:
+                    st.write("- No major gaps detected in quickscan scope.")
+
+            with st.expander("Safe next steps", expanded=True):
+                for step in snap.get("safe_next_steps", []):
+                    st.write(f"- {step}")
+        else:
+            st.info("Run analysis after upload/context.")
+
+    with t4:
+        st.subheader("Evidence Pack")
+        snap = st.session_state.v152_snapshot
+        if not snap:
+            st.info("Run v152 Autopilot Analysis first.")
+        else:
+            st.markdown(st.session_state.v152_report_markdown)
+            bundle = v152_autopilot.build_bundle_zip(
+                snap,
+                st.session_state.v152_customer_df,
+                st.session_state.v152_synthetic_df,
+            )
+            st.download_button(
+                "Download v152 Evidence Pack ZIP",
+                bundle,
+                file_name=f"{st.session_state.get('v152_project_name', 'EdgeTwin')}_v152_Evidence_Pack.zip",
+                mime="application/zip",
+                type="primary",
+                use_container_width=True,
+            )
+
+    with t5:
+        st.subheader("Founder Approval")
+        if not is_founder:
+            st.warning("Founder Approval details are only visible in Founder Mode. Customer Mode sees the safe summary and Evidence Pack only.")
+            return
+
+        snap = st.session_state.v152_snapshot
+        if not snap:
+            st.info("No snapshot yet. Run analysis first.")
+            return
+
+        approval = snap.get("approval", {})
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Approval status", approval.get("status", "Unknown"))
+        c2.metric("Safe to deliver", approval.get("safe_to_deliver", "Unknown"))
+        c3.metric("Risk level", snap.get("risk_level", "Unknown"))
+
+        st.write("Founder action")
+        st.info(approval.get("founder_action", ""))
+
+        if approval.get("blockers"):
+            st.error("Blockers")
+            for blocker in approval.get("blockers", []):
+                st.write(f"- {blocker}")
+
+        if approval.get("warnings"):
+            st.warning("Warnings")
+            for warning in approval.get("warnings", []):
+                st.write(f"- {warning}")
+
+        st.write("Claims to avoid")
+        for claim in snap.get("claims_to_avoid", []):
+            st.write(f"- {claim}")
+
+        text = st.text_area(
+            "Check customer-facing claim text",
+            value="EdgeTwin helps assess whether the provided data is ready for a controlled AI or predictive-maintenance pilot.",
+            height=120,
+            key="v152_claim_text",
+        )
+        claim_scan = v152_autopilot.scan_claims(text)
+        if claim_scan.get("safe"):
+            st.success("Claim text looks safe.")
+        else:
+            st.error("Unsafe claim language detected.")
+            st.json(claim_scan)
+
+
 _PAGE_RENDERERS = {
+    'v152_autopilot_approval_tab': render_v152_autopilot_approval_tab,
     'market_wedge_simplification_tab': render_market_wedge_simplification_tab,
     'ultimate_customer_flow_tab': render_ultimate_customer_flow_tab,
     'release_qa_gate_tab': render_release_qa_gate_tab,
